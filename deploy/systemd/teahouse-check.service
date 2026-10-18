@@ -1,0 +1,26 @@
+[Unit]
+Description=Teahouse relay integrity check (fsck, seating charts, configuration)
+Documentation=file:///usr/local/share/doc/teahouse/RELAY.md
+
+[Service]
+Type=oneshot
+User=teahouse
+Group=teahouse
+ExecStart=/usr/local/bin/teahouse-relay --root /var/lib/teahouse check
+# Sandboxing: the check only reads the relay directory.
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/teahouse
+ReadWritePaths=/var/lib/teahouse/log /var/lib/teahouse/tmp
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+PrivateNetwork=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallFilter=@system-service
+CapabilityBoundingSet=

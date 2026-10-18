@@ -1,0 +1,9 @@
+[package]
+name = "teahouse-core"
+description = "Teahouse data model: members, roles, keys, invariants. Dependency-free."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
