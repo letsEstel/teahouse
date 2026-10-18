@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { WorkKind } from '../data/fake'
+  import type { WorkKind } from '../data'
   // 成果类型的几何符号，只用墨色线条
   let { kind, size = 40 }: { kind: WorkKind; size?: number } = $props()
 </script>

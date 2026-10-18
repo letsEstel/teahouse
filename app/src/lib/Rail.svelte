@@ -1,50 +1,73 @@
 <script lang="ts">
   import Shape from './Shape.svelte'
-  import { house, members, proposals, problems, byId, me, roleName } from '../data/fake'
+  import { houses, self, pad, type House } from '../data'
+  import { i18n, langs, setLang, t, L, type Lang } from '../i18n/index.svelte'
 
-  let { section }: { section: 'house' | 'problems' | 'proposals' } = $props()
-  const self = byId(me)
+  // ≥1024：左侧竖栏；<1024：顶栏，茶馆列表收进下拉。
+  let { house, section }: { house: House; section: 'house' | 'problems' | 'proposals' } = $props()
+  let me = $derived(self(house))
+  let open = $state(false)
 
-  const nav = [
-    { key: 'house', no: '01', name: '座位', href: '#/house', count: `${members.length}/${house.capacity}` },
-    { key: 'problems', no: '02', name: '问题', href: '#/problems', count: String(problems.length).padStart(2, '0') },
-    { key: 'proposals', no: '03', name: '提案', href: '#/proposal/p1', count: String(proposals.length).padStart(2, '0'), alert: true },
-  ] as const
+  let nav = $derived([
+    { key: 'house', no: '01', name: t('nav.seats'), href: `#/${house.id}/house`, count: `${house.members.length}/${house.capacity}`, badge: false },
+    { key: 'problems', no: '02', name: t('nav.problems'), href: `#/${house.id}/problems`, count: pad(house.problems.length), badge: false },
+    { key: 'proposals', no: '03', name: t('nav.proposals'), href: `#/${house.id}/proposals`, count: pad(house.proposals.length), badge: house.proposals.length > 0 },
+  ])
+  const short: Record<Lang, string> = { zh: '中', en: 'EN', de: 'DE' }
+  const full: Record<Lang, string> = { zh: '中文', en: 'English', de: 'Deutsch' }
 </script>
 
 <aside>
-  <a class="mark" href="#/house" aria-label="茶馆">
-    <svg width="44" height="44" viewBox="0 0 44 44">
+  <a class="mark" href="#/{house.id}/house" aria-label={t('app.name')}>
+    <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
       <rect x="1.5" y="1.5" width="41" height="41" fill="none" stroke="var(--ink)" stroke-width="3" />
       <circle cx="22" cy="22" r="10" fill="var(--ink)" />
       <rect x="17" y="39" width="10" height="5" fill="var(--paper)" />
     </svg>
-    <div>
-      <div class="word">茶馆</div>
-      <div class="label">Teahouse</div>
+    <div class="mark-text">
+      <div class="word">{t('app.name')}</div>
+      <div class="label">{t('app.sub')}</div>
     </div>
   </a>
 
-  <div class="house">
-    <div class="label">当前茶馆</div>
-    <div class="house-name">{house.name}</div>
+  <div class="houses">
+    <div class="label head">{t('rail.houses')}</div>
+    <button class="switch" aria-expanded={open} aria-label={t('rail.switch')} onclick={() => (open = !open)}>
+      <span>{L(house.name)}</span><i class:up={open}></i>
+    </button>
+    <ul class:open>
+      {#each houses as h}
+        <li>
+          <a href="#/{h.id}/house" class:on={h.id === house.id} onclick={() => (open = false)}>
+            <i></i><span>{L(h.name)}</span>
+          </a>
+        </li>
+      {/each}
+    </ul>
   </div>
 
-  <nav>
+  <nav aria-label={t('nav.label')}>
     {#each nav as n}
-      <a href={n.href} class:on={section === n.key}>
+      <a href={n.href} class:on={section === n.key} data-tour={n.key === 'problems' ? 'nav-problems' : undefined}>
         <span class="no num">{n.no}</span>
         <span class="nm">{n.name}</span>
-        <span class="ct num" class:alert={'alert' in n}>{n.count}</span>
+        {#if n.badge}<em class="badge">{n.count}</em>{:else}<span class="ct num">{n.count}</span>{/if}
       </a>
     {/each}
   </nav>
 
-  <div class="self">
-    <Shape role={self.role} size={16} />
-    <div>
-      <div class="self-name">{self.name}</div>
-      <div class="label">你 · {roleName[self.role]}</div>
+  <div class="foot">
+    <div class="self">
+      <Shape role={me.role} size={16} />
+      <div>
+        <div class="self-name">{L(me.name)}</div>
+        <div class="label">{t('self.you', { role: t(`role.${me.role}`) })}</div>
+      </div>
+    </div>
+    <div class="langs" role="group" aria-label={t('rail.lang')}>
+      {#each langs as l}
+        <button class:on={i18n.lang === l} aria-pressed={i18n.lang === l} title={full[l]} lang={l} onclick={() => setLang(l)}>{short[l]}</button>
+      {/each}
     </div>
   </div>
 </aside>
@@ -57,38 +80,111 @@
     border-right: 2px solid var(--ink);
     display: flex;
     flex-direction: column;
-    padding: 40px 0 36px;
+    padding: 36px 0 28px;
     background: var(--paper);
-    z-index: 2;
+    z-index: 5;
+    overflow-y: auto;
+    --in: clamp(20px, 2.2vw, 32px);
   }
-  .mark { display: flex; gap: 14px; align-items: center; padding: 0 32px; }
-  .word { font-family: var(--han); font-weight: 900; font-size: 22px; line-height: 1.1; letter-spacing: 0.08em; }
+  .mark { display: flex; gap: 14px; align-items: center; padding: 0 var(--in); }
+  .mark svg { flex: none; }
+  .word { font-family: var(--display); font-weight: var(--heavy); font-size: 22px; line-height: 1.1; letter-spacing: var(--track-wide); }
   .mark .label { font-size: 10px; margin-top: 3px; }
 
-  .house { margin: 64px 0 28px; padding: 0 32px; }
-  .house-name { font-family: var(--han); font-weight: 700; font-size: 18px; margin-top: 6px; line-height: 1.3; }
+  .houses { margin: 48px 0 24px; padding: 0 var(--in); position: relative; }
+  .head { margin-bottom: 8px; }
+  .switch { display: none; }
+  ul { list-style: none; }
+  ul a { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; font-size: 14px; color: var(--ink-2); line-height: 1.35; }
+  ul a i { flex: none; width: 9px; height: 9px; border: 1.5px solid var(--ink); transform: translateY(-1px); }
+  ul a:hover { color: var(--ink); }
+  ul a.on { color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 17px; }
+  ul a.on i { background: var(--ink); }
 
   nav { border-top: 2px solid var(--ink); }
   nav a {
     display: grid;
-    grid-template-columns: 36px 1fr auto;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
     align-items: baseline;
-    padding: 18px 32px 18px 32px;
+    gap: 6px;
+    padding: 16px var(--in);
     border-bottom: 1px solid var(--ink);
-    position: relative;
     transition: background 200ms var(--ease);
   }
   nav a:hover { background: var(--paper-deep); }
   nav a.on { background: var(--ink); color: var(--paper); }
   .no { font-size: 12px; font-weight: 500; color: var(--ink-3); }
-  .on .no { color: var(--paper); opacity: 0.6; }
-  .nm { font-family: var(--han); font-size: 17px; font-weight: 500; letter-spacing: 0.1em; }
+  .on .no { color: var(--paper); }
+  .nm { font-family: var(--display); font-size: 16px; font-weight: 500; letter-spacing: var(--track-wide); white-space: nowrap; }
   .on .nm { font-weight: 700; }
   .ct { font-size: 13px; color: var(--ink-2); }
   .on .ct { color: var(--paper); }
-  .ct.alert { background: var(--red); color: var(--paper); padding: 0 7px; font-weight: 500; }
+  .on .badge { background: var(--paper); color: var(--ink); }
 
-  .self { margin-top: auto; padding: 0 32px; display: flex; align-items: center; gap: 14px; }
-  .self-name { font-family: var(--han); font-weight: 700; font-size: 15px; line-height: 1.2; }
+  .foot { margin-top: auto; padding: 28px var(--in) 0; display: flex; flex-direction: column; gap: 20px; }
+  .self { display: flex; align-items: center; gap: 14px; }
+  .self-name { font-family: var(--display); font-weight: 700; font-size: 15px; line-height: 1.2; }
   .self .label { font-size: 10px; }
+  .langs { display: flex; }
+  .langs button {
+    font-family: var(--latin); font-size: 12px; font-weight: 500; letter-spacing: 0.08em;
+    min-width: 40px; height: 30px; padding: 0 8px; border: 1.5px solid var(--ink); margin-right: -1.5px;
+    text-align: center;
+  }
+  .langs button[lang='zh'] { font-family: 'Noto Sans SC', sans-serif; }
+  .langs button.on { background: var(--ink); color: var(--paper); }
+
+  /* 窄窗口：侧栏变成顶栏 */
+  @media (max-width: 1023.98px) {
+    aside {
+      position: sticky;
+      top: 0;
+      width: auto;
+      inset: auto;
+      border-right: 0;
+      border-bottom: 2px solid var(--ink);
+      padding: 0;
+      overflow: visible;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: 'mark houses foot' 'nav nav nav';
+      align-items: center;
+      --in: 20px;
+    }
+    .mark { grid-area: mark; padding: 12px var(--in); gap: 10px; }
+    .mark svg { width: 32px; height: 32px; }
+    .mark .label { display: none; }
+    .word { font-size: 18px; }
+
+    .houses { grid-area: houses; margin: 0; padding: 0 0 0 var(--in); border-left: 1px solid var(--ink); align-self: stretch; display: flex; }
+    .head { display: none; }
+    .switch {
+      display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0;
+      font-family: var(--display); font-weight: 700; font-size: 16px;
+    }
+    .switch span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .switch i { flex: none; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid var(--ink); transition: transform 200ms var(--ease); }
+    .switch i.up { transform: rotate(180deg); }
+    ul {
+      display: none;
+      position: absolute; top: 100%; left: -1px; min-width: 280px;
+      background: var(--paper); border: 2px solid var(--ink); padding: 10px var(--in); z-index: 6;
+    }
+    ul.open { display: block; }
+    ul a { padding: 8px 0; }
+
+    nav { grid-area: nav; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+    nav a { grid-template-columns: minmax(0, 1fr) auto; border-bottom: 0; padding: 12px var(--in); }
+    nav a + a { border-left: 1px solid var(--ink); }
+    .no { display: none; }
+    .nm { font-size: 15px; }
+
+    .foot { grid-area: foot; margin: 0; padding: 0 var(--in); flex-direction: row; align-items: center; gap: 16px; }
+    .self .label { display: none; }
+    .self { gap: 8px; }
+    .self-name { font-size: 14px; }
+  }
+  @media (max-width: 640px) {
+    .self-name { display: none; }
+  }
 </style>

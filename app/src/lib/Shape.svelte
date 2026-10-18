@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Role } from '../data/fake'
+  import type { Role } from '../data'
   // 老板 = 红方，伙计 = 黄三角，茶客 = 蓝圆，空座 = 墨线圆
   let { role = null, size = 14 }: { role?: Role | null; size?: number } = $props()
 </script>

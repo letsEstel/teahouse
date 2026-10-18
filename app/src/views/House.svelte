@@ -1,49 +1,80 @@
 <script lang="ts">
   import Room from '../lib/Room.svelte'
   import Shape from '../lib/Shape.svelte'
-  import { house, members, problems, proposals, recent, byId } from '../data/fake'
+  import { fit } from '../lib/fit'
+  import { member, self, boss, workCount, pad, type House, type Role } from '../data'
+  import { t, L, when, date, i18n } from '../i18n/index.svelte'
 
-  const works = problems.reduce((n, p) => n + p.works.length, 0)
-  const count = (r: string) => members.filter((m) => m.role === r).length
-  const pad = (n: number) => String(n).padStart(2, '0')
+  let { house }: { house: House } = $props()
+  let me = $derived(self(house))
+  let owner = $derived(boss(house))
+  let works = $derived(house.problems.reduce((n, p) => n + workCount(p), 0))
+  let free = $derived(house.capacity - house.members.length)
+  const count = (r: Role) => house.members.filter((m) => m.role === r).length
+
+  // 每个角色在首页的最主要动作
+  let action = $derived(
+    me.role === 'boss' ? { label: t('act.invite'), hint: t('act.inviteHint', { n: free }), href: undefined }
+    : me.role === 'heir' ? { label: t('act.newProblem'), hint: t('act.newProblemHint'), href: `#/${house.id}/problems` }
+    : { label: t('act.newProposal'), hint: t('act.newProposalHint'), href: `#/${house.id}/proposals` }
+  )
 </script>
 
 <div class="wrap">
-  <section class="left">
-    <div class="label">茶馆 · 开张于 {house.founded}</div>
-    <h1>梧桐里<br />三号院</h1>
-    <i class="bar"></i>
-    <p class="motto">{house.motto}</p>
+  <section class="intro">
+    <div class="label">{t('house.founded', { date: date(house.founded) })}</div>
+    <h1 use:fit={i18n.lang}>
+      {#each house.nameLines[i18n.lang] as line}<span>{line}</span>{/each}
+    </h1>
+
+    <div class="sign">
+      <i class="bar"></i>
+      <p>{L(house.sign)}</p>
+      <div class="sign-by">
+        <Shape role="boss" size={10} />
+        <span>{t('house.signBy', { name: L(owner.name) })}</span>
+        {#if me.role === 'boss'}<button class="edit">{t('house.signEdit')}</button>{/if}
+      </div>
+    </div>
+
+    <div class="action" data-tour="action">
+      {#if action.href}
+        <a class="primary" href={action.href}><i>+</i><span>{action.label}</span></a>
+      {:else}
+        <button class="primary"><i>+</i><span>{action.label}</span></button>
+      {/if}
+      <p class="consequence">{action.hint}</p>
+    </div>
 
     <div class="stats">
-      <a href="#/problems"><b class="num">{pad(problems.length)}</b><span>问题</span></a>
-      <a href="#/problem/0001"><b class="num">{works}</b><span>成果</span></a>
-      <a href="#/proposal/p1" class="hot"><b class="num">{pad(proposals.length)}</b><span>提案待审</span></a>
+      <a href="#/{house.id}/problems"><b class="num">{pad(house.problems.length)}</b><span>{t('stat.problems')}</span></a>
+      <a href="#/{house.id}/problem/0001"><b class="num">{pad(works)}</b><span>{t('stat.works')}</span></a>
+      <a href="#/{house.id}/proposals" class:todo={house.proposals.length > 0}><b class="num">{pad(house.proposals.length)}</b><span>{t('stat.pending')}</span></a>
     </div>
 
     <div class="recent">
-      <div class="label head">最近</div>
+      <div class="label head">{t('house.recent')}</div>
       <ul>
-        {#each recent as e}
-          {@const m = byId(e.by)}
+        {#each house.recent as e}
+          {@const m = member(house, e.by)}
           <li>
             <Shape role={m.role} size={10} />
-            <span class="who">{m.name}</span>
-            <span class="what">{e.text}</span>
-            <span class="when">{e.when}</span>
+            <span class="who">{L(m.name)}</span>
+            <span class="what">{t(`ev.${e.act}`, { ref: e.ref ? L(e.ref) : '' })}</span>
+            <span class="when">{when(e.when)}</span>
           </li>
         {/each}
       </ul>
     </div>
   </section>
 
-  <section class="right">
-    <Room size={540} />
+  <section class="seats">
+    <div data-tour="room"><Room {house} /></div>
     <div class="legend">
-      <span><Shape role="boss" size={12} />老板 <em class="num">{count('boss')}</em></span>
-      <span><Shape role="heir" size={12} />伙计 · 继承人 <em class="num">{count('heir')}</em></span>
-      <span><Shape role="guest" size={12} />茶客 <em class="num">{count('guest')}</em></span>
-      <span><Shape role={null} size={12} />空座 <em class="num">{house.capacity - members.length}</em></span>
+      <span><Shape role="boss" size={12} />{t('role.boss')} <em class="num">{count('boss')}</em></span>
+      <span><Shape role="heir" size={12} />{t('role.heir')} · {t('role.heirNote')} <em class="num">{count('heir')}</em></span>
+      <span><Shape role="guest" size={12} />{t('role.guest')} <em class="num">{count('guest')}</em></span>
+      <span><Shape role={null} size={12} />{t('role.empty')} <em class="num">{free}</em></span>
     </div>
   </section>
 </div>
@@ -51,60 +82,87 @@
 <style>
   .wrap {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 540px;
-    gap: 72px;
-    padding: 64px 72px 56px 64px;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 36vw, 540px);
+    gap: clamp(40px, 5vw, 72px);
+    padding: var(--pad-top) var(--pad-x) 56px;
     min-height: 100vh;
   }
-  .left { display: flex; flex-direction: column; }
+  .intro { display: flex; flex-direction: column; min-width: 0; }
 
   h1 {
-    font-family: var(--han);
-    font-weight: 900;
-    font-size: 84px;
+    font-family: var(--display);
+    font-weight: var(--heavy);
+    font-size: clamp(48px, 5.8vw, 84px);
     line-height: 1.04;
-    letter-spacing: 0.02em;
+    letter-spacing: var(--track);
     margin-top: 22px;
+    white-space: nowrap;
+    hyphens: none;
   }
-  .bar { display: block; width: 72px; height: 8px; background: var(--red); margin: 30px 0 18px; }
-  .motto { font-size: 18px; color: var(--ink-2); letter-spacing: 0.06em; }
+  h1 span { display: block; width: max-content; }
+
+  .sign { margin-top: 28px; max-width: 34em; }
+  .bar { display: block; width: 72px; height: 8px; background: var(--ink); margin-bottom: 18px; }
+  .sign p { font-size: clamp(16px, 1.3vw, 19px); line-height: 1.6; letter-spacing: 0.02em; }
+  .sign-by { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--ink-2); }
+  .edit { margin-left: 8px; font-size: 13px; font-weight: 500; color: var(--ink); border-bottom: 1px solid var(--ink); }
+
+  .action { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-top: 36px; }
+  .action .consequence { flex: 1 1 16em; }
 
   .stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    margin-top: 48px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 40px;
     border-top: 2px solid var(--ink);
   }
-  .stats a { padding: 16px 0 0; display: flex; flex-direction: column; }
-  .stats a + a { padding-left: 20px; border-left: 1px solid var(--ink); }
-  .stats b { font-size: 56px; font-weight: 300; line-height: 1; letter-spacing: -0.02em; }
-  .stats span { font-size: 14px; margin-top: 8px; font-weight: 500; }
-  .stats .hot b { color: var(--red); }
+  .stats a { padding: 16px 16px 14px 0; display: flex; flex-direction: column; min-width: 0; transition: background 200ms var(--ease); }
+  .stats a + a { padding-left: 18px; border-left: 1px solid var(--ink); }
+  .stats a:hover { background: var(--paper-deep); }
+  .stats b { font-size: clamp(40px, 3.9vw, 56px); font-weight: 300; line-height: 1; letter-spacing: -0.02em; }
+  .stats span { font-size: 14px; margin-top: 8px; font-weight: 500; line-height: 1.3; }
+  /* 待办：整格反白，不用红色 */
+  .stats a.todo { background: var(--ink); color: var(--paper); }
 
   .recent { margin-top: auto; padding-top: 40px; }
   .head { padding-bottom: 10px; border-bottom: 1px solid var(--ink); }
   ul { list-style: none; }
   li {
     display: grid;
-    grid-template-columns: 10px 64px 1fr auto;
+    grid-template-columns: 10px auto minmax(0, 1fr) auto;
     gap: 12px;
-    align-items: center;
+    align-items: baseline;
     padding: 10px 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+    border-bottom: 1px solid var(--rule);
     font-size: 14px;
+    line-height: 1.45;
   }
-  .who { font-weight: 700; }
-  .what { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .when { font-family: var(--latin); font-size: 12px; color: var(--ink-3); }
+  li :global(svg) { align-self: center; }
+  .who { font-weight: 700; white-space: nowrap; }
+  .what { color: var(--ink-2); }
+  .when { font-family: var(--latin); font-size: 12px; color: var(--ink-3); white-space: nowrap; text-align: right; }
 
-  .right { display: flex; flex-direction: column; align-items: flex-start; padding-top: 8px; }
+  .seats { display: flex; flex-direction: column; padding-top: 8px; min-width: 0; }
+  .seats > div:first-child { width: 100%; }
   .legend {
     display: flex;
-    gap: 28px;
-    margin-top: 56px;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    margin-top: 52px;
     font-size: 13px;
     font-weight: 500;
   }
-  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
   .legend em { font-style: normal; color: var(--ink-3); }
+
+  /* 窄窗口：座位图放到内容上方 */
+  @media (max-width: 1023.98px) {
+    .wrap { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 48px; }
+    .seats { order: -1; max-width: 520px; }
+    .recent { margin-top: 0; }
+  }
+  @media (max-width: 560px) {
+    li { grid-template-columns: 10px minmax(0, 1fr) auto; }
+    .what { grid-column: 2 / -1; }
+  }
 </style>

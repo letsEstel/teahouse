@@ -1,43 +1,51 @@
 <script lang="ts">
   import Rail from './lib/Rail.svelte'
+  import Tour from './lib/Tour.svelte'
   import House from './views/House.svelte'
   import Problems from './views/Problems.svelte'
   import ProblemView from './views/Problem.svelte'
   import Proposal from './views/Proposal.svelte'
+  import { findHouse } from './data'
+  import { i18n } from './i18n/index.svelte'
 
-  let hash = $state(location.hash || '#/house')
+  // 路由：#/<茶馆>/<界面>/<参数>，例如 #/wutong/problem/0001
+  let hash = $state(location.hash)
   $effect(() => {
-    const on = () => { hash = location.hash || '#/house'; window.scrollTo(0, 0) }
+    const on = () => { hash = location.hash; window.scrollTo(0, 0) }
     addEventListener('hashchange', on)
     return () => removeEventListener('hashchange', on)
   })
 
   let route = $derived.by(() => {
-    const [, page, arg] = hash.split('/')
-    return { page: page || 'house', arg }
+    const [, h, page, arg] = hash.split('/')
+    return { house: findHouse(h), page: page || 'house', arg }
   })
+  let house = $derived(route.house)
   let section = $derived(
     route.page === 'problems' || route.page === 'problem' ? 'problems'
-    : route.page === 'proposal' ? 'proposals' : 'house'
+    : route.page === 'proposals' || route.page === 'proposal' ? 'proposals' : 'house'
   ) as 'house' | 'problems' | 'proposals'
 </script>
 
-<Rail {section} />
+<Rail {house} {section} />
 <main>
-  {#key hash}
+  {#key hash + i18n.lang}
     <div class="page">
       {#if route.page === 'problems'}
-        <Problems />
+        <Problems {house} />
       {:else if route.page === 'problem'}
-        <ProblemView id={route.arg ?? '0001'} />
-      {:else if route.page === 'proposal'}
-        <Proposal id={route.arg ?? 'p1'} />
+        <ProblemView {house} id={route.arg ?? '0001'} />
+      {:else if route.page === 'proposals' || route.page === 'proposal'}
+        <Proposal {house} id={route.page === 'proposal' ? route.arg : undefined} />
       {:else}
-        <House />
+        <House {house} />
       {/if}
     </div>
   {/key}
 </main>
+{#if route.page === 'house'}
+  {#key house.id}<Tour {house} />{/key}
+{/if}
 
 <style>
   main { margin-left: var(--rail); min-height: 100vh; }
