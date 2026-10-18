@@ -6,7 +6,61 @@
 use crate::members::{valid_member_id, Role};
 
 /// Directories the steward may write on `main` (说明书 第四节 + 第十四节).
-pub const STEWARD_DIRS: &[&str] = &["problems/", "works/", "board/"];
+pub const STEWARD_DIRS: &[&str] = &["problems/", "works/", "board/", "talk/"];
+
+/// Where written discussion lives (说明书 第十四节):
+/// * `talk/<problem-id>/<stamp>-<member-id>.md` — under a problem
+/// * `talk/board/<notice>/<stamp>-<member-id>.md` — replies to a notice
+///
+/// `<stamp>` is UTC `YYYYMMDDTHHMMSSZ`. One post, one file, one author.
+pub const TALK_DIR: &str = "talk/";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TalkTopic<'a> {
+    Problem(&'a str),
+    Board(&'a str),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TalkPost<'a> {
+    pub topic: TalkTopic<'a>,
+    pub author: &'a str,
+}
+
+fn valid_stamp(s: &str) -> bool {
+    let b = s.as_bytes();
+    b.len() == 16
+        && b[..8].iter().all(u8::is_ascii_digit)
+        && b[8] == b'T'
+        && b[9..15].iter().all(u8::is_ascii_digit)
+        && b[15] == b'Z'
+}
+
+fn valid_notice_stem(s: &str) -> bool {
+    (1..=80).contains(&s.len())
+        && !s.starts_with('.')
+        && s.bytes()
+            .all(|c| c.is_ascii_alphanumeric() || b"-_.".contains(&c))
+}
+
+/// Parses a discussion post path; `None` if it is not one.
+pub fn parse_talk_path(path: &str) -> Option<TalkPost<'_>> {
+    let rest = path.strip_prefix(TALK_DIR)?;
+    let parts: Vec<&str> = rest.split('/').collect();
+    let (topic, file) = match parts.as_slice() {
+        ["board", notice, file] if valid_notice_stem(notice) => (TalkTopic::Board(notice), *file),
+        [id, file] if id.len() == 4 && id.bytes().all(|b| b.is_ascii_digit()) => {
+            (TalkTopic::Problem(id), *file)
+        }
+        _ => return None,
+    };
+    let stem = file.strip_suffix(".md")?;
+    let (stamp, author) = stem.split_once('-')?;
+    if !valid_stamp(stamp) || !valid_member_id(author) {
+        return None;
+    }
+    Some(TalkPost { topic, author })
+}
 
 pub const MAIN_REF: &str = "refs/heads/main";
 pub const PROPOSALS_PREFIX: &str = "refs/proposals/";
@@ -79,6 +133,9 @@ pub enum ProblemRef {
     Id(String),
     /// `Problem: meta` — changes to the teahouse itself (host only).
     Meta,
+    /// `Problem: board` — notices and replies; may touch only `board/` and
+    /// `talk/board/`.
+    Board,
 }
 
 impl ProblemRef {
@@ -86,6 +143,9 @@ impl ProblemRef {
         let v = v.trim();
         if v == "meta" {
             return Some(ProblemRef::Meta);
+        }
+        if v == "board" {
+            return Some(ProblemRef::Board);
         }
         if v.len() == 4 && v.bytes().all(|b| b.is_ascii_digit()) {
             return Some(ProblemRef::Id(v.to_string()));
@@ -124,10 +184,9 @@ pub fn decide_ref(role: Role, member_id: &str, kind: &RefKind<'_>, op: Op) -> Re
         RefKind::Main => match (op, role) {
             (Op::Delete, _) => Deny("main can never be deleted / main 分支不能删除".into()),
             (Op::Create, _) => Deny("main already exists on the relay / main 只能由 relay 创建".into()),
-            (Op::Update, Role::Guest) => Deny(
-                "guests cannot write main; push to refs/proposals/<your-id>/<name> instead / 茶客不能直接写入 main，请推送到提案分支".into(),
-            ),
-            (Op::Update, Role::Host | Role::Steward) => Allow,
+            // Guests may update main only with their own talk/ posts; that is
+            // judged commit by commit (see the relay's pre-receive hook).
+            (Op::Update, _) => Allow,
         },
         RefKind::Proposal { owner, .. } => {
             // Your own namespace is yours; the host may also clear others'
@@ -161,6 +220,42 @@ mod tests {
         assert!(!may_write_on_main(Role::Steward, "works"));
         assert!(!may_write_on_main(Role::Steward, "worksX/a"));
         assert!(!may_write_on_main(Role::Guest, "works/0001/a.md"));
+    }
+
+    #[test]
+    fn talk_paths() {
+        assert_eq!(
+            parse_talk_path("talk/0001/20261018T213000Z-wang.md"),
+            Some(TalkPost {
+                topic: TalkTopic::Problem("0001"),
+                author: "wang"
+            })
+        );
+        assert_eq!(
+            parse_talk_path("talk/board/2026-10-18-meeting/20261018T213000Z-li_2.md"),
+            Some(TalkPost {
+                topic: TalkTopic::Board("2026-10-18-meeting"),
+                author: "li_2"
+            })
+        );
+        for bad in [
+            "talk/0001/x.md",
+            "talk/0001/20261018T213000Z-wang.txt",
+            "talk/0001/20261018T213000-wang.md",
+            "talk/0001/20261018T213000Z-Wang.md",
+            "talk/01/20261018T213000Z-wang.md",
+            "talk/0001/sub/20261018T213000Z-wang.md",
+            "talk/board/.x/20261018T213000Z-wang.md",
+            "talk/board/20261018T213000Z-wang.md",
+            "works/0001/20261018T213000Z-wang.md",
+        ] {
+            assert_eq!(parse_talk_path(bad), None, "{bad}");
+        }
+        assert!(may_write_on_main(
+            Role::Steward,
+            "talk/0001/20261018T213000Z-wang.md"
+        ));
+        assert_eq!(ProblemRef::parse("board"), Some(ProblemRef::Board));
     }
 
     #[test]
@@ -238,10 +333,10 @@ mod tests {
         ));
 
         let m = RefKind::Main;
-        assert!(matches!(
+        assert_eq!(
             decide_ref(Role::Guest, "wang", &m, Op::Update),
-            RefDecision::Deny(_)
-        ));
+            RefDecision::Allow
+        );
         assert_eq!(
             decide_ref(Role::Steward, "zhou", &m, Op::Update),
             RefDecision::Allow

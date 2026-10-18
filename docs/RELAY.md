@@ -70,10 +70,10 @@ A new teahouse is prepared under `tmp/` and moved into `houses/` with one
 | 1 | Only seated keys can connect to a teahouse; unknown teahouses and teahouses without your seat look identical. | read, write |
 | 2 | Only `refs/heads/main` and `refs/proposals/<member-id>/<name>` exist. Tags and other branches are refused. | all |
 | 3 | `main` is never created, deleted or rewritten through a push (fast-forward only, even for the host). | all |
-| 4 | Guests (茶客) cannot update `main`; they push proposals to their own namespace. | guest |
+| 4 | Guests (茶客) land on `main` only by **adding** their own discussion posts (`talk/…/<stamp>-<their-id>.md`): no edits, no deletions, no merges, nothing else. Everything else they push as a proposal to their own namespace. | guest |
 | 5 | Anyone may create, rework (force) or delete proposals in **their own** namespace; only the host may delete someone else's. | all |
-| 6 | The steward (伙计) may change only `problems/`, `works/` and `board/` on `main`. Checked **per commit**, including what a merge resolution itself introduces (`git diff-tree -c`). | steward |
-| 7 | Every commit carries exactly one `Problem:` trailer: a 4-digit id whose file `problems/<id>-*.md` exists in that commit, or `meta`. | all |
+| 6 | The steward (伙计) may change only `problems/`, `works/`, `board/` and `talk/` (moderation) on `main`. Checked **per commit**, including what a merge resolution itself introduces (`git diff-tree -c`). | steward |
+| 7 | Every commit carries exactly one `Problem:` trailer: a 4-digit id whose file `problems/<id>-*.md` exists in that commit, `board` (may touch only `board/` and `talk/board/`), or `meta`. A post must sit under the topic its commit faces. | all |
 | 8 | `Problem: meta` may land on `main` only from the host. | steward |
 | 9 | `.teahouse/` contains only `members.toml`; any commit that changes it must leave a valid chart (1–15 seats, exactly one host, at most one steward, unique ids and keys, ed25519 only). | all |
 | 10 | Paths that would turn into `.teahouse/` on Windows or macOS checkouts (`.TeaHouse/`, `.teahouse./`, `TEAHOU~1`) are refused. | all |
@@ -82,6 +82,17 @@ A new teahouse is prepared under `tmp/` and moved into `houses/` with one
 Laws 6–9 apply to every commit a push would add to `main` — including commits
 that came from someone else's proposal. A steward therefore cannot land a
 guest's proposal that touches the seating chart; only the host can.
+
+### Discussion layout (说明书 第十四节)
+
+```
+board/<notice>.md                                  notices (host, steward)
+talk/<problem-id>/<YYYYMMDDTHHMMSSZ>-<member>.md   discussion under a problem
+talk/board/<notice>/<YYYYMMDDTHHMMSSZ>-<member>.md replies to a notice
+```
+
+One post is one file with one author; it is written, not spoken, so it is
+never edited afterwards. The steward and host may remove posts (moderation).
 
 ## 4. 继承 · Succession
 

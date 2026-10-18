@@ -1078,3 +1078,93 @@ fn concurrent_pushes_never_corrupt_main() {
     );
     w.relay_ok(&["check"]);
 }
+
+// ───────────────────────────── 讨论与公告 · talk and board ─────────────────────────────
+
+#[test]
+fn guests_post_to_talk_directly_but_only_their_own_new_posts() {
+    let w = World::new();
+    let _ = w.wutong();
+    let wang = w.clone("wang", "wutong");
+    let post = "talk/0001/20261018T213000Z-wang.md";
+
+    // A guest adds their own post straight to main.
+    w.write(&wang, post, "晚上七点以后基本没位置。\n");
+    w.commit(&wang, "留言\n\nProblem: 0001");
+    w.push_ok(&wang, &["main"]);
+
+    // …but cannot edit or delete it afterwards (written, not spoken).
+    w.write(&wang, post, "改口了\n");
+    w.commit(&wang, "改留言\n\nProblem: 0001");
+    w.push_denied(
+        &wang,
+        &["main"],
+        "guests cannot write main except adding their own posts",
+    );
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+    fs::remove_file(wang.join(post)).unwrap();
+    w.commit(&wang, "删留言\n\nProblem: 0001");
+    w.push_denied(
+        &wang,
+        &["main"],
+        "guests cannot write main except adding their own posts",
+    );
+
+    // Posting in someone else's name, or sneaking a result in with a post.
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+    w.write(&wang, "talk/0001/20261018T213100Z-li.md", "冒名\n");
+    w.commit(&wang, "x\n\nProblem: 0001");
+    w.push_denied(&wang, &["main"], "not talk/0001/20261018T213100Z-li.md");
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+    w.write(&wang, "talk/0001/20261018T213200Z-wang.md", "ok\n");
+    w.write(&wang, "works/0001/plan.md", "smuggled\n");
+    w.commit(&wang, "x\n\nProblem: 0001");
+    w.push_denied(&wang, &["main"], "not works/0001/plan.md");
+
+    // A post must sit under the problem its commit faces.
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+    w.write(&wang, "talk/0001/20261018T213300Z-wang.md", "ok\n");
+    w.commit(&wang, "x\n\nProblem: board");
+    w.push_denied(&wang, &["main"], "different topic");
+
+    // The steward moderates.
+    let zhou = w.clone("zhou", "wutong");
+    fs::remove_file(zhou.join(post)).unwrap();
+    w.commit(&zhou, "移除留言\n\nProblem: 0001");
+    w.push_ok(&zhou, &["main"]);
+}
+
+#[test]
+fn board_notices_and_replies() {
+    let w = World::new();
+    let _ = w.wutong();
+    let zhou = w.clone("zhou", "wutong");
+    w.write(
+        &zhou,
+        "board/2026-10-25-meeting.md",
+        "周六上午十点，楼下集合。\n",
+    );
+    w.commit(&zhou, "贴公告\n\nProblem: board");
+    w.push_ok(&zhou, &["main"]);
+
+    let wang = w.clone("wang", "wutong");
+    w.write(
+        &wang,
+        "talk/board/2026-10-25-meeting/20261019T080000Z-wang.md",
+        "我去。\n",
+    );
+    w.commit(&wang, "回应公告\n\nProblem: board");
+    w.push_ok(&wang, &["main"]);
+
+    // `board` is for the board only.
+    w.git_ok(&zhou, &["pull", "--quiet", "--ff-only"]);
+    w.write(&zhou, "works/0001/x.md", "x");
+    w.commit(&zhou, "x\n\nProblem: board");
+    w.push_denied(&zhou, &["main"], "may only change board/");
+
+    // Guests do not post notices themselves; they propose them.
+    w.write(&wang, "board/my-notice.md", "x");
+    w.commit(&wang, "x\n\nProblem: board");
+    w.push_denied(&wang, &["main"], "guests cannot write main except");
+    w.push_ok(&wang, &["HEAD:refs/proposals/wang/notice"]);
+}

@@ -246,6 +246,30 @@ impl Git {
         split_z(out)
     }
 
+    /// `(status, path)` for a non-merge commit: `A`dded, `M`odified,
+    /// `D`eleted, `T`ype-changed. Renames appear as `D` + `A`.
+    pub fn changes(&self, commit: &str) -> Result<Vec<(char, String)>> {
+        let out = self.run(&[
+            "diff-tree",
+            "--no-commit-id",
+            "-r",
+            "--root",
+            "--no-renames",
+            "--name-status",
+            "-z",
+            commit,
+        ])?;
+        let fields = split_z(out)?;
+        let mut v = Vec::new();
+        for pair in fields.chunks(2) {
+            match pair {
+                [status, path] => v.push((status.chars().next().unwrap_or('?'), path.clone())),
+                _ => bail!("unexpected diff-tree output for {commit}"),
+            }
+        }
+        Ok(v)
+    }
+
     /// Values of the `key:` trailer, parsed by git's own trailer parser.
     pub fn trailer_values(&self, commit: &str, key: &str) -> Result<Vec<String>> {
         let fmt = format!("--format=%(trailers:key={key},valueonly,unfold,separator=%x00)");

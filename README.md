@@ -24,7 +24,7 @@ cargo test               # 全部测试（需要 git）
 | | 老板 host | 伙计 steward | 茶客 guest |
 |---|---|---|---|
 | 读取全部 | ✓ | ✓ | ✓ |
-| 直接写 main | 全部 | `problems/` `works/` `board/` | ✗ |
+| 直接写 main | 全部 | `problems/` `works/` `board/` `talk/` | 只能新增自己的留言（`talk/`） |
 | 提案（`refs/proposals/<id>/…`） | ✓ | ✓ | ✓ |
 | 修改座位表 / `Problem: meta` | ✓ | ✗ | 只能提案 |
 | 继承茶馆 | — | ✓ | ✗ |
