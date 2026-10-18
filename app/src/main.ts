@@ -1,0 +1,14 @@
+import '@fontsource/jost/300.css'
+import '@fontsource/jost/400.css'
+import '@fontsource/jost/500.css'
+import '@fontsource/jost/700.css'
+import '@fontsource/noto-sans-sc/300.css'
+import '@fontsource/noto-sans-sc/400.css'
+import '@fontsource/noto-sans-sc/500.css'
+import '@fontsource/noto-sans-sc/700.css'
+import '@fontsource/noto-sans-sc/900.css'
+import './styles/base.css'
+import { mount } from 'svelte'
+import App from './App.svelte'
+
+export default mount(App, { target: document.getElementById('app')! })

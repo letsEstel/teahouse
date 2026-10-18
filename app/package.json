@@ -1,0 +1,26 @@
+{
+  "name": "teahouse-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "shoot": "node scripts/shoot.mjs"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.1.1",
+    "@tsconfig/svelte": "^5.0.8",
+    "playwright": "^1.64.1",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.7",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.4"
+  },
+  "dependencies": {
+    "@fontsource/jost": "^5.3.0",
+    "@fontsource/noto-sans-sc": "^5.3.1"
+  }
+}

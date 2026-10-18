@@ -1,0 +1,53 @@
+:root {
+  --paper: #f1ece2;
+  --paper-deep: #e6dfd1;
+  --ink: #141414;
+  --ink-2: #57534c;
+  --ink-3: #9a948a;
+  --red: #d2321e;
+  --blue: #1f4ea1;
+  --yellow: #efb71b;
+
+  --rail: 248px;
+  --gutter: 32px;
+
+  --latin: 'Jost', 'Noto Sans SC', sans-serif;
+  --han: 'Noto Sans SC', 'Jost', sans-serif;
+  --sans: 'Jost', 'Noto Sans SC', sans-serif;
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+
+/* 小号拉丁标签：编号、分区名 */
+.label {
+  font-family: var(--latin);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.num {
+  font-family: var(--latin);
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+::selection { background: var(--yellow); color: var(--ink); }
