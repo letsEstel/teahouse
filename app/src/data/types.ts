@@ -24,7 +24,11 @@ export interface Work {
 export interface Note { by: string; text: Text; when: string }
 
 /** 公告板上的一条公告（board/ 目录下一个文件），只有老板和伙计能张贴 */
-export interface Notice { id: string; by: string; title: Text; text: Text; when: string; replies: Note[] }
+export interface Notice {
+  id: string; by: string; title: Text; text: Text; when: string
+  /** 回应，同样按进入茶馆的先后排列 */
+  replies: Note[]
+}
 
 export interface Event { by: string; act: Act; ref?: Text; when: string; problem?: string }
 
@@ -41,7 +45,7 @@ export interface Problem {
   /** 没有展开的问题只给成果数 */
   workCount?: number
   events: Event[]
-  /** 问题下的讨论 */
+  /** 问题下的讨论。数组顺序就是进入茶馆的先后（说明书第三节），界面照此显示，不按 when 排序 */
   notes?: Note[]
 }
 

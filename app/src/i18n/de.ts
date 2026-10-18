@@ -192,4 +192,7 @@ export default {
   'propose.another': 'Noch einen machen',
   'propose.cancel': 'Abbrechen',
   'propose.notGuest': 'Als {role} änderst du direkt; Vorschläge sind für Gäste.',
+
+  'rail.showAll': 'Alle {n} Teehäuser',
+  'rail.collapse': 'Weniger zeigen',
 }

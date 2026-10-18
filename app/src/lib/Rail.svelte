@@ -8,6 +8,10 @@
   let { house, section }: { house: House; section: 'house' | 'board' | 'problems' | 'proposals' } = $props()
   let me = $derived(self(house))
   let open = $state(false)
+  // 茶馆超过 4 间时，宽屏侧栏默认只列出当前这间，点"全部"展开（展开后列表可滚动）
+  const MANY = 4
+  let many = $derived(houses.length > MANY)
+  let expanded = $state(false)
 
   let nav = $derived([
     { key: 'house', no: '01', name: t('nav.seats'), href: `#/${house.id}/house`, count: `${house.members.length}/${house.capacity}`, badge: false },
@@ -37,15 +41,20 @@
     <button class="switch" aria-expanded={open} aria-label={t('rail.switch')} onclick={() => (open = !open)}>
       <span>{L(house.name)}</span><i class:up={open}></i>
     </button>
-    <ul class:open>
+    <ul class:open class:folded={many && !expanded} class:scroll={many && expanded}>
       {#each houses as h}
-        <li>
-          <a href="#/{h.id}/house" class:on={h.id === house.id} onclick={() => (open = false)}>
+        <li class:current={h.id === house.id}>
+          <a href="#/{h.id}/house" class:on={h.id === house.id} onclick={() => { open = false; expanded = false }}>
             <i></i><span>{L(h.name)}</span>
           </a>
         </li>
       {/each}
     </ul>
+    {#if many}
+      <button class="more" aria-expanded={expanded} onclick={() => (expanded = !expanded)}>
+        {expanded ? t('rail.collapse') : t('rail.showAll', { n: houses.length })}<i class:up={expanded}></i>
+      </button>
+    {/if}
   </div>
 
   <nav aria-label={t('nav.label')}>
@@ -111,6 +120,12 @@
   ul a:hover { color: var(--ink); }
   ul a.on { color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 17px; }
   ul a.on i { background: var(--ink); }
+  ul.folded li:not(.current) { display: none; }
+  ul.scroll { max-height: 34vh; overflow-y: auto; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+  .more { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; font-weight: 500; color: var(--ink-2); border-bottom: 1px solid var(--ink-3); }
+  .more:hover { color: var(--ink); }
+  .more i { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; transition: transform 200ms var(--ease); }
+  .more i.up { transform: rotate(180deg); }
 
   nav { border-top: 2px solid var(--ink); }
   nav a {
@@ -188,7 +203,11 @@
       position: absolute; top: 100%; left: -1px; min-width: 280px;
       background: var(--paper); border: 2px solid var(--ink); padding: 10px var(--in); z-index: 6;
     }
-    ul.open { display: block; }
+    ul.open { display: block; max-height: min(60vh, 420px); overflow-y: auto; }
+    /* 窄屏下拉里总是列出全部茶馆 */
+    ul.folded li:not(.current) { display: list-item; }
+    ul.scroll { border-bottom: 2px solid var(--ink); }
+    .more { display: none; }
     ul a { padding: 8px 0; }
 
     nav { grid-area: nav; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--ink); }

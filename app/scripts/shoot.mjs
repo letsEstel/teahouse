@@ -45,8 +45,9 @@ const sizes = [
   [900, 1000],
 ]
 const langs = ['zh', 'en', 'de']
-// 默认保存的一组：1366 中文；个别界面（saveDe）另存一张 1366 德文
-const keep = (s, w, lang) => fullSet || (w === 1366 && (lang === 'zh' || (s.saveDe && lang === 'de')))
+// 默认保存的一组：标了 save 的界面，存 1366 中文；saveDe 另存 1366 德文；saveAt 指定别的宽度（中文）
+const keep = (s, w, lang) =>
+  fullSet || (s.save && ((w === (s.saveAt ?? 1366) && lang === 'zh') || (s.saveDe && w === 1366 && lang === 'de')))
 
 // 康德读书会：茶客修改术语表，然后写理由
 const reasons = {
@@ -62,32 +63,44 @@ async function fillProposal(p, lang) {
   await p.fill('textarea[name=reason]', reasons[lang])
 }
 
-// 每个界面：名字、路由、可选操作 act(page, lang)、只在哪些宽度跑、theme、是否只在默认组里出现
-const screens = [
-  { name: 'wutong-house', hash: '#/wutong/house' },
-  { name: 'wutong-board', hash: '#/wutong/board' },
-  { name: 'wutong-problems', hash: '#/wutong/problems' },
+// 每个界面：名字、路由、可选操作 act(page, lang)、只在哪些宽度跑（widths）、theme、
+// save（本轮要保存的图）。所有界面都参加溢出检查，只有 save 的才存图。
+const houses = ['wutong', 'kant', 'family', 'startup', 'band', 'lab']
+const screens = []
+for (const h of houses) {
+  screens.push(
+    { name: `${h}-house`, hash: `#/${h}/house` },
+    { name: `${h}-board`, hash: `#/${h}/board` },
+    { name: `${h}-problems`, hash: `#/${h}/problems` },
+    { name: `${h}-problem`, hash: `#/${h}/problem/0001` },
+    { name: `${h}-proposal`, hash: `#/${h}/proposal/p1` },
+  )
+}
+screens.push(
   { name: 'wutong-kanban', hash: '#/wutong/problems/kanban' },
-  { name: 'wutong-problem', hash: '#/wutong/problem/0001' },
-  { name: 'wutong-proposal', hash: '#/wutong/proposal/p1' },
   { name: 'wutong-proposal-merged', hash: '#/wutong/proposal/p1', act: (p) => p.click('button.adopt') },
-  { name: 'wutong-proposals', hash: '#/wutong/proposals', widths: [900], save: false },
-  { name: 'kant-house', hash: '#/kant/house' },
-  { name: 'kant-board', hash: '#/kant/board' },
-  { name: 'kant-propose', hash: '#/kant/propose/0001', act: fillProposal, saveDe: true },
-  { name: 'kant-propose-done', hash: '#/kant/propose/0001', act: async (p, l) => { await fillProposal(p, l); await p.click('button.send') } },
-  { name: 'kant-propose-new', hash: '#/kant/propose/new', save: false },
-  { name: 'kant-problem', hash: '#/kant/problem/0001', save: false },
-  { name: 'family-house', hash: '#/family/house', saveDe: true },
-  { name: 'family-problem', hash: '#/family/problem/0001' },
-  { name: 'family-proposal', hash: '#/family/proposal/p1', save: false },
-  { name: 'wutong-tour-1', hash: '#/wutong/house', tour: 1, full: false, save: false },
-  // 夜间模式：布局不变，只在默认组里拍
-  { name: 'wutong-house-dark', hash: '#/wutong/house', theme: 'dark', only1366: true },
-  { name: 'wutong-problem-dark', hash: '#/wutong/problem/0001', theme: 'dark', only1366: true },
-  { name: 'wutong-proposal-dark', hash: '#/wutong/proposal/p1', theme: 'dark', only1366: true },
-  { name: 'kant-propose-dark', hash: '#/kant/propose/0001', act: fillProposal, theme: 'dark', only1366: true },
-]
+  { name: 'wutong-proposals', hash: '#/wutong/proposals', widths: [900] },
+  { name: 'kant-propose', hash: '#/kant/propose/0001', act: fillProposal },
+  { name: 'kant-propose-new', hash: '#/kant/propose/new' },
+  { name: 'kant-propose-board', hash: '#/kant/propose/board' },
+  { name: 'wutong-tour-1', hash: '#/wutong/house', tour: 1, full: false },
+  // 侧栏：茶馆多于 4 间时折叠；展开后可滚动；窄屏下拉
+  { name: 'wutong-rail-open', hash: '#/wutong/house', act: (p) => p.click('button.more'), widths: [1920, 1366] },
+  { name: 'wutong-switch', hash: '#/wutong/house', act: (p) => p.click('button.switch'), widths: [900], full: false },
+)
+// 本轮保存的图
+const save = {
+  'wutong-house': {}, 'wutong-rail-open': {}, 'wutong-switch': { saveAt: 900 },
+  'startup-house': {}, 'startup-problem': {},
+  'band-house': { saveDe: true }, 'band-problem': {}, 'band-proposal': {},
+  'lab-house': {}, 'lab-problem': { saveDe: true }, 'lab-proposal': {}, 'lab-board': {},
+}
+for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
+// 夜间模式：布局不变，只拍默认组
+screens.push(
+  { name: 'band-house-dark', hash: '#/band/house', theme: 'dark', only1366: true, save: true },
+  { name: 'lab-problem-dark', hash: '#/lab/problem/0001', theme: 'dark', only1366: true, save: true },
+)
 
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
 function audit() {
@@ -174,7 +187,7 @@ try {
         const issues = await page.evaluate(audit)
         if (issues.length) report.push({ file, issues })
         checked++
-        if (!keep(s, w, lang) || s.save === false && !fullSet) continue
+        if (!keep(s, w, lang)) continue
         // 整页截图：把视口拉到整页高度再拍，这样固定的侧栏也是整页高（Playwright 的 fullPage 不会拉伸它）
         const full = s.full !== false && (await page.evaluate(() => document.documentElement.scrollHeight))
         if (full && full > h) { await page.setViewportSize({ width: w, height: full }); await page.waitForTimeout(150) }

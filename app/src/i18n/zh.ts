@@ -193,4 +193,7 @@ export default {
   'write.hintGuest': '你的留言直接写进茶馆，不需要老板采纳。写下就不再修改。',
   'propose.board': '一条公告',
   'propose.boardTitle': '公告标题',
+
+  'rail.showAll': '全部 {n} 间',
+  'rail.collapse': '收起',
 }

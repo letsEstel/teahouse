@@ -193,4 +193,7 @@ export default {
   'write.hintGuest': 'Your note goes straight into the teahouse; no adoption needed. Once written, it isn’t edited.',
   'propose.board': 'A notice',
   'propose.boardTitle': 'Notice title',
+
+  'rail.showAll': 'All {n} teahouses',
+  'rail.collapse': 'Show less',
 }
