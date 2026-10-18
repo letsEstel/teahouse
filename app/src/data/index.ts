@@ -2,11 +2,11 @@
 import type { House, Member, Problem } from './types'
 import { wutong } from './wutong'
 import { kant } from './kant'
-import { startup } from './startup'
+import { family } from './family'
 
 export * from './types'
 
-export const houses: House[] = [wutong, kant, startup]
+export const houses: House[] = [wutong, kant, family]
 
 export const findHouse = (id: string | undefined) => houses.find((h) => h.id === id) ?? houses[0]
 export const member = (h: House, id: string): Member => h.members.find((m) => m.id === id)!

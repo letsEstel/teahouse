@@ -22,7 +22,7 @@
 
 <div class="wrap" class:detail={id !== undefined}>
   <aside class="queue">
-    <div class="label">03 · {t('nav.proposals')}</div>
+    <div class="label">04 · {t('nav.proposals')}</div>
     <h1 use:fit={i18n.lang}><span>{t('prop.title')}</span></h1>
 
     <div class="label sub">{t('prop.pending')} <em class="badge">{house.proposals.length}</em></div>
@@ -133,7 +133,7 @@
               <a class="primary" href="#/{house.id}/problem/{problem.id}"><i>→</i><span>{t('prop.editDirect')}</span></a>
             {:else}
               {#if p.by === me.id}<button class="secondary">{t('prop.withdraw')}</button>{/if}
-              <button class="primary"><i>+</i><span>{t('act.newProposal')}</span></button>
+              <a class="primary" href="#/{house.id}/propose"><i>+</i><span>{t('act.newProposal')}</span></a>
             {/if}
           </div>
         {/if}

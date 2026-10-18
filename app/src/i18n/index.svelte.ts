@@ -12,8 +12,8 @@ export type Dict = Record<string, Entry>
 const dicts: Record<Lang, Dict> = { zh, en, de }
 const locales: Record<Lang, string> = { zh: 'zh-CN', en: 'en-GB', de: 'de-DE' }
 
-/** 成员写下的内容。M0 的假数据为了检验排版，每段都备了三种语言。 */
-export type Text = Record<Lang, string>
+/** 成员写下的内容。M0 的假数据为了检验排版备了中英两种语言；德语暂时可缺，缺了用英语。 */
+export type Text = { zh: string; en: string; de?: string }
 
 function initial(): Lang {
   const q = new URLSearchParams(location.search).get('lang')
@@ -43,7 +43,8 @@ $effect.root(() => {
 })
 
 export function t(key: string, params: Record<string, string | number> = {}): string {
-  const e = dicts[i18n.lang][key] ?? dicts.zh[key]
+  // 德语只是附带：缺的词条先退到英语，再退到中文
+  const e = dicts[i18n.lang][key] ?? dicts.en[key] ?? dicts.zh[key]
   if (e === undefined) {
     if (import.meta.env.DEV) console.warn('missing i18n key', key)
     return key
@@ -58,7 +59,7 @@ export function t(key: string, params: Record<string, string | number> = {}): st
 }
 
 /** 取一段内容在当前语言下的文字 */
-export const L = (x: Text) => x[i18n.lang]
+export const L = (x: Text) => x[i18n.lang] ?? x.en
 
 // ---- 日期与时间 ----
 

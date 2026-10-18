@@ -10,13 +10,14 @@
   let owner = $derived(boss(house))
   let works = $derived(house.problems.reduce((n, p) => n + workCount(p), 0))
   let free = $derived(house.capacity - house.members.length)
+  let notice = $derived(house.board[0])
   const count = (r: Role) => house.members.filter((m) => m.role === r).length
 
   // 每个角色在首页的最主要动作
   let action = $derived(
     me.role === 'boss' ? { label: t('act.invite'), hint: t('act.inviteHint', { n: free }), href: undefined }
     : me.role === 'heir' ? { label: t('act.newProblem'), hint: t('act.newProblemHint'), href: `#/${house.id}/problems` }
-    : { label: t('act.newProposal'), hint: t('act.newProposalHint'), href: `#/${house.id}/proposals` }
+    : { label: t('act.newProposal'), hint: t('act.newProposalHint'), href: `#/${house.id}/propose` }
   )
 </script>
 
@@ -24,7 +25,7 @@
   <section class="intro">
     <div class="label">{t('house.founded', { date: date(house.founded) })}</div>
     <h1 use:fit={i18n.lang}>
-      {#each house.nameLines[i18n.lang] as line}<span>{line}</span>{/each}
+      {#each house.nameLines[i18n.lang] ?? house.nameLines.en as line}<span>{line}</span>{/each}
     </h1>
 
     <div class="sign">
@@ -51,6 +52,21 @@
       <a href="#/{house.id}/problem/0001"><b class="num">{pad(works)}</b><span>{t('stat.works')}</span></a>
       <a href="#/{house.id}/proposals" class:todo={house.proposals.length > 0}><b class="num">{pad(house.proposals.length)}</b><span>{t('stat.pending')}</span></a>
     </div>
+
+    {#if notice}
+      {@const nm = member(house, notice.by)}
+      <a class="notice" href="#/{house.id}/board">
+        <div class="label nh">{t('board.latest')}</div>
+        <div class="nt">{L(notice.title)}</div>
+        <p class="nx">{L(notice.text)}</p>
+        <div class="nb">
+          <Shape role={nm.role} size={10} />
+          <span>{t('board.postedBy', { name: L(nm.name) })}</span>
+          <span class="when">{when(notice.when)}</span>
+          <span class="more">{t('board.replies', { n: notice.replies.length })} →</span>
+        </div>
+      </a>
+    {/if}
 
     <div class="recent">
       <div class="label head">{t('house.recent')}</div>
@@ -123,6 +139,15 @@
   .stats span { font-size: 14px; margin-top: 8px; font-weight: 500; line-height: 1.3; }
   /* 待办：整格反白，不用红色 */
   .stats a.todo { background: var(--ink); color: var(--paper); }
+
+  .notice { display: block; margin-top: 40px; padding: 18px 22px 16px; border: 2px solid var(--ink); transition: background 200ms var(--ease); }
+  .notice:hover { background: var(--paper-deep); }
+  .nh { margin-bottom: 8px; }
+  .nt { font-family: var(--display); font-weight: 700; font-size: 19px; line-height: 1.35; letter-spacing: var(--track); }
+  .nx { margin-top: 6px; font-size: 14px; line-height: 1.7; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .nb { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 12px; font-size: 12px; color: var(--ink-2); }
+  .nb .when { font-family: var(--latin); color: var(--ink-3); }
+  .nb .more { margin-left: auto; font-weight: 700; color: var(--ink); }
 
   .recent { margin-top: auto; padding-top: 40px; }
   .head { padding-bottom: 10px; border-bottom: 1px solid var(--ink); }

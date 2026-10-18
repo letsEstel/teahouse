@@ -39,12 +39,14 @@
       <div
         class="seat"
         class:empty={!s.m}
+        class:me={s.m?.id === house.me}
         style:left="{s.c * 20}%"
         style:top="{s.r * 20}%"
         style:animation-delay="{120 + s.i * 45}ms"
       >
         <span class="glyph"><Shape role={s.m?.role ?? null} size={20} /></span>
         <span class="name">{s.m ? L(s.m.name) : t('role.empty')}</span>
+        {#if s.m?.id === house.me}<span class="you label">{t('room.you')}</span>{/if}
       </div>
     {/each}
   </div>
@@ -103,6 +105,9 @@
     hyphens: none;
   }
   .empty .name { color: var(--ink-3); font-weight: 400; }
+  /* 你的座位：细墨框 + "你"，不用新颜色 */
+  .me::before { content: ''; position: absolute; inset: 13%; border: 1.5px solid var(--ink); }
+  .you { position: absolute; top: 13%; left: 13%; transform: translateY(-50%); background: var(--paper); padding: 0 4px; margin-left: 6px; font-size: 10px; color: var(--ink); line-height: 1.2; }
   .seat:not(.empty):hover :global(svg) { transform: scale(1.12); }
 
   /* 入座：从无到有，只动一次 */

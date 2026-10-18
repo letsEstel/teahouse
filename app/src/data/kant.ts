@@ -83,6 +83,13 @@ export const kant: House = {
         {
           id: 'k2', kind: 'doc', by: 'he', when: '2026-10-09T23:00', title: glossary,
           note: { zh: '中德对照，41 条', en: 'Chinese–German, 41 entries', de: 'Chinesisch–Deutsch, 41 Einträge' },
+          lines: [
+            { zh: 'Anschauung — 直观', en: 'Anschauung — 直观 (intuition)' },
+            { zh: 'Erscheinung — 显象', en: 'Erscheinung — 显象 (appearance)' },
+            { zh: 'Ding an sich — 物自体', en: 'Ding an sich — 物自体 (thing in itself)' },
+            { zh: 'Noumenon — 本体、物自体', en: 'Noumenon — 本体, 物自体' },
+            { zh: 'Verstand — 知性', en: 'Verstand — 知性 (understanding)' },
+          ],
         },
         {
           id: 'k3', kind: 'doc', by: 'tang', when: '2026-10-02T22:30',
@@ -104,6 +111,11 @@ export const kant: House = {
         { by: 'su', act: 'merge', ref: { zh: '二手文献清单', en: 'Secondary literature list', de: 'Liste der Sekundärliteratur' }, when: '2026-09-26T09:00' },
         { by: 'su', act: 'markActive', when: '2026-09-05T08:00' },
         { by: 'luo', act: 'open', when: '2026-09-04T22:10' },
+      ],
+      notes: [
+        { by: 'tang', when: '2026-10-02T22:50', text: { zh: '我倾向于读成两步。§21 自己说了“证明的开端”，说明还没完。', en: 'I read it as two steps. §21 itself speaks of “the beginning of a deduction”, so it isn’t finished yet.' } },
+        { by: 'luo', when: '2026-10-09T23:10', text: { zh: '同意两步，但第二步到底多证了什么，我还是说不出来。', en: 'Agreed on two steps, but I still can’t say what the second step adds.' } },
+        { by: 'he', when: '2026-10-16T22:45', text: { zh: '第三稿里把第二步写成“范围的扩展”：从“被统一的直观”扩到“我们的一切感性直观”。周五请挑错。', en: 'The 3rd draft treats step two as widening the scope: from “unified intuition” to “all our sensible intuition”. Please find holes on Friday.' } },
       ],
     },
     {
@@ -173,6 +185,29 @@ export const kant: House = {
           ],
         },
       ],
+    },
+  ],
+  board: [
+    {
+      id: 'b2', by: 'su', when: '2026-10-17T10:00',
+      title: { zh: '本周改到周五晚上', en: 'This week we meet on Friday evening' },
+      text: {
+        zh: '周四我出差。周五 19:30，地点不变。读 B 版 §24–§27，十二页。',
+        en: 'I’m travelling on Thursday. Friday at 19:30, same place. Read B §24–§27, twelve pages.',
+      },
+      replies: [
+        { by: 'xu', when: '2026-10-17T12:40', text: { zh: '可以。我会把术语表的提案先交上来，周五一起看。', en: 'Fine. I’ll submit my glossary proposal first so we can look at it on Friday.' } },
+        { by: 'tang', when: '2026-10-17T18:03', text: { zh: '周五我要晚到半小时。', en: 'I’ll be half an hour late on Friday.' } },
+      ],
+    },
+    {
+      id: 'b1', by: 'he', when: '2026-09-30T21:00',
+      title: { zh: '纪要轮值表', en: 'Note-taking rota' },
+      text: {
+        zh: '每次读书会由一人写纪要，按座位顺时针轮。纪要当晚交，挂在对应的问题下面。',
+        en: 'One person writes the notes each session, clockwise round the table. Notes go in the same night, under the matching problem.',
+      },
+      replies: [],
     },
   ],
   decided: [

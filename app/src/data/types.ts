@@ -16,7 +16,15 @@ export interface Work {
   note?: Text
   /** 首张成果的预览：定制图（只有梧桐里的车位图）或一段摘录 */
   preview?: { chart: 'parking' } | { excerpt: Text }
+  /** 文本成果的正文（逐行），发起提案时可以在此基础上修改 */
+  lines?: Text[]
 }
+
+/** 写下来的一段话：公告的回应、问题下的讨论。每条都是一次提交。 */
+export interface Note { by: string; text: Text; when: string }
+
+/** 公告板上的一条公告（board/ 目录下一个文件），只有老板和伙计能张贴 */
+export interface Notice { id: string; by: string; title: Text; text: Text; when: string; replies: Note[] }
 
 export interface Event { by: string; act: Act; ref?: Text; when: string; problem?: string }
 
@@ -33,6 +41,8 @@ export interface Problem {
   /** 没有展开的问题只给成果数 */
   workCount?: number
   events: Event[]
+  /** 问题下的讨论 */
+  notes?: Note[]
 }
 
 export interface DiffLine { kind: 'same' | 'add' | 'del'; text: Text }
@@ -53,7 +63,7 @@ export interface House {
   id: string
   name: Text
   /** 大标题的断行位置，按语言给出 */
-  nameLines: Record<keyof Text, string[]>
+  nameLines: { zh: string[]; en: string[]; de?: string[] }
   /** 招牌：老板写的一句话 */
   sign: Text
   founded: string
@@ -65,4 +75,5 @@ export interface House {
   recent: Event[]
   proposals: Proposal[]
   decided: Decided[]
+  board: Notice[]
 }

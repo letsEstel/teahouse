@@ -3,8 +3,10 @@
   import StatusMark from '../lib/StatusMark.svelte'
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import ParkingMap from '../lib/ParkingMap.svelte'
-  import { member, self, workCount, pad, type House } from '../data'
-  import { t, L, when, date } from '../i18n/index.svelte'
+  import Notes from '../lib/Notes.svelte'
+  import Write from '../lib/Write.svelte'
+  import { member, self, workCount, pad, type House, type Note } from '../data'
+  import { t, L, when, date, NOW } from '../i18n/index.svelte'
 
   let { house, id }: { house: House; id: string } = $props()
   let p = $derived(house.problems.find((x) => x.id === id) ?? house.problems[0])
@@ -15,9 +17,16 @@
 
   let action = $derived(
     me.role === 'guest'
-      ? { label: t('act.proposeWork'), hint: t('act.proposeWorkHint') }
-      : { label: t('act.addWork'), hint: t('act.addWorkHint') }
+      ? { label: t('act.proposeWork'), hint: t('act.proposeWorkHint'), href: `#/${house.id}/propose/${p.id}` }
+      : { label: t('act.addWork'), hint: t('act.addWorkHint'), href: undefined }
   )
+
+  // 问题下的讨论。M0：写下的只留在本页（M1 起每条留言是一次提交）
+  let notes = $state<Note[]>([])
+  $effect.pre(() => { notes = [...(p.notes ?? [])] })
+  function write(text: string) {
+    notes.push({ by: me.id, when: NOW.toISOString(), text: { zh: text, en: text } })
+  }
 </script>
 
 <div class="wrap">
@@ -69,7 +78,11 @@
         <h2>{t('problem.worksHead')}</h2>
         <div class="action">
           <p class="consequence">{action.hint}</p>
-          <button class="primary"><i>+</i><span>{action.label}</span></button>
+          {#if action.href}
+            <a class="primary" href={action.href}><i>+</i><span>{action.label}</span></a>
+          {:else}
+            <button class="primary"><i>+</i><span>{action.label}</span></button>
+          {/if}
         </div>
       </div>
 
@@ -117,6 +130,19 @@
           </article>
         {/each}
       </div>
+
+      <section class="talk">
+        <div class="talk-head">
+          <h2>{t('talk.title')}</h2>
+          <p class="consequence">{t('talk.lede')}</p>
+        </div>
+        {#if notes.length}
+          <Notes {house} {notes} />
+        {:else}
+          <p class="quiet none">{t('talk.none')}</p>
+        {/if}
+        <div class="talk-write"><Write placeholder={t('talk.placeholder')} onsubmit={write} /></div>
+      </section>
     </section>
   </div>
 </div>
@@ -214,6 +240,11 @@
   .tile-foot .by { padding: 0; }
   .tile-foot .by span { margin-left: 10px; }
   .feature .kind { color: var(--ink); }
+
+  .talk { margin-top: 56px; max-width: 48em; }
+  .talk-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 24px; padding-bottom: 14px; border-bottom: 2px solid var(--ink); margin-bottom: 12px; }
+  .none { padding: 8px 0 16px; }
+  .talk-write { margin-top: 20px; }
 
   @media (max-width: 1279.98px) {
     .cols { grid-template-columns: minmax(0, 1fr); }

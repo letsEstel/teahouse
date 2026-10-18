@@ -4,7 +4,9 @@
   import { member, self, workCount, pad, type House, type Status } from '../data'
   import { t, L, when } from '../i18n/index.svelte'
 
-  let { house }: { house: House } = $props()
+  // 列表和看板是同一份数据的两种视图
+  let { house, view = 'list' }: { house: House; view?: 'list' | 'kanban' } = $props()
+  const columns: Status[] = ['open', 'active', 'solved']
   let me = $derived(self(house))
 
   let filter = $state<'all' | Status>('all')
@@ -16,32 +18,73 @@
   // 茶客不能直接写问题，只能提议
   let action = $derived(
     me.role === 'guest'
-      ? { label: t('act.suggestProblem'), hint: t('act.suggestProblemHint') }
-      : { label: t('act.newProblem'), hint: t('act.newProblemHint') }
+      ? { label: t('act.suggestProblem'), hint: t('act.suggestProblemHint'), href: `#/${house.id}/propose/new` }
+      : { label: t('act.newProblem'), hint: t('act.newProblemHint'), href: undefined }
   )
 </script>
 
 <div class="wrap">
   <header>
     <div class="titles">
-      <div class="label">02 · {t('nav.problems')}</div>
+      <div class="label">03 · {t('nav.problems')}</div>
       <h1>{t('nav.problems')}<sup class="num">{pad(house.problems.length)}</sup></h1>
       <p class="lede">{t('problems.lede')}</p>
     </div>
     <div class="action">
-      <button class="primary"><i>+</i><span>{action.label}</span></button>
+      {#if action.href}
+        <a class="primary" href={action.href}><i>+</i><span>{action.label}</span></a>
+      {:else}
+        <button class="primary"><i>+</i><span>{action.label}</span></button>
+      {/if}
       <p class="consequence">{action.hint}</p>
     </div>
   </header>
 
-  <div class="tabs" role="tablist">
-    {#each tabs as k}
-      <button role="tab" aria-selected={filter === k} class:on={filter === k} onclick={() => (filter = k)}>
-        {t(`status.${k}`)}<span class="num">{n(k)}</span>
-      </button>
-    {/each}
+  <div class="bar">
+    <div class="tabs" role="tablist">
+      {#if view === 'list'}
+        {#each tabs as k}
+          <button role="tab" aria-selected={filter === k} class:on={filter === k} onclick={() => (filter = k)}>
+            {t(`status.${k}`)}<span class="num">{n(k)}</span>
+          </button>
+        {/each}
+      {/if}
+    </div>
+    <div class="views" role="group">
+      <a href="#/{house.id}/problems" class:on={view === 'list'} aria-current={view === 'list' ? 'page' : undefined}>
+        <i class="vg list"><b></b><b></b><b></b></i>{t('view.list')}
+      </a>
+      <a href="#/{house.id}/problems/kanban" class:on={view === 'kanban'} aria-current={view === 'kanban' ? 'page' : undefined}>
+        <i class="vg cols"><b></b><b></b><b></b></i>{t('view.kanban')}
+      </a>
+    </div>
   </div>
 
+  {#if view === 'kanban'}
+    <div class="kanban">
+      {#each columns as c}
+        {@const items = house.problems.filter((p) => p.status === c)}
+        <section class="col">
+          <div class="col-head"><StatusMark status={c} /><span class="num">{items.length}</span></div>
+          {#each items as p (p.id)}
+            {@const m = member(house, p.by)}
+            {@const pr = pending(p.id)}
+            <a class="card" class:solved={c === 'solved'} href="#/{house.id}/problem/{p.id}">
+              <span class="num cno">{p.id}</span>
+              <span class="ct">{L(p.title)}</span>
+              <span class="cmeta">
+                <span><b class="num">{workCount(p)}</b> {t('problems.works', { n: workCount(p) })}</span>
+                {#if pr}<span><em class="badge">{pr}</em> {t('problems.pending')}</span>{/if}
+                <span class="by"><Shape role={m.role} size={9} />{L(m.name)}</span>
+              </span>
+            </a>
+          {:else}
+            <p class="empty">{t('kanban.empty')}</p>
+          {/each}
+        </section>
+      {/each}
+    </div>
+  {:else}
   <div class="list">
     <ol>
       {#each list as p (p.id)}
@@ -66,6 +109,7 @@
       {/each}
     </ol>
   </div>
+  {/if}
 </div>
 
 <style>
@@ -85,7 +129,29 @@
   .lede { margin-top: 18px; color: var(--ink-2); font-size: 16px; letter-spacing: 0.04em; }
   .action { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 26em; }
 
-  .tabs { display: flex; flex-wrap: wrap; gap: 8px 36px; margin-top: 48px; border-bottom: 2px solid var(--ink); }
+  .bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 24px; margin-top: 48px; border-bottom: 2px solid var(--ink); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px 36px; }
+  .views { display: flex; margin-bottom: 10px; }
+  .views a { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1.5px solid var(--ink); font-size: 13px; font-weight: 500; margin-left: -1.5px; }
+  .views a.on { background: var(--ink); color: var(--paper); }
+  .vg { display: inline-flex; gap: 2px; width: 14px; height: 12px; }
+  .vg b { flex: 1; background: currentColor; }
+  .vg.list { flex-direction: column; }
+  .vg.list b { flex: none; height: 2px; margin: 1px 0; }
+
+  .kanban { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-left: 1px solid var(--ink); }
+  .col { border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 18px clamp(12px, 1.4vw, 20px) 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .col-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--ink); }
+  .col-head .num { font-size: 22px; font-weight: 300; }
+  .card { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 14px; border: 1.5px solid var(--ink); background: var(--paper); transition: background 200ms var(--ease); }
+  .card:hover { background: var(--paper-deep); }
+  .cno { font-size: 13px; color: var(--ink-3); }
+  .ct { font-family: var(--display); font-size: 16px; font-weight: 700; line-height: 1.4; letter-spacing: var(--track); }
+  .cmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+  .cmeta b { font-weight: 500; color: var(--ink); }
+  .card.solved .ct { color: var(--ink-3); }
+  .empty { font-size: 13px; color: var(--ink-3); padding: 8px 0; }
+  @media (max-width: 700px) { .kanban { grid-template-columns: minmax(0, 1fr); } }
   .tabs button {
     font-size: 15px; font-weight: 500; padding: 0 0 14px; position: relative; color: var(--ink-2);
     display: flex; gap: 8px; align-items: baseline;

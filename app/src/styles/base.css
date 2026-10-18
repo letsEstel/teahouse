@@ -6,6 +6,8 @@
  *   .badge                      提醒和待办数字：墨底米白字。
  *   成果内容里的颜色（例如车位图）必须带图例。
  *
+ * 夜间模式只换 --paper / --ink 系列，三原色不变。
+ *
  * 断点：≥1440 宽屏；1024–1439 笔记本（侧栏收窄）；<1024 窄窗口（侧栏变顶栏）。
  */
 :root {
@@ -35,6 +37,27 @@
 }
 
 /* 德语长复合词：只在窄格子里允许断字（成果卡片、座位名、提案列表），正文和导航不断字 */
+/* 夜间模式：墨黑底、米白字；三原色不变，"颜色只属于人"不变。
+   组件只用这些变量，所以墨色实块（按钮、待办数字）在夜间自动变成米白实块。 */
+:root[data-theme='dark'] {
+  --paper: #161514;
+  --paper-deep: #24221f;
+  --ink: #f1ece2;
+  --ink-2: #cfc8bb;   /* 11:1 */
+  --ink-3: #a8a196;   /* 7.1:1，悬停底色上 6.2:1 */
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --paper: #161514;
+    --paper-deep: #24221f;
+    --ink: #f1ece2;
+    --ink-2: #cfc8bb;
+    --ink-3: #a8a196;
+    color-scheme: dark;
+  }
+}
+
 :root[lang|='de'] .hyphenate { hyphens: auto; }
 
 :root:not([lang|='zh']) {

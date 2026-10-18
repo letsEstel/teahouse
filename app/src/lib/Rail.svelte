@@ -2,16 +2,18 @@
   import Shape from './Shape.svelte'
   import { houses, self, pad, type House } from '../data'
   import { i18n, langs, setLang, t, L, type Lang } from '../i18n/index.svelte'
+  import { theme, themes, setTheme } from './theme.svelte'
 
   // ≥1024：左侧竖栏；<1024：顶栏，茶馆列表收进下拉。
-  let { house, section }: { house: House; section: 'house' | 'problems' | 'proposals' } = $props()
+  let { house, section }: { house: House; section: 'house' | 'board' | 'problems' | 'proposals' } = $props()
   let me = $derived(self(house))
   let open = $state(false)
 
   let nav = $derived([
     { key: 'house', no: '01', name: t('nav.seats'), href: `#/${house.id}/house`, count: `${house.members.length}/${house.capacity}`, badge: false },
-    { key: 'problems', no: '02', name: t('nav.problems'), href: `#/${house.id}/problems`, count: pad(house.problems.length), badge: false },
-    { key: 'proposals', no: '03', name: t('nav.proposals'), href: `#/${house.id}/proposals`, count: pad(house.proposals.length), badge: house.proposals.length > 0 },
+    { key: 'board', no: '02', name: t('nav.board'), href: `#/${house.id}/board`, count: pad(house.board.length), badge: false },
+    { key: 'problems', no: '03', name: t('nav.problems'), href: `#/${house.id}/problems`, count: pad(house.problems.length), badge: false },
+    { key: 'proposals', no: '04', name: t('nav.proposals'), href: `#/${house.id}/proposals`, count: pad(house.proposals.length), badge: house.proposals.length > 0 },
   ])
   const short: Record<Lang, string> = { zh: '中', en: 'EN', de: 'DE' }
   const full: Record<Lang, string> = { zh: '中文', en: 'English', de: 'Deutsch' }
@@ -64,10 +66,19 @@
         <div class="label">{t('self.you', { role: t(`role.${me.role}`) })}</div>
       </div>
     </div>
-    <div class="langs" role="group" aria-label={t('rail.lang')}>
-      {#each langs as l}
-        <button class:on={i18n.lang === l} aria-pressed={i18n.lang === l} title={full[l]} lang={l} onclick={() => setLang(l)}>{short[l]}</button>
-      {/each}
+    <div class="switches">
+      <div class="langs" role="group" aria-label={t('rail.lang')}>
+        {#each langs as l}
+          <button class:on={i18n.lang === l} aria-pressed={i18n.lang === l} title={full[l]} lang={l} onclick={() => setLang(l)}>{short[l]}</button>
+        {/each}
+      </div>
+      <div class="langs themes" role="group" aria-label={t('theme.label')}>
+        {#each themes as m}
+          <button class:on={theme.mode === m} aria-pressed={theme.mode === m} title={t(`theme.${m}`)} aria-label={t(`theme.${m}`)} onclick={() => setTheme(m)}>
+            <i class="glyph {m}"></i>
+          </button>
+        {/each}
+      </div>
     </div>
   </div>
 </aside>
@@ -133,6 +144,13 @@
   }
   .langs button[lang='zh'] { font-family: 'Noto Sans SC', sans-serif; }
   .langs button.on { background: var(--ink); color: var(--paper); }
+  .switches { display: flex; flex-wrap: wrap; gap: 8px; }
+  .themes button { min-width: 34px; display: grid; place-items: center; }
+  /* 自动 = 半满圆，浅 = 空心圆，深 = 实心圆 */
+  .glyph { display: block; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid currentColor; }
+  .glyph.dark { background: currentColor; }
+  .glyph.auto { overflow: hidden; }
+  .glyph.auto::before { content: ''; display: block; width: 50%; height: 100%; background: currentColor; }
 
   /* 窄窗口：侧栏变成顶栏 */
   @media (max-width: 1023.98px) {
@@ -173,7 +191,7 @@
     ul.open { display: block; }
     ul a { padding: 8px 0; }
 
-    nav { grid-area: nav; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+    nav { grid-area: nav; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
     nav a { grid-template-columns: minmax(0, 1fr) auto; border-bottom: 0; padding: 12px var(--in); }
     nav a + a { border-left: 1px solid var(--ink); }
     .no { display: none; }
@@ -183,6 +201,7 @@
     .self .label { display: none; }
     .self { gap: 8px; }
     .self-name { font-size: 14px; }
+    .switches { flex-wrap: nowrap; }
   }
   @media (max-width: 640px) {
     .self-name { display: none; }
