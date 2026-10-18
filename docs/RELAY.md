@@ -73,13 +73,14 @@ A new teahouse is prepared under `tmp/` and moved into `houses/` with one
 | 4 | Guests (茶客) land on `main` only by **adding** their own discussion posts (`talk/…/<stamp>-<their-id>.md`): no edits, no deletions, no merges, nothing else. Everything else they push as a proposal to their own namespace. | guest |
 | 5 | Anyone may create, rework (force) or delete proposals in **their own** namespace; only the host may delete someone else's. | all |
 | 6 | The steward (伙计) may change only `problems/`, `works/`, `board/` and `talk/` (moderation) on `main`. Checked **per commit**, including what a merge resolution itself introduces (`git diff-tree -c`). | steward |
-| 7 | Every commit carries exactly one `Problem:` trailer: a 4-digit id whose file `problems/<id>-*.md` exists in that commit, `board` (may touch only `board/` and `talk/board/`), or `meta`. A post must sit under the topic its commit faces. | all |
+| 7 | Every commit carries exactly one `Problem:` trailer: a 4-digit id whose file `problems/<id>-*.md` exists in that commit, `board` (may touch only `board/` and `talk/board/`), or `meta`. A post must sit under the topic its commit faces, and that problem (`problems/<id>-*.md`) or notice (`board/<notice>.md`) must exist in the same commit. | all |
 | 8 | `Problem: meta` may land on `main` only from the host. | steward |
 | 9 | `.teahouse/` contains only `members.toml`; any commit that changes it must leave a valid chart (1–15 seats, exactly one host, at most one steward, unique ids and keys, ed25519 only). | all |
 | 10 | Paths that would turn into `.teahouse/` on Windows or macOS checkouts (`.TeaHouse/`, `.teahouse./`, `TEAHOU~1`) are refused. | all |
 | 11 | At most 64 ref updates and 5 000 new commits per push; pack size ≤ 200 MiB; objects are fsck-checked on receive. | all |
+| 12 | Posts and notices (`talk/`, `board/`) are regular UTF-8 text files of at most 32 KiB, without control characters except tab and line breaks. A post's stamp is a real UTC time no more than 10 minutes ahead of the relay's clock; posts are shown in the order they entered `main`, never by stamp. | all |
 
-Laws 6–9 apply to every commit a push would add to `main` — including commits
+Laws 6–9 and 12 apply to every commit a push would add to `main` — including commits
 that came from someone else's proposal. A steward therefore cannot land a
 guest's proposal that touches the seating chart; only the host can.
 
