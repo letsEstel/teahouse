@@ -6,12 +6,14 @@
     title = false,
     titlePlaceholder = '',
     rows = 3,
+    hint = '',
     onsubmit,
   }: {
     placeholder: string
     title?: boolean
     titlePlaceholder?: string
     rows?: number
+    hint?: string
     onsubmit: (text: string, title: string) => void
   } = $props()
 
@@ -34,7 +36,7 @@
   {/if}
   <textarea bind:value={text} {placeholder} aria-label={placeholder} {rows}></textarea>
   <div class="foot">
-    <p class="consequence">{t('write.hint')}</p>
+    <p class="consequence">{hint || t('write.hint')}</p>
     <button class="submit" type="submit" disabled={!ready}>{t('write.submit')}</button>
   </div>
 </form>

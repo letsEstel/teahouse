@@ -5,8 +5,8 @@
 // 1. 构建前端并在本地起一个预览服务；
 // 2. 默认只保存 1366×768 中文一组（含夜间模式），整轮不超过 20 张；
 //    --full 才保存 3 种尺寸 × 全部语言的全套；
-// 3. 不管存不存图，溢出检查都对全部组合运行（1920×1080、1366×768、900×1000 × zh / en），
-//    结果写进 检查.md。德语暂不检查（用户决定先不管德语），加 --de 可以带上；
+// 3. 不管存不存图，溢出检查都对全部组合运行（1920×1080、1366×768、900×1000 × zh / en / de），
+//    结果写进 检查.md；
 // 4. 截图存到 茶馆/截图/<轮次>/，文件名 <界面>_<宽度>_<语言>.png。
 //
 // 可选：--only=wutong-house,kant-problem 只跑部分界面；--dpr=2 高清；
@@ -44,9 +44,9 @@ const sizes = [
   [1366, 768],
   [900, 1000],
 ]
-const langs = args.includes('--de') ? ['zh', 'en', 'de'] : ['zh', 'en']
-// 默认保存的一组
-const keep = (w, lang) => fullSet || (w === 1366 && lang === 'zh')
+const langs = ['zh', 'en', 'de']
+// 默认保存的一组：1366 中文；个别界面（saveDe）另存一张 1366 德文
+const keep = (s, w, lang) => fullSet || (w === 1366 && (lang === 'zh' || (s.saveDe && lang === 'de')))
 
 // 康德读书会：茶客修改术语表，然后写理由
 const reasons = {
@@ -73,14 +73,15 @@ const screens = [
   { name: 'wutong-proposal-merged', hash: '#/wutong/proposal/p1', act: (p) => p.click('button.adopt') },
   { name: 'wutong-proposals', hash: '#/wutong/proposals', widths: [900], save: false },
   { name: 'kant-house', hash: '#/kant/house' },
-  { name: 'kant-propose', hash: '#/kant/propose/0001', act: fillProposal },
+  { name: 'kant-board', hash: '#/kant/board' },
+  { name: 'kant-propose', hash: '#/kant/propose/0001', act: fillProposal, saveDe: true },
   { name: 'kant-propose-done', hash: '#/kant/propose/0001', act: async (p, l) => { await fillProposal(p, l); await p.click('button.send') } },
   { name: 'kant-propose-new', hash: '#/kant/propose/new', save: false },
   { name: 'kant-problem', hash: '#/kant/problem/0001', save: false },
-  { name: 'family-house', hash: '#/family/house' },
+  { name: 'family-house', hash: '#/family/house', saveDe: true },
   { name: 'family-problem', hash: '#/family/problem/0001' },
   { name: 'family-proposal', hash: '#/family/proposal/p1', save: false },
-  { name: 'wutong-tour-1', hash: '#/wutong/house', tour: 1, full: false },
+  { name: 'wutong-tour-1', hash: '#/wutong/house', tour: 1, full: false, save: false },
   // 夜间模式：布局不变，只在默认组里拍
   { name: 'wutong-house-dark', hash: '#/wutong/house', theme: 'dark', only1366: true },
   { name: 'wutong-problem-dark', hash: '#/wutong/problem/0001', theme: 'dark', only1366: true },
@@ -173,7 +174,7 @@ try {
         const issues = await page.evaluate(audit)
         if (issues.length) report.push({ file, issues })
         checked++
-        if (!keep(w, lang) || s.save === false && !fullSet) continue
+        if (!keep(s, w, lang) || s.save === false && !fullSet) continue
         // 整页截图：把视口拉到整页高度再拍，这样固定的侧栏也是整页高（Playwright 的 fullPage 不会拉伸它）
         const full = s.full !== false && (await page.evaluate(() => document.documentElement.scrollHeight))
         if (full && full > h) { await page.setViewportSize({ width: w, height: full }); await page.waitForTimeout(150) }

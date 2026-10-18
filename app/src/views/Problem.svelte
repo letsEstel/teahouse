@@ -24,6 +24,9 @@
   // 问题下的讨论。M0：写下的只留在本页（M1 起每条留言是一次提交）
   let notes = $state<Note[]>([])
   $effect.pre(() => { notes = [...(p.notes ?? [])] })
+  function remove(n: Note) {
+    notes = notes.filter((x) => x !== n)
+  }
   function write(text: string) {
     notes.push({ by: me.id, when: NOW.toISOString(), text: { zh: text, en: text } })
   }
@@ -137,11 +140,11 @@
           <p class="consequence">{t('talk.lede')}</p>
         </div>
         {#if notes.length}
-          <Notes {house} {notes} />
+          <Notes {house} {notes} ondelete={me.role !== 'guest' ? remove : undefined} />
         {:else}
           <p class="quiet none">{t('talk.none')}</p>
         {/if}
-        <div class="talk-write"><Write placeholder={t('talk.placeholder')} onsubmit={write} /></div>
+        <div class="talk-write"><Write placeholder={t('talk.placeholder')} hint={me.role === 'guest' ? t('write.hintGuest') : ''} onsubmit={write} /></div>
       </section>
     </section>
   </div>

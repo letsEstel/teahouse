@@ -133,7 +133,7 @@ export default {
   'board.all': '全部公告',
   'board.post': '张贴公告',
   'board.postHint': '公告会写进茶馆的历史，所有座位都看得到。',
-  'board.guestNote': '只有老板和伙计能张贴公告；你可以在公告下面写回应。',
+  'board.guestNote': '你可以直接在任何公告下面写回应。',
   'board.postedBy': '{name} 张贴',
   'board.replies': { other: '{n} 条回应' },
   'board.reply': '写下回应',
@@ -142,7 +142,7 @@ export default {
   'board.bodyPh': '正文：时间、地点、要大家做什么。',
   'board.none': '还没有公告。',
   'write.submit': '写进茶馆',
-  'write.hint': '每一条都是一次提交，会一直留在历史里。写下来，不是聊天。',
+  'write.hint': '每一条都会一直留在历史里，写下就不再修改。写下来，不是聊天。',
 
   'talk.title': '讨论',
   'talk.lede': '关于这个问题，认真写下来的话。闲聊请留在群里。',
@@ -184,4 +184,13 @@ export default {
   'propose.another': '再发起一个',
   'propose.cancel': '取消',
   'propose.notGuest': '你是{role}，可以直接修改，不必走提案。这个界面是茶客用的。',
+
+  'board.suggest': '提议一条公告',
+  'board.suggestHint': '你的公告先成为提案，老板或伙计采纳后张贴。',
+  'note.delete': '删除',
+  'note.confirm': '确认删除',
+  'note.deleteHint': '删除后不再显示，历史里仍有记录。',
+  'write.hintGuest': '你的留言直接写进茶馆，不需要老板采纳。写下就不再修改。',
+  'propose.board': '一条公告',
+  'propose.boardTitle': '公告标题',
 }

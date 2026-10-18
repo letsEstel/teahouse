@@ -2,7 +2,7 @@
   import Shape from '../lib/Shape.svelte'
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
-  import { member, self, pad, type House, type Notice } from '../data'
+  import { member, self, pad, type House, type Notice, type Note } from '../data'
   import { t, L, when, NOW } from '../i18n/index.svelte'
 
   // 公告板：老板和伙计张贴，所有人可以在下面回应。每条公告是 board/ 下的一个文件。
@@ -20,6 +20,11 @@
   function post(text: string, title: string) {
     notices.unshift({ id: `b${notices.length + 1}`, by: me.id, when: now(), title: { zh: title, en: title }, text: { zh: text, en: text }, replies: [] })
     posting = false
+  }
+  // 茶客的留言直接写进茶馆；老板和伙计可以删除留言
+  let writeHint = $derived(me.role === 'guest' ? t('write.hintGuest') : '')
+  function remove(n: Notice, note: Note) {
+    n.replies = n.replies.filter((r) => r !== note)
   }
   function reply(n: Notice, text: string) {
     n.replies.push({ by: me.id, when: now(), text: { zh: text, en: text } })
@@ -43,6 +48,10 @@
         </div>
       {/if}
     {:else}
+      <div class="action">
+        <a class="primary" href="#/{house.id}/propose/board"><i>+</i><span>{t('board.suggest')}</span></a>
+        <p class="consequence">{t('board.suggestHint')}</p>
+      </div>
       <p class="consequence guest">{t('board.guestNote')}</p>
     {/if}
   </header>
@@ -64,9 +73,9 @@
 
           <div class="replies">
             <div class="label rh">{t('board.replies', { n: n.replies.length })}</div>
-            {#if n.replies.length}<Notes {house} notes={n.replies} />{/if}
+            {#if n.replies.length}<Notes {house} notes={n.replies} ondelete={canPost ? (note) => remove(n, note) : undefined} />{/if}
             {#if replying === n.id}
-              <Write placeholder={t('board.replyPh')} rows={2} onsubmit={(text) => reply(n, text)} />
+              <Write placeholder={t('board.replyPh')} rows={2} hint={writeHint} onsubmit={(text) => reply(n, text)} />
             {:else}
               <button class="reply" onclick={() => (replying = n.id)}>{t('board.reply')} →</button>
             {/if}

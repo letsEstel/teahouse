@@ -12,7 +12,7 @@ export type Dict = Record<string, Entry>
 const dicts: Record<Lang, Dict> = { zh, en, de }
 const locales: Record<Lang, string> = { zh: 'zh-CN', en: 'en-GB', de: 'de-DE' }
 
-/** 成员写下的内容。M0 的假数据为了检验排版备了中英两种语言；德语暂时可缺，缺了用英语。 */
+/** 成员写下的内容。M0 的假数据为了检验排版备了三种语言；缺德语时用英语。 */
 export type Text = { zh: string; en: string; de?: string }
 
 function initial(): Lang {
@@ -43,7 +43,7 @@ $effect.root(() => {
 })
 
 export function t(key: string, params: Record<string, string | number> = {}): string {
-  // 德语只是附带：缺的词条先退到英语，再退到中文
+  // 缺的词条先退到英语，再退到中文
   const e = dicts[i18n.lang][key] ?? dicts.en[key] ?? dicts.zh[key]
   if (e === undefined) {
     if (import.meta.env.DEV) console.warn('missing i18n key', key)

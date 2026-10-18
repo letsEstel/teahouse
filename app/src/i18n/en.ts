@@ -133,7 +133,7 @@ export default {
   'board.all': 'All notices',
   'board.post': 'Post a notice',
   'board.postHint': 'Notices go into the teahouse’s history, visible to every seat.',
-  'board.guestNote': 'Only the host and the steward post notices; you can reply under each one.',
+  'board.guestNote': 'You can reply directly under any notice.',
   'board.postedBy': 'posted by {name}',
   'board.replies': { one: '{n} reply', other: '{n} replies' },
   'board.reply': 'Write a reply',
@@ -142,7 +142,7 @@ export default {
   'board.bodyPh': 'Text: when, where, and what you need from people.',
   'board.none': 'No notices yet.',
   'write.submit': 'Write it into the teahouse',
-  'write.hint': 'Each one is a commit and stays in the history. Written, not chatted.',
+  'write.hint': 'Each one stays in the history and isn’t edited once written. Written, not chatted.',
 
   'talk.title': 'Discussion',
   'talk.lede': 'Considered words about this problem. Keep small talk in your group chat.',
@@ -184,4 +184,13 @@ export default {
   'propose.another': 'Make another',
   'propose.cancel': 'Cancel',
   'propose.notGuest': 'As {role} you can change things directly; proposals are for guests.',
+
+  'board.suggest': 'Suggest a notice',
+  'board.suggestHint': 'Your notice becomes a proposal first; it’s posted once the host or the steward adopts it.',
+  'note.delete': 'Delete',
+  'note.confirm': 'Confirm delete',
+  'note.deleteHint': 'It disappears from view; the history keeps a record.',
+  'write.hintGuest': 'Your note goes straight into the teahouse; no adoption needed. Once written, it isn’t edited.',
+  'propose.board': 'A notice',
+  'propose.boardTitle': 'Notice title',
 }

@@ -21,15 +21,16 @@
   let reason = $state('')
   let sent = $state(false)
 
+  // arg：问题编号、"new"（提议新问题）或 "board"（提议一条公告）
   $effect.pre(() => {
-    target = arg === 'new' || house.problems.some((p) => p.id === arg) ? arg! : null
+    target = arg === 'new' || arg === 'board' || house.problems.some((p) => p.id === arg) ? arg! : null
   })
 
   let problem = $derived(house.problems.find((p) => p.id === target))
   let works = $derived(problem?.works ?? [])
   let work = $derived(works.find((w) => w.id === workId))
   // 这个问题没有可改的成果时，只能添加
-  let effMode = $derived(target === 'new' ? 'new' : works.length ? mode : 'add')
+  let effMode = $derived(target === 'new' || target === 'board' ? 'new' : works.length ? mode : 'add')
   let original = $derived(work?.lines?.map(L) ?? [])
 
   function pickProblem(id: string) {
@@ -102,6 +103,10 @@
               <span class="num cid">+</span>
               <span class="ctitle">{t('propose.newProblem')}</span>
             </button>
+            <button type="button" role="radio" aria-checked={target === 'board'} class="choice new" class:on={target === 'board'} onclick={() => pickProblem('board')}>
+              <span class="num cid">+</span>
+              <span class="ctitle">{t('propose.board')}</span>
+            </button>
           </div>
         </div>
       </section>
@@ -111,14 +116,14 @@
         <div class="sn num">02</div>
         <div class="sc">
           <h2>{t('propose.step2')}</h2>
-          {#if target === 'new'}
+          {#if target === 'new' || target === 'board'}
             <label class="field">
-              <span class="label">{t('propose.newProblemTitle')}</span>
+              <span class="label">{target === 'board' ? t('propose.boardTitle') : t('propose.newProblemTitle')}</span>
               <input bind:value={newTitle} />
             </label>
             <label class="field">
               <span class="label">{t('propose.editor')}</span>
-              <textarea name="body" rows="5" bind:value={body} placeholder={t('propose.newProblemBody')}></textarea>
+              <textarea name="body" rows="5" bind:value={body} placeholder={target === 'board' ? t('board.bodyPh') : t('propose.newProblemBody')}></textarea>
             </label>
           {:else if target}
             {#if works.length}

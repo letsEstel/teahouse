@@ -74,11 +74,11 @@ export const wutong: House = {
           title: { zh: '错峰共享方案 v2', en: 'Time-sharing plan v2', de: 'Zeitversetzte Platzteilung v2' },
           note: { zh: '白天空位开放给夜班住户', en: 'Daytime spaces open to night-shift residents', de: 'Tagsüber freie Plätze für Nachtschicht-Anwohner' },
           lines: [
-            { zh: '一、适用范围', en: '1. Scope' },
-            { zh: '院内全部 42 个地面车位。', en: 'All 42 surface spaces in the courtyard.' },
-            { zh: '二、时段划分', en: '2. Time slots' },
-            { zh: '07:00–19:00 为日间时段：登记的夜班住户可停任意空位。', en: '07:00–19:00 day slot: registered night-shift residents may use any free space.' },
-            { zh: '19:00–07:00 为夜间时段：车位优先归属固定住户。', en: '19:00–07:00 night slot: spaces go to regular residents first.' },
+            { zh: '一、适用范围', en: '1. Scope', de: '1. Geltungsbereich' },
+            { zh: '院内全部 42 个地面车位。', en: 'All 42 surface spaces in the courtyard.', de: 'Alle 42 Stellplätze im Hof.' },
+            { zh: '二、时段划分', en: '2. Time slots', de: '2. Zeitfenster' },
+            { zh: '07:00–19:00 为日间时段：登记的夜班住户可停任意空位。', en: '07:00–19:00 day slot: registered night-shift residents may use any free space.', de: '07:00–19:00 Tagesfenster: gemeldete Nachtschicht-Anwohner dürfen jeden freien Platz nutzen.' },
+            { zh: '19:00–07:00 为夜间时段：车位优先归属固定住户。', en: '19:00–07:00 night slot: spaces go to regular residents first.', de: '19:00–07:00 Nachtfenster: Plätze gehören zuerst den Stammanwohnern.' },
           ],
         },
         {
@@ -106,9 +106,9 @@ export const wutong: House = {
         { by: 'wang', act: 'open', when: '2026-03-16T09:00' },
       ],
       notes: [
-        { by: 'li', when: '2026-10-13T08:40', text: { zh: '地锁报价如果用不上，账单能不能留着？别的院子可能用得上。', en: 'If we don’t need the lock quotes, can we keep the bill anyway? Another courtyard might use it.' } },
-        { by: 'zhao', when: '2026-10-17T22:30', text: { zh: 'v2 里夜班住户要提前登记。登记表谁来收？', en: 'In v2 night-shift residents register in advance. Who collects the forms?' } },
-        { by: 'zhou', when: '2026-10-18T09:10', text: { zh: '我来收。门卫室放一个本子，每周日拍照传到这里。', en: 'I will. There’ll be a notebook in the gatehouse; I’ll photograph it every Sunday and post it here.' } },
+        { by: 'li', when: '2026-10-13T08:40', text: { zh: '地锁报价如果用不上，账单能不能留着？别的院子可能用得上。', en: 'If we don’t need the lock quotes, can we keep the bill anyway? Another courtyard might use it.', de: 'Wenn wir die Bügel-Angebote nicht brauchen, können wir die Rechnung trotzdem behalten? Ein anderer Hof kann sie vielleicht gebrauchen.' } },
+        { by: 'zhao', when: '2026-10-17T22:30', text: { zh: 'v2 里夜班住户要提前登记。登记表谁来收？', en: 'In v2 night-shift residents register in advance. Who collects the forms?', de: 'In v2 melden sich Nachtschicht-Anwohner vorher an. Wer sammelt die Formulare ein?' } },
+        { by: 'zhou', when: '2026-10-18T09:10', text: { zh: '我来收。门卫室放一个本子，每周日拍照传到这里。', en: 'I will. There’ll be a notebook in the gatehouse; I’ll photograph it every Sunday and post it here.', de: 'Mache ich. Im Pförtnerhaus liegt ein Heft; ich fotografiere es jeden Sonntag und stelle es hier ein.' } },
       ],
     },
     {
@@ -218,25 +218,25 @@ export const wutong: House = {
   board: [
     {
       id: 'b2', by: 'chen', when: '2026-10-16T20:00',
-      title: { zh: '10 月 25 日（周六）上午院内大扫除', en: 'Courtyard clean-up, Saturday 25 October, morning' },
+      title: { zh: '10 月 25 日（周六）上午院内大扫除', en: 'Courtyard clean-up, Saturday 25 October, morning', de: 'Hofputz am Samstag, 25. Oktober, vormittags' },
       text: {
         zh: '九点在 2 号楼前集合，工具由物业提供。顺便给车位喷编号，需要四个人帮忙。能来的在下面写一句。',
-        en: 'Meet at 9 in front of Building 2; the management provides the tools. We’ll also paint the parking numbers and need four helpers. Write a line below if you can come.',
+        en: 'Meet at 9 in front of Building 2; the management provides the tools. We’ll also paint the parking numbers and need four helpers. Write a line below if you can come.', de: 'Treffpunkt um 9 vor Haus 2; das Werkzeug stellt die Hausverwaltung. Dabei malen wir auch die Parkplatznummern und brauchen vier Helfer. Wer kommen kann, schreibt unten eine Zeile.',
       },
       replies: [
-        { by: 'wang', when: '2026-10-16T20:31', text: { zh: '我来，带两把扫帚。', en: 'I’ll come and bring two brooms.' } },
-        { by: 'wu', when: '2026-10-17T07:50', text: { zh: '喷漆的活我熟，算我一个。', en: 'I know how to spray-paint. Count me in.' } },
-        { by: 'lin', when: '2026-10-17T12:02', text: { zh: '上午要陪老人看病，下午可以来收尾。', en: 'I’m taking a neighbour to the doctor in the morning, but I can help finish in the afternoon.' } },
+        { by: 'wang', when: '2026-10-16T20:31', text: { zh: '我来，带两把扫帚。', en: 'I’ll come and bring two brooms.', de: 'Ich komme und bringe zwei Besen mit.' } },
+        { by: 'wu', when: '2026-10-17T07:50', text: { zh: '喷漆的活我熟，算我一个。', en: 'I know how to spray-paint. Count me in.', de: 'Mit Sprühfarbe kenne ich mich aus. Ich bin dabei.' } },
+        { by: 'lin', when: '2026-10-17T12:02', text: { zh: '上午要陪老人看病，下午可以来收尾。', en: 'I’m taking a neighbour to the doctor in the morning, but I can help finish in the afternoon.', de: 'Vormittags begleite ich eine Nachbarin zum Arzt, nachmittags helfe ich beim Abschluss.' } },
       ],
     },
     {
       id: 'b1', by: 'zhou', when: '2026-10-08T19:00',
-      title: { zh: '停车方案 11 月 6 日在业委会表决', en: 'Parking plan goes to the committee vote on 6 November' },
+      title: { zh: '停车方案 11 月 6 日在业委会表决', en: 'Parking plan goes to the committee vote on 6 November', de: 'Parkplan kommt am 6. November im Beirat zur Abstimmung' },
       text: {
         zh: '表决前一周定稿。有意见请写在“小区停车位不好找”下面，别只在群里说，群里的话会被冲掉。',
-        en: 'Final draft a week before the vote. Please write comments under “Hard to find a parking space”, not just in the group chat, where they get lost.',
+        en: 'Final draft a week before the vote. Please write comments under “Hard to find a parking space”, not just in the group chat, where they get lost.', de: 'Endfassung eine Woche vor der Abstimmung. Anmerkungen bitte unter „Kaum freie Parkplätze im Hof“ schreiben, nicht nur in den Gruppenchat, dort gehen sie unter.',
       },
-      replies: [{ by: 'zhao', when: '2026-10-08T21:15', text: { zh: '收到，v2 周末前提交。', en: 'Got it. v2 will be in before the weekend.' } }],
+      replies: [{ by: 'zhao', when: '2026-10-08T21:15', text: { zh: '收到，v2 周末前提交。', en: 'Got it. v2 will be in before the weekend.', de: 'Verstanden. v2 kommt vor dem Wochenende.' } }],
     },
   ],
   decided: [
