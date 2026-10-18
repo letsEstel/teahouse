@@ -754,6 +754,43 @@ fn the_shell_runs_nothing_but_git() {
         "{}",
         s(&o)
     );
+    // Refused commands and logins are audited too.
+    let log = w.audit();
+    assert_eq!(
+        log.matches("\"event\":\"shell.refused\"").count(),
+        5,
+        "{log}"
+    );
+    let info: Vec<&str> = log
+        .lines()
+        .filter(|l| l.contains("\"event\":\"shell.info\""))
+        .collect();
+    assert_eq!(info.len(), 1, "{log}");
+    assert!(info[0].contains("\"houses\":\"wutong\""), "{}", info[0]);
+
+    // A key with no seat anywhere gets an empty list, still audited.
+    let o = Command::new(BIN)
+        .args([
+            "--root",
+            w.root.to_str().unwrap(),
+            "shell",
+            key_for(99).blob_b64(),
+        ])
+        .env("SSH_ORIGINAL_COMMAND", "info")
+        .output()
+        .unwrap();
+    assert!(
+        String::from_utf8_lossy(&o.stdout).contains("no seat"),
+        "{}",
+        s(&o)
+    );
+    let log = w.audit();
+    let info: Vec<&str> = log
+        .lines()
+        .filter(|l| l.contains("\"event\":\"shell.info\""))
+        .collect();
+    assert_eq!(info.len(), 2, "{log}");
+    assert!(info[1].contains("\"houses\":\"\""), "{}", info[1]);
 }
 
 #[test]

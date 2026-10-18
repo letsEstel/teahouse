@@ -11,13 +11,22 @@
 | `docs/RELAY.md` | Relay 的设计、茶馆的法、部署与运维。 |
 | `deploy/` | sshd 配置片段、systemd 定时检查。 |
 | `scripts/demo.sh` | 一键演示：开茶馆、入座、提案、被拒、继承。 |
+| `scripts/sshd-test.sh` | 真实 sshd 集成测试（非 root，两种接法）。 |
 
 ## 快速开始
 
 ```sh
 cargo test               # 全部测试（需要 git）
 ./scripts/demo.sh        # 演示完整流程
+./scripts/sshd-test.sh   # 在真实的 OpenSSH 后面验证（不需要 root，约 15 秒）
 ```
+
+`sshd-test.sh` 在 `127.0.0.1:2222` 起一个非 root 的 sshd，用 `deploy/sshd/teahouse.conf`
+生成配置，把 AuthorizedKeysCommand 和 authorized_keys 文件两种接法各测一遍。
+测试内容包括：进门、读写权限、留言、直接登录、端口转发和审计日志。
+没装 sshd 的话，它会把 Ubuntu 的 openssh-server 解压到 `~/.cache/teahouse/sshd`。
+常用参数：`./scripts/sshd-test.sh A` 或 `B` 只测一种接法；`PORT=2299` 换端口；
+`KEEP=1` 保留临时目录，里面有生成的 sshd 配置和日志。全部通过时退出码为 0。
 
 ## 角色
 

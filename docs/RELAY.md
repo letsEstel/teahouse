@@ -138,14 +138,25 @@ Members then use plain git:
 
 ```sh
 git clone teahouse@relay.example.org:wutong
-ssh teahouse@relay.example.org          # prints the teahouses you sit in
+ssh -T teahouse@relay.example.org       # prints the teahouses you sit in
 ```
+
+Tell members to use `ssh -T`. The relay never hands out a terminal, so a
+plain `ssh` from an interactive shell first prints `PTY allocation request
+failed on channel 0`. That line is harmless, but it looks like an error.
+`ssh -tt` insists on a terminal and exits without printing anything.
 
 If you cannot use `AuthorizedKeysCommand`, run `init --authorized-keys
 /var/lib/teahouse/.ssh/authorized_keys` instead: `post-receive` then rewrites
 the managed block of that file whenever a seating chart changes, and
 `sync-keys --file …` does it by hand. Lines outside the managed block are
-kept.
+kept. Both ways are covered by `scripts/sshd-test.sh` (§8).
+
+sshd runs an `AuthorizedKeysCommand` only if the program and every directory
+above it are owned by root and writable by no one else; otherwise it logs
+`Unsafe AuthorizedKeysCommand "…": bad ownership or modes` and refuses every
+key. The `install -o root … /usr/local/bin/` in step 1 satisfies this; a
+binary under someone's home directory does not.
 
 ## 6. 运维 · Operations
 
@@ -155,9 +166,43 @@ kept.
 | Seats of one teahouse | `teahouse-relay members <id>` |
 | Integrity check (fsck + charts + config) | `teahouse-relay check [<id>]` |
 | After moving the binary or root | `teahouse-relay init --binary <path>` (rewrites hooks, re-configures every house) |
-| Who did what | `log/audit.log` (`shell.read`, `shell.write`, `shell.denied`, `push.allowed`, `push.denied`, `push.applied`, `seats.changed`, `house.opened`, `house.adopted`) |
+| Who did what | `log/audit.log` (see below) and sshd's log (`journalctl -u ssh`) |
 | Ref history on the server | `git --git-dir houses/<id>.git reflog main` |
 | Backup | Any member's clone is a full backup. On the relay, back up `houses/` with `git bundle` or file-level snapshots. |
+
+### 审计日志 · Audit log
+
+`log/audit.log` is append-only JSON, one object per line. Every line has
+`ts` (UTC), `event` and `pid`; the other fields depend on the event.
+
+| Event | When | Fields |
+|-------|------|--------|
+| `shell.info` | A member logged in without a command (`ssh -T …`) | `key`, `houses` (comma-separated; empty if none) |
+| `shell.read` | Fetch or clone let through to `git upload-pack` | `house`, `member`, `key`, `role` |
+| `shell.write` | Push let through to `git receive-pack` (the hook judges it next) | `house`, `member`, `key`, `role` |
+| `shell.denied` | A git request for a teahouse that does not exist, or where the key has no seat | `house`, `key`, `reason` |
+| `shell.refused` | Anything that is not a git request: `bash`, `scp`, a malformed path… **Watch this one.** | `key`, `command`, `reason` |
+| `push.allowed` | pre-receive accepted every ref update | `house`, `member`, `key`, `role`, `refs` |
+| `push.denied` | pre-receive refused the push (all of it), or the pusher's seat was removed meanwhile | `house`, `member`, `key`, `role`, `refs`, `reasons` / `reason` |
+| `push.applied` | post-receive: the refs have moved | `house`, `refs` |
+| `seats.changed` | A push changed `members.toml` on `main` | `house` |
+| `keys.synced` | `sync-keys` or post-receive rewrote the authorized_keys file | `file`, `keys` (count) |
+| `house.opened` | `open` | `house`, `member` (host), `commit` |
+| `house.adopted` | `adopt` (succession) | `house`, `member` (new host), `from`, `previous_host`, `commit` |
+| `relay.init` | `init` | `binary` |
+
+**What is *not* in the audit log.** sshd turns some requests away before
+the relay ever runs. Those appear only in sshd's log:
+
+| Attempt | sshd log line |
+|---------|---------------|
+| A key with no seat on any teahouse | `Failed publickey for teahouse from … ssh2: ED25519 SHA256:…` |
+| `-L` / `-W` port forwarding | `refused local port forward: originator …, target …` |
+| `-R` remote forwarding | nothing at `LogLevel VERBOSE`. The client sees `remote port forwarding failed`. |
+
+Set `LogLevel VERBOSE` in sshd for the key fingerprint on every accepted or
+failed login. A key seated in one teahouse but asking for another passes
+sshd and is logged by the relay as `shell.denied`.
 
 ## 7. 本地开发 · Local development
 
@@ -174,6 +219,15 @@ It reads the key for `chenli` from `$TEAHOUSE_LOCAL_KEYS/chenli.pub` and runs
 the exact forced command OpenSSH would. It proves nothing about identity:
 **never expose it on a real relay**. `scripts/demo.sh` uses it for a guided tour.
 
+**A real sshd on a development machine:** use the authorized_keys way
+(`init --authorized-keys <file>` + `sync-keys`, `AuthorizedKeysFile <file>`).
+`AuthorizedKeysCommand` needs a root-owned binary (§5), which `target/release/`
+is not. sshd also needs no root for this: an unprivileged sshd on a high port
+works. Keep the authorized_keys file under your home directory, not `/tmp`.
+With `StrictModes`, sshd refuses a file below a world-writable directory.
+`scripts/sshd-test.sh` sets all of this up; run it with `KEEP=1` and copy the
+generated `sshd-B.conf` as a starting point.
+
 ## 8. 测试 · Tests
 
 ```sh
@@ -188,11 +242,40 @@ smuggling a bad ref next to a good one, 16 seats, two hosts, look-alike paths,
 outsiders, removed members, pushes that bypass the shell, concurrent pushes,
 and succession on a fresh relay.
 
+```sh
+./scripts/sshd-test.sh        # real OpenSSH, no root needed (~15 s)
+./scripts/sshd-test.sh B      # only the authorized_keys way
+```
+
+`scripts/sshd-test.sh` puts a real, unprivileged sshd on `127.0.0.1:2222`
+(`PORT=…` to change) in front of throw-away relays. It builds its sshd
+configs from `deploy/sshd/teahouse.conf` itself, so the file we ship is the
+file under test. If the file changes shape, the script stops instead of
+testing something else. It runs once with `AuthorizedKeysCommand` and once
+with the authorized_keys file, and checks with real `ssh` and `git`:
+
+* outsiders, removed members and the host, steward and guest paths;
+* `talk/` posts (a guest's own new post lands; impersonation and edits are
+  refused);
+* direct login, `bash`, path tricks, and `-L` / `-W` / `-R` forwarding;
+* the audit events;
+* that the `restrict` on each key line holds even under an sshd_config with
+  no hardening at all.
+
+If no sshd is installed, it unpacks Ubuntu's `openssh-server` into
+`~/.cache/teahouse/sshd` with `apt-get download` + `dpkg -x`.
+
 ## 9. 已知局限 · Known limits (v0.1)
 
-* **Not yet run behind a real sshd in CI.** The forced-command path is tested
-  end to end; the sshd configuration in `deploy/` follows OpenSSH's documented
-  semantics but has not been exercised in this repository's tests.
+* **Verified behind OpenSSH 9.6p1** (Ubuntu 24.04) with both wirings, by
+  `scripts/sshd-test.sh`. That script is not run by `cargo test` and is not
+  in CI yet. Run it by hand after changing `deploy/sshd/` or the shell. Other
+  OpenSSH versions are untested; 9.8+ splits sshd into `sshd-session`, which
+  should not matter to the relay but has not been tried.
+* As a non-root user, `AuthorizedKeysCommand` can only be tested through a
+  root-owned launcher (`/usr/bin/env`). The script first checks that sshd
+  refuses the binary when it is not root-owned. With a root-owned install
+  (§5), the shipped line works as is.
 * Commit authorship (`git commit --author`) is not verified; the audit log
   records which **key** pushed each commit. Signed commits are a v0.2 topic.
 * `members.toml` uses a strict TOML subset (bare keys, basic strings,

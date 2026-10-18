@@ -161,6 +161,7 @@ pub fn run(root: &Root, key_b64: &str) -> Result<()> {
 
 fn info(root: &Root, key: &PublicKey) -> Result<()> {
     let mut seats = Vec::new();
+    let mut ids = Vec::new();
     for id in root.house_ids()? {
         let Ok(h) = root.house(&id) else { continue };
         let Ok(m) = h.members() else { continue };
@@ -171,8 +172,15 @@ fn info(root: &Root, key: &PublicKey) -> Result<()> {
                 me.role.zh(),
                 me.role
             ));
+            ids.push(id);
         }
     }
+    audit::log(
+        root,
+        Entry::new("shell.info")
+            .key(&key.short())
+            .field("houses", ids.join(",")),
+    );
     if seats.is_empty() {
         println!("你在这个 relay 上还没有座位。 You have no seat on this relay yet.");
     } else {
