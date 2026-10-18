@@ -1136,22 +1136,22 @@ fn guests_post_to_talk_directly_but_only_their_own_new_posts() {
     w.push_denied(
         &wang,
         &["main"],
-        "guests cannot write main except adding their own posts",
+        "talk/0001/20261018T213000Z-wang.md was already posted; posts are never edited",
     );
     w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
     fs::remove_file(wang.join(post)).unwrap();
     w.commit(&wang, "删留言\n\nProblem: 0001");
-    w.push_denied(
-        &wang,
-        &["main"],
-        "guests cannot write main except adding their own posts",
-    );
+    w.push_denied(&wang, &["main"], "guests cannot remove posts");
 
     // Posting in someone else's name, or sneaking a result in with a post.
     w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
     w.write(&wang, "talk/0001/20261018T213100Z-li.md", "冒名\n");
     w.commit(&wang, "x\n\nProblem: 0001");
-    w.push_denied(&wang, &["main"], "not talk/0001/20261018T213100Z-li.md");
+    w.push_denied(
+        &wang,
+        &["main"],
+        "talk/0001/20261018T213100Z-li.md is signed by li, not by you; name your post …-wang.md",
+    );
     w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
     w.write(&wang, "talk/0001/20261018T213200Z-wang.md", "ok\n");
     w.write(&wang, "works/0001/plan.md", "smuggled\n");
@@ -1309,7 +1309,7 @@ fn post_stamps_may_not_run_ahead_of_the_relay() {
     // Not a real date: not a post at all.
     w.write(&wang, "talk/0001/20260230T000000Z-wang.md", "二月三十日\n");
     w.commit(&wang, "x\n\nProblem: 0001");
-    w.push_denied(&wang, &["main"], "except adding their own posts");
+    w.push_denied(&wang, &["main"], "is not a post path");
 }
 
 #[test]

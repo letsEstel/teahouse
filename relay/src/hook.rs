@@ -180,12 +180,8 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
             ));
         } else {
             for (status, path) in cx.git.changes(c)? {
-                let own_new_post =
-                    status == 'A' && parse_talk_path(&path).is_some_and(|post| post.author == me);
-                if !own_new_post {
-                    out.push(format!(
-                        "commit {sc}: guests cannot write main except adding their own posts under talk/ (not {path}); push to refs/proposals/{me}/<name> instead / 茶客只能在 talk/ 下新增自己的留言，其余请发起提案"
-                    ));
+                if let Some(why) = guest_change_refused(me, status, &path) {
+                    out.push(format!("commit {sc}: {why}"));
                 }
             }
         }
@@ -261,6 +257,31 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
         }
     }
     Ok(())
+}
+
+/// Why a guest may not make this change on `main`, as precisely as we can
+/// tell; `None` if it is their own new post.
+fn guest_change_refused(me: &str, status: char, path: &str) -> Option<String> {
+    let post = parse_talk_path(path);
+    match (status, &post) {
+        ('A', Some(p)) if p.author == me => None,
+        ('A', Some(p)) => Some(format!(
+            "{path} is signed by {}, not by you; name your post …-{me}.md / 只能以自己的名义留言（文件名结尾应是 -{me}.md）",
+            p.author
+        )),
+        ('M', Some(_)) => Some(format!(
+            "{path} was already posted; posts are never edited, add a new post instead / 留言写下后不能修改，请另发一条"
+        )),
+        ('D', Some(_)) => Some(format!(
+            "{path}: guests cannot remove posts; ask the steward or host / 茶客不能删除留言，请找伙计或老板"
+        )),
+        ('A', None) if path.starts_with(TALK_DIR) => Some(format!(
+            "{path} is not a post path; use talk/<problem-id>/<YYYYMMDDTHHMMSSZ>-{me}.md or talk/board/<notice>/<YYYYMMDDTHHMMSSZ>-{me}.md with a real UTC time / 留言路径不对"
+        )),
+        _ => Some(format!(
+            "guests cannot write main except adding their own posts under talk/ (not {path}); push to refs/proposals/{me}/<name> instead / 茶客只能在 talk/ 下新增自己的留言，其余请发起提案"
+        )),
+    }
 }
 
 /// Posts and notices (说明书 第十四节): plain text of at most 32 KiB; a post

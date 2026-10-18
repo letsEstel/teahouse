@@ -289,11 +289,11 @@ EOF
   expect ok "T12 茶客在 main 上新增自己的留言" "main -> main" git_as wang -C "$c/wang" push origin main
   echo "我同意。" >"$c/wang/talk/0001/$(stamp)-zhou.md"
   commit "$c/wang" $'冒名留言\n\nProblem: 0001'
-  expect fail "T12b 冒名（伙计的名字）留言被拒" "own posts under talk/" git_as wang -C "$c/wang" push origin main
+  expect fail "T12b 冒名（伙计的名字）留言被拒" "is signed by zhou, not by you" git_as wang -C "$c/wang" push origin main
   git -C "$c/wang" reset -q --hard origin/main
   echo "改一下。" >>"$c/wang/$post"
   commit "$c/wang" $'改留言\n\nProblem: 0001'
-  expect fail "T12c 修改已有留言被拒（只能新增）" "own posts under talk/" git_as wang -C "$c/wang" push origin main
+  expect fail "T12c 修改已有留言被拒（只能新增）" "posts are never edited" git_as wang -C "$c/wang" push origin main
   git -C "$c/wang" reset -q --hard origin/main
   mkdir -p "$c/wang/talk/board/no-such-notice"; echo "?" >"$c/wang/talk/board/no-such-notice/$(stamp)-wang.md"
   commit "$c/wang" $'回复\n\nProblem: board'
