@@ -94,6 +94,46 @@ talk/board/<notice>/<YYYYMMDDTHHMMSSZ>-<member>.md replies to a notice
 One post is one file with one author; it is written, not spoken, so it is
 never edited afterwards. The steward and host may remove posts (moderation).
 
+What the relay checks for every post or notice that a commit adds or
+changes, on `main` and on proposals alike:
+
+* **Text, at most 32 KiB** (32 768 bytes, about ten thousand Chinese
+  characters). The file must be a regular file (not a symlink), valid UTF-8,
+  and free of control characters other than tab, line feed and carriage
+  return. Pictures and attachments go in `works/`. The same limit applies to
+  every file under `board/`.
+* **It answers something real.** `talk/<id>/…` needs `problems/<id>-*.md`,
+  and `talk/board/<notice>/…` needs `board/<notice>.md`, both in that same
+  commit. Taking a notice down later is moderation; its replies may stay.
+* **The stamp is a real UTC date and time, at most 10 minutes ahead of the
+  relay's clock** at the time of the push. Earlier stamps are fine: a post
+  written offline is pushed later.
+
+#### 显示顺序 · Display order
+
+**Posts are shown in the order they entered the teahouse's `main`, never
+sorted by their stamp.** The stamp only names the file and keeps two posts
+apart, so changing it gains nothing. Every member's clone can compute this
+order from history alone:
+
+```sh
+# For each step of main, oldest first: the posts that step added
+# (compared with the step before it, i.e. the first parent).
+git rev-list --first-parent --reverse main | while read c; do
+  if git rev-parse -q --verify "$c^" >/dev/null; then
+    git diff-tree -r --no-renames --diff-filter=A --name-only "$c^" "$c" -- talk/
+  else
+    git diff-tree -r --root --no-commit-id --no-renames --diff-filter=A --name-only "$c" -- talk/
+  fi
+done
+```
+
+Compare against the first parent explicitly. A plain `git diff-tree <merge>`
+prints nothing for a merge and would lose every post that came in through
+one. A post that arrives through a merged proposal enters when the merge
+lands, not when the proposal was written. Within one step, order by file
+name. Clients name new posts with `teahouse_core::rules::format_stamp(now)`.
+
 ## 4. 继承 · Succession
 
 Every member holds the full history, so a relay can be shut down but a
@@ -255,8 +295,8 @@ testing something else. It runs once with `AuthorizedKeysCommand` and once
 with the authorized_keys file, and checks with real `ssh` and `git`:
 
 * outsiders, removed members and the host, steward and guest paths;
-* `talk/` posts (a guest's own new post lands; impersonation and edits are
-  refused);
+* `talk/` posts (a guest's own new post lands; impersonation, edits,
+  replies to a missing notice and posts over 32 KiB are refused);
 * direct login, `bash`, path tricks, and `-L` / `-W` / `-R` forwarding;
 * the audit events;
 * that the `restrict` on each key line holds even under an sshd_config with

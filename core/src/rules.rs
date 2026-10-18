@@ -13,7 +13,18 @@ pub const STEWARD_DIRS: &[&str] = &["problems/", "works/", "board/", "talk/"];
 /// * `talk/board/<notice>/<stamp>-<member-id>.md` — replies to a notice
 ///
 /// `<stamp>` is UTC `YYYYMMDDTHHMMSSZ`. One post, one file, one author.
+/// The stamp only names the file and keeps names apart; posts are *shown* in
+/// the order they reached `main`, so a stamp cannot reorder a discussion.
 pub const TALK_DIR: &str = "talk/";
+/// Where notices live: `board/<notice>.md`.
+pub const BOARD_DIR: &str = "board/";
+
+/// Largest post or notice: 32 KiB, roughly ten thousand Chinese characters.
+/// Pictures and attachments belong in `works/`.
+pub const MAX_TEXT_BYTES: usize = 32 * 1024;
+/// How far a post's stamp may run ahead of the relay's clock. Earlier stamps
+/// are fine: a post written offline is pushed later.
+pub const MAX_STAMP_AHEAD_SECS: i64 = 10 * 60;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TalkTopic<'a> {
@@ -24,16 +35,96 @@ pub enum TalkTopic<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TalkPost<'a> {
     pub topic: TalkTopic<'a>,
+    pub stamp: &'a str,
     pub author: &'a str,
 }
 
-fn valid_stamp(s: &str) -> bool {
+/// Seconds since the Unix epoch of a `YYYYMMDDTHHMMSSZ` stamp; `None` unless
+/// it is a real UTC date and time (no 2月30日, no 25点).
+pub fn stamp_epoch(s: &str) -> Option<i64> {
     let b = s.as_bytes();
-    b.len() == 16
+    if !(b.len() == 16
         && b[..8].iter().all(u8::is_ascii_digit)
         && b[8] == b'T'
         && b[9..15].iter().all(u8::is_ascii_digit)
-        && b[15] == b'Z'
+        && b[15] == b'Z')
+    {
+        return None;
+    }
+    let num = |r: std::ops::Range<usize>| s[r].parse::<i64>().ok();
+    let (y, mo, d) = (num(0..4)?, num(4..6)?, num(6..8)?);
+    let (h, mi, se) = (num(9..11)?, num(11..13)?, num(13..15)?);
+    let leap = y % 4 == 0 && (y % 100 != 0 || y % 400 == 0);
+    let month_len = match mo {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if leap => 29,
+        2 => 28,
+        _ => return None,
+    };
+    if !(1..=month_len).contains(&d) || h > 23 || mi > 59 || se > 59 {
+        return None;
+    }
+    Some(days_from_civil(y, mo, d) * 86_400 + h * 3_600 + mi * 60 + se)
+}
+
+/// The `YYYYMMDDTHHMMSSZ` stamp for a moment, for naming a new post.
+pub fn format_stamp(epoch: i64) -> String {
+    let (days, secs) = (epoch.div_euclid(86_400), epoch.rem_euclid(86_400));
+    let (y, m, d) = civil_from_days(days);
+    format!(
+        "{y:04}{m:02}{d:02}T{:02}{:02}{:02}Z",
+        secs / 3_600,
+        secs % 3_600 / 60,
+        secs % 60
+    )
+}
+
+/// Howard Hinnant's days→civil algorithm (proleptic Gregorian).
+fn civil_from_days(z: i64) -> (i64, i64, i64) {
+    let z = z + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    (yoe + era * 400 + i64::from(m <= 2), m, d)
+}
+
+/// Howard Hinnant's civil→days algorithm (proleptic Gregorian).
+fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let doy = (153 * ((m + 9) % 12) + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
+}
+
+/// Posts and notices are plain text: at most [`MAX_TEXT_BYTES`], UTF-8, and
+/// no control characters except tab and line breaks.
+pub fn check_text(bytes: &[u8]) -> Result<(), String> {
+    if bytes.len() > MAX_TEXT_BYTES {
+        return Err(format!(
+            "{} bytes; posts and notices are limited to 32 KiB ({MAX_TEXT_BYTES} bytes), put attachments in works/ / 留言和公告最多 32 KiB，附件请放进 works/",
+            bytes.len()
+        ));
+    }
+    let Ok(text) = std::str::from_utf8(bytes) else {
+        return Err("is not UTF-8 text; posts and notices must be text, put attachments in works/ / 留言和公告必须是文本".into());
+    };
+    if let Some(c) = text
+        .chars()
+        .find(|c| c.is_control() && !matches!(c, '\t' | '\n' | '\r'))
+    {
+        return Err(format!(
+            "contains the control character U+{:04X}; posts and notices must be plain text / 留言和公告必须是纯文本",
+            c as u32
+        ));
+    }
+    Ok(())
 }
 
 fn valid_notice_stem(s: &str) -> bool {
@@ -56,10 +147,14 @@ pub fn parse_talk_path(path: &str) -> Option<TalkPost<'_>> {
     };
     let stem = file.strip_suffix(".md")?;
     let (stamp, author) = stem.split_once('-')?;
-    if !valid_stamp(stamp) || !valid_member_id(author) {
+    if stamp_epoch(stamp).is_none() || !valid_member_id(author) {
         return None;
     }
-    Some(TalkPost { topic, author })
+    Some(TalkPost {
+        topic,
+        stamp,
+        author,
+    })
 }
 
 pub const MAIN_REF: &str = "refs/heads/main";
@@ -228,6 +323,7 @@ mod tests {
             parse_talk_path("talk/0001/20261018T213000Z-wang.md"),
             Some(TalkPost {
                 topic: TalkTopic::Problem("0001"),
+                stamp: "20261018T213000Z",
                 author: "wang"
             })
         );
@@ -235,6 +331,7 @@ mod tests {
             parse_talk_path("talk/board/2026-10-18-meeting/20261018T213000Z-li_2.md"),
             Some(TalkPost {
                 topic: TalkTopic::Board("2026-10-18-meeting"),
+                stamp: "20261018T213000Z",
                 author: "li_2"
             })
         );
@@ -242,6 +339,9 @@ mod tests {
             "talk/0001/x.md",
             "talk/0001/20261018T213000Z-wang.txt",
             "talk/0001/20261018T213000-wang.md",
+            "talk/0001/20261318T213000Z-wang.md",
+            "talk/0001/20260230T213000Z-wang.md",
+            "talk/0001/20261018T243000Z-wang.md",
             "talk/0001/20261018T213000Z-Wang.md",
             "talk/01/20261018T213000Z-wang.md",
             "talk/0001/sub/20261018T213000Z-wang.md",
@@ -256,6 +356,52 @@ mod tests {
             "talk/0001/20261018T213000Z-wang.md"
         ));
         assert_eq!(ProblemRef::parse("board"), Some(ProblemRef::Board));
+    }
+
+    #[test]
+    fn stamps() {
+        assert_eq!(stamp_epoch("19700101T000000Z"), Some(0));
+        // Same instant as relay/src/audit.rs's rfc3339 test.
+        assert_eq!(stamp_epoch("20261018T212005Z"), Some(1_792_358_405));
+        assert_eq!(stamp_epoch("20000229T000000Z"), Some(951_782_400));
+        assert_eq!(stamp_epoch("19991231T235959Z"), Some(946_684_799));
+        for t in [0, 951_782_400, 1_792_358_405, 4_102_444_799, 1_234_567_890] {
+            assert_eq!(stamp_epoch(&format_stamp(t)), Some(t), "{t}");
+        }
+        assert_eq!(format_stamp(1_792_358_405), "20261018T212005Z");
+        for bad in [
+            "20260229T000000Z", // 2026 is not a leap year
+            "21000229T000000Z", // nor is 2100
+            "20261000T000000Z",
+            "20261032T000000Z",
+            "20261018T236000Z",
+            "20261018T235960Z",
+            "20261018T213000",
+            "2026-10-18T2130Z",
+            "+0261018T213000Z",
+        ] {
+            assert_eq!(stamp_epoch(bad), None, "{bad}");
+        }
+    }
+
+    #[test]
+    fn post_text() {
+        assert!(check_text("晚上七点以后基本没位置。\r\n\t第二行\n".as_bytes()).is_ok());
+        assert!(check_text(&vec![b'a'; MAX_TEXT_BYTES]).is_ok());
+        assert!(check_text(&vec![b'a'; MAX_TEXT_BYTES + 1])
+            .unwrap_err()
+            .contains("32 KiB"));
+        // 10 922 three-byte characters fit; one more does not.
+        assert!(check_text("茶".repeat(10_922).as_bytes()).is_ok());
+        assert!(check_text("茶".repeat(10_923).as_bytes()).is_err());
+        assert!(check_text(b"\x89PNG\r\n\x1a\n")
+            .unwrap_err()
+            .contains("UTF-8"));
+        assert!(check_text(b"a\0b").unwrap_err().contains("U+0000"));
+        assert!(check_text("\u{1b}[2J".as_bytes())
+            .unwrap_err()
+            .contains("U+001B"));
+        assert!(check_text("\u{7f}".as_bytes()).is_err());
     }
 
     #[test]

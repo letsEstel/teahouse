@@ -295,6 +295,14 @@ EOF
   commit "$c/wang" $'改留言\n\nProblem: 0001'
   expect fail "T12c 修改已有留言被拒（只能新增）" "own posts under talk/" git_as wang -C "$c/wang" push origin main
   git -C "$c/wang" reset -q --hard origin/main
+  mkdir -p "$c/wang/talk/board/no-such-notice"; echo "?" >"$c/wang/talk/board/no-such-notice/$(stamp)-wang.md"
+  commit "$c/wang" $'回复\n\nProblem: board'
+  expect fail "T12d 回复不存在的公告被拒" "which does not exist" git_as wang -C "$c/wang" push origin main
+  git -C "$c/wang" reset -q --hard origin/main
+  head -c 40000 /dev/zero | tr '\0' 'a' >"$c/wang/talk/0001/$(stamp)-wang.md"
+  commit "$c/wang" $'超长留言\n\nProblem: 0001'
+  expect fail "T12e 超过 32 KiB 的留言被拒" "limited to 32 KiB" git_as wang -C "$c/wang" push origin main
+  git -C "$c/wang" reset -q --hard origin/main
 
   expect ok "T10 scp 风格地址 user@host:wutong" "" \
     env GIT_SSH_COMMAND="ssh $(ssh_opts chenli)" git clone -q "$user@localhost:wutong" "$c/scp"

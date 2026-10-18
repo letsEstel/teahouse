@@ -15,8 +15,9 @@ use crate::root::{members_at, Root};
 use std::io::{self, BufRead, Read};
 use teahouse_core::members::{Member, Members, Role, MEMBERS_PATH};
 use teahouse_core::rules::{
-    classify_ref, decide_ref, is_reserved_lookalike, may_write_on_main, parse_talk_path, Op,
-    ProblemRef, RefDecision, RefKind, TalkTopic, MAIN_REF, TALK_DIR,
+    check_text, classify_ref, decide_ref, is_reserved_lookalike, may_write_on_main,
+    parse_talk_path, stamp_epoch, Op, ProblemRef, RefDecision, RefKind, TalkTopic, BOARD_DIR,
+    MAIN_REF, MAX_STAMP_AHEAD_SECS, MAX_TEXT_BYTES, TALK_DIR,
 };
 use teahouse_core::PublicKey;
 
@@ -57,6 +58,8 @@ pub fn read_updates(input: impl Read) -> Result<Vec<Update>> {
 pub struct Context<'a> {
     pub git: &'a Git,
     pub pusher: &'a Member,
+    /// The relay's clock when the push arrived, in Unix seconds.
+    pub now: i64,
 }
 
 fn op_of(u: &Update) -> Op {
@@ -229,6 +232,9 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
                 "commit {sc}: {p} is not a valid post path (talk/<id>/<YYYYMMDDTHHMMSSZ>-<member>.md or talk/board/<notice>/…)"
             ));
         }
+        if p.starts_with(TALK_DIR) || p.starts_with(BOARD_DIR) {
+            check_discussion_file(cx, c, p, &facing, out)?;
+        }
         if matches!(facing, Some(ProblemRef::Board))
             && !(p.starts_with("board/") || p.starts_with("talk/board/"))
         {
@@ -252,6 +258,85 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
                     }
                 }
             },
+        }
+    }
+    Ok(())
+}
+
+/// Posts and notices (说明书 第十四节): plain text of at most 32 KiB; a post
+/// answers a problem or notice that exists, and its stamp is not ahead of
+/// the relay's clock by more than ten minutes. Removed files are not checked.
+fn check_discussion_file(
+    cx: &Context<'_>,
+    c: &str,
+    p: &str,
+    facing: &Option<ProblemRef>,
+    out: &mut Vec<String>,
+) -> Result<()> {
+    let sc = short(c);
+    let Some(entry) = cx.git.tree_entry(c, p)? else {
+        return Ok(()); // removed (moderation)
+    };
+    if !entry.is_regular_file() {
+        out.push(format!(
+            "commit {sc}: {p} must be a plain text file, not a {} / 留言和公告必须是普通文本文件",
+            if entry.kind == "blob" {
+                "symlink"
+            } else {
+                &entry.kind
+            }
+        ));
+        return Ok(());
+    }
+    let size = entry.size.unwrap_or(u64::MAX);
+    if size > MAX_TEXT_BYTES as u64 {
+        // Do not read it: the size alone decides.
+        out.push(format!(
+            "commit {sc}: {p} is {size} bytes; posts and notices are limited to 32 KiB ({MAX_TEXT_BYTES} bytes), put attachments in works/ / 留言和公告最多 32 KiB，附件请放进 works/"
+        ));
+    } else if let Some(bytes) = cx.git.read_file(c, p)? {
+        if let Err(why) = check_text(&bytes) {
+            out.push(format!("commit {sc}: {p} {why}"));
+        }
+    }
+
+    let Some(post) = parse_talk_path(p) else {
+        return Ok(());
+    };
+    if let Some(t) = stamp_epoch(post.stamp) {
+        if t > cx.now + MAX_STAMP_AHEAD_SECS {
+            out.push(format!(
+                "commit {sc}: {p} is stamped {} minutes in the future; a stamp may be at most {} minutes ahead of the relay's clock / 留言时间不能晚于推送时间 10 分钟以上",
+                (t - cx.now) / 60,
+                MAX_STAMP_AHEAD_SECS / 60
+            ));
+        }
+    }
+    match post.topic {
+        // Already reported through the commit's own `Problem:` trailer.
+        TalkTopic::Problem(id) if matches!(facing, Some(ProblemRef::Id(f)) if f == id) => {}
+        TalkTopic::Problem(id) => {
+            let files = cx.git.list_dir(c, "problems")?;
+            if !files
+                .iter()
+                .any(|f| ProblemRef::matches_problem_file(id, f))
+            {
+                out.push(format!(
+                    "commit {sc}: {p} answers problem {id}, which does not exist (no problems/{id}-*.md) / 问题 {id} 不存在"
+                ));
+            }
+        }
+        TalkTopic::Board(notice) => {
+            let file = format!("{BOARD_DIR}{notice}.md");
+            if !cx
+                .git
+                .tree_entry(c, &file)?
+                .is_some_and(|e| e.is_regular_file())
+            {
+                out.push(format!(
+                    "commit {sc}: {p} replies to notice {notice:?}, which does not exist (no {file}) / 回复的公告不存在"
+                ));
+            }
         }
     }
     Ok(())
@@ -291,7 +376,15 @@ pub fn pre_receive(root: &Root) -> Result<()> {
             updates.len()
         ));
     } else {
-        let cx = Context { git: &git, pusher };
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|_| Error("the relay's clock is before 1970".into()))?
+            .as_secs() as i64;
+        let cx = Context {
+            git: &git,
+            pusher,
+            now,
+        };
         for u in &updates {
             problems.extend(check_update(&cx, u)?);
         }

@@ -27,6 +27,24 @@ const REDIRECTING_ENV: &[&str] = &[
     "GIT_COMMON_DIR",
 ];
 
+/// One entry of a tree, as `git ls-tree -l` reports it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TreeEntry {
+    /// `100644`, `100755`, `120000` (symlink), `160000` (submodule), `040000`.
+    pub mode: String,
+    /// `blob`, `tree` or `commit`.
+    pub kind: String,
+    /// Size in bytes; `None` for trees and submodules.
+    pub size: Option<u64>,
+}
+
+impl TreeEntry {
+    /// A regular file (executable or not): not a symlink, directory or submodule.
+    pub fn is_regular_file(&self) -> bool {
+        self.kind == "blob" && (self.mode == "100644" || self.mode == "100755")
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Git {
     /// `Some(dir)`: operate on that repository with a clean environment.
@@ -283,6 +301,32 @@ impl Git {
     }
 
     /// File names directly inside `dir/` at `commit` (no recursion).
+    /// The tree entry at `path` in `commit` without reading its content;
+    /// `None` if there is nothing at that path.
+    pub fn tree_entry(&self, commit: &str, path: &str) -> Result<Option<TreeEntry>> {
+        let out = self.run(&["ls-tree", "-l", "-z", "--full-tree", commit, "--", path])?;
+        for rec in split_z(out)? {
+            // <mode> SP <type> SP <oid> SP+ <size or -> TAB <path>
+            let Some((meta, p)) = rec.split_once('\t') else {
+                bail!("unexpected ls-tree output for {commit}:{path}");
+            };
+            if p != path {
+                continue;
+            }
+            let mut it = meta.split_whitespace();
+            let (Some(mode), Some(kind), Some(_oid), Some(size)) =
+                (it.next(), it.next(), it.next(), it.next())
+            else {
+                bail!("unexpected ls-tree output for {commit}:{path}");
+            };
+            return Ok(Some(TreeEntry {
+                mode: mode.to_string(),
+                kind: kind.to_string(),
+                size: size.parse().ok(),
+            }));
+        }
+        Ok(None)
+    }
     pub fn list_dir(&self, commit: &str, dir: &str) -> Result<Vec<String>> {
         let spec = format!("{commit}:{dir}");
         let exists = self.run_raw(["cat-file", "-e", spec.as_str()], None)?;

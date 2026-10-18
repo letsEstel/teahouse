@@ -1187,7 +1187,7 @@ fn board_notices_and_replies() {
     let wang = w.clone("wang", "wutong");
     w.write(
         &wang,
-        "talk/board/2026-10-25-meeting/20261019T080000Z-wang.md",
+        "talk/board/2026-10-25-meeting/20261018T080000Z-wang.md",
         "我去。\n",
     );
     w.commit(&wang, "回应公告\n\nProblem: board");
@@ -1204,4 +1204,165 @@ fn board_notices_and_replies() {
     w.commit(&wang, "x\n\nProblem: board");
     w.push_denied(&wang, &["main"], "guests cannot write main except");
     w.push_ok(&wang, &["HEAD:refs/proposals/wang/notice"]);
+}
+
+/// A post's stamp, `offset` seconds from now.
+fn stamp_in(offset: i64) -> String {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+    teahouse_core::rules::format_stamp(now + offset)
+}
+
+#[test]
+fn replies_need_a_real_notice_or_problem() {
+    let w = World::new();
+    let host = w.wutong();
+    let wang = w.clone("wang", "wutong");
+
+    // No such notice: refused, for a guest and for the host alike.
+    w.write(
+        &wang,
+        "talk/board/no-such-notice/20261018T080000Z-wang.md",
+        "?\n",
+    );
+    w.commit(&wang, "回应\n\nProblem: board");
+    w.push_denied(
+        &wang,
+        &["main"],
+        "which does not exist (no board/no-such-notice.md)",
+    );
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+
+    // A post under a problem that does not exist, even in a host's meta commit.
+    w.write(&host, "talk/0002/20261018T080000Z-chenli.md", "?\n");
+    w.commit(&host, "x\n\nProblem: meta");
+    w.push_denied(
+        &host,
+        &["main"],
+        "answers problem 0002, which does not exist",
+    );
+    w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
+
+    // Once the notice is up, the same reply lands.
+    let zhou = w.clone("zhou", "wutong");
+    w.write(&zhou, "board/meeting.md", "周六开会。\n");
+    w.commit(&zhou, "贴公告\n\nProblem: board");
+    w.push_ok(&zhou, &["main"]);
+    w.git_ok(&wang, &["pull", "--quiet", "--ff-only"]);
+    w.write(
+        &wang,
+        "talk/board/meeting/20261018T080000Z-wang.md",
+        "我去。\n",
+    );
+    w.commit(&wang, "回应\n\nProblem: board");
+    w.push_ok(&wang, &["main"]);
+
+    // Taking a notice down later is moderation; its replies may stay.
+    w.git_ok(&zhou, &["pull", "--quiet", "--ff-only"]);
+    fs::remove_file(zhou.join("board/meeting.md")).unwrap();
+    w.commit(&zhou, "撤公告\n\nProblem: board");
+    w.push_ok(&zhou, &["main"]);
+}
+
+#[test]
+fn post_stamps_may_not_run_ahead_of_the_relay() {
+    let w = World::new();
+    let _ = w.wutong();
+    let wang = w.clone("wang", "wutong");
+
+    // Up to ten minutes ahead is clock skew, and fine.
+    let soon = format!("talk/0001/{}-wang.md", stamp_in(5 * 60));
+    w.write(&wang, &soon, "快到了\n");
+    w.commit(&wang, "x\n\nProblem: 0001");
+    w.push_ok(&wang, &["main"]);
+
+    // Further ahead is refused, whatever the year…
+    for stamp in [stamp_in(20 * 60), "20990101T000000Z".to_string()] {
+        let post = format!("talk/0001/{stamp}-wang.md");
+        w.write(&wang, &post, "未来\n");
+        w.commit(&wang, "x\n\nProblem: 0001");
+        w.push_denied(&wang, &["main"], "minutes in the future");
+        w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+    }
+    // …also on a proposal.
+    w.write(&wang, "talk/0001/20990101T000000Z-wang.md", "未来\n");
+    w.commit(&wang, "x\n\nProblem: 0001");
+    w.push_denied(
+        &wang,
+        &["HEAD:refs/proposals/wang/x"],
+        "minutes in the future",
+    );
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+
+    // Earlier stamps are fine (written offline, pushed later). Order on
+    // screen comes from main's history, so an old stamp gains nothing.
+    w.write(
+        &wang,
+        "talk/0001/19990101T000000Z-wang.md",
+        "很久以前写的\n",
+    );
+    w.commit(&wang, "x\n\nProblem: 0001");
+    w.push_ok(&wang, &["main"]);
+
+    // Not a real date: not a post at all.
+    w.write(&wang, "talk/0001/20260230T000000Z-wang.md", "二月三十日\n");
+    w.commit(&wang, "x\n\nProblem: 0001");
+    w.push_denied(&wang, &["main"], "except adding their own posts");
+}
+
+#[test]
+fn posts_and_notices_are_text_of_at_most_32_kib() {
+    let w = World::new();
+    let _ = w.wutong();
+    let wang = w.clone("wang", "wutong");
+    let write_bytes = |dir: &Path, path: &str, bytes: &[u8]| {
+        let p = dir.join(path);
+        fs::create_dir_all(p.parent().unwrap()).unwrap();
+        fs::write(p, bytes).unwrap();
+    };
+
+    // Exactly 32 KiB of Chinese text (10 922 three-byte characters + 2 bytes).
+    let long = format!("{}\n\n", "茶".repeat(10_922));
+    assert_eq!(long.len(), 32 * 1024);
+    w.write(&wang, "talk/0001/20261018T080000Z-wang.md", &long);
+    w.commit(&wang, "长留言\n\nProblem: 0001");
+    w.push_ok(&wang, &["main"]);
+
+    for (bytes, why) in [
+        (format!("{long}x").into_bytes(), "limited to 32 KiB"),
+        (b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR".to_vec(), "not UTF-8 text"),
+        (b"\x1b[2J\x1b[31mhello".to_vec(), "U+001B"),
+    ] {
+        write_bytes(&wang, "talk/0001/20261018T080100Z-wang.md", &bytes);
+        w.commit(&wang, "x\n\nProblem: 0001");
+        w.push_denied(&wang, &["main"], why);
+        w.push_denied(&wang, &["HEAD:refs/proposals/wang/x"], why);
+        w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+    }
+
+    // A symlink is not a post, even if its name looks like one.
+    std::os::unix::fs::symlink(
+        "../../.teahouse/members.toml",
+        wang.join("talk/0001/20261018T080200Z-wang.md"),
+    )
+    .unwrap();
+    w.commit(&wang, "x\n\nProblem: 0001");
+    w.push_denied(&wang, &["main"], "not a symlink");
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+
+    // Notices too: text only, attachments go to works/.
+    let zhou = w.clone("zhou", "wutong");
+    write_bytes(&zhou, "board/photo.png", b"\x89PNG\r\n\x1a\n\0\0");
+    w.commit(&zhou, "x\n\nProblem: board");
+    w.push_denied(&zhou, &["main"], "board/photo.png is not UTF-8 text");
+    w.git_ok(&zhou, &["reset", "--quiet", "--hard", "origin/main"]);
+    w.write(&zhou, "board/long.md", &format!("{long}x"));
+    w.commit(&zhou, "x\n\nProblem: board");
+    w.push_denied(&zhou, &["main"], "board/long.md is 32769 bytes");
+    w.git_ok(&zhou, &["reset", "--quiet", "--hard", "origin/main"]);
+    write_bytes(&zhou, "works/0001/photo.png", b"\x89PNG\r\n\x1a\n\0\0");
+    w.commit(&zhou, "照片\n\nProblem: 0001");
+    w.push_ok(&zhou, &["main"]);
 }
