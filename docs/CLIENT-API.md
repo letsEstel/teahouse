@@ -151,6 +151,7 @@ Act: add-work
 - **签名**：引擎对每个提交做 git 的 ssh 签名（`gpg.format=ssh`）。签名用的就是设备钥匙。
 - 传输：**引擎内置 git 库，不依赖系统里的 git 程序**（用 `git2` crate，也就是 libgit2 加 libssh2；ssh 认证和提交签名都在进程内完成）。这样同一个引擎可以直接编译到 Windows、macOS、Linux 和 **Android**，打包时也不用附带 git。（用户 10-19：手机是安卓，要尽快在手机上用，所以从第一天起就这样做。）
 - 配置：`<应用数据目录>/teahouse/client.toml`，记录每间茶馆的 Relay 地址。
+- 本地目录（`<root>` 即应用数据目录下的 `teahouse/`）：`houses/<id>/` 是各茶馆的 git 副本；`blobs/<sha256>` 是附件缓存；`drafts/<id>/` 是被拒绝或离线时保存的草稿；设备钥匙在第 4 步打包前暂存为 `<root>/device`（权限 0600），打包时移入系统钥匙串。
 - "我是谁"：拿本机公钥和 `members.toml` 比对。找不到座位，说明已经离座，界面切换成只读并给出提示，本地副本保留。
 - 开发期用 Relay 的 `local-ssh`（RELAY.md 第 7 节），由 `scripts/dev-stack.sh` 一键配置。
 
@@ -186,7 +187,7 @@ interface SyncState {
 
 interface Member { id: string; name: string; role: Role; joined: string }
 interface Event  { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
-interface Note   { by: string; text: string; when: string; writtenAt: string }  // when=进入茶馆的时间，writtenAt=文件名里的时间戳
+interface Note   { id: string; by: string; text: string; when: string; writtenAt: string }  // id=留言文件的仓库路径  // when=进入茶馆的时间，writtenAt=文件名里的时间戳
 interface Notice { id: string; by: string; title: string; text: string; when: string; replies: Note[] }
 
 interface Work {
@@ -251,7 +252,7 @@ interface HistoryEntry { by: string; when: string; act: Act; problem: string; ti
 | `problem` | `{ house, problem }` | `Problem` |
 | `archive` | `{ house, view: 'dirs' \| 'problems' }` | `ArchiveNode` |
 | `file` | `{ house, id }` | `{ node: ArchiveNode, text?: string, history: HistoryEntry[] }` |
-| `blob` | `{ house, id }` | 附件的本地路径（没有缓存时先下载并校验）|
+| `blob` | `{ house, id }` | 附件的本地路径（没有缓存时先下载并校验）。界面显示时：Tauri 里用 `convertFileSrc`；开发期用 `serve` 提供的只读地址 `GET /v1/blob?house=<id>&id=<附件id>`，只返回该茶馆附件缓存里的文件 |
 | `export` | `{ house, to }` | 把整间茶馆（git bundle + 附件 + 一份可直接阅读的文件夹）导出到 `to` |
 
 ### 同步
