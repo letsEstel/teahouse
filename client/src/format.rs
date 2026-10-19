@@ -147,6 +147,55 @@ pub fn quote_value(v: &str) -> String {
     }
 }
 
+/// A frontmatter block for `fields` (values quoted as needed), ending in a
+/// newline.
+pub fn render_frontmatter(fields: &[(&str, &str)]) -> String {
+    let mut s = String::from("---\n");
+    for (k, v) in fields {
+        s.push_str(&format!("{k}: {}\n", quote_value(v)));
+    }
+    s.push_str("---\n");
+    s
+}
+
+/// `text` with frontmatter fields set (`Some`) or removed (`None`), keeping
+/// every other line, comment and the body as they were.
+pub fn set_fields(text: &str, changes: &[(&str, Option<&str>)]) -> String {
+    let (fm, body) = split_frontmatter(text);
+    if fm.fields.is_empty() && body.len() == text.len() && !text.starts_with("---") {
+        let fields: Vec<(&str, &str)> = changes
+            .iter()
+            .filter_map(|(k, v)| v.map(|v| (*k, v)))
+            .collect();
+        return render_frontmatter(&fields) + text;
+    }
+    let head = &text[..text.len() - body.len()];
+    let mut lines: Vec<String> = head.lines().map(str::to_string).collect();
+    // lines[0] is the opening fence, the last one the closing fence.
+    let close = lines.len().saturating_sub(1);
+    let mut done = vec![false; changes.len()];
+    let mut out = vec![lines[0].clone()];
+    for line in &lines[1..close] {
+        let key = parse_field(line.trim_end_matches('\r')).map(|(k, _)| k);
+        match key.and_then(|k| changes.iter().position(|(c, _)| *c == k)) {
+            Some(i) => {
+                if let (Some(v), false) = (changes[i].1, done[i]) {
+                    out.push(format!("{}: {}", changes[i].0, quote_value(v)));
+                }
+                done[i] = true;
+            }
+            None => out.push(line.clone()),
+        }
+    }
+    for (i, (k, v)) in changes.iter().enumerate() {
+        if let (Some(v), false) = (v, done[i]) {
+            out.push(format!("{k}: {}", quote_value(v)));
+        }
+    }
+    out.push(lines.remove(close));
+    out.join("\n") + "\n" + body
+}
+
 // ---------------------------------------------------------------------------
 // Problems
 
@@ -450,6 +499,30 @@ mod tests {
         assert_eq!(split_frontmatter(t), (Frontmatter::default(), t));
         let t = "plain\n---\n";
         assert_eq!(split_frontmatter(t), (Frontmatter::default(), t));
+    }
+
+    #[test]
+    fn setting_fields() {
+        let t = "---\ntitle: 停车\nstatus: open   # 注释\nowner: wang\n---\n## 现状\n";
+        assert_eq!(
+            set_fields(
+                t,
+                &[
+                    ("status", Some("active")),
+                    ("owner", None),
+                    ("x", Some("a: b"))
+                ]
+            ),
+            "---\ntitle: 停车\nstatus: active\nx: \"a: b\"\n---\n## 现状\n"
+        );
+        assert_eq!(
+            set_fields("正文\n", &[("status", Some("open"))]),
+            "---\nstatus: open\n---\n正文\n"
+        );
+        assert_eq!(
+            render_frontmatter(&[("title", "修 #3 号楼"), ("kind", "plan")]),
+            "---\ntitle: \"修 #3 号楼\"\nkind: plan\n---\n"
+        );
     }
 
     #[test]

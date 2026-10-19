@@ -137,11 +137,26 @@ impl Snapshot {
 
     // -- small helpers ------------------------------------------------------
 
-    fn me_id(&self) -> String {
+    /// The commit `main` points at.
+    pub(crate) fn head(&self) -> &str {
+        &self.head
+    }
+
+    /// A file of `main`, by path.
+    pub(crate) fn entry(&self, path: &str) -> Option<&TreeFile> {
+        self.tree.get(path)
+    }
+
+    /// The text of a file of `main`.
+    pub(crate) fn text(&self, path: &str) -> Result<Option<String>> {
+        Ok(self.read_many(&[path])?.remove(path).map(|b| text_of(&b)))
+    }
+
+    pub(crate) fn me_id(&self) -> String {
         self.me.as_ref().map(|m| m.id.clone()).unwrap_or_default()
     }
 
-    fn my_role(&self) -> &'static str {
+    pub(crate) fn my_role(&self) -> &'static str {
         // A device without a seat reads as a guest would (CLIENT-API.md §2).
         self.me.as_ref().map_or("guest", |m| m.role.as_str())
     }
@@ -183,7 +198,7 @@ impl Snapshot {
         self.touched.get(path).map(|&i| &self.steps[i])
     }
 
-    fn read_many(&self, paths: &[&str]) -> Result<HashMap<String, Vec<u8>>> {
+    pub(crate) fn read_many(&self, paths: &[&str]) -> Result<HashMap<String, Vec<u8>>> {
         let specs: Vec<String> = paths
             .iter()
             .filter_map(|p| self.tree.get(*p))
@@ -205,7 +220,7 @@ impl Snapshot {
             .collect())
     }
 
-    fn files_under(&self, prefix: &str) -> impl Iterator<Item = &TreeFile> + '_ {
+    pub(crate) fn files_under(&self, prefix: &str) -> impl Iterator<Item = &TreeFile> + '_ {
         let prefix = prefix.to_string();
         self.tree
             .range(prefix.clone()..)
@@ -213,7 +228,7 @@ impl Snapshot {
             .map(|(_, f)| f)
     }
 
-    fn problem_files(&self) -> Vec<(&str, &str, &str)> {
+    pub(crate) fn problem_files(&self) -> Vec<(&str, &str, &str)> {
         self.files_under("problems/")
             .filter_map(|f| {
                 format::parse_problem_path(&f.path).map(|(id, slug)| (id, slug, f.path.as_str()))
@@ -221,7 +236,7 @@ impl Snapshot {
             .collect()
     }
 
-    fn problem_path(&self, pid: &str) -> Option<(&str, &str)> {
+    pub(crate) fn problem_path(&self, pid: &str) -> Option<(&str, &str)> {
         self.problem_files()
             .into_iter()
             .find(|(id, _, _)| *id == pid)
@@ -257,6 +272,7 @@ impl Snapshot {
             .filter_map(|(p, _)| {
                 let pp = format::parse_post_path(p)?;
                 Some(Note {
+                    id: p.to_string(),
                     by: pp.member.to_string(),
                     text: texts.get(p).map(|b| text_of(b)).unwrap_or_default(),
                     when: when(self.added_step(p)?.time),
@@ -266,31 +282,31 @@ impl Snapshot {
             .collect()
     }
 
-    fn sync(&self) -> Result<SyncState> {
-        let Some(upstream) = self.git.resolve(UPSTREAM)? else {
-            // Never synced (or a house made locally): everything is local.
-            let unpushed = self.steps.len();
-            return Ok(SyncState {
-                state: SyncKind::Ahead,
-                unpushed,
-                last_sync: None,
-                message: None,
-            });
+    /// Where this clone stands against the relay: commits not yet pushed,
+    /// and how the last sync attempt went.
+    pub(crate) fn summary_sync(&self) -> Result<SyncState> {
+        let record = crate::sync::Record::load(self.git.dir());
+        let last_sync = record.last_ok.map(when);
+        let (unpushed, behind) = match self.git.resolve(UPSTREAM)? {
+            Some(upstream) => (
+                self.git.count(&upstream, &self.head)?,
+                self.git.count(&self.head, &upstream)?,
+            ),
+            // Never synced (or made locally): everything is local.
+            None => (self.steps.len(), 0),
         };
-        let unpushed = self.git.count(&upstream, &self.head)?;
-        let behind = self.git.count(&self.head, &upstream)?;
-        let state = if unpushed > 0 {
-            SyncKind::Ahead
-        } else if behind > 0 {
-            SyncKind::Behind
-        } else {
-            SyncKind::Synced
+        let state = match record.failed.as_deref() {
+            Some("offline") => SyncKind::Offline,
+            Some(_) => SyncKind::Error,
+            None if unpushed > 0 => SyncKind::Ahead,
+            None if behind > 0 => SyncKind::Behind,
+            None => SyncKind::Synced,
         };
         Ok(SyncState {
             state,
             unpushed,
-            last_sync: None,
-            message: None,
+            last_sync,
+            message: record.message,
         })
     }
 
@@ -428,7 +444,7 @@ impl Snapshot {
             my_role: self.my_role(),
             seats: self.members.members.len(),
             pending_proposals: self.proposals(false)?.len(),
-            sync: self.sync()?,
+            sync: self.summary_sync()?,
         })
     }
 
@@ -544,7 +560,7 @@ impl Snapshot {
             proposals,
             decided: self.decided()?,
             board,
-            sync: self.sync()?,
+            sync: self.summary_sync()?,
         })
     }
 
@@ -813,9 +829,19 @@ impl Snapshot {
         }
         let mut root = Dir::default();
         for f in self.tree.values() {
+            // A table's title file belongs to the table (§1.2).
+            if f.path.starts_with("works/")
+                && format::classify_work(&f.path, None) == WorkFile::TableMeta
+            {
+                continue;
+            }
             let mut d = &mut root;
             let mut parts: Vec<&str> = f.path.split('/').collect();
             parts.pop();
+            // Files at the top (README.md) belong to the teahouse itself.
+            if parts.is_empty() {
+                parts.push(".teahouse");
+            }
             for p in parts {
                 d = d.dirs.entry(p).or_default();
             }
@@ -936,13 +962,24 @@ impl Snapshot {
                 children: Some(notices),
             });
         }
+        // The seating chart, README.md and anything not filed above.
         let rest: Vec<ArchiveNode> = self
             .tree
             .values()
             .filter(|f| !placed.contains(f.path.as_str()))
             .map(|f| self.leaf(f, titles, texts))
             .collect();
-        children.extend(rest);
+        if !rest.is_empty() {
+            children.push(ArchiveNode {
+                id: ".teahouse".into(),
+                dir: Some("meta"),
+                label: None,
+                kind: NodeKind::Dir,
+                problem: None,
+                size: None,
+                children: Some(rest),
+            });
+        }
         ArchiveNode {
             id: String::new(),
             dir: None,
@@ -1006,6 +1043,12 @@ impl Snapshot {
 
     /// The local path of an attachment's content.
     pub fn blob(&self, path: &str) -> Result<String> {
+        Ok(self.blob_file(path)?.0.to_string_lossy().into_owned())
+    }
+
+    /// The cached file of an attachment and its media type. Only ever a
+    /// file in this engine's attachment cache, named by its hash.
+    pub fn blob_file(&self, path: &str) -> Result<(PathBuf, String)> {
         let text = self
             .tree
             .get(path)
@@ -1031,7 +1074,7 @@ impl Snapshot {
         }
         let local = self.blobs_dir.join(&r.hash);
         if local.is_file() {
-            return Ok(local.to_string_lossy().into_owned());
+            return Ok((local, r.mime));
         }
         Err(Error::new(
             Code::Offline,

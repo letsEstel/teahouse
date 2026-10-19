@@ -116,6 +116,15 @@ impl Git {
         })
     }
 
+    pub fn repo(&self) -> &Repository {
+        &self.repo
+    }
+
+    /// The git directory (`.git` of a clone, or the bare repository).
+    pub fn dir(&self) -> &Path {
+        self.repo.path()
+    }
+
     fn commit(&self, rev: &str) -> Result<Commit<'_>> {
         Ok(self.repo.find_commit(oid(rev)?)?)
     }
