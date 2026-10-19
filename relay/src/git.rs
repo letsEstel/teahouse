@@ -399,6 +399,22 @@ pub fn commit_files(
     message: &str,
     who: &Signature<'_>,
 ) -> Result<String> {
+    commit_files_as(git, scratch, base, files, message, who, who, None)
+}
+
+/// Like [`commit_files`], with distinct author and committer, and signed
+/// (git's ssh signature) with `signing_key` when given.
+#[allow(clippy::too_many_arguments)]
+pub fn commit_files_as(
+    git: &Git,
+    scratch: &Path,
+    base: Option<&str>,
+    files: &[(&str, &[u8])],
+    message: &str,
+    author: &Signature<'_>,
+    committer: &Signature<'_>,
+    signing_key: Option<&Path>,
+) -> Result<String> {
     let index = scratch.join(format!("teahouse-index-{}", std::process::id()));
     let _ = std::fs::remove_file(&index);
     let idx = index.to_string_lossy().to_string();
@@ -414,17 +430,25 @@ pub fn commit_files(
             g.run(&["update-index", "--add", "--cacheinfo", &info])?;
         }
         let tree = g.run_str(&["write-tree"])?;
-        let mut args = vec!["commit-tree", tree.as_str()];
+        let key_cfg = signing_key.map(|k| format!("user.signingkey={}", k.display()));
+        let mut args: Vec<&str> = Vec::new();
+        if let Some(k) = &key_cfg {
+            args.extend(["-c", "gpg.format=ssh", "-c", k.as_str()]);
+        }
+        args.extend(["commit-tree", tree.as_str()]);
+        if key_cfg.is_some() {
+            args.push("-S");
+        }
         if let Some(b) = base {
             args.push("-p");
             args.push(b);
         }
         let g2 = g
             .clone()
-            .with_env("GIT_AUTHOR_NAME", who.name)
-            .with_env("GIT_AUTHOR_EMAIL", who.email)
-            .with_env("GIT_COMMITTER_NAME", who.name)
-            .with_env("GIT_COMMITTER_EMAIL", who.email);
+            .with_env("GIT_AUTHOR_NAME", author.name)
+            .with_env("GIT_AUTHOR_EMAIL", author.email)
+            .with_env("GIT_COMMITTER_NAME", committer.name)
+            .with_env("GIT_COMMITTER_EMAIL", committer.email);
         let out = g2.run_input(
             &[&args[..], &["-F", "-"]].concat(),
             Some(message.as_bytes()),

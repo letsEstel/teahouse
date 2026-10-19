@@ -50,8 +50,15 @@ fn s(o: &Output) -> String {
     )
 }
 
+/// The private half of person `n`: a real ed25519 key from the seed
+/// `[n; 32]`, so tests are repeatable and members can sign their commits.
+fn private_for(n: u8) -> ssh_key::PrivateKey {
+    let pair = ssh_key::private::Ed25519Keypair::from_seed(&[n; 32]);
+    ssh_key::PrivateKey::from(pair)
+}
+
 fn key_for(n: u8) -> PublicKey {
-    PublicKey::from_point(&[n; 32])
+    PublicKey::parse(&private_for(n).public_key().to_openssh().unwrap()).unwrap()
 }
 
 impl World {
@@ -82,7 +89,8 @@ impl World {
         String::from_utf8_lossy(&o.stdout).into_owned()
     }
 
-    /// Creates `<name>.pub` and returns the key.
+    /// Creates `<name>` (private, for signing) and `<name>.pub`; returns
+    /// the public key.
     fn person(&self, name: &str, n: u8) -> PublicKey {
         let k = key_for(n);
         fs::write(
@@ -90,7 +98,26 @@ impl World {
             format!("{} {name}@test\n", k.openssh()),
         )
         .unwrap();
+        let private = self.keys.join(name);
+        let pem = private_for(n).to_openssh(ssh_key::LineEnding::LF).unwrap();
+        fs::write(&private, pem.as_bytes()).unwrap();
+        fs::set_permissions(
+            &private,
+            std::os::unix::fs::PermissionsExt::from_mode(0o600),
+        )
+        .unwrap();
         k
+    }
+
+    /// Makes `who` the author of commits in `dir`, signing with their key
+    /// as the relay requires.
+    fn sign_as(&self, dir: &Path, who: &str) {
+        self.git_ok(dir, &["config", "user.name", who]);
+        self.git_ok(dir, &["config", "user.email", &format!("{who}@teahouse")]);
+        self.git_ok(dir, &["config", "gpg.format", "ssh"]);
+        let key = self.keys.join(who);
+        self.git_ok(dir, &["config", "user.signingkey", key.to_str().unwrap()]);
+        self.git_ok(dir, &["config", "commit.gpgsign", "true"]);
     }
 
     fn key_file(&self, name: &str) -> String {
@@ -144,8 +171,7 @@ impl World {
             "{who} could not clone {house}:\n{}",
             s(&o)
         );
-        self.git_ok(&dir, &["config", "user.name", who]);
-        self.git_ok(&dir, &["config", "user.email", &format!("{who}@test")]);
+        self.sign_as(&dir, who);
         dir
     }
 
@@ -851,9 +877,14 @@ fn authorized_keys_are_locked_down() {
     }
     let one = w.relay_ok(&["authorized-keys", "--key", key_for(3).blob_b64()]);
     assert_eq!(one.lines().count(), 1);
-    assert!(w
-        .relay_ok(&["authorized-keys", "--key", key_for(99).blob_b64()])
-        .is_empty());
+    // A key with no seat anywhere may only redeem an invitation (INVITE.md
+    // rule 6); the full list (authorized_keys files) never includes it.
+    let stranger = w.relay_ok(&["authorized-keys", "--key", key_for(99).blob_b64()]);
+    let lines: Vec<&str> = stranger.lines().collect();
+    assert_eq!(lines.len(), 1, "{stranger}");
+    assert!(lines[0].starts_with("restrict,command=\""), "{stranger}");
+    assert!(lines[0].contains(" redeem-shell "), "{stranger}");
+    assert!(!out.contains(key_for(99).blob_b64()));
 
     let ak = w.tmp.0.join("authorized_keys");
     fs::write(&ak, "ssh-ed25519 AAAA admin-key-kept\n").unwrap();
@@ -1381,4 +1412,540 @@ fn file_names_with_newlines_cannot_dodge_the_text_check() {
     fs::write(p, b"\x89PNG\r\n\x1a\n\0\0").unwrap();
     w.commit(&zhou, "x\n\nProblem: board");
     w.push_denied(&zhou, &["main"], "is not UTF-8 text");
+}
+
+#[test]
+fn every_commit_is_signed_by_the_member_it_names() {
+    let w = World::new();
+    let host = w.wutong();
+    w.person("stranger", 77);
+
+    // Unsigned.
+    w.git_ok(&host, &["config", "commit.gpgsign", "false"]);
+    w.write(&host, "works/0001/a.md", "a\n");
+    w.commit(&host, "unsigned\n\nProblem: 0001");
+    w.push_denied(&host, &["main"], "is not signed");
+    w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
+
+    // Signed with one's own key while naming someone else as the author.
+    w.sign_as(&host, "chenli");
+    w.git_ok(&host, &["config", "user.email", "zhou@teahouse"]);
+    w.write(&host, "works/0001/b.md", "b\n");
+    w.commit(&host, "posing as zhou\n\nProblem: 0001");
+    w.push_denied(
+        &host,
+        &["main"],
+        "names zhou@teahouse as its author but is signed by chenli@teahouse",
+    );
+    w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
+
+    // Signed with a key that never had a seat, even if pushed by a member.
+    w.sign_as(&host, "chenli");
+    let key = w.keys.join("stranger");
+    w.git_ok(&host, &["config", "user.signingkey", key.to_str().unwrap()]);
+    w.write(&host, "works/0001/c.md", "c\n");
+    w.commit(&host, "stranger's key\n\nProblem: 0001");
+    w.push_denied(&host, &["main"], "never had a seat here");
+    w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
+
+    // Proposals too.
+    let wang = w.clone("wang", "wutong");
+    w.git_ok(&wang, &["config", "commit.gpgsign", "false"]);
+    w.write(&wang, "works/0001/d.md", "d\n");
+    w.commit(&wang, "unsigned proposal\n\nProblem: 0001");
+    w.push_denied(&wang, &["HEAD:refs/proposals/wang/d"], "is not signed");
+
+    // The real thing goes through, and a guest's signed proposal adopted by
+    // the host keeps its author's signature valid.
+    w.sign_as(&wang, "wang");
+    w.git_ok(&wang, &["commit", "--quiet", "--amend", "--no-edit", "-S"]);
+    w.push_ok(&wang, &["HEAD:refs/proposals/wang/d"]);
+    w.sign_as(&host, "chenli");
+    w.git_ok(
+        &host,
+        &["fetch", "--quiet", "origin", "refs/proposals/wang/d"],
+    );
+    w.git_ok(
+        &host,
+        &[
+            "merge",
+            "--quiet",
+            "--no-ff",
+            "FETCH_HEAD",
+            "-m",
+            "采纳\n\nProblem: 0001",
+        ],
+    );
+    w.push_ok(&host, &["main", ":refs/proposals/wang/d"]);
+    assert!(w.audit().contains("push.denied"));
+}
+
+#[test]
+fn each_problem_number_names_one_problem() {
+    let w = World::new();
+    let host = w.wutong();
+    w.write(&host, "problems/0001-另一个.md", "# 撞号\n");
+    w.commit(&host, "撞号\n\nProblem: 0001");
+    w.push_denied(&host, &["main"], "problem 0001 would have 2 files");
+    // On a proposal it is allowed: the host renumbers when adopting.
+    let wang = w.clone("wang", "wutong");
+    w.write(&wang, "problems/0001-另一个.md", "# 撞号\n");
+    w.commit(&wang, "新问题\n\nProblem: 0001");
+    w.push_ok(&wang, &["HEAD:refs/proposals/wang/p"]);
+}
+
+#[test]
+fn attachments_stay_out_of_git() {
+    let w = World::new();
+    let host = w.wutong();
+    let data = b"\x89PNG not really";
+    let hash = teahouse_core::sha256::hex(data);
+    let reference = |size: usize| {
+        format!("---\ntitle: 照片\nblob: \"sha256:{hash}\"\nsize: {size}\ntype: image/png\n---\n")
+    };
+
+    // A reference to an attachment the relay does not have.
+    w.write(&host, "works/0001/照片.png.ref.md", &reference(data.len()));
+    w.commit(&host, "照片\n\nProblem: 0001");
+    w.push_denied(&host, &["main"], "is not in the attachment store");
+
+    // Once uploaded it is accepted; the size must match.
+    let store = w.root.join("blobs/wutong");
+    fs::create_dir_all(&store).unwrap();
+    fs::write(store.join(&hash), data).unwrap();
+    w.write(&host, "works/0001/照片.png.ref.md", &reference(3));
+    w.commit(&host, "照片\n\nProblem: 0001");
+    w.push_denied(&host, &["main"], "says 3 bytes");
+    w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
+    w.write(&host, "works/0001/照片.png.ref.md", &reference(data.len()));
+    w.commit(&host, "照片\n\nProblem: 0001");
+    w.push_ok(&host, &["main"]);
+
+    // Malformed references, and binaries over 1 MiB, are refused.
+    w.write(
+        &host,
+        "works/0001/坏.png.ref.md",
+        "---\nblob: sha256:xyz\n---\n",
+    );
+    w.commit(&host, "坏\n\nProblem: 0001");
+    w.push_denied(
+        &host,
+        &["main"],
+        "must be sha256: and 64 lowercase hex digits",
+    );
+    w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
+    let mut big = vec![b'x'; 1024 * 1024 + 10];
+    fs::write(host.join("works/0001/big.txt"), &big).unwrap();
+    w.commit(&host, "大文本可以\n\nProblem: 0001");
+    w.push_ok(&host, &["main"]);
+    big[5] = 0;
+    fs::write(host.join("works/0001/big.bin"), &big).unwrap();
+    w.commit(&host, "大二进制不行\n\nProblem: 0001");
+    w.push_denied(&host, &["main"], "is a binary file of 1048586 bytes");
+    w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
+
+    // A purged reference needs no stored attachment.
+    fs::remove_file(store.join(&hash)).unwrap();
+    let purged = reference(data.len()).replace(
+        "type: image/png",
+        "type: image/png\npurged: 2026-10-19T00:00:00Z chenli",
+    );
+    w.write(&host, "works/0001/照片.png.ref.md", &purged);
+    w.commit(&host, "删除附件\n\nProblem: 0001");
+    w.push_ok(&host, &["main"]);
+}
+
+impl World {
+    /// Runs a teahouse command through the forced command sshd would use
+    /// for `key` (`shell`, or `redeem-shell` for a key with no seat).
+    fn command(&self, key: &PublicKey, entry: &str, cmd: &str, stdin: &[u8]) -> Output {
+        use std::io::Write;
+        let mut child = Command::new(BIN)
+            .arg("--root")
+            .arg(&self.root)
+            .arg(entry)
+            .arg(key.blob_b64())
+            .env("SSH_ORIGINAL_COMMAND", cmd)
+            .env_remove("TEAHOUSE_ROOT")
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .unwrap();
+        // The relay may refuse before reading its input.
+        let _ = child.stdin.take().unwrap().write_all(stdin);
+        child.wait_with_output().unwrap()
+    }
+
+    fn command_ok(&self, key: &PublicKey, cmd: &str) -> String {
+        let o = self.command(key, "shell", cmd, b"");
+        assert!(o.status.success(), "{cmd}: {}", s(&o));
+        String::from_utf8_lossy(&o.stdout).trim().to_string()
+    }
+
+    fn command_err(&self, key: &PublicKey, entry: &str, cmd: &str, needle: &str) {
+        let o = self.command(key, entry, cmd, b"");
+        let err = String::from_utf8_lossy(&o.stderr);
+        assert!(!o.status.success(), "{cmd} should fail: {}", s(&o));
+        assert!(err.contains(needle), "{cmd}: expected {needle:?} in {err}");
+    }
+
+    fn invite(&self, args: &str) -> String {
+        self.command_ok(&key_for(1), &format!("invite wutong {args}"))
+    }
+
+    fn redeem(&self, key: &PublicKey, code: &str, name: &str) -> Output {
+        self.command(
+            key,
+            "redeem-shell",
+            &format!("redeem {code} --name '{name}'"),
+            b"",
+        )
+    }
+
+    fn chart(&self) -> Members {
+        let host = self.clone("chenli", "wutong");
+        Members::parse(&fs::read_to_string(host.join(".teahouse/members.toml")).unwrap()).unwrap()
+    }
+}
+
+use teahouse_core::{Members, Role};
+
+#[test]
+fn an_invitation_seats_a_stranger_once() {
+    let w = World::new();
+    let _ = w.wutong();
+    let code = w.invite("--name '王阿姨'");
+    assert!(code.starts_with("TH-") && code.len() == 22, "{code}");
+    // The code is not stored anywhere, only its hash.
+    let stored = fs::read_dir(w.root.join("invites/wutong"))
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    assert!(!fs::read_to_string(&stored).unwrap().contains(&code[3..]));
+
+    // A key that has no seat anywhere: only `redeem`.
+    let k = key_for(50);
+    w.command_err(
+        &k,
+        "redeem-shell",
+        "git-upload-pack 'wutong'",
+        "can only redeem",
+    );
+    w.command_err(&k, "redeem-shell", "blob-get wutong 00", "can only redeem");
+
+    // Pasting the whole invitation works; case and the relay address do not matter.
+    let o = w.redeem(
+        &k,
+        &format!("{}@relay.example.org", code.to_lowercase()),
+        "王阿姨",
+    );
+    assert!(o.status.success(), "{}", s(&o));
+    assert_eq!(
+        String::from_utf8_lossy(&o.stdout),
+        "house wutong\nmember m1\n"
+    );
+    let m = w.chart();
+    let seat = m.by_id("m1").unwrap();
+    assert_eq!((seat.name.as_str(), seat.role), ("王阿姨", Role::Guest));
+    assert_eq!(seat.key, k);
+
+    // The seat commit: authored by the host, written and signed by the relay.
+    let git = |args: &[&str]| -> String {
+        let o = Command::new("git")
+            .arg("--git-dir")
+            .arg(w.root.join("houses/wutong.git"))
+            .args(args)
+            .output()
+            .unwrap();
+        String::from_utf8_lossy(&o.stdout).trim().to_string()
+    };
+    assert_eq!(
+        git(&["log", "-1", "--format=%an <%ae> / %cn <%ce>"]),
+        "CHENLI <chenli@teahouse> / Teahouse Relay <relay@teahouse>"
+    );
+    let msg = git(&["log", "-1", "--format=%B"]);
+    assert!(
+        msg.contains("Act: seat")
+            && msg.contains("Problem: meta")
+            && msg.contains(&format!("Invite: {}", &code[3..7])),
+        "{msg}"
+    );
+    let signers = w.tmp.0.join("relay-signer");
+    let relay_pub = fs::read_to_string(w.root.join("relay_signing_key.pub")).unwrap();
+    fs::write(&signers, format!("relay@teahouse {relay_pub}")).unwrap();
+    let sig = git(&[
+        "-c",
+        "gpg.format=ssh",
+        "-c",
+        &format!("gpg.ssh.allowedSignersFile={}", signers.display()),
+        "log",
+        "-1",
+        "--format=%G? %GS",
+    ]);
+    assert_eq!(sig, "G relay@teahouse");
+
+    // The new member can now read and write like anyone seated.
+    w.person("m1", 50);
+    let c = w.clone("m1", "wutong");
+    w.write(&c, "talk/0001/20261018T120000Z-m1.md", "我是王阿姨。\n");
+    w.commit(&c, "留言\n\nProblem: 0001");
+    w.push_ok(&c, &["main"]);
+
+    // Used up: the same code again fails, and so does the same key twice.
+    let o = w.redeem(&key_for(51), &code, "第二个人");
+    assert!(
+        !o.status.success() && s(&o).contains("not valid"),
+        "{}",
+        s(&o)
+    );
+    let again = w.invite("");
+    let o = w.command(&k, "shell", &format!("redeem {again} --name '王阿姨'"), b"");
+    assert!(s(&o).contains("already has a seat"), "{}", s(&o));
+}
+
+#[test]
+fn invitations_expire_are_revoked_and_respect_the_chart() {
+    let w = World::new();
+    let _ = w.wutong(); // chenli host, zhou steward, wang + li guests: 4 seats
+    let host = key_for(1);
+
+    // Only the host invites, and only for this teahouse.
+    w.command_err(&key_for(2), "shell", "invite wutong", "only the host");
+    w.command_err(&key_for(1), "shell", "invite elsewhere", "no seat in it");
+    w.command_err(&host, "shell", "invite wutong --days 31", "1 to 30 days");
+    w.command_err(&host, "shell", "invite wutong --role host", "not a host");
+
+    // Expired.
+    let old = w.invite("");
+    for e in fs::read_dir(w.root.join("invites/wutong")).unwrap() {
+        let p = e.unwrap().path();
+        let t = fs::read_to_string(&p).unwrap();
+        let t: String = t
+            .lines()
+            .map(|l| {
+                if l.starts_with("expires") {
+                    "expires = 1".to_string()
+                } else {
+                    l.to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        fs::write(&p, t + "\n").unwrap();
+    }
+    let o = w.redeem(&key_for(60), &old, "过期");
+    assert!(s(&o).contains("expired"), "{}", s(&o));
+
+    // Revoked.
+    let code = w.invite("");
+    w.command_ok(&host, &format!("uninvite wutong {}", &code[3..7]));
+    let o = w.redeem(&key_for(61), &code, "撤销");
+    assert!(s(&o).contains("not valid"), "{}", s(&o));
+
+    // A steward invitation when there is a steward already.
+    let code = w.invite("--role steward");
+    let o = w.redeem(&key_for(62), &code, "伙计二号");
+    assert!(s(&o).contains("already has a steward"), "{}", s(&o));
+
+    // Full house: 15 seats.
+    for i in 0..11u8 {
+        let code = w.invite("");
+        let o = w.redeem(&key_for(100 + i), &code, &format!("Guest {i}"));
+        assert!(o.status.success(), "{i}: {}", s(&o));
+    }
+    assert_eq!(w.chart().members.len(), 15);
+    let code = w.invite("");
+    let o = w.redeem(&key_for(120), &code, "第十六位");
+    assert!(s(&o).contains("full"), "{}", s(&o));
+    // Ids from ASCII names, numbered when taken.
+    assert!(w.chart().by_id("guest-0").is_some());
+
+    let audit = w.audit();
+    for ev in [
+        "invite.created",
+        "invite.redeemed",
+        "invite.failed",
+        "invite.revoked",
+        "seats.changed",
+    ] {
+        assert!(
+            audit.contains(&format!("\"event\":\"{ev}\"")),
+            "{ev} missing"
+        );
+    }
+}
+
+#[test]
+fn redeeming_is_rate_limited() {
+    let w = World::new();
+    let _ = w.wutong();
+    let k = key_for(70);
+    for _ in 0..5 {
+        let o = w.redeem(&k, "TH-0000-0000-0000-0000", "x");
+        assert!(s(&o).contains("not valid"), "{}", s(&o));
+    }
+    // Even a good code is refused now, for this key; another key is fine.
+    let code = w.invite("");
+    let o = w.redeem(&k, &code, "x");
+    assert!(s(&o).contains("too many failed attempts"), "{}", s(&o));
+    let o = w.redeem(&key_for(71), &code, "y");
+    assert!(o.status.success(), "{}", s(&o));
+}
+
+#[test]
+fn redeeming_while_others_push_keeps_main_whole() {
+    let w = World::new();
+    let host = w.wutong();
+    let codes: Vec<String> = (0..4).map(|_| w.invite("")).collect();
+    let zhou = w.clone("zhou", "wutong");
+    std::thread::scope(|scope| {
+        for (i, code) in codes.iter().enumerate() {
+            let w = &w;
+            scope.spawn(move || {
+                let o = w.redeem(&key_for(80 + i as u8), code, &format!("p{i}"));
+                assert!(o.status.success(), "{}", s(&o));
+            });
+        }
+        scope.spawn(|| {
+            for n in 0..3 {
+                w.git_ok(&zhou, &["pull", "--quiet", "--rebase"]);
+                w.write(&zhou, &format!("works/0001/n{n}.md"), "x\n");
+                w.commit(&zhou, "成果\n\nProblem: 0001");
+                // A push may lose the race with a seat commit (git's own
+                // ref lock refuses it): pull and retry.
+                let mut tries = 0;
+                while !w.push(&zhou, &["main"]).status.success() {
+                    tries += 1;
+                    assert!(tries < 20, "push never got through");
+                    w.git_ok(&zhou, &["pull", "--quiet", "--rebase"]);
+                }
+            }
+        });
+    });
+    let m = w.chart();
+    assert_eq!(m.members.len(), 8);
+    let _ = host;
+    let fsck = Command::new("git")
+        .arg("--git-dir")
+        .arg(w.root.join("houses/wutong.git"))
+        .args(["fsck", "--no-dangling"])
+        .output()
+        .unwrap();
+    assert!(fsck.status.success());
+}
+
+#[test]
+fn the_attachment_store() {
+    let w = World::new();
+    let _ = w.wutong();
+    let (host, guest, outsider) = (key_for(1), key_for(3), key_for(99));
+    let data = b"\x89PNG \x00 binary".to_vec();
+    let hash = teahouse_core::sha256::hex(&data);
+
+    assert_eq!(
+        w.command_ok(&guest, &format!("blob-has wutong {hash}")),
+        "no"
+    );
+    // Wrong content for the name: refused, nothing stored.
+    let o = w.command(
+        &guest,
+        "shell",
+        &format!("blob-put wutong {hash} {}", data.len()),
+        b"something else!!",
+    );
+    assert!(s(&o).contains("hashes to"), "{}", s(&o));
+    let o = w.command(
+        &guest,
+        "shell",
+        &format!("blob-put wutong {hash} {}", data.len()),
+        &data[..4],
+    );
+    assert!(s(&o).contains("upload ended"), "{}", s(&o));
+    assert_eq!(
+        w.command_ok(&guest, &format!("blob-has wutong {hash}")),
+        "no"
+    );
+    // Any seated member uploads and downloads.
+    let o = w.command(
+        &guest,
+        "shell",
+        &format!("blob-put wutong {hash} {}", data.len()),
+        &data,
+    );
+    assert!(o.status.success(), "{}", s(&o));
+    assert_eq!(
+        w.command_ok(&host, &format!("blob-has wutong {hash}")),
+        "yes"
+    );
+    let o = w.command(&host, "shell", &format!("blob-get wutong {hash}"), b"");
+    assert_eq!(o.stdout, data);
+    // Nobody else, and only the host purges.
+    w.command_err(
+        &outsider,
+        "shell",
+        &format!("blob-get wutong {hash}"),
+        "no seat in it",
+    );
+    w.command_err(
+        &guest,
+        "shell",
+        &format!("blob-purge wutong {hash}"),
+        "only the host",
+    );
+    w.command_ok(&host, &format!("blob-purge wutong {hash}"));
+    assert_eq!(
+        w.command_ok(&host, &format!("blob-has wutong {hash}")),
+        "no"
+    );
+    // Over the limit, and a bad name.
+    w.command_err(
+        &guest,
+        "shell",
+        &format!("blob-put wutong {hash} 104857601"),
+        "100 MiB",
+    );
+    w.command_err(
+        &guest,
+        "shell",
+        "blob-has wutong ../../etc/passwd",
+        "not a sha256",
+    );
+    // The quota.
+    let conf = w.root.join("relay.conf");
+    let mut c = fs::read_to_string(&conf).unwrap();
+    c.push_str("blob_quota_mib = 1\n");
+    fs::write(&conf, c).unwrap();
+    let big = vec![7u8; 1024 * 1024 + 1];
+    let big_hash = teahouse_core::sha256::hex(&big);
+    let o = w.command(
+        &guest,
+        "shell",
+        &format!("blob-put wutong {big_hash} {}", big.len()),
+        &big,
+    );
+    assert!(s(&o).contains("exceed 1 MiB"), "{}", s(&o));
+    let audit = w.audit();
+    assert!(
+        audit.contains("\"event\":\"blob.put\"") && audit.contains("\"event\":\"blob.purged\"")
+    );
+}
+
+#[test]
+fn commands_are_parsed_without_a_shell() {
+    let w = World::new();
+    let _ = w.wutong();
+    for bad in [
+        "invite wutong; rm -rf /",
+        "invite wutong $(id)",
+        "blob-has wutong `id`",
+        "invite 'wutong",
+    ] {
+        let o = w.command(&key_for(1), "shell", bad, b"");
+        assert!(!o.status.success(), "{bad}");
+    }
+    let o = w.command(&key_for(1), "shell", "bash", b"");
+    assert!(s(&o).contains("only git"), "{}", s(&o));
 }

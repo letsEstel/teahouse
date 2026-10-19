@@ -57,6 +57,10 @@ restart, nothing listening on a new port.
   houses/<id>.git       one bare repository per teahouse
   hooks/                pre-receive, post-receive (shared via core.hooksPath)
   log/audit.log         append-only JSON lines
+  blobs/<id>/<sha256>   attachments of each teahouse (CLIENT-API.md §1.6)
+  invites/<id>/         pending invitations, by the SHA-256 of the code only
+  relay_signing_key     the relay's own ed25519 key (made by `init`), for the
+                        seat commits it writes when an invitation is redeemed
   tmp/                  scratch (staging new houses, private index files)
 ```
 
@@ -135,6 +139,59 @@ one. A post that arrives through a merged proposal enters when the merge
 lands, not when the proposal was written. Within one step, order by file
 name. Clients name new posts with `teahouse_core::rules::format_stamp(now)`.
 
+### Signatures, numbers and attachments (step 3; table wording pending)
+
+These checks are enforced since step 3 of CLIENT-API.md §7. Their wording for
+the table above is proposed to the reviewer and the user (CLIENT-API.md §8.2);
+until it is settled, this section describes them.
+
+* **Every pushed commit is signed by the member it names.** The author must
+  be `<member-id>@teahouse`, and the commit must carry git's ssh signature
+  (`gpg.format=ssh`) made with a key that has sat on this teahouse's chart.
+  git checks it (`%G?`/`%GS` with an allowed-signers file built from every
+  version of `members.toml` on `main`, verified by ssh-keygen). Who may
+  *push* is still decided by the current chart. Commits the relay writes
+  itself (opening, succession, redeemed invitations) are not pushed; the
+  seat commits of invitations are signed with `relay_signing_key` and
+  committed by `Teahouse Relay <relay@teahouse>`.
+* **One problem file per number on `main`.** Two `problems/0007-*.md` on
+  `main` are refused; on a proposal they are allowed, and the host's client
+  renumbers when adopting (`Renumbered:`).
+* **Attachments stay out of git.** A `*.ref.md` must name `blob:
+  sha256:<64 hex>`, `size` (≤ 100 MiB) and `type`, and, unless `purged`, the
+  attachment must already be in `blobs/<id>/` with that size. Any other file
+  over 1 MiB that is binary (a NUL in its first 8000 bytes) is refused.
+
+## 3a. 附件与邀请 · Attachments and invitations
+
+Besides git, the forced command serves a fixed list of commands. Arguments
+are words; single quotes quote (`--name '王阿姨'`); nothing is expanded.
+
+| Command | Who | What |
+|---|---|---|
+| `blob-has <id> <sha256>` | seated | prints `yes` / `no` |
+| `blob-put <id> <sha256> <size>` | seated | reads exactly `size` bytes, checks the hash, stores it (100 MiB each, `blob_quota_mib` per teahouse, default 2048) |
+| `blob-get <id> <sha256>` | seated | writes the attachment |
+| `blob-purge <id> <sha256>` | host | deletes it for good |
+| `invite <id> [--role guest\|steward] [--name N] [--days 1–30]` | host | prints a one-time code `TH-XXXX-XXXX-XXXX-XXXX` (80 bits, default 7 days) |
+| `uninvite <id> <first four>` | host | revokes it |
+| `redeem <code> --name N` | anyone, incl. a key with no seat | seats the key; prints `house <id>` and `member <id>` |
+
+**A key with no seat anywhere** gets, from `AuthorizedKeysCommand`, a line
+forcing `teahouse-relay redeem-shell <key>`: the same entry, which accepts
+`redeem` and nothing else (INVITE.md rule 6). With the authorized_keys-file
+way, unknown keys cannot connect at all, so invitations need
+`AuthorizedKeysCommand`.
+
+Redeeming is all or nothing: the invitation must be valid, unused and
+unexpired; the teahouse must have a free seat (15) and, for a steward
+invitation, no steward; the key must not sit there yet. The member id comes
+from the name's ASCII letters (`Wang Li` → `wang-li`) or is `m1`, `m2`, …
+The seat commit is checked by the same code as a push (with the host as the
+pusher) and lands with a compare-and-swap on `main`; a push racing it is
+refused by git's ref lock and simply retried by the client. At most 5
+failures per key per hour and 30 attempts per minute in all.
+
 ## 4. 继承 · Succession
 
 Every member holds the full history, so a relay can be shut down but a
@@ -175,12 +232,19 @@ sudo -u teahouse teahouse-relay --root /var/lib/teahouse open wutong \
   --host-id chenli --host-name "陈立" --host-key "ssh-ed25519 AAAA… chenli@laptop"
 ```
 
-Members then use plain git:
+Members normally use the teahouse client. Plain git works too, with every
+commit signed by the member's own key:
 
 ```sh
-git clone teahouse@relay.example.org:wutong
+git clone teahouse@relay.example.org:wutong && cd wutong
+git config user.email <member-id>@teahouse
+git config gpg.format ssh && git config user.signingkey ~/.ssh/id_ed25519
+git config commit.gpgsign true
 ssh -T teahouse@relay.example.org       # prints the teahouses you sit in
 ```
+
+The relay checks signatures with `ssh-keygen`, which must be installed (it
+comes with the OpenSSH client).
 
 Tell members to use `ssh -T`. The relay never hands out a terminal, so a
 plain `ssh` from an interactive shell first prints `PTY allocation request
@@ -231,13 +295,19 @@ binary under someone's home directory does not.
 | `house.opened` | `open` | `house`, `member` (host), `commit` |
 | `house.adopted` | `adopt` (succession) | `house`, `member` (new host), `from`, `previous_host`, `commit` |
 | `relay.init` | `init` | `binary` |
+| `invite.created` | The host created an invitation | `house`, `member`, `invite` (first four), `role`, `days` |
+| `invite.redeemed` | An invitation seated a key | `house`, `member` (new), `key`, `invite` |
+| `invite.failed` | A redemption failed (bad code, expired, full, rate limited…) | `key`, `reason` |
+| `invite.revoked` | The host revoked an invitation | `house`, `member`, `invite` |
+| `blob.put` | An attachment was uploaded | `house`, `member`, `blob`, `size` |
+| `blob.purged` | The host removed an attachment | `house`, `member`, `blob`, `existed` |
 
 **What is *not* in the audit log.** sshd turns some requests away before
 the relay ever runs. Those appear only in sshd's log:
 
 | Attempt | sshd log line |
 |---------|---------------|
-| A key with no seat on any teahouse | `Failed publickey for teahouse from … ssh2: ED25519 SHA256:…` |
+| A key with no seat on any teahouse (authorized_keys file only; with `AuthorizedKeysCommand` it reaches `redeem-shell`, and anything but `redeem` is logged as `shell.refused`) | `Failed publickey for teahouse from … ssh2: ED25519 SHA256:…` |
 | `-L` / `-W` port forwarding | `refused local port forward: originator …, target …` |
 | `-R` remote forwarding | nothing at `LogLevel VERBOSE`. The client sees `remote port forwarding failed`. |
 
@@ -259,6 +329,13 @@ git clone ssh://chenli@local/wutong
 It reads the key for `chenli` from `$TEAHOUSE_LOCAL_KEYS/chenli.pub` and runs
 the exact forced command OpenSSH would. It proves nothing about identity:
 **never expose it on a real relay**. `scripts/demo.sh` uses it for a guided tour.
+Commits must still be signed (§5): the demo configures each clone.
+
+**The whole stack** (relay, the six example teahouses as real signed
+history, the client engine and the interface): `scripts/dev-stack.sh`
+(`TEAHOUSE_DEV_ME=<member>` chooses who you are, `--fresh` rebuilds,
+`NO_UI=1` skips the interface). The engine reaches the relay through its
+forced command directly (`teahouse-local://`), with no sshd.
 
 **A real sshd on a development machine:** use the authorized_keys way
 (`init --authorized-keys <file>` + `sync-keys`, `AuthorizedKeysFile <file>`).
@@ -300,6 +377,11 @@ with the authorized_keys file, and checks with real `ssh` and `git`:
   replies to a missing notice and posts over 32 KiB are refused);
 * direct login, `bash`, path tricks, and `-L` / `-W` / `-R` forwarding;
 * the audit events;
+* the client engine through the same sshd (E1–E6): joining with the device
+  key from memory (libssh2), signed pushes, no seat → `not_a_member`,
+  invitations (a brand-new device redeems through `redeem-shell` with
+  `AuthorizedKeysCommand`; with the file way it cannot), attachments up and
+  down over ssh, and a changed host key refused;
 * that the `restrict` on each key line holds even under an sshd_config with
   no hardening at all.
 
@@ -309,20 +391,22 @@ If no sshd is installed, it unpacks Ubuntu's `openssh-server` into
 ## 9. 已知局限 · Known limits (v0.1)
 
 * **Verified behind OpenSSH 9.6p1** (Ubuntu 24.04) with both wirings, by
-  `scripts/sshd-test.sh`. That script is not run by `cargo test`.
-  `.github/workflows/ci.yml` runs it (after fmt, clippy and `cargo test`) on
-  Ubuntu 24.04, but the workflow has not run yet because the repository is
-  not on GitHub yet. Until then, run the script by hand after changing
-  `deploy/sshd/` or the shell. Other
-  OpenSSH versions are untested; 9.8+ splits sshd into `sshd-session`, which
-  should not matter to the relay but has not been tried.
+  `scripts/sshd-test.sh`, which CI runs on every push after fmt, clippy and
+  `cargo test`. Other OpenSSH versions are untested; 9.8+ splits sshd into
+  `sshd-session`, which should not matter to the relay but has not been tried.
 * As a non-root user, `AuthorizedKeysCommand` can only be tested through a
   root-owned launcher (`/usr/bin/env`). The script first checks that sshd
   refuses the binary when it is not root-owned. With a root-owned install
   (§5), the shipped line works as is.
-* Commit authorship (`git commit --author`) is not verified; the audit log
-  records which **key** pushed each commit. Signed commits are a v0.2 topic.
+* Signatures are checked for pushed commits only; history that came with
+  `open`/`adopt` is taken as it is. Clients do not yet verify the relay's own
+  signature on seat commits.
 * `members.toml` uses a strict TOML subset (bare keys, basic strings,
   integers, booleans, tables). Anything else is rejected, not guessed.
-* No rate limiting beyond sshd's own (`MaxStartups`, `MaxSessions`).
+* Rate limits exist for invitations only (5 failures per key per hour, 30
+  attempts per minute); everything else relies on sshd (`MaxStartups`,
+  `MaxSessions`). With `AuthorizedKeysCommand`, any key on the internet can
+  open a `redeem-shell` session: keep `MaxStartups` at its default or lower.
+* Device pairing (INVITE.md rule 8, several keys per member) is not done; it
+  changes the chart's format and is planned with step 4.
 * Succession is manual (`adopt`); clients do not yet follow the heir by themselves.

@@ -5,9 +5,11 @@
 //! enforces. The same crate will back the desktop client, so the client can
 //! warn before a push the relay would reject.
 
+pub mod frontmatter;
 pub mod key;
 pub mod members;
 pub mod rules;
+pub mod sha256;
 pub mod toml;
 
 pub use key::PublicKey;

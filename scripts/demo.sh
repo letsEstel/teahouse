@@ -32,21 +32,10 @@ expect_refused() {
   grep -E '✗ ' <<<"$out" | sed 's/^remote: *//; s/ *$//; s/^/    /' || true
 }
 
-# Demo keys: real ed25519 keys if ssh-keygen exists, otherwise structurally
-# valid stand-ins (local-ssh never checks a signature — sshd would).
-mkkey() {
-  if command -v ssh-keygen >/dev/null; then
-    ssh-keygen -q -t ed25519 -N '' -C "$1@demo" -f "$keys/$1"
-  else
-    python3 - "$1" "$keys/$1.pub" <<'PY'
-import base64, hashlib, struct, sys
-name, out = sys.argv[1], sys.argv[2]
-alg = b"ssh-ed25519"; pt = hashlib.sha256(name.encode()).digest()
-blob = struct.pack(">I", len(alg)) + alg + struct.pack(">I", 32) + pt
-open(out, "w").write(f"ssh-ed25519 {base64.b64encode(blob).decode()} {name}@demo\n")
-PY
-  fi
-}
+# Demo keys: real ed25519 keys. Members sign their commits with them, and
+# the relay checks those signatures with ssh-keygen too.
+command -v ssh-keygen >/dev/null || { echo "demo: needs ssh-keygen (openssh-client)" >&2; exit 2; }
+mkkey() { ssh-keygen -q -t ed25519 -N '' -C "$1@demo" -f "$keys/$1"; }
 for p in chenli zhou wang; do mkkey "$p"; done
 key() { cut -d' ' -f1,2 "$keys/$1.pub"; }
 
@@ -55,7 +44,13 @@ step "1. 开一个 relay，开一间茶馆（老板：陈立）"
 "$bin" --root "$root" open wutong --name "梧桐里三号院" --signboard "车位、垃圾、楼道灯，咱们自己管。" \
   --host-id chenli --host-name "陈立" --host-key "@$keys/chenli.pub"
 
-clone() { git clone -q "ssh://$1@local/wutong" "$demo/$1"; git -C "$demo/$1" config user.name "$1"; git -C "$demo/$1" config user.email "$1@demo"; }
+clone() {
+  git clone -q "ssh://$1@local/wutong" "$demo/$1"
+  # Every commit is signed with its author's key; the relay checks it.
+  git -C "$demo/$1" config user.name "$1"; git -C "$demo/$1" config user.email "$1@teahouse"
+  git -C "$demo/$1" config gpg.format ssh; git -C "$demo/$1" config user.signingkey "$keys/$1"
+  git -C "$demo/$1" config commit.gpgsign true
+}
 commit() { local d="$demo/$1"; shift; git -C "$d" add -A; git -C "$d" commit -q -m "$1"; }
 
 step "2. 老板请周小满做伙计、王阿姨做茶客，并提出问题 0001"

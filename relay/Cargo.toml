@@ -12,3 +12,8 @@ path = "src/main.rs"
 
 [dependencies]
 teahouse-core = { path = "../core" }
+
+[dev-dependencies]
+# Tests only: real ed25519 key pairs from fixed seeds, so test members can
+# sign their commits (the relay itself checks signatures with git).
+ssh-key = { version = "0.6", default-features = false, features = ["std", "ed25519"] }

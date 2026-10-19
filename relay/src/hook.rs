@@ -13,6 +13,7 @@ use crate::error::{Error, Result};
 use crate::git::{is_zero_oid, Git};
 use crate::root::{members_at, Root};
 use std::io::{self, BufRead, Read};
+use std::path::Path;
 use teahouse_core::members::{Member, Members, Role, MEMBERS_PATH};
 use teahouse_core::rules::{
     check_text, classify_ref, decide_ref, is_reserved_lookalike, may_write_on_main,
@@ -60,6 +61,172 @@ pub struct Context<'a> {
     pub pusher: &'a Member,
     /// The relay's clock when the push arrived, in Unix seconds.
     pub now: i64,
+    /// This teahouse's attachment store (`<root>/blobs/<id>/`).
+    pub blobs: &'a Path,
+    /// An allowed-signers file of every key ever seated here; `None` for
+    /// commits the relay writes itself (not pushed, not member-signed).
+    pub signers: Option<&'a Path>,
+}
+
+/// Files larger than this must not be binary in git (§1.6: attachments go
+/// to the attachment store; only a reference goes into history).
+pub const MAX_BINARY_IN_GIT: u64 = 1024 * 1024;
+
+/// An allowed-signers file (`ssh-keygen -Y`) naming every member key that
+/// was ever on this teahouse's seating chart, as `<id>@teahouse`. A commit
+/// is authored by whoever was seated when it was written; the people who
+/// may *push* it are decided separately, by the current chart.
+pub fn write_allowed_signers(git: &Git, rev: &str, path: &Path) -> Result<()> {
+    let revs = git.run_str(&["log", "--format=%H", rev, "--", MEMBERS_PATH])?;
+    let mut lines = std::collections::BTreeSet::new();
+    for c in revs.lines() {
+        let Some(bytes) = git.read_file(c, MEMBERS_PATH)? else {
+            continue;
+        };
+        let Ok(m) = Members::parse(&String::from_utf8_lossy(&bytes)) else {
+            continue;
+        };
+        for x in m.members {
+            lines.insert(format!(
+                "{}@teahouse namespaces=\"git\" {}",
+                x.id,
+                x.key.openssh()
+            ));
+        }
+    }
+    let mut text = String::new();
+    for l in lines {
+        text.push_str(&l);
+        text.push('\n');
+    }
+    std::fs::write(path, text)?;
+    Ok(())
+}
+
+/// Law: every pushed commit is signed with the device key of the member it
+/// names as its author (`<id>@teahouse`). git checks the signatures (with
+/// ssh-keygen), in one run for all commits of the update.
+fn check_signatures(cx: &Context<'_>, commits: &[String], out: &mut Vec<String>) -> Result<()> {
+    let Some(signers) = cx.signers else {
+        return Ok(());
+    };
+    if commits.is_empty() {
+        return Ok(());
+    }
+    let file = format!("gpg.ssh.allowedSignersFile={}", signers.display());
+    let mut input = commits.join("\n");
+    input.push('\n');
+    let out_bytes = cx.git.run_input(
+        &[
+            "-c",
+            "gpg.format=ssh",
+            "-c",
+            &file,
+            "log",
+            "--no-walk=unsorted",
+            "--stdin",
+            "--format=%H%x00%G?%x00%GS%x00%ae",
+        ],
+        Some(input.as_bytes()),
+    )?;
+    for line in String::from_utf8_lossy(&out_bytes).lines() {
+        let f: Vec<&str> = line.split('\0').collect();
+        let [hash, status, signer, author] = f.as_slice() else {
+            continue;
+        };
+        let sc = short(hash);
+        let me = format!("{}@teahouse", cx.pusher.id);
+        match *status {
+            "G" if signer == author => {}
+            "G" => out.push(format!(
+                "commit {sc} names {author} as its author but is signed by {signer} / 作者和签名不是同一个人"
+            )),
+            "N" => out.push(format!(
+                "commit {sc} is not signed; every commit must be signed with its author's device key (git: gpg.format=ssh, commit.gpgsign=true, user.email={me}) / 每个提交都必须用作者的设备钥匙签名"
+            )),
+            "U" | "E" => out.push(format!(
+                "commit {sc} is signed with a key that has never had a seat here / 签名的钥匙不在座位表上"
+            )),
+            other => out.push(format!(
+                "commit {sc}: its signature does not verify ({other}) / 签名无效"
+            )),
+        }
+        if out.len() >= 20 {
+            break;
+        }
+    }
+    Ok(())
+}
+
+/// Law: on `main`, one problem file per number.
+fn check_unique_numbers(cx: &Context<'_>, c: &str, out: &mut Vec<String>) -> Result<()> {
+    let mut seen: std::collections::BTreeMap<String, Vec<String>> = Default::default();
+    for f in cx.git.list_dir(c, "problems")? {
+        let id = f.get(..4).filter(|id| {
+            id.bytes().all(|b| b.is_ascii_digit()) && ProblemRef::matches_problem_file(id, &f)
+        });
+        if let Some(id) = id {
+            seen.entry(id.to_string()).or_default().push(f.clone());
+        }
+    }
+    for (id, files) in seen {
+        if files.len() > 1 {
+            out.push(format!(
+                "commit {}: problem {id} would have {} files ({}); each number names one problem / 同一个编号只能有一个问题",
+                short(c),
+                files.len(),
+                files.join(", ")
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Law: attachments stay out of git. A `*.ref.md` reference must be well
+/// formed and, unless purged, point at a file in this teahouse's attachment
+/// store; any other file over 1 MiB must not be binary.
+fn check_attachment(cx: &Context<'_>, c: &str, p: &str, out: &mut Vec<String>) -> Result<()> {
+    let sc = short(c);
+    let Some(entry) = cx.git.tree_entry(c, p)? else {
+        return Ok(()); // removed
+    };
+    if p.to_ascii_lowercase().ends_with(".ref.md") {
+        if !entry.is_regular_file() || entry.size.unwrap_or(u64::MAX) > MAX_TEXT_BYTES as u64 {
+            out.push(format!(
+                "commit {sc}: {p} must be a small text file (an attachment reference)"
+            ));
+            return Ok(());
+        }
+        let text =
+            String::from_utf8_lossy(&cx.git.read_file(c, p)?.unwrap_or_default()).into_owned();
+        match teahouse_core::frontmatter::check_blob_ref(&text) {
+            Err(why) => out.push(format!("commit {sc}: {p} {why}")),
+            Ok(r) if r.purged => {}
+            Ok(r) => match std::fs::metadata(cx.blobs.join(&r.hash)) {
+                Ok(m) if m.len() == r.size => {}
+                Ok(m) => out.push(format!(
+                    "commit {sc}: {p} says {} bytes, but the stored attachment has {} / 附件大小不符",
+                    r.size,
+                    m.len()
+                )),
+                Err(_) => out.push(format!(
+                    "commit {sc}: {p} refers to sha256:{} which is not in the attachment store; upload it first / 附件还没有上传",
+                    r.hash
+                )),
+            },
+        }
+        return Ok(());
+    }
+    if entry.kind == "blob" && entry.size.unwrap_or(0) > MAX_BINARY_IN_GIT {
+        let bytes = cx.git.read_file(c, p)?.unwrap_or_default();
+        if bytes.iter().take(8000).any(|&b| b == 0) {
+            out.push(format!(
+                "commit {sc}: {p} is a binary file of {} bytes; files over 1 MiB that are not text go to the attachment store, with a *.ref.md in git / 超过 1 MiB 的二进制文件请作为附件上传",
+                bytes.len()
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn op_of(u: &Update) -> Op {
@@ -113,6 +280,7 @@ pub fn check_update(cx: &Context<'_>, u: &Update) -> Result<Vec<String>> {
     }
 
     let on_main = matches!(kind, RefKind::Main);
+    check_signatures(cx, &commits, &mut problems)?;
     for c in &commits {
         check_commit(cx, c, on_main, &mut problems)?;
         if problems.len() >= 20 {
@@ -231,6 +399,7 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
         if p.starts_with(TALK_DIR) || p.starts_with(BOARD_DIR) {
             check_discussion_file(cx, c, p, &facing, out)?;
         }
+        check_attachment(cx, c, p, out)?;
         if matches!(facing, Some(ProblemRef::Board))
             && !(p.starts_with("board/") || p.starts_with("talk/board/"))
         {
@@ -238,6 +407,10 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
                 "commit {sc}: `Problem: board` may only change board/ and talk/board/, not {p}"
             ));
         }
+    }
+
+    if on_main {
+        check_unique_numbers(cx, c, out)?;
     }
 
     // 4. A seating chart in history must always be a valid one.
@@ -401,14 +574,24 @@ pub fn pre_receive(root: &Root) -> Result<()> {
             .duration_since(std::time::UNIX_EPOCH)
             .map_err(|_| Error("the relay's clock is before 1970".into()))?
             .as_secs() as i64;
+        let signers = root
+            .tmp_dir()
+            .join(format!("allowed-signers-{}", std::process::id()));
+        write_allowed_signers(&git, MAIN_REF, &signers)?;
+        let blobs = root.blobs_dir(&house);
         let cx = Context {
             git: &git,
             pusher,
             now,
+            blobs: &blobs,
+            signers: Some(&signers),
         };
-        for u in &updates {
-            problems.extend(check_update(&cx, u)?);
-        }
+        let result = updates
+            .iter()
+            .map(|u| check_update(&cx, u))
+            .collect::<Result<Vec<_>>>();
+        let _ = std::fs::remove_file(&signers);
+        problems.extend(result?.into_iter().flatten());
     }
 
     let refs: Vec<String> = updates

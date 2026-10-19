@@ -82,6 +82,10 @@ pub fn init(root: &Root, binary: Option<&str>, authorized_keys: Option<&str>) ->
     for id in root.house_ids()? {
         configure_house(root, &Git::at(root.house_path(&id)))?;
     }
+    // The relay signs the seat commits it writes for invitations.
+    if let Err(e) = crate::invites::ensure_signing_key(root) {
+        eprintln!("teahouse-relay: warning: {e}; invitations will not work until it exists");
+    }
     audit::log(root, Entry::new("relay.init").field("binary", bin.clone()));
     println!("relay ready at {root_s}");
     println!("  binary: {bin}");
@@ -431,6 +435,17 @@ pub fn check(root: &Root, only: Option<&str>) -> Result<()> {
         bail!("{bad} of {} teahouses failed the check", ids.len());
     }
     Ok(())
+}
+
+/// The line for a key with no seat anywhere (AuthorizedKeysCommand only):
+/// it may redeem an invitation and nothing else (INVITE.md rule 6).
+pub fn redeem_line(root: &Root, binary: &str, key: &PublicKey) -> Result<String> {
+    let root_s = root.dir_str()?;
+    Ok(format!(
+        "restrict,command=\"{binary} --root {root_s} redeem-shell {}\" {} teahouse-stranger",
+        key.blob_b64(),
+        key.openssh()
+    ))
 }
 
 /// Lines for OpenSSH: every member key, forced into `teahouse-relay shell`.

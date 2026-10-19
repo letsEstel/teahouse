@@ -4,14 +4,21 @@
 //! runs `teahouse-relay shell <key>` with the client's request in
 //! `SSH_ORIGINAL_COMMAND`. This module decides whether that key may read or
 //! write the requested teahouse and, if so, replaces itself with the real
-//! `git upload-pack` / `git receive-pack`. Nothing else can be executed.
+//! `git upload-pack` / `git receive-pack`. Besides git, it serves a short,
+//! fixed list of teahouse commands (attachments, invitations); nothing else
+//! can be executed.
+//!
+//! Keys with no seat anywhere get `redeem-shell` instead (INVITE.md rule 6):
+//! the same entry, restricted to `redeem`.
 
 use crate::audit::{self, Entry};
 use crate::bail;
 use crate::error::Result;
 use crate::root::{valid_house_id, Root};
+use crate::{blobs, invites};
 use std::os::unix::process::CommandExt;
 use std::process::Command;
+use teahouse_core::members::{Member, Role};
 use teahouse_core::PublicKey;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -69,12 +76,258 @@ pub fn parse_request(cmd: &str) -> Result<(Service, String)> {
 const NOT_FOUND: &str =
     "teahouse not found, or you have no seat in it / 茶馆不存在，或者你在这里没有座位";
 
-pub fn run(root: &Root, key_b64: &str) -> Result<()> {
+/// Splits a command line into words: spaces separate, single quotes
+/// quote (POSIX: `'it'\''s'`). Nothing is expanded.
+pub fn split_words(cmd: &str) -> Result<Vec<String>> {
+    let mut words = Vec::new();
+    let mut cur = String::new();
+    let mut in_word = false;
+    let mut chars = cmd.chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '\'' => {
+                in_word = true;
+                loop {
+                    match chars.next() {
+                        Some('\'') => break,
+                        Some(c) => cur.push(c),
+                        None => bail!("unterminated quote"),
+                    }
+                }
+            }
+            ' ' | '\t' | '\n' => {
+                if in_word {
+                    words.push(std::mem::take(&mut cur));
+                    in_word = false;
+                }
+            }
+            '\\' | '"' | '$' | '`' | ';' | '|' | '&' | '<' | '>' => {
+                bail!("unsupported character {c:?} in command")
+            }
+            c => {
+                in_word = true;
+                cur.push(c);
+            }
+        }
+    }
+    if in_word {
+        words.push(cur);
+    }
+    Ok(words)
+}
+
+/// `--flag value` options after the positional words.
+struct Opts {
+    words: Vec<String>,
+}
+
+impl Opts {
+    fn flag(&mut self, name: &str) -> Result<Option<String>> {
+        match self.words.iter().position(|w| w == name) {
+            None => Ok(None),
+            Some(i) if i + 1 < self.words.len() => {
+                let v = self.words.remove(i + 1);
+                self.words.remove(i);
+                Ok(Some(v))
+            }
+            Some(_) => bail!("{name} needs a value"),
+        }
+    }
+
+    fn positional(&mut self, what: &str) -> Result<String> {
+        if self.words.is_empty() {
+            bail!("missing {what}");
+        }
+        Ok(self.words.remove(0))
+    }
+
+    fn done(self) -> Result<()> {
+        match self.words.first() {
+            Some(w) => bail!("unexpected argument {w:?}"),
+            None => Ok(()),
+        }
+    }
+}
+
+/// The house and the seat of `key` in it, or the one answer for both
+/// "no such teahouse" and "no seat here" (law 1).
+fn seated(root: &Root, id: &str, key: &PublicKey) -> Result<(crate::root::House, Member)> {
+    let denied = |reason: &str| {
+        audit::log(
+            root,
+            Entry::new("shell.denied")
+                .house(id)
+                .key(&key.short())
+                .field("reason", reason.to_string()),
+        );
+    };
+    let Ok(house) = root.house(id) else {
+        denied("no such house");
+        bail!("{NOT_FOUND}");
+    };
+    let members = house.members()?;
+    let Some(member) = members.by_key(key).cloned() else {
+        denied("not a member");
+        bail!("{NOT_FOUND}");
+    };
+    Ok((house, member))
+}
+
+fn host_only(member: &Member, what: &str) -> Result<()> {
+    if member.role != Role::Host {
+        bail!(
+            "only the host can {what} / 只有老板能{}",
+            if what == "purge attachments" {
+                "删除附件"
+            } else {
+                "管理邀请"
+            }
+        );
+    }
+    Ok(())
+}
+
+/// The teahouse commands besides git.
+fn command(root: &Root, key: &PublicKey, words: Vec<String>, restricted: bool) -> Result<()> {
+    let mut o = Opts { words };
+    let verb = o.positional("command")?;
+    if restricted && verb != "redeem" {
+        audit::log(
+            root,
+            Entry::new("shell.refused")
+                .key(&key.short())
+                .field("command", verb.clone())
+                .field("reason", "no seat"),
+        );
+        bail!("this key has no seat yet; it can only redeem an invitation / 这把钥匙还没有座位，只能兑换邀请");
+    }
+    match verb.as_str() {
+        "redeem" => {
+            let code = o.positional("invitation code")?;
+            let name = o
+                .flag("--name")?
+                .ok_or_else(|| crate::error::Error("missing --name".into()))?;
+            o.done()?;
+            let s = invites::redeem(root, key, &code, &name)?;
+            println!("house {}", s.house);
+            println!("member {}", s.member);
+            Ok(())
+        }
+        "invite" => {
+            let house = o.positional("teahouse")?;
+            let role = o.flag("--role")?;
+            let name = o.flag("--name")?;
+            let days = o.flag("--days")?;
+            o.done()?;
+            let (_, me) = seated(root, &house, key)?;
+            host_only(&me, "invite")?;
+            let role = match role.as_deref() {
+                None => Role::Guest,
+                Some(r) => Role::parse(r)
+                    .ok_or_else(|| crate::error::Error(format!("unknown role {r:?}")))?,
+            };
+            let days =
+                match days {
+                    None => None,
+                    Some(d) => Some(d.parse().map_err(|_| {
+                        crate::error::Error(format!("--days {d:?} is not a number"))
+                    })?),
+                };
+            println!(
+                "{}",
+                invites::create(root, &house, &me, role, name.as_deref(), days)?
+            );
+            Ok(())
+        }
+        "uninvite" => {
+            let house = o.positional("teahouse")?;
+            let prefix = o.positional("first four characters of the code")?;
+            o.done()?;
+            let (_, me) = seated(root, &house, key)?;
+            host_only(&me, "invite")?;
+            invites::revoke(root, &house, &me, &prefix)
+        }
+        "blob-has" | "blob-get" | "blob-purge" => {
+            let house = o.positional("teahouse")?;
+            let hash = o.positional("sha256")?;
+            o.done()?;
+            let (_, me) = seated(root, &house, key)?;
+            match verb.as_str() {
+                "blob-has" => {
+                    println!(
+                        "{}",
+                        if blobs::has(root, &house, &hash)? {
+                            "yes"
+                        } else {
+                            "no"
+                        }
+                    );
+                    Ok(())
+                }
+                "blob-get" => blobs::get(root, &house, &hash, &mut std::io::stdout().lock()),
+                _ => {
+                    host_only(&me, "purge attachments")?;
+                    blobs::purge(root, &house, &me.id, &hash)
+                }
+            }
+        }
+        "blob-put" => {
+            let house = o.positional("teahouse")?;
+            let hash = o.positional("sha256")?;
+            let size = o.positional("size")?;
+            o.done()?;
+            let size: u64 = size
+                .parse()
+                .map_err(|_| crate::error::Error(format!("size {size:?} is not a number")))?;
+            let (_, me) = seated(root, &house, key)?;
+            let quota = root.load_config()?.blob_quota;
+            blobs::put(
+                root,
+                &house,
+                &me.id,
+                &hash,
+                size,
+                &mut std::io::stdin().lock(),
+                quota,
+            )
+        }
+        other => {
+            audit::log(
+                root,
+                Entry::new("shell.refused")
+                    .key(&key.short())
+                    .field("command", other.to_string())
+                    .field("reason", "unknown command"),
+            );
+            bail!("only git fetch/clone/push are served here / 这里只提供 git 读写")
+        }
+    }
+}
+
+pub fn run(root: &Root, key_b64: &str, restricted: bool) -> Result<()> {
     let key = PublicKey::from_blob_b64(key_b64)?;
     let original = std::env::var("SSH_ORIGINAL_COMMAND").unwrap_or_default();
 
-    if original.trim().is_empty() || original.trim() == "info" {
+    if !restricted && (original.trim().is_empty() || original.trim() == "info") {
         return info(root, &key);
+    }
+    let trimmed = original.trim_start();
+    if !trimmed.starts_with("git") || restricted {
+        let words = match split_words(&original) {
+            Ok(w) if !w.is_empty() => w,
+            Ok(_) => vec!["redeem".to_string()],
+            Err(e) => {
+                audit::log(
+                    root,
+                    Entry::new("shell.refused")
+                        .key(&key.short())
+                        .field("command", original.clone())
+                        .field("reason", e.0.clone()),
+                );
+                return Err(e);
+            }
+        };
+        return command(root, &key, words, restricted);
     }
 
     let (service, id) = match parse_request(&original) {
