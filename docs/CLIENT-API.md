@@ -57,13 +57,15 @@ owner: wang               # 认领人的成员 id，可省略
 
 - `id` 是四位数字，由引擎分配：取现有最大编号加一。两个人同时新开问题，后推送的一方会因为不是快进而被拒绝；引擎此时拉取最新状态，重新编号，然后重试一次。
 - `slug` 只是为了文件名好认，引擎生成后不再改动。标题以 frontmatter 里的 `title` 为准。
-- 正文的每个 `##` 小节，对应界面上的一个分段（`body[]`）。
+- frontmatter 之后、第一个 `##` 之前的那段文字是**摘要**（`summary`）；每个 `##` 小节对应界面上的一个分段（`body[]`）。
+- **frontmatter 语法**（全文通用）：只有一层 `key: value`，不支持嵌套；` #` 之后是注释；值可以加双引号，引号里按 JSON 转义。引擎写入时，值里出现 `#`、`:` 或首尾有空格，一律加引号。不使用 YAML 库。
+- **编号唯一**：main 上每个编号最多对应一个 `problems/<id>-*.md`（Relay 检查，见第 8 节第 2 条）。
 
 ### 1.2 成果 `works/<问题id>/<文件名>`
 
 | 类型 `kind` | 文件 | 说明 |
 |---|---|---|
-| `doc` 文档 | `*.md` | frontmatter 里写 `title`，可选写 `kind: plan` 表示"方案" |
+| `doc` 文档 | `*.md` | frontmatter 里写 `title`；可选 `kind: plan` 表示"方案"；可选 `note:` 一句话说明（成果卡片上标题下面那一行） |
 | `plan` 方案 | `*.md` | 同上，`kind: plan` |
 | `table` 表格 | `*.csv` | 第一行是表头。标题放在同名的 `*.csv.meta.md` 的 frontmatter 里；没有这个文件时，用文件名当标题 |
 | `image` 图片 | 附件引用（见 1.6） | 标题写在引用文件里 |
@@ -74,6 +76,8 @@ owner: wang               # 认领人的成员 id，可省略
 - 公告 `board/<公告名>.md`：frontmatter 里写 `title`，正文就是公告内容。
 - 留言 `talk/<问题id>/<YYYYMMDDTHHMMSSZ>-<成员id>.md`，公告的回应放在 `talk/board/<公告名>/…`。文件内容就是留言正文，没有 frontmatter。
 - **显示顺序 = 进入 main 的先后**，按 RELAY.md "显示顺序"一节给出的 git 命令计算，不按文件名里的时间戳排序。
+
+**`works/` 下文件的分类，按优先级判断**：`*.ref.md` → 附件（`type` 为 `image/*` 时是 `image`，否则是 `file`）；`*.csv.meta.md` → 只作为表格的标题和说明，不单独列出；`*.md` → `plan`（frontmatter 写了 `kind: plan`）或 `doc`；`*.csv` → `table`；其他文件（1.6 节之前直接放进 git 的）→ `file`，带 `size`，没有 `blob`。
 
 ### 1.4 提交说明（commit message）
 
@@ -97,6 +101,9 @@ Act: add-work
 | `notice` | 张贴公告 | 新增 `board/*.md` |
 | `adopt` | 采纳提案（合并提交，另写 `Proposal: <成员id>/<提案名>`） | 老板 |
 | `decline` | 不采纳提案（空提交，另写 `Proposal: …`，正文写理由） | 老板 |
+| `remove-note` | 删除留言 | 老板、伙计 |
+
+采纳和不采纳的提交同样必须带 `Problem:`：取提案所针对的问题；提案改的是公告时写 `board`。
 | `seat` | 座位变更 | 修改 `members.toml` |
 
 **没有 `Act:` 的提交**（比如有人直接用 git 提交）照样能显示：引擎会从改动的路径推断动作，推断不出来时显示为 `update`。
@@ -106,6 +113,8 @@ Act: add-work
 - 分支名：`refs/proposals/<作者id>/<提案名>`，提案名由引擎从标题生成（ASCII slug 加短随机后缀）。
 - 提案的标题和理由，就是这条分支上**第一个提交**的说明第一行和正文。
 - **采纳**：老板一侧，引擎在本地把提案分支用 `--no-ff` 合并进 main，提交说明为 `采纳提案：<标题>`，带 `Act: adopt` 和 `Proposal:` 两个 trailer，然后推送 main，并在同一次推送里删除这条提案分支。
+- **新问题的编号撞车**：提案里新建了 `problems/0007-…`，但采纳时 0007 已被占用，引擎就在**合并提交本身**里把文件（连同 `talk/0007/…`）改到新编号，并在提交说明里写 `Renumbered: 0007 -> 0009`。合并提交由老板签名，茶客原来的提交不动。
+- **决定不能撤回**：采纳和不采纳推送之后就是历史。以后如果要"改主意"，做法是一次新的提交（例如重新打开提案）。
 - **不采纳**：先推送一个空提交到 main（`Act: decline`），再删除提案分支。这样"已处理"列表永远可以从历史里还原，不依赖 Relay 的审计日志。
 
 ### 1.6 图片和附件：不进 git，只进 git 一行引用
@@ -150,13 +159,16 @@ Act: add-work
 ## 3. 数据模型（引擎返回的 JSON）
 
 字段名使用 camelCase，时间使用 RFC 3339 UTC，**用户写的内容都是普通字符串**（不分语言）；界面自身的文字仍然走 i18n。
-角色使用 Relay 的名字：`host | steward | guest`。界面现在的 `boss | heir | guest` 在 `HttpBackend` / `TauriBackend` 里做一次映射，以后统一改掉。
+角色使用 Relay 的名字：`host | steward | guest`（界面内部也已统一）。
+**给人看的固定文字由界面翻译**：引擎只返回代码（目录种类、错误代码及参数），界面按中英德显示；只有用户自己写的内容（标题、正文、成员名）是原样字符串。
+**时间**：`when`（进入茶馆的时间）取把它带进 main 的那个第一父提交的 committer 时间，仅供显示，可能有设备时钟误差；**顺序**以第一父链为准，这是可靠的。可信的服务器时间以后由 Relay 另行记录。
+`Member.joined` 取第一次加入这个 id 的提交时间，`House.founded` 取根提交时间。
 
 ```ts
 type Role = 'host' | 'steward' | 'guest'
 type Status = 'open' | 'active' | 'solved'
 type WorkKind = 'doc' | 'plan' | 'table' | 'image' | 'file'   // image、file 是附件引用（1.6）
-type Act = 'open-problem' | 'set-status' | 'add-work' | 'update-work' | 'note' | 'notice'
+type Act = 'open-problem' | 'set-status' | 'add-work' | 'update-work' | 'note' | 'remove-note' | 'notice'
          | 'propose' | 'adopt' | 'decline' | 'seat' | 'update'
 
 interface HouseSummary {
@@ -181,6 +193,7 @@ interface Work {
   id: string                    // 稳定 id，就是仓库路径的编码（界面不显示）
   kind: WorkKind; title: string; by: string; when: string
   size: number
+  note?: string                 // 一句话说明（frontmatter 的 note:）
   text?: string                 // doc/plan 的正文，table 的 CSV 原文；图片和附件不带
   blob?: { hash: string; type: string; cached: boolean; purged?: boolean }
 }
@@ -212,12 +225,14 @@ interface House {
 
 // 档案
 interface ArchiveNode {
-  id: string; label: string     // label 用人话（"成果 / 0001 · 小区停车位不好找"）
+  id: string                    // 就是仓库路径，界面放进地址栏时用 encodeURIComponent
+  dir?: 'problems' | 'works' | 'board' | 'talk' | 'meta'   // 目录种类，由界面翻译
+  label?: string                // 只放用户写的内容（问题标题、公告标题、成员名）
   kind: 'dir' | 'problem' | WorkKind | 'notice' | 'note' | 'members'
   problem?: string; size?: number
   children?: ArchiveNode[]
 }
-interface HistoryEntry { by: string; when: string; act: Act; problem: string; title: string; diff?: DiffLine[] }
+interface HistoryEntry { by: string; when: string; act: Act; problem: string; title: string; status?: Status; diff?: DiffLine[] }
 ```
 
 ---
@@ -264,6 +279,9 @@ interface HistoryEntry { by: string; when: string; act: Act; problem: string; ti
 | `invite` | `{ house, role?, name?, days? }` | 老板 | 无提交；返回邀请码 |
 | `redeem` | `{ relay, code, name }` | 尚未入座的人 | Relay 代写 `seat`；完成后自动克隆茶馆 |
 | `purgeBlob` | `{ house, id }` | 老板 | 删除附件内容，引用标成 purged |
+| `removeNote` | `{ house, id }` | 老板、伙计 | `remove-note` |
+
+`propose` 的 `title` 由界面自动生成（"修改《…》""添加《…》"），茶客只需要写理由。
 
 **界面按角色分开设计，引擎再兜一层底。**
 - 界面以 `House.me` 的角色为准，**按角色显示不同的界面**：老板有"座位管理"和"提案审阅"，别人看不到这两样；茶客看到的按钮直接写成"提议添加成果""提议一条公告"，点之前就知道这会交给老板。
@@ -284,8 +302,9 @@ interface HistoryEntry { by: string; when: string; act: Act; problem: string; ti
 interface ApiError {
   code: 'not_found' | 'not_a_member' | 'forbidden' | 'invalid' | 'conflict'
       | 'offline' | 'relay_refused' | 'too_large' | 'internal'
-  message: string              // 给人看的一句话（中英双语，和 Relay 的风格一致）
-  reasons?: string[]           // relay_refused 时，Relay 给出的逐条理由（去掉 "remote:" 前缀）
+  params?: Record<string, string>   // 例如 { path: 'members' }，界面据此拼出本地化的句子
+  message: string              // 后备：界面不认识这个 code 时才显示
+  reasons?: string[]           // relay_refused 时，Relay 给出的逐条理由（原样显示，去掉 "remote:" 前缀）
 }
 ```
 
@@ -335,6 +354,7 @@ interface ApiError {
 2. **"法"的修订，评审方起草后交用户确认**：
    - 签名检查：Relay 只接受作者是座位表成员、并且用该成员钥匙签名的提交（Relay 自己代写的提交，由 Relay 的钥匙签名，并注明"代写"）。
    - 附件：`*.ref.md` 引用文件的格式检查；git 里禁止出现超过 1 MiB 的二进制文件。
+   - **编号唯一**（2 号提议，评审同意）：main 上每个编号最多对应一个 `problems/<id>-*.md`。
    - 座位表支持一人多把钥匙（多设备）。**优先级提前**：手机和电脑同步需要它，随第 4 步一起做。
 3. **以后**：公开页面渲染（老板把某个问题或成果标成"公开"，Relay 把它渲染成网页，可以发链接给任何人看，像 Obsidian Publish）；网页窗口；手机 App。
 4. 图片缩略图：先不做，直接显示原图。
