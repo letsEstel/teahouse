@@ -7,6 +7,7 @@
 |------|------|
 | `core/` | `teahouse-core`：成员、角色、密钥、规则。零依赖、无 I/O，供 relay 和以后的桌面客户端共用。 |
 | `relay/` | `teahouse-relay`：OpenSSH 后面的守门人。只有它决定谁能进门、谁能写什么。 |
+| `client/` | `teahouse-client`：客户端引擎（`docs/CLIENT-API.md`）。每间茶馆一份本地副本，用内置的 libgit2 读写，不调用 git 程序。现在有读取命令：`teahouse-client --root <目录> call house '{"house":"…"}'`。 |
 | `app/` | 界面（Tauri + Web 前端，开发中）。 |
 | `docs/RELAY.md` | Relay 的设计、茶馆的法、部署与运维。 |
 | `deploy/` | sshd 配置片段、systemd 定时检查。 |
