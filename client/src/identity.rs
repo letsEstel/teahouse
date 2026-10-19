@@ -16,6 +16,9 @@ const GIT_NAMESPACE: &str = "git";
 
 pub struct Identity {
     key: PrivateKey,
+    /// `<root>/device`, for ssh libraries that cannot take a key from memory
+    /// (libssh2 on Windows).
+    path: std::path::PathBuf,
 }
 
 fn io(e: impl std::fmt::Display) -> Error {
@@ -32,14 +35,17 @@ impl Identity {
             if key.algorithm() != Algorithm::Ed25519 {
                 return Err(io("the device key must be ed25519"));
             }
-            return Ok(Identity { key });
+            return Ok(Identity { key, path });
         }
         std::fs::create_dir_all(root)?;
         let key =
             PrivateKey::random(&mut ssh_key::rand_core::OsRng, Algorithm::Ed25519).map_err(io)?;
         let pem = key.to_openssh(LineEnding::LF).map_err(io)?;
         write_private(&path, pem.as_bytes())?;
-        let id = Identity { key };
+        let id = Identity {
+            key,
+            path: path.clone(),
+        };
         std::fs::write(root.join("device.pub"), format!("{}\n", id.public_line()))?;
         Ok(id)
     }
@@ -53,6 +59,11 @@ impl Identity {
 
     pub fn public(&self) -> PublicKey {
         PublicKey::parse(&self.public_line()).expect("an ed25519 key parses")
+    }
+
+    /// The private key's file (OpenSSH format).
+    pub fn private_path(&self) -> &Path {
+        &self.path
     }
 
     /// The private key in OpenSSH format, for libssh2.

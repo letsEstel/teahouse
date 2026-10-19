@@ -273,14 +273,12 @@ fn exec_ssh(
         .ok_or_else(|| offline("no host key"))?;
     let fp: String = hash.iter().map(|b| format!("{b:02x}")).collect();
     crate::transport::pin_host_key(known_hosts, host, &fp)?;
-    let private = identity.private_openssh()?;
-    s.userauth_pubkey_memory(user, Some(&identity.public_line()), &private, None)
-        .map_err(|_| {
-            Error::new(
-                Code::NotAMember,
-                "the relay does not know this device / Relay 不认识这台设备",
-            )
-        })?;
+    authenticate(&s, user, identity).map_err(|_| {
+        Error::new(
+            Code::NotAMember,
+            "the relay does not know this device / Relay 不认识这台设备",
+        )
+    })?;
     let mut ch = s.channel_session().map_err(offline)?;
     ch.exec(command).map_err(offline)?;
     std::io::copy(stdin, &mut ch)?;
@@ -295,6 +293,21 @@ fn exec_ssh(
     } else {
         Err(refused(&err))
     }
+}
+
+/// The device key, from memory where libssh2 can (its OpenSSL backend),
+/// from the key file elsewhere (WinCNG on Windows).
+#[cfg(unix)]
+fn authenticate(s: &ssh2::Session, user: &str, identity: &Identity) -> Result<()> {
+    let private = identity.private_openssh()?;
+    s.userauth_pubkey_memory(user, Some(&identity.public_line()), &private, None)
+        .map_err(offline)
+}
+
+#[cfg(not(unix))]
+fn authenticate(s: &ssh2::Session, user: &str, identity: &Identity) -> Result<()> {
+    s.userauth_pubkey_file(user, None, identity.private_path(), None)
+        .map_err(offline)
 }
 
 #[cfg(test)]

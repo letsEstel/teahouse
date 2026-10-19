@@ -1067,6 +1067,7 @@ name = "teahouse-client"
 version = "0.1.0"
 dependencies = [
  "git2",
+ "libssh2-sys",
  "serde",
  "serde_json",
  "ssh-key",

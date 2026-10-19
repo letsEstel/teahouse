@@ -31,3 +31,8 @@ ssh2 = "0.9"
 # `serve`: the development HTTP interface on 127.0.0.1:7377. Small,
 # synchronous, no async runtime; not used inside the Tauri app.
 tiny_http = "0.12"
+
+[target.'cfg(windows)'.dependencies]
+# libssh2 on Windows defaults to WinCNG, which has no ed25519 (the device
+# key's type): build it against the same vendored OpenSSL instead.
+libssh2-sys = { version = "0.3", features = ["openssl-on-win32", "vendored-openssl"] }

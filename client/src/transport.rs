@@ -109,15 +109,17 @@ pub fn callbacks<'a>(
             ));
         }
         tried = true;
-        let private = identity
-            .private_openssh()
-            .map_err(|e| git2::Error::from_str(&e.message))?;
-        Cred::ssh_key_from_memory(
-            user.unwrap_or("teahouse"),
-            Some(&identity.public_line()),
-            &private,
-            None,
-        )
+        let user = user.unwrap_or("teahouse");
+        // libssh2 takes keys from memory only with its OpenSSL backend
+        // (not on Windows, where it uses WinCNG): elsewhere, the key file.
+        if cfg!(unix) {
+            let private = identity
+                .private_openssh()
+                .map_err(|e| git2::Error::from_str(&e.message))?;
+            Cred::ssh_key_from_memory(user, Some(&identity.public_line()), &private, None)
+        } else {
+            Cred::ssh_key(user, None, identity.private_path(), None)
+        }
     });
     let r = report.clone();
     cb.certificate_check(move |cert, host| {
