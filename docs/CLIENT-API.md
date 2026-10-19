@@ -140,7 +140,7 @@ Act: add-work
 - **多设备**：在已入座的设备上点"添加一台设备"，得到一个配对码，在新设备上输入。新设备生成自己的钥匙，旧钥匙不需要导出。（需要座位表支持"一人多钥匙"，见第 8 节。）
 - **高级选项**：懂行的用户可以改用已有的 ssh 密钥。
 - **签名**：引擎对每个提交做 git 的 ssh 签名（`gpg.format=ssh`）。签名用的就是设备钥匙。
-- 传输：引擎随客户端自带 git 和 ssh（Windows 上打包 MinGit 和系统自带的 OpenSSH；手机版以后换成内置的 git 库）。
+- 传输：**引擎内置 git 库，不依赖系统里的 git 程序**（用 `git2` crate，也就是 libgit2 加 libssh2；ssh 认证和提交签名都在进程内完成）。这样同一个引擎可以直接编译到 Windows、macOS、Linux 和 **Android**，打包时也不用附带 git。（用户 10-19：手机是安卓，要尽快在手机上用，所以从第一天起就这样做。）
 - 配置：`<应用数据目录>/teahouse/client.toml`，记录每间茶馆的 Relay 地址。
 - "我是谁"：拿本机公钥和 `members.toml` 比对。找不到座位，说明已经离座，界面切换成只读并给出提示，本地副本保留。
 - 开发期用 Relay 的 `local-ssh`（RELAY.md 第 7 节），由 `scripts/dev-stack.sh` 一键配置。
@@ -317,9 +317,9 @@ interface ApiError {
 | 1 | 定义 `Backend` 接口（第 4 节），现有假数据放到 `FakeBackend` 后面，视觉不变；导出 `fixtures/houses.zh.json` | 新建 `client/` crate：读取命令和第 1 节的格式解析（直接读本地 git 副本） |
 | 2 | 实现 `HttpBackend`（开发期，本机 7377 端口）；把 `boss/heir` 映射成 `host/steward` | 写入、签名、同步、预检、被拒后撤回；`serve` 子命令 |
 | 3 | 入座界面（只问名字、粘贴邀请码）；"未同步""已离座""被拒绝"三种状态 | Relay：签名检查、附件仓库、邀请码（INVITE.md）；`dev-stack.sh`；端到端测试 |
-| 4 | Tauri 外壳和 `TauriBackend`；CI 打包 | 联调、修复问题 |
+| 4 | Tauri 外壳和 `TauriBackend`；**桌面版和 Android 一起打包**（Tauri 2 mobile）；CI 产出 Windows 安装包和 Android APK | 联调、修复问题；一人多设备（座位表支持多把钥匙、配对码） |
 
-**依赖库**：引擎可以用第三方库，每加一个都要在 PR 里写明理由；git 操作调用随客户端自带的 git，和 Relay 保持一致。`core/` 保持零依赖。
+**依赖库**：引擎可以用第三方库，每加一个都要在 PR 里写明理由。git 操作用 `git2`（libgit2），**禁止调用外部 git 程序**，否则 Android 上无法运行；同时要加一组对照测试，确认引擎写出的提交，能被 Relay（系统 git）原样接受。签名用 `ssh-key` crate 生成 SSHSIG 格式，与 git 的 ssh 签名兼容。`core/` 保持零依赖。
 
 **Relay 部署要尽量简单（用户要求）**：
 - 目标：一台最便宜的 VPS，**一条命令装好**：`curl -fsSL <地址>/install.sh | sh`，或者 `docker run -d -p 2222:22 -v teahouse:/var/lib/teahouse teahouse/relay`。
@@ -335,7 +335,7 @@ interface ApiError {
 2. **"法"的修订，评审方起草后交用户确认**：
    - 签名检查：Relay 只接受作者是座位表成员、并且用该成员钥匙签名的提交（Relay 自己代写的提交，由 Relay 的钥匙签名，并注明"代写"）。
    - 附件：`*.ref.md` 引用文件的格式检查；git 里禁止出现超过 1 MiB 的二进制文件。
-   - 座位表支持一人多把钥匙（多设备）。
+   - 座位表支持一人多把钥匙（多设备）。**优先级提前**：手机和电脑同步需要它，随第 4 步一起做。
 3. **以后**：公开页面渲染（老板把某个问题或成果标成"公开"，Relay 把它渲染成网页，可以发链接给任何人看，像 Obsidian Publish）；网页窗口；手机 App。
 4. 图片缩略图：先不做，直接显示原图。
 5. 茶客离线时写好的提案，同步时发现自己已经离座了：导出成文件交还给他，绝不悄悄丢掉。
