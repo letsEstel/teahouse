@@ -11,7 +11,8 @@
     "shoot": "node scripts/shoot.mjs",
     "preview:publish": "node scripts/preview.mjs",
     "export-fixtures": "node scripts/export-fixtures.mjs",
-    "dev:engine": "VITE_BACKEND=local VITE_BACKEND_URL= vite"
+    "dev:engine": "VITE_BACKEND=local VITE_BACKEND_URL= vite",
+    "tauri": "tauri"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.1.1",
