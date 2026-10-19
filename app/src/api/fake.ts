@@ -7,7 +7,18 @@ import { archive as fakeArchive, type AFile } from '../data/archive'
 import { L, t, NOW, i18n, type Text } from '../i18n/index.svelte'
 
 const store: FHouse[] = structuredClone(seed)
-const synced: A.SyncState = { state: 'synced', unpushed: 0, lastSync: NOW.toISOString() }
+// 演示用的状态（截图和预览）：?fake=unsynced | offline | unseated | refuse
+//   unsynced：有 2 处修改还没送出；offline：连不上 Relay；unseated：本机钥匙不在座位表上（已离座）；
+//   refuse：之后的写入都被 Relay 拒绝
+const demo = typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('fake') ?? ''
+const lastSync = new Date(NOW.getTime() - 25 * 60_000).toISOString()
+let synced: A.SyncState =
+  demo === 'unsynced' ? { state: 'ahead', unpushed: 2, lastSync }
+  : demo === 'offline' ? { state: 'offline', unpushed: 1, lastSync, message: 'ssh: connect to host relay.example.org port 22: Network is unreachable' }
+  : { state: 'synced', unpushed: 0, lastSync: NOW.toISOString() }
+const unseated = demo === 'unseated'
+/** 已离座时，引擎给的 me 是空字符串 */
+const meOf = (h: FHouse) => (unseated ? '' : h.me)
 const iso = (s: string) => (s.length === 10 ? `${s}T09:00:00Z` : new Date(s).toISOString())
 const text = (s: string): Text => ({ zh: s, en: s, de: s })
 const ok = <T>(data: T): A.Result<T> => ({ ok: true, data })
@@ -63,13 +74,13 @@ function toEvent(e: FEvent, problem?: string): A.Event {
 }
 
 // 留言：数组顺序就是进入茶馆的先后。进入时间不早于前一条（离线写的那条晚到了）
-function toNotes(ns: FNote[], dir = ''): A.Note[] {
+function toNotes(ns: FNote[], dir: string): A.Note[] {
   let last = ''
   return ns.map((n) => {
     const written = iso(n.when)
     const when = written < last ? new Date(new Date(last).getTime() + 60_000).toISOString() : written
     last = when
-    return { by: n.by, text: L(n.text), when, writtenAt: written, id: dir && `${dir}/${written.replace(/[-:]/g, '').slice(0, 15)}Z-${n.by}.md` }
+    return { id: `${dir}/${written.replace(/[-:]/g, '').slice(0, 15)}Z-${n.by}.md`, by: n.by, text: L(n.text), when, writtenAt: written }
   })
 }
 const toNotice = (n: FNotice): A.Notice => ({ id: n.id, by: n.by, title: L(n.title), text: L(n.text), when: iso(n.when), replies: toNotes(n.replies, `talk/board/${n.id}`) })
@@ -86,7 +97,7 @@ function summary(h: FHouse, p: FProblem): A.ProblemSummary {
 function toHouse(h: FHouse): A.House {
   return {
     id: h.id, name: L(h.name), signboard: L(h.sign), founded: iso(h.founded), capacity: 15,
-    me: h.me,
+    me: meOf(h),
     members: h.members.map((m) => ({ id: m.id, name: L(m.name), role: m.role, joined: iso(m.joined) })),
     problems: h.problems.map((p) => summary(h, p)),
     recent: h.recent.map((e) => toEvent(e, e.problem)),
@@ -207,7 +218,7 @@ const written = (becameProposal = false): A.Result<A.WriteResult> => ok({ commit
 
 const handlers: Handlers = {
   houses: () => ok(store.map((h) => ({
-    id: h.id, name: L(h.name), me: h.me, myRole: h.members.find((m) => m.id === h.me)!.role,
+    id: h.id, name: L(h.name), me: meOf(h), myRole: h.members.find((m) => m.id === h.me)!.role,
     seats: h.members.length, pendingProposals: h.proposals.length, sync: synced,
   }))),
   house: ({ house }) => {
@@ -232,10 +243,25 @@ const handlers: Handlers = {
   // 假数据里只有车位图是"图片"，界面认得这个特殊地址
   blob: ({ id }) => (id.includes('/w1-') ? ok('fake:parking') : fail('not_found', 'no blob in M0')),
   export: () => ok(null),
-  sync: () => ok(synced),
+  sync: () => {
+    // 演示：同步一次就送出了积压的修改（离线时仍然离线）
+    if (synced.state !== 'offline') synced = { state: 'synced', unpushed: 0, lastSync: NOW.toISOString() }
+    return ok(synced)
+  },
   join: () => fail('offline', 'M0 has no relay'),
 
-  removeNote: () => written(),
+  removeNote: ({ house, id }) => {
+    const h = find(house)
+    if (!h) return fail('not_found', house)
+    const me = h.members.find((m) => m.id === h.me)
+    if (!me || me.role === 'guest') return fail('forbidden', 'only the host and the steward can remove notes')
+    const lists = [...h.problems.map((p) => [p.notes ?? [], `talk/${p.id}`] as const), ...h.board.map((n) => [n.replies, `talk/board/${n.id}`] as const)]
+    for (const [list, dir] of lists) {
+      const i = toNotes(list, dir).findIndex((n) => n.id === id)
+      if (i >= 0) { list.splice(i, 1); return written() }
+    }
+    return fail('not_found', id)
+  },
   note: ({ house, problem, notice, text: s }) => {
     const h = find(house)
     if (!h) return fail('not_found', house)
@@ -266,14 +292,40 @@ const handlers: Handlers = {
   addWork: () => written(),
   updateWork: () => written(),
   seat: () => written(),
-  invite: () => ok('TEA-M0-DEMO'),
-  redeem: () => fail('offline', 'M0 has no relay'),
+  // 邀请：给出的是一整串"邀请码@Relay 地址"，粘贴时界面能一并认出地址（已在 PR 里提出）
+  invite: () => ok('TH-7KQ2-M9XF-3RDP-WC5L@relay.teahouse.example'),
+  // 入座：假数据里让你作为茶客坐进梧桐里
+  redeem: ({ code, name }) => {
+    if (!/^TH(-[0-9A-Z]{4}){4}$/i.test(code)) return fail('invalid', `not an invitation code: ${code}`)
+    const h = find('wutong')!
+    if (h.members.length >= 15) return { ok: false, error: { code: 'relay_refused', message: 'no free seat', reasons: ['no free seat in this teahouse / 这间茶馆已经坐满了'] } }
+    const id = `new${h.members.length + 1}`
+    h.members.push({ id, name: text(name), role: 'guest', joined: NOW.toISOString() })
+    h.me = id
+    return ok({ id: h.id, name: L(h.name), me: id, myRole: 'guest', seats: h.members.length, pendingProposals: h.proposals.length, sync: synced })
+  },
   purgeBlob: () => written(),
+}
+
+const writes: A.Command[] = ['openProblem', 'setStatus', 'addWork', 'updateWork', 'note', 'removeNote', 'postNotice', 'propose', 'withdraw', 'adopt', 'decline', 'seat', 'purgeBlob']
+// 演示"被拒绝"：Relay 的理由原样转达（RELAY.md 第 3 节的口吻）
+const refused: A.Result<never> = {
+  ok: false,
+  error: {
+    code: 'relay_refused',
+    message: 'the relay refused the push',
+    reasons: [
+      'commit 3f2a91c: signature does not match any key in members.toml / 签名和座位表上的钥匙对不上',
+      'talk/0001/20261018T201000Z-chen.md: stamp is more than 10 minutes ahead of the relay clock (rule 12) / 留言的时间比 Relay 的时钟快了 10 分钟以上（第 12 条）',
+    ],
+  },
 }
 
 export const fakeBackend = {
   kind: 'fake' as const,
   async call<C extends A.Command>(cmd: C, args: A.Args<C>): Promise<A.Result<A.Returns<C>>> {
+    if (demo === 'refuse' && writes.includes(cmd)) return refused as A.Result<A.Returns<C>>
+    if (unseated && writes.includes(cmd)) return fail('not_a_member', 'this device has no seat in the teahouse')
     return (handlers[cmd] as (a: A.Args<C>) => A.Result<A.Returns<C>>)(args)
   },
   /** 只给截图和导出脚本用：直接拿到某间茶馆的 API 形状 */

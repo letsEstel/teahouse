@@ -13,9 +13,7 @@
   let canPost = $derived(me.role !== 'guest')
   let posting = $state(false)
   let replying = $state<string | null>(null)
-  // 删除留言：CLIENT-API 还没有这个命令（已在 PR #1 提出），M0 只从页面上去掉
-  let hidden = $state<Note[]>([])
-  let notices = $derived(house.board.map((n) => ({ ...n, replies: n.replies.filter((r) => !hidden.some((h) => h.writtenAt === r.writtenAt && h.by === r.by)) })))
+  let notices = $derived(house.board)
 
   async function post(text: string, title: string) {
     if (!(await write('postNotice', { house: house.id, title, text }))) return false
@@ -24,8 +22,9 @@
   }
   // 茶客的留言直接写进茶馆；老板和伙计可以删除留言
   let writeHint = $derived(me.role === 'guest' ? t('write.hintGuest') : '')
-  function remove(_n: Notice, note: Note) {
-    hidden = [...hidden, note]
+  // 删除留言（老板、伙计）：removeNote，然后重新读取
+  async function remove(_n: Notice, note: Note) {
+    if (await write('removeNote', { house: house.id, id: note.id })) refresh()
   }
   async function reply(n: Notice, text: string) {
     if (!(await write('note', { house: house.id, notice: n.id, text }))) return false
@@ -40,21 +39,21 @@
     <h1>{t('board.title')}</h1>
     {#if canPost}
       {#if posting}
-        <div class="compose">
+        <div class="compose" data-write>
           <Write title titlePlaceholder={t('board.titlePh')} placeholder={t('board.bodyPh')} rows={5} onsubmit={post} />
         </div>
       {:else}
-        <div class="action">
+        <div class="action" data-write>
           <button class="primary" onclick={() => (posting = true)}><i>+</i><span>{t('board.post')}</span></button>
           <p class="consequence">{t('board.postHint')}</p>
         </div>
       {/if}
     {:else}
-      <div class="action">
+      <div class="action" data-write>
         <a class="primary" href="#/{house.id}/propose/board"><i>+</i><span>{t('board.suggest')}</span></a>
         <p class="consequence">{t('board.suggestHint')}</p>
       </div>
-      <p class="consequence guest">{t('board.guestNote')}</p>
+      <p class="consequence guest" data-write>{t('board.guestNote')}</p>
     {/if}
   </header>
 
@@ -79,7 +78,7 @@
             {#if replying === n.id}
               <Write placeholder={t('board.replyPh')} rows={2} hint={writeHint} onsubmit={(text) => reply(n, text)} />
             {:else}
-              <button class="reply" onclick={() => (replying = n.id)}>{t('board.reply')} →</button>
+              <button class="reply" data-write onclick={() => (replying = n.id)}>{t('board.reply')} →</button>
             {/if}
           </div>
         </div>

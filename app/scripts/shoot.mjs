@@ -94,29 +94,36 @@ screens.push(
 screens.push(
   { name: 'kant-archive-history', hash: '#/kant/archive/' + encodeURIComponent('works/0001/k2-glossary-of-terms.md'), act: (p) => p.click('.entry') },
   { name: 'wutong-archive-byproblem', hash: '#/wutong/archive/' + encodeURIComponent('works/0001/w1-parking-map-measured.png.ref.md'), act: (p) => p.click('.seg button:nth-child(2)'), widths: [1920, 1366] },
-  { name: 'startup-archive-table', hash: '#/startup/archive/' + encodeURIComponent('works/0001/s2-price-list.csv') },
-  { name: 'wutong-archive-members', hash: '#/wutong/archive/' + encodeURIComponent('.teahouse/members.toml'), act: (p) => p.click('.entry') },
-  { name: 'lab-archive-export', hash: '#/lab/archive/' + encodeURIComponent('works/0001/l2-draft-of-section-3.md'), act: (p) => p.click('.export button') },
   { name: 'wutong-archive-list', hash: '#/wutong/archive', widths: [900, 390] },
+)
+// 入座和三种状态（CLIENT-API 第 7 节第 3 步）
+const invite = 'TH-7KQ2-M9XF-3RDP-WC5L@relay.teahouse.example'
+screens.push(
+  { name: 'join', hash: '#/join' },
+  { name: 'join-filled', hash: '#/join', act: async (p) => { await p.fill('textarea[name=invite]', `邀请你坐进茶馆「梧桐里三号院」。打开茶馆，选“加入一间茶馆”，把这段话整段贴进去：${invite}`); await p.fill('input[name=name]', '小周') } },
+  { name: 'join-seated', hash: '#/join', act: async (p) => { await p.fill('textarea[name=invite]', invite); await p.fill('input[name=name]', '小周'); await p.click('button[type=submit]'); await p.waitForTimeout(400) } },
+  { name: 'wutong-invite', hash: '#/wutong/house', act: async (p) => { await p.click('[data-tour=action] button.primary'); await p.click('.invite .primary') } },
+  { name: 'wutong-unsynced', hash: '#/wutong/house', query: '&fake=unsynced' },
+  { name: 'wutong-offline', hash: '#/wutong/problem/0001', query: '&fake=offline' },
+  { name: 'kant-unseated', hash: '#/kant/house', query: '&fake=unseated' },
+  { name: 'kant-unseated-problem', hash: '#/kant/problem/0001', query: '&fake=unseated' },
+  { name: 'wutong-refused', hash: '#/wutong/problem/0001', query: '&fake=refuse', act: async (p) => { await p.fill('.talk-write textarea', '我同意，周六我也来帮忙喷编号。'); await p.click('.talk-write button.submit'); await p.waitForTimeout(300) } },
 )
 // 本轮保存的图
 const save = {
-  'wutong-archive': {},
-  'kant-archive-history': { saveDe: true },
-  'wutong-archive-byproblem': {},
-  'startup-archive-table': {},
-  'wutong-archive-members': {},
-  'lab-archive-export': {},
+  'join': {}, 'join-filled': { saveDe: true }, 'join-seated': {}, 'wutong-invite': {},
+  'wutong-unsynced': {}, 'wutong-offline': {}, 'kant-unseated': {}, 'kant-unseated-problem': {}, 'wutong-refused': { saveDe: true },
 }
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
-// 窄窗口和手机：档案是"文件树 → 文件"两级页面
+// 手机
 screens.push(
-  { name: 'wutong-archive-tree', hash: '#/wutong/archive', widths: [900], save: true, saveAt: 900, full: false },
-  { name: 'kant-archive-phone', hash: '#/kant/archive/' + encodeURIComponent('works/0001/k2-glossary-of-terms.md'), act: (p) => p.click('.entry'), widths: [390], save: true, saveAt: 390 },
+  { name: 'join-phone', hash: '#/join', widths: [390], save: true, saveAt: 390, act: async (p) => { await p.fill('textarea[name=invite]', invite); await p.fill('input[name=name]', '小周') } },
+  { name: 'kant-unseated-phone', hash: '#/kant/problem/0001', query: '&fake=unseated', widths: [390], save: true, saveAt: 390 },
 )
+
 // 夜间模式：布局不变，只拍默认组
 screens.push(
-  { name: 'kant-archive-history-dark', hash: '#/kant/archive/' + encodeURIComponent('works/0001/k2-glossary-of-terms.md'), act: (p) => p.click('.entry'), theme: 'dark', only1366: true, save: true },
+  { name: 'wutong-refused-dark', hash: '#/wutong/problem/0001', query: '&fake=refuse', theme: 'dark', only1366: true, save: true, act: async (p) => { await p.fill('.talk-write textarea', '我同意，周六我也来帮忙喷编号。'); await p.click('.talk-write button.submit'); await p.waitForTimeout(300) } },
 )
 
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
@@ -195,7 +202,7 @@ try {
         if (s.only1366 && !(w === 1366 && lang === 'zh')) continue
         const file = `${s.name}_${w}_${lang}.png`
         await page.goto('about:blank')
-        await page.goto(`${base}?lang=${lang}&tour=${s.tour ?? 'off'}&theme=${s.theme ?? 'light'}${s.hash}`)
+        await page.goto(`${base}?lang=${lang}&tour=${s.tour ?? 'off'}&theme=${s.theme ?? 'light'}${s.query ?? ''}${s.hash}`)
         await page.evaluate(() => document.fonts.ready)
         await page.waitForTimeout(250)
         if (s.act) { await s.act(page, lang); await page.waitForTimeout(250) }

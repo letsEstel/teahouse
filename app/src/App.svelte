@@ -8,7 +8,9 @@
   import Board from './views/Board.svelte'
   import Propose from './views/Propose.svelte'
   import Archive from './views/Archive.svelte'
+  import Join from './views/Join.svelte'
   import ErrorBar from './lib/ErrorBar.svelte'
+  import StatusBar from './lib/StatusBar.svelte'
   import { api, BackendError } from './api/backend'
   import { errorText } from './api/errors.svelte'
   import { t } from './i18n/index.svelte'
@@ -25,6 +27,8 @@
 
   let route = $derived.by(() => {
     const [, h, page, arg] = hash.split('/')
+    // #/join 是入座页，不属于任何一间茶馆
+    if (h === 'join') return { houseId: '', page: 'join', arg: undefined }
     return { houseId: h, page: page || 'house', arg: arg ? decodeURIComponent(arg) : arg }
   })
 
@@ -33,6 +37,7 @@
   let house = $state<HouseData | null>(null)
   let version = $state(0)
   let failed = $state<ApiError | null>(null)
+  let loaded = $state(false)
   const refresh = () => version++
   $effect(() => {
     const id = route.houseId
@@ -41,17 +46,22 @@
     ;(async () => {
       try {
         const list = await api('houses', {})
+        houses = list
+        // 这台设备上还没有任何茶馆：直接到入座页
+        if (!list.length) { house = null; failed = null; loaded = true; return }
         const target = list.find((x) => x.id === id) ?? list[0]
-        if (!target) throw new BackendError({ code: 'not_found', message: 'no teahouse on this device' })
         const h = await api('house', { house: target.id })
         houses = list
         house = h
         failed = null
+        loaded = true
       } catch (e) {
         failed = e instanceof BackendError ? e.error : { code: 'internal', message: String(e) }
       }
     })()
   })
+  // 已离座：引擎给的 me 在座位表里找不到（CLIENT-API 第 2 节）→ 整间茶馆只读
+  let seated = $derived(!!house && house.members.some((m) => m.id === house!.me))
   let section = $derived(
     route.page === 'problems' || route.page === 'problem' ? 'problems'
     : route.page === 'proposals' || route.page === 'proposal' || route.page === 'propose' ? 'proposals'
@@ -59,10 +69,16 @@
   ) as 'house' | 'board' | 'problems' | 'proposals' | 'archive'
 </script>
 
-{#if house}
-<Rail {house} {houses} {section} />
-<main>
+{#if route.page === 'join' || (!house && !failed && loaded && !houses.length)}
+  <main class="solo">
+    <ErrorBar />
+    <Join {houses} onjoined={(seat) => { location.hash = `#/${seat.id}/house`; refresh() }} />
+  </main>
+{:else if house}
+<Rail {house} {houses} {section} {seated} />
+<main class:readonly={!seated}>
   <ErrorBar />
+  <StatusBar {house} {seated} {refresh} />
   {#key hash + i18n.lang + house.id}
     <div class="page">
       {#if route.page === 'problems'}
@@ -98,6 +114,7 @@
 
 <style>
   main { margin-left: var(--rail); min-height: 100vh; }
+  main.solo { margin-left: 0; }
   .failed { padding: var(--pad-top) var(--pad-x); display: flex; flex-direction: column; align-items: flex-start; gap: 16px; max-width: 40em; }
   .failed h1 { font-family: var(--display); font-weight: var(--heavy); font-size: clamp(32px, 4vw, 56px); letter-spacing: var(--track); }
   .failed .detail { font-size: 13px; color: var(--ink-3); font-family: var(--latin); overflow-wrap: anywhere; }

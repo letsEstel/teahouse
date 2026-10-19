@@ -37,7 +37,7 @@ URL 参数：`?lang=zh|en|de` 指定语言（否则用上次的选择或系统�
 TEAHOUSE_ENGINE_CLI=<teahouse-client 的路径> TEAHOUSE_CLIENT_ROOT=<引擎根目录> npm run dev:engine
 ```
 
-（`scripts/engine-bridge.mjs`：`/v1/<命令>` → `teahouse-client --root <根目录> call <命令> <参数>`；附件经 `/v1/__file` 读取，只允许读根目录里面的文件。）
+（`scripts/engine-bridge.mjs`：`/v1/<命令>` → `teahouse-client --root <根目录> call <命令> <参数>`；附件经 `GET /v1/blob?house=&id=` 读取（合同第 4 节），只返回根目录里面的文件。）
 写入失败时，页面顶部出现一条按错误代码本地化的提示，输入框里写的内容保留；连不上引擎时显示"打不开这间茶馆"和重试按钮。
 
 ```bash

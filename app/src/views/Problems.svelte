@@ -30,7 +30,7 @@
       <h1>{t('nav.problems')}<sup class="num">{pad(house.problems.length)}</sup></h1>
       <p class="lede">{t('problems.lede')}</p>
     </div>
-    <div class="action">
+    <div class="action" data-write>
       {#if action.href}
         <a class="primary" href={action.href}><i>+</i><span>{action.label}</span></a>
       {:else}

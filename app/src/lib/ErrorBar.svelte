@@ -7,14 +7,16 @@
 {#if errors.list.length}
   <div class="bar" role="alert">
     {#each errors.list as e, i}
-      <div class="item">
+      <div class="item" class:refused={e.code === 'relay_refused'}>
         <i aria-hidden="true"></i>
         <div class="text">
           <p class="what">{errorText(e)}</p>
           {#if e.reasons?.length}
-            <ul>{#each e.reasons as r}<li>{r}</li>{/each}</ul>
+            <p class="why">{t('err.refusedWhy')}</p>
+            <ul>{#each e.reasons as r}<li>{r.replace(/^remote:\s*/, '')}</li>{/each}</ul>
           {/if}
-          {#if e.message && errorText(e) !== e.message}<p class="detail">{e.message}</p>{/if}
+          {#if e.code === 'relay_refused'}<p class="draft">{t('err.refusedDraft')}</p>{/if}
+          {#if e.message && !e.reasons?.length && errorText(e) !== e.message}<p class="detail">{e.message}</p>{/if}
         </div>
         <button onclick={() => dismiss(i)}>{t('err.dismiss')}</button>
       </div>
@@ -27,7 +29,12 @@
   .item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: start; border: 2px solid var(--ink); padding: 14px 18px; background: var(--paper); }
   i { width: 14px; height: 14px; margin-top: 4px; background: var(--ink); }
   .what { font-weight: 700; line-height: 1.5; }
-  ul { margin: 6px 0 0 1.1em; font-size: 14px; line-height: 1.6; }
+  ul { margin: 4px 0 0 1.1em; font-size: 14px; line-height: 1.6; }
+  .why { margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+  .draft { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule); font-size: 14px; }
+  /* 被拒绝：双线框，和普通的错误区分开（仍然不用颜色） */
+  .refused { border-style: double; border-width: 4px; }
+  .refused i { background: none; border: 2px solid var(--ink); transform: rotate(45deg); }
   .detail { margin-top: 4px; font-size: 12px; color: var(--ink-3); font-family: var(--latin); overflow-wrap: anywhere; }
   button { font-size: 13px; font-weight: 700; border-bottom: 1.5px solid var(--ink); padding: 2px 0; white-space: nowrap; }
 </style>
