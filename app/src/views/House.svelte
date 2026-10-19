@@ -188,6 +188,8 @@
   }
   @media (max-width: 560px) {
     li { grid-template-columns: 10px minmax(0, 1fr) auto; }
-    .what { grid-column: 2 / -1; }
+    .who { grid-column: 2; grid-row: 1; }
+    .when { grid-column: 3; grid-row: 1; }
+    .what { grid-column: 2 / -1; grid-row: 2; }
   }
 </style>

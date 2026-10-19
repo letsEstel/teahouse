@@ -108,7 +108,7 @@
   }
   .mark { display: flex; gap: 14px; align-items: center; padding: 0 var(--in); }
   .mark svg { flex: none; }
-  .word { font-family: var(--display); font-weight: var(--heavy); font-size: 22px; line-height: 1.1; letter-spacing: var(--track-wide); }
+  .word { font-family: var(--display); font-weight: var(--heavy); font-size: 22px; line-height: 1.1; letter-spacing: var(--track-wide); white-space: nowrap; }
   .mark .label { font-size: 10px; margin-top: 3px; }
 
   .houses { margin: 48px 0 24px; padding: 0 var(--in); position: relative; }
@@ -222,7 +222,25 @@
     .self-name { font-size: 14px; }
     .switches { flex-wrap: nowrap; }
   }
-  @media (max-width: 640px) {
-    .self-name { display: none; }
+  /* 手机：三行，不吸顶（屏幕太矮）。第一行标志 + 茶馆切换，第二行你是谁 + 语言/外观，第三行四个栏目 */
+  @media (max-width: 639.98px) {
+    aside {
+      position: static;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas: 'mark houses' 'foot foot' 'nav nav';
+    }
+    .word { white-space: nowrap; }
+    .switch { padding: 8px 0; }
+    .switch span { white-space: normal; line-height: 1.25; }
+    .foot { justify-content: space-between; padding: 8px var(--in); border-top: 1px solid var(--ink); }
+    .self-name { display: block; }
+    .switches { gap: 6px; }
+    .langs button { min-width: 34px; height: 28px; padding: 0 6px; }
+    .themes button { min-width: 30px; }
+    nav a { padding: 12px 10px; justify-content: center; grid-template-columns: auto; gap: 2px; text-align: center; }
+    .ct { display: none; }
+    nav a .badge { justify-self: center; font-size: 11px; }
+    .nm { font-size: 14px; letter-spacing: 0; }
+    ul { min-width: min(280px, calc(100vw - 32px)); }
   }
 </style>
