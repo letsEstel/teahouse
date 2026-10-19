@@ -6,7 +6,7 @@
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
   import { member, self, pad, eventText, type House, type Note, type Problem } from '../api/view'
-  import { api } from '../api/backend'
+  import { api, write as send, fileUrl } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
   let { house, id }: { house: House; id: string } = $props()
@@ -35,7 +35,7 @@
 
   // 问题下的讨论：留言直接写进茶馆（茶客也一样）
   async function write(text: string) {
-    await api('note', { house: house.id, problem: id, text })
+    if (!(await send('note', { house: house.id, problem: id, text }))) return false
     await load()
   }
   // 删除留言：CLIENT-API 第 4 节还没有这个命令（已在 PR #1 提出），M0 只从页面上去掉
@@ -119,7 +119,7 @@
                 {#if image === 'fake:parking'}
                   <ParkingMap />
                 {:else if image}
-                  <img src={image} alt={feature.title} />
+                  <img src={fileUrl(image)} alt={feature.title} />
                 {:else}
                   <blockquote>{feature.text}</blockquote>
                 {/if}

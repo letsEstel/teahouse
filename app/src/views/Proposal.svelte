@@ -3,7 +3,7 @@
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import Diff from '../lib/Diff.svelte'
   import { member, self, host, type House, type Proposal } from '../api/view'
-  import { api } from '../api/backend'
+  import { write } from '../api/backend'
   import { fit } from '../lib/fit'
   import { t, when, i18n } from '../i18n/index.svelte'
 
@@ -18,9 +18,8 @@
   // 采纳 / 不采纳走引擎。决定不能撤回（CLIENT-API 第 1.5 节）
   async function decide(adopt: boolean) {
     if (!p) return
-    if (adopt) await api('adopt', { house: house.id, proposal: p.id })
-    else await api('decline', { house: house.id, proposal: p.id })
-    state = adopt ? 'merged' : 'rejected'
+    const done = adopt ? await write('adopt', { house: house.id, proposal: p.id }) : await write('decline', { house: house.id, proposal: p.id })
+    if (done) state = adopt ? 'merged' : 'rejected'
   }
 
   const tally = (f: Proposal['files'][number]) => ({
