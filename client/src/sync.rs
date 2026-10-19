@@ -68,6 +68,46 @@ pub struct Link<'a> {
     pub repo: &'a Repository,
     pub identity: &'a Identity,
     pub known_hosts: &'a Path,
+    /// The engine's attachment cache (`<root>/blobs`).
+    pub blobs: &'a Path,
+}
+
+/// Attachments the host purged while offline: removed from the relay's
+/// store after the purge commit is pushed.
+const PENDING_PURGES: &str = "teahouse-purges";
+
+pub fn add_pending_purge(git_dir: &Path, hash: &str) -> Result<()> {
+    let p = git_dir.join(PENDING_PURGES);
+    let mut text = std::fs::read_to_string(&p).unwrap_or_default();
+    if !text.lines().any(|l| l == hash) {
+        text.push_str(hash);
+        text.push('\n');
+    }
+    std::fs::write(p, text)?;
+    Ok(())
+}
+
+pub fn remove_pending_purge(git_dir: &Path, hash: &str) -> Result<()> {
+    let p = git_dir.join(PENDING_PURGES);
+    let text = std::fs::read_to_string(&p).unwrap_or_default();
+    let kept: String = text
+        .lines()
+        .filter(|l| *l != hash)
+        .map(|l| format!("{l}\n"))
+        .collect();
+    std::fs::write(p, kept)?;
+    Ok(())
+}
+
+/// The teahouse id in a teahouse URL (`ssh://…/<id>`, `teahouse-local://<id>/…`).
+pub fn house_of_url(url: &str) -> Option<String> {
+    if let Some(rest) = url.strip_prefix(&format!("{}://", transport::LOCAL_SCHEME)) {
+        return rest.split('/').next().map(str::to_string);
+    }
+    url.trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .map(|h| h.trim_end_matches(".git").to_string())
 }
 
 /// How a sync ended.
@@ -259,11 +299,120 @@ impl Link<'_> {
             }
         }
 
+        if !specs.is_empty() {
+            self.upload_attachments()?;
+        }
         self.push(&specs)?;
         for (name, to) in after {
             set_ref(repo, &name, to)?;
         }
+        self.run_pending_purges()?;
         Ok(Outcome::Synced)
+    }
+
+    fn endpoint(&self) -> Result<(crate::remote::Endpoint, String)> {
+        let remote = self.repo.find_remote("origin")?;
+        let url = remote.url().unwrap_or_default().to_string();
+        let house = house_of_url(&url).ok_or_else(|| Error::internal(format!("bad URL {url}")))?;
+        Ok((crate::remote::Endpoint::of_house_url(&url)?, house))
+    }
+
+    /// Every attachment that commits about to be pushed refer to, and that
+    /// the relay does not have yet, is uploaded first: the relay refuses a
+    /// reference to an attachment it does not hold.
+    fn upload_attachments(&self) -> Result<()> {
+        let repo = self.repo;
+        let mut walk = repo.revwalk()?;
+        let mut pushed_any = false;
+        for (_, oid) in refs_under(repo, PROPOSALS)? {
+            walk.push(oid)?;
+            pushed_any = true;
+        }
+        if let Ok(m) = repo.refname_to_id(MAIN) {
+            walk.push(m)?;
+            pushed_any = true;
+        }
+        if !pushed_any {
+            return Ok(());
+        }
+        if let Ok(t) = repo.refname_to_id(TRACKING_MAIN) {
+            walk.hide(t)?;
+        }
+        for (_, oid) in refs_under(repo, TRACKING_PROPOSALS)? {
+            walk.hide(oid)?;
+        }
+        let mut hashes = BTreeSet::new();
+        for id in walk {
+            let c = repo.find_commit(id?)?;
+            let parent = c.parent(0).ok().map(|p| p.tree()).transpose()?;
+            let diff = repo.diff_tree_to_tree(parent.as_ref(), Some(&c.tree()?), None)?;
+            for d in diff.deltas() {
+                if d.status() == Delta::Deleted {
+                    continue;
+                }
+                let path = String::from_utf8_lossy(d.new_file().path_bytes().unwrap_or_default())
+                    .to_lowercase();
+                if !path.ends_with(".ref.md") {
+                    continue;
+                }
+                let blob = repo.find_blob(d.new_file().id())?;
+                if let Some(r) = format::parse_blob_ref(&String::from_utf8_lossy(blob.content())) {
+                    if !r.purged {
+                        hashes.insert(r.hash);
+                    }
+                }
+            }
+        }
+        if hashes.is_empty() {
+            return Ok(());
+        }
+        let (endpoint, house) = self.endpoint()?;
+        for hash in hashes {
+            let has = crate::remote::exec_text(
+                &endpoint,
+                self.identity,
+                self.known_hosts,
+                &format!("blob-has {house} {hash}"),
+            )?;
+            if has.trim() == "yes" {
+                continue;
+            }
+            let path = self.blobs.join(&hash);
+            let mut file = std::fs::File::open(&path).map_err(|_| {
+                Error::internal(format!(
+                    "attachment sha256:{hash} is not in the local cache"
+                ))
+            })?;
+            let size = file.metadata()?.len();
+            crate::remote::exec(
+                &endpoint,
+                self.identity,
+                self.known_hosts,
+                &format!("blob-put {house} {hash} {size}"),
+                &mut file,
+                &mut std::io::sink(),
+            )?;
+        }
+        Ok(())
+    }
+
+    fn run_pending_purges(&self) -> Result<()> {
+        let git_dir = self.repo.path();
+        let pending = std::fs::read_to_string(git_dir.join(PENDING_PURGES)).unwrap_or_default();
+        if pending.trim().is_empty() {
+            return Ok(());
+        }
+        let (endpoint, house) = self.endpoint()?;
+        for hash in pending.lines().filter(|l| !l.is_empty()) {
+            crate::remote::exec_text(
+                &endpoint,
+                self.identity,
+                self.known_hosts,
+                &format!("blob-purge {house} {hash}"),
+            )?;
+            remove_pending_purge(git_dir, hash)?;
+        }
+        Ok(())
     }
 }
 

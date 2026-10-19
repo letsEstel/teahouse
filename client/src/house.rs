@@ -1046,6 +1046,20 @@ impl Snapshot {
         Ok(self.blob_file(path)?.0.to_string_lossy().into_owned())
     }
 
+    /// The hash an attachment reference names (whether cached or not).
+    pub fn blob_hash(&self, path: &str) -> Result<String> {
+        let text = self
+            .text(path)?
+            .filter(|_| path.ends_with(".ref.md"))
+            .ok_or_else(|| {
+                Error::not_found(format!("{path} is not an attachment / 不是附件"))
+                    .with("path", path)
+            })?;
+        format::parse_blob_ref(&text)
+            .map(|r| r.hash)
+            .ok_or_else(|| Error::invalid(format!("{path}: malformed attachment reference")))
+    }
+
     /// The cached file of an attachment and its media type. Only ever a
     /// file in this engine's attachment cache, named by its hash.
     pub fn blob_file(&self, path: &str) -> Result<(PathBuf, String)> {

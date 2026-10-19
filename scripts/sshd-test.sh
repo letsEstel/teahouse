@@ -117,6 +117,12 @@ ssh_as() { local who=$1; shift; ssh $(ssh_opts "$who") "$@"; }
 git_as() { local who=$1; shift; GIT_SSH_COMMAND="ssh $(ssh_opts "$who")" git "$@"; }
 url="ssh://$user@localhost:$port/wutong"
 commit() { git -C "$1" add -A && git -C "$1" commit -q -m "$2"; }
+# Members sign their commits with their own key (the relay checks it).
+as_member() {
+  git -C "$1" config user.name "$2"; git -C "$1" config user.email "$2@teahouse"
+  git -C "$1" config gpg.format ssh; git -C "$1" config user.signingkey "$keys/$2"
+  git -C "$1" config commit.gpgsign true
+}
 stamp() { date -u +%Y%m%dT%H%M%SZ; }
 
 # ── sshd configs, generated from the shipped file ─────────────────────────
@@ -219,7 +225,7 @@ run_method() {
 
   local c="$clones"
   expect ok "T1 老板 clone" "" git_as chenli clone -q "$url" "$c/chenli" || return
-  git -C "$c/chenli" config user.name chenli; git -C "$c/chenli" config user.email chenli@test
+  as_member "$c/chenli" chenli
   cat >>"$c/chenli/.teahouse/members.toml" <<EOF
 
 [[member]]
@@ -244,7 +250,7 @@ EOF
 
   for who in zhou wang; do
     must git_as "$who" clone -q "$url" "$c/$who" || return
-    git -C "$c/$who" config user.name "$who"; git -C "$c/$who" config user.email "$who@test"
+    as_member "$c/$who" "$who"
   done
   mkdir -p "$c/wang/works/0001"; echo "错峰共享" >"$c/wang/works/0001/idea.md"
   commit "$c/wang" $'错峰共享\n\nProblem: 0001'
@@ -259,7 +265,12 @@ EOF
   commit "$c/zhou" $'车位分布图\n\nProblem: 0001'
   expect ok "T4c 伙计推送 works/ 到 main" "main -> main" git_as zhou -C "$c/zhou" push origin main
 
-  expect fail "T5 茶馆外的密钥：ssh 被拒" "Permission denied" ssh_as outsider "$user@localhost"
+  if [[ $method == A ]]; then
+    # INVITE.md rule 6: a key with no seat gets in, but can only redeem.
+    expect fail "T5 茶馆外的密钥：只能兑换邀请" "can only redeem" ssh_as outsider "$user@localhost" "git-upload-pack 'wutong'"
+  else
+    expect fail "T5 茶馆外的密钥：ssh 被拒" "Permission denied" ssh_as outsider "$user@localhost"
+  fi
   expect fail "T5 茶馆外的密钥：clone 失败" "" git_as outsider clone -q "$url" "$c/outsider"
 
   expect ok "T6 直接登录：只打印你的茶馆" "你的茶馆" ssh_as chenli "$user@localhost" </dev/null
@@ -336,6 +347,31 @@ PY
   expect ok "E2 Relay 上收到这次提交" "经真实 sshd 推送" git -C "$root/houses/kehu.git" log -1 --format=%s main
   expect ok "E3 没有座位的茶馆进不去" '"code":"not_a_member"' \
     bash -c "'$client' --root '$eng' call join '{\"relay\":\"$user@127.0.0.1:$port\",\"house\":\"wutong\"}'; true"
+  # E5: an invitation brings in a new device (method A: a key with no seat
+  # reaches redeem-shell; method B cannot let unknown keys in at all).
+  local inv eng2="$work/engine2-$method"
+  inv="$("$client" --root "$eng" call invite '{"house":"kehu","name":"新设备"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"])')"
+  if [[ $inv == TH-*@* ]]; then pass "E5 老板创建邀请" "$inv"; else fail "E5 老板创建邀请" "$inv"; fi
+  if [[ $method == A ]]; then
+    expect ok "E5 新设备凭邀请入座并克隆" '"myRole":"guest"' \
+      "$client" --root "$eng2" call redeem "{\"code\":\"$inv\",\"name\":\"新设备\"}"
+    expect ok "E5 新设备留言并推送" '"commit":"pushed"' \
+      "$client" --root "$eng2" call note '{"house":"kehu","problem":"0001","text":"新设备来了。"}'
+  else
+    expect ok "E5 方式 B 不认识陌生钥匙：兑换不可用" '"code":"not_a_member"' \
+      bash -c "'$client' --root '$eng2' call redeem '{\"code\":\"$inv\",\"name\":\"x\"}'; true"
+  fi
+  # E6: attachments go up before the reference is pushed, and come down on demand.
+  printf 'png over ssh' >"$work/photo-$method.png"
+  expect ok "E6 附件经 ssh 上传，引用随后推送" '"commit":"pushed"' \
+    "$client" --root "$eng" call addWork "{\"house\":\"kehu\",\"problem\":\"0001\",\"kind\":\"image\",\"title\":\"照片\",\"fromPath\":\"$work/photo-$method.png\"}"
+  expect ok "E6 Relay 的附件仓库里有它" "" test -f "$root/blobs/kehu/$(sha256sum "$work/photo-$method.png" | cut -d' ' -f1)"
+  if [[ $method == A ]]; then
+    "$client" --root "$eng2" call sync '{"house":"kehu"}' >/dev/null
+    expect ok "E6 另一台设备按需下载并校验" '"ok":true' \
+      "$client" --root "$eng2" call blob '{"house":"kehu","id":"works/0001/照片.png.ref.md"}'
+  fi
+
   sed -i 's/ [0-9a-f]*$/ 00/' "$eng/known_hosts"
   expect ok "E4 主机钥匙变了：拒绝连接" "different host key" \
     "$client" --root "$eng" call sync '{"house":"kehu"}'

@@ -23,7 +23,6 @@ use crate::Client;
 use git2::{Oid, Repository};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use teahouse_core::rules::{self, check_text, format_stamp};
 use teahouse_core::{Member, Members, Role, MEMBERS_PATH};
 
@@ -78,6 +77,8 @@ enum Undo {
     Main(Oid),
     /// A proposal ref and what it pointed at before.
     Proposal(String, Option<Oid>),
+    /// An attachment queued for deletion at the relay.
+    PendingPurge(String),
 }
 
 pub struct Writer<'c> {
@@ -379,6 +380,7 @@ impl<'c> Writer<'c> {
             repo: self.repo(),
             identity: &self.identity,
             known_hosts: &self.client.known_hosts(),
+            blobs: &self.client.root().join("blobs"),
         };
         let pushed = match link.sync() {
             Ok(sync::Outcome::Synced) => true,
@@ -456,6 +458,7 @@ impl<'c> Writer<'c> {
                     let current = repo.refname_to_id(name).ok();
                     commit::move_ref(repo, name, current, *old, "teahouse: refused")?;
                 }
+                Undo::PendingPurge(hash) => sync::remove_pending_purge(repo.path(), hash)?,
             }
         }
         Ok(())
@@ -623,10 +626,7 @@ impl<'c> Writer<'c> {
             .with("limit", MAX_BLOB.to_string()));
         }
         let data = std::fs::read(from)?;
-        let hash: String = Sha256::digest(&data)
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect();
+        let hash = teahouse_core::sha256::hex(&data);
         let dir = self.client.root().join("blobs");
         std::fs::create_dir_all(&dir)?;
         let dest = dir.join(&hash);
@@ -1079,6 +1079,53 @@ impl<'c> Writer<'c> {
             false,
             None,
         )
+    }
+
+    /// The host removes an attachment's content for good: the reference is
+    /// marked `purged: <time> <host>` (a signed commit), and once that is on
+    /// the relay, the relay deletes the file (CLIENT-API.md §1.6).
+    pub fn purge_blob(self, id: &str, args: &Value) -> Result<WriteResult> {
+        self.require(&[Role::Host], "purgeBlob")?;
+        let Some((pid, _)) = format::parse_work_path(id).filter(|_| id.ends_with(".ref.md")) else {
+            return Err(
+                Error::not_found(format!("{id} is not an attachment / 不是附件")).with("id", id),
+            );
+        };
+        let text = self.snap.text(id)?.ok_or_else(|| {
+            Error::not_found(format!("{id} is not an attachment / 不是附件")).with("id", id)
+        })?;
+        let r = format::parse_blob_ref(&text).ok_or_else(|| {
+            invalid(format!("{id}: malformed attachment reference")).with("id", id)
+        })?;
+        if r.purged {
+            return Err(
+                invalid("this attachment was already removed / 这个附件已经删除了").with("id", id),
+            );
+        }
+        let stamp = format!(
+            "{} {}",
+            teahouse_core::rules::format_rfc3339(sync::now()),
+            self.me.id
+        );
+        let new = format::set_fields(&text, &[("purged", Some(&stamp))]);
+        let title = r.title.clone().unwrap_or_else(|| format::file_title(id));
+        let pid = pid.to_string();
+        let c = self.commit_main(
+            &[Edit::Put(id.to_string(), new.into_bytes())],
+            &format!("删除附件：{title}"),
+            None,
+            &[("Problem", pid), ("Act", "update-work".into())],
+        )?;
+        sync::add_pending_purge(self.repo().path(), &r.hash)?;
+        let result = self.publish(
+            vec![Undo::Main(c), Undo::PendingPurge(r.hash.clone())],
+            "purgeBlob",
+            args,
+            false,
+            Some(id.to_string()),
+        )?;
+        let _ = std::fs::remove_file(self.client.root().join("blobs").join(&r.hash));
+        Ok(result)
     }
 
     // -- seats ------------------------------------------------------------

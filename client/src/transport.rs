@@ -159,7 +159,7 @@ pub fn callbacks<'a>(
 
 /// Trust on first use: remembers `host`'s fingerprint, and refuses a
 /// different one later.
-fn pin_host_key(known_hosts: &Path, host: &str, fp: &str) -> Result<()> {
+pub(crate) fn pin_host_key(known_hosts: &Path, host: &str, fp: &str) -> Result<()> {
     let text = std::fs::read_to_string(known_hosts).unwrap_or_default();
     for line in text.lines() {
         if let Some((h, f)) = line.split_once(' ') {

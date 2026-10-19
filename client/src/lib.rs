@@ -17,11 +17,15 @@
 
 pub mod commit;
 pub mod error;
+pub mod export;
 pub mod format;
 pub mod git;
 pub mod house;
 pub mod identity;
 pub mod model;
+pub mod remote;
+#[cfg(not(target_os = "android"))]
+pub mod seed;
 pub mod serve;
 pub mod sync;
 pub mod transport;
@@ -129,6 +133,7 @@ impl Client {
             repo: snap.git.repo(),
             identity: &identity,
             known_hosts: &self.known_hosts(),
+            blobs: &self.root.join("blobs"),
         };
         if let Err(e) = link.sync() {
             if e.code == Code::Internal {
@@ -162,6 +167,7 @@ impl Client {
             repo: &repo,
             identity: &identity,
             known_hosts: &self.known_hosts(),
+            blobs: &self.root.join("blobs"),
         };
         if let Err(e) = link.sync() {
             drop(repo);
@@ -169,6 +175,235 @@ impl Client {
             return Err(e);
         }
         self.snapshot(house)?.summary()
+    }
+
+    /// The relay a teahouse syncs with.
+    fn endpoint(&self, snap: &Snapshot) -> Result<(remote::Endpoint, String)> {
+        let remote = snap
+            .git
+            .repo()
+            .find_remote("origin")
+            .map_err(|_| Error::invalid("this teahouse has no relay / 这间茶馆没有 Relay"))?;
+        let url = remote.url().unwrap_or_default().to_string();
+        let house = sync::house_of_url(&url).unwrap_or_else(|| snap.id.clone());
+        Ok((remote::Endpoint::of_house_url(&url)?, house))
+    }
+
+    /// The host creates an invitation; returns the whole invitation to pass
+    /// on, `TH-XXXX-XXXX-XXXX-XXXX@<relay>`.
+    pub fn invite(
+        &self,
+        house: &str,
+        role: Option<&str>,
+        name: Option<&str>,
+        days: Option<u64>,
+    ) -> Result<String> {
+        let snap = self.snapshot(house)?;
+        if snap.me.as_ref().map(|m| m.role) != Some(teahouse_core::Role::Host) {
+            return Err(
+                Error::new(Code::Forbidden, "only the host invites / 只有老板能邀请")
+                    .with("action", "invite"),
+            );
+        }
+        let (endpoint, remote_house) = self.endpoint(&snap)?;
+        let mut cmd = format!("invite {remote_house}");
+        if let Some(r) = role {
+            cmd.push_str(&format!(" --role {}", remote::quote(r)));
+        }
+        if let Some(n) = name.filter(|n| !n.trim().is_empty()) {
+            cmd.push_str(&format!(" --name {}", remote::quote(n.trim())));
+        }
+        if let Some(d) = days {
+            cmd.push_str(&format!(" --days {d}"));
+        }
+        let code = remote::exec_text(&endpoint, &self.identity()?, &self.known_hosts(), &cmd)?;
+        Ok(format!("{}@{}", code.trim(), endpoint.address()))
+    }
+
+    /// Redeems an invitation with this device's key, then clones the
+    /// teahouse. `code` may be the whole invitation (`TH-…@relay`); an
+    /// explicit `relay` wins.
+    pub fn redeem(
+        &self,
+        relay: Option<&str>,
+        code: &str,
+        name: &str,
+    ) -> Result<model::HouseSummary> {
+        if name.trim().is_empty() {
+            return Err(Error::invalid("your name, please / 请写上你的名字").with("field", "name"));
+        }
+        let (code_part, from_code) = match code.trim().split_once('@') {
+            Some((c, r)) => (c.trim(), Some(r.trim())),
+            None => (code.trim(), None),
+        };
+        let relay = relay
+            .map(str::trim)
+            .filter(|r| !r.is_empty())
+            .or(from_code)
+            .ok_or_else(|| {
+                Error::invalid("which relay? the invitation has no address / 邀请里没有 Relay 地址")
+                    .with("field", "relay")
+            })?;
+        let endpoint = remote::Endpoint::parse(relay)?;
+        let identity = self.identity()?;
+        let out = remote::exec_text(
+            &endpoint,
+            &identity,
+            &self.known_hosts(),
+            &format!(
+                "redeem {} --name {}",
+                remote::quote(code_part),
+                remote::quote(name.trim())
+            ),
+        )?;
+        let house = out
+            .lines()
+            .find_map(|l| l.strip_prefix("house "))
+            .map(|h| h.trim().to_string())
+            .ok_or_else(|| Error::internal(format!("unexpected answer from the relay: {out}")))?;
+        let address = match &endpoint {
+            remote::Endpoint::Local { root } => format!("teahouse-local:{}", root.display()),
+            remote::Endpoint::Ssh { user, host, port } => format!("{user}@{host}:{port}"),
+        };
+        self.join(&address, &house)
+    }
+
+    /// The local file of an attachment, downloaded from the relay (and its
+    /// hash checked) when this device does not have it yet.
+    pub fn blob(&self, house: &str, id: &str) -> Result<PathBuf> {
+        let snap = self.snapshot(house)?;
+        match snap.blob_file(id) {
+            Ok((path, _)) => Ok(path),
+            Err(e) if e.code == Code::Offline => {
+                let hash = snap.blob_hash(id)?;
+                // Without a relay there is nowhere to fetch it from.
+                let Ok((endpoint, remote_house)) = self.endpoint(&snap) else {
+                    return Err(e);
+                };
+                let dir = self.root.join("blobs");
+                std::fs::create_dir_all(&dir)?;
+                let tmp = dir.join(format!(".download-{hash}"));
+                let mut f = std::fs::File::create(&tmp)?;
+                let r = remote::exec(
+                    &endpoint,
+                    &self.identity()?,
+                    &self.known_hosts(),
+                    &format!("blob-get {remote_house} {hash}"),
+                    &mut std::io::empty(),
+                    &mut f,
+                );
+                drop(f);
+                let checked = r.and_then(|_| {
+                    let data = std::fs::read(&tmp)?;
+                    if teahouse_core::sha256::hex(&data) != hash {
+                        return Err(Error::internal("the downloaded attachment does not match its hash / 下载的附件和哈希不符"));
+                    }
+                    Ok(())
+                });
+                if let Err(e) = checked {
+                    let _ = std::fs::remove_file(&tmp);
+                    return Err(e);
+                }
+                let dest = dir.join(&hash);
+                std::fs::rename(&tmp, &dest)?;
+                Ok(dest)
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Exports a teahouse into a new folder under `to`; returns its path.
+    pub fn export(&self, house: &str, to: &str) -> Result<String> {
+        if to.trim().is_empty() {
+            return Err(Error::invalid("where to? / 导出到哪里？").with("field", "to"));
+        }
+        let snap = self.snapshot(house)?;
+        let today = teahouse_core::rules::format_stamp(sync::now())[..8].to_string();
+        let dir = export::export(&snap, &self.root.join("blobs"), Path::new(to), &today)?;
+        Ok(dir.to_string_lossy().into_owned())
+    }
+
+    fn drafts_dir(&self, house: &str) -> Result<PathBuf> {
+        if !valid_house_id(house) {
+            return Err(Error::not_found(format!("no teahouse {house:?}")).with("house", house));
+        }
+        Ok(self.root.join("drafts").join(house))
+    }
+
+    /// What people wrote that the relay refused, newest first.
+    pub fn drafts(&self, house: &str) -> Result<Vec<model::Draft>> {
+        let dir = self.drafts_dir(house)?;
+        let mut out = Vec::new();
+        let Ok(rd) = std::fs::read_dir(&dir) else {
+            return Ok(out);
+        };
+        for e in rd.filter_map(|e| e.ok()) {
+            let name = e.file_name().to_string_lossy().into_owned();
+            let Some(id) = name.strip_suffix(".json") else {
+                continue;
+            };
+            let Ok(v) = serde_json::from_slice::<Value>(&std::fs::read(e.path())?) else {
+                continue;
+            };
+            let args = &v["args"];
+            let text = args["text"]
+                .as_str()
+                .map(str::to_string)
+                .or_else(|| {
+                    args["body"].as_array().map(|b| {
+                        b.iter()
+                            .filter_map(|s| s["text"].as_str())
+                            .collect::<Vec<_>>()
+                            .join(
+                                "
+
+",
+                            )
+                    })
+                })
+                .unwrap_or_default();
+            let title = args["title"]
+                .as_str()
+                .map(str::to_string)
+                .unwrap_or_else(|| text.lines().next().unwrap_or("").chars().take(40).collect());
+            let at: i64 = id
+                .split('-')
+                .next()
+                .and_then(|t| t.parse().ok())
+                .unwrap_or(0);
+            let reasons: Vec<&str> = v["error"]["reasons"]
+                .as_array()
+                .map(|r| r.iter().filter_map(Value::as_str).collect())
+                .unwrap_or_default();
+            let reason = if reasons.is_empty() {
+                v["error"]["message"].as_str().map(str::to_string)
+            } else {
+                Some(reasons.join(
+                    "
+",
+                ))
+            };
+            out.push(model::Draft {
+                id: id.to_string(),
+                kind: v["command"].as_str().unwrap_or("").to_string(),
+                title,
+                text,
+                when: teahouse_core::rules::format_rfc3339(at),
+                reason,
+            });
+        }
+        out.sort_by(|a, b| b.id.cmp(&a.id));
+        Ok(out)
+    }
+
+    pub fn discard_draft(&self, house: &str, id: &str) -> Result<()> {
+        let ok = !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-');
+        let path = self.drafts_dir(house)?.join(format!("{id}.json"));
+        if !ok || !path.is_file() {
+            return Err(Error::not_found(format!("no draft {id:?}")).with("id", id));
+        }
+        std::fs::remove_file(path)?;
+        Ok(())
     }
 
     /// Keeps what someone wrote when the relay refused it; returns the path
@@ -326,7 +561,50 @@ impl Client {
             }
             "blob" => {
                 let a: IdArg = parse(command, a)?;
-                to_value(self.snapshot(&a.house)?.blob(&a.id)?)
+                to_value(self.blob(&a.house, &a.id)?.to_string_lossy())
+            }
+            "export" => {
+                #[derive(Deserialize)]
+                struct ExportArg {
+                    house: String,
+                    to: String,
+                }
+                let a: ExportArg = parse(command, a)?;
+                to_value(self.export(&a.house, &a.to)?)
+            }
+            "drafts" => {
+                let a: HouseArg = parse(command, a)?;
+                to_value(self.drafts(&a.house)?)
+            }
+            "discardDraft" => {
+                let a: IdArg = parse(command, a)?;
+                self.discard_draft(&a.house, &a.id)?;
+                Ok(Value::Null)
+            }
+            "invite" => {
+                #[derive(Deserialize)]
+                struct InviteArg {
+                    house: String,
+                    role: Option<String>,
+                    name: Option<String>,
+                    days: Option<u64>,
+                }
+                let a: InviteArg = parse(command, a)?;
+                to_value(self.invite(&a.house, a.role.as_deref(), a.name.as_deref(), a.days)?)
+            }
+            "redeem" => {
+                #[derive(Deserialize)]
+                struct RedeemArg {
+                    relay: Option<String>,
+                    code: String,
+                    name: String,
+                }
+                let a: RedeemArg = parse(command, a)?;
+                to_value(self.redeem(a.relay.as_deref(), &a.code, &a.name)?)
+            }
+            "purgeBlob" => {
+                let p: IdArg = parse(command, a)?;
+                to_value(Writer::open(self, &p.house)?.purge_blob(&p.id, a)?)
             }
             "sync" => {
                 let a: MaybeHouse = parse(command, a)?;
@@ -427,10 +705,6 @@ impl Client {
                 let role = p.role.as_ref().map(|r| (r.id.as_str(), r.role.as_str()));
                 to_value(Writer::open(self, &p.house)?.seat(p.remove.as_deref(), role, a)?)
             }
-            "export" | "invite" | "redeem" | "purgeBlob" => Err(Error::invalid(format!(
-                "{command} is not implemented yet / 这条命令还没有实现"
-            ))
-            .with("command", command)),
             _ => {
                 Err(Error::invalid(format!("unknown command {command:?}")).with("command", command))
             }
