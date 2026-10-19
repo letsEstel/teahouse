@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = ["core", "relay"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "UNLICENSED"
+rust-version = "1.75"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
