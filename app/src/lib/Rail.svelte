@@ -58,6 +58,7 @@
           </a>
         </li>
       {/each}
+      <li class="join"><a href="#/join" onclick={() => (open = false)}>+ {t('rail.join')}</a></li>
     </ul>
     {#if many}
       <button class="more" aria-expanded={expanded} onclick={() => (expanded = !expanded)}>
@@ -129,7 +130,8 @@
   ul a:hover { color: var(--ink); }
   ul a.on { color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 17px; }
   ul a.on i { background: var(--ink); }
-  ul.folded li:not(.current) { display: none; }
+  ul.folded li:not(.current):not(.join) { display: none; }
+  .join a { font-size: 12px; font-weight: 500; padding-top: 8px; }
   ul.scroll { max-height: 34vh; overflow-y: auto; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
   .more { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; font-weight: 500; color: var(--ink-2); border-bottom: 1px solid var(--ink-3); }
   .more:hover { color: var(--ink); }
@@ -217,6 +219,7 @@
     ul.folded li:not(.current) { display: list-item; }
     ul.scroll { border-bottom: 2px solid var(--ink); }
     .more { display: none; }
+    .join a { border-top: 1px solid var(--rule); margin-top: 4px; padding-top: 10px; }
     ul a { padding: 8px 0; }
 
     nav { grid-area: nav; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
