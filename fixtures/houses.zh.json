@@ -126,38 +126,38 @@
         "recent": [
           {
             "by": "zhou",
-            "act": "add-work",
-            "title": "车位分布图（实测）",
             "when": "2026-10-18T16:02:00.000Z",
-            "problem": "0001"
+            "problem": "0001",
+            "act": "add-work",
+            "title": "添加了成果《车位分布图（实测）》"
           },
           {
             "by": "zhao",
-            "act": "propose",
-            "title": "把夜间临时停车改为错峰共享",
             "when": "2026-10-17T20:14:00.000Z",
-            "problem": "0001"
+            "problem": "0001",
+            "act": "propose",
+            "title": "发起提案《把夜间临时停车改为错峰共享》"
           },
           {
             "by": "sun",
-            "act": "add-work",
-            "title": "清运时间表",
             "when": "2026-10-17T08:00:00.000Z",
-            "problem": "0002"
+            "problem": "0002",
+            "act": "add-work",
+            "title": "添加了成果《清运时间表》"
           },
           {
             "by": "lin",
-            "act": "open-problem",
-            "title": "给院里独居老人订午餐",
             "when": "2026-10-15T06:30:00.000Z",
-            "problem": "0004"
+            "problem": "0004",
+            "act": "open-problem",
+            "title": "提出了问题《给院里独居老人订午餐》"
           },
           {
             "by": "chen",
-            "act": "add-work",
-            "title": "维修基金余额明细",
             "when": "2026-10-14T17:00:00.000Z",
-            "problem": "0005"
+            "problem": "0005",
+            "act": "add-work",
+            "title": "添加了成果《维修基金余额明细》"
           }
         ],
         "proposals": [
@@ -295,19 +295,22 @@
                 "by": "wang",
                 "text": "我来，带两把扫帚。",
                 "when": "2026-10-16T18:31:00.000Z",
-                "writtenAt": "2026-10-16T18:31:00.000Z"
+                "writtenAt": "2026-10-16T18:31:00.000Z",
+                "id": "talk/board/b2/20261016T183100Z-wang.md"
               },
               {
                 "by": "wu",
                 "text": "喷漆的活我熟，算我一个。",
                 "when": "2026-10-17T05:50:00.000Z",
-                "writtenAt": "2026-10-17T05:50:00.000Z"
+                "writtenAt": "2026-10-17T05:50:00.000Z",
+                "id": "talk/board/b2/20261017T055000Z-wu.md"
               },
               {
                 "by": "lin",
                 "text": "上午要陪老人看病，下午可以来收尾。",
                 "when": "2026-10-17T10:02:00.000Z",
-                "writtenAt": "2026-10-17T10:02:00.000Z"
+                "writtenAt": "2026-10-17T10:02:00.000Z",
+                "id": "talk/board/b2/20261017T100200Z-lin.md"
               }
             ]
           },
@@ -322,7 +325,8 @@
                 "by": "zhao",
                 "text": "收到，v2 周末前提交。",
                 "when": "2026-10-08T19:15:00.000Z",
-                "writtenAt": "2026-10-08T19:15:00.000Z"
+                "writtenAt": "2026-10-08T19:15:00.000Z",
+                "id": "talk/board/b1/20261008T191500Z-zhao.md"
               }
             ]
           }
@@ -450,46 +454,46 @@
           "events": [
             {
               "by": "wang",
-              "act": "open-problem",
-              "title": "",
               "when": "2026-03-16T08:00:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "open-problem",
+              "title": "提出了这个问题"
             },
             {
               "by": "chen",
+              "when": "2026-09-18T18:30:00.000Z",
+              "problem": "0001",
               "act": "set-status",
               "status": "active",
-              "title": "",
-              "when": "2026-09-18T18:30:00.000Z",
-              "problem": "0001"
+              "title": "把问题标为进行中"
             },
             {
               "by": "wang",
-              "act": "update-work",
-              "title": "一周占位记录",
               "when": "2026-10-09T19:30:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "update-work",
+              "title": "更新了《一周占位记录》"
             },
             {
               "by": "chen",
-              "act": "adopt",
-              "title": "地锁采购报价",
               "when": "2026-10-12T08:20:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "adopt",
+              "title": "采纳了提案《地锁采购报价》"
             },
             {
               "by": "zhao",
-              "act": "propose",
-              "title": "把夜间临时停车改为错峰共享",
               "when": "2026-10-17T20:14:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "propose",
+              "title": "发起提案《把夜间临时停车改为错峰共享》"
             },
             {
               "by": "zhou",
-              "act": "add-work",
-              "title": "车位分布图（实测）",
               "when": "2026-10-18T16:02:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《车位分布图（实测）》"
             }
           ],
           "notes": [
@@ -497,19 +501,22 @@
               "by": "li",
               "text": "地锁报价如果用不上，报价表能不能留着？别的院子可能用得上。",
               "when": "2026-10-13T06:40:00.000Z",
-              "writtenAt": "2026-10-13T06:40:00.000Z"
+              "writtenAt": "2026-10-13T06:40:00.000Z",
+              "id": "talk/0001/20261013T064000Z-li.md"
             },
             {
               "by": "zhao",
               "text": "v2 里夜班住户要提前登记。登记表谁来收？",
               "when": "2026-10-17T20:30:00.000Z",
-              "writtenAt": "2026-10-17T20:30:00.000Z"
+              "writtenAt": "2026-10-17T20:30:00.000Z",
+              "id": "talk/0001/20261017T203000Z-zhao.md"
             },
             {
               "by": "zhou",
               "text": "我来收。门卫室放一个本子，每周日拍照传到这里。",
               "when": "2026-10-18T07:10:00.000Z",
-              "writtenAt": "2026-10-18T07:10:00.000Z"
+              "writtenAt": "2026-10-18T07:10:00.000Z",
+              "id": "talk/0001/20261018T071000Z-zhou.md"
             }
           ]
         },
@@ -586,14 +593,15 @@
               "when": "2026-09-18T18:30:00.000Z",
               "act": "set-status",
               "problem": "0001",
-              "title": "active"
+              "title": "把问题标为进行中",
+              "status": "active"
             },
             {
               "by": "wang",
               "when": "2026-03-16T08:00:00.000Z",
               "act": "open-problem",
               "problem": "0001",
-              "title": "小区停车位不好找"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -608,7 +616,7 @@
               "when": "2026-06-02T09:00:00Z",
               "act": "open-problem",
               "problem": "0002",
-              "title": "垃圾分类点的气味"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -623,7 +631,7 @@
               "when": "2026-04-10T09:00:00Z",
               "act": "open-problem",
               "problem": "0003",
-              "title": "楼道灯坏了三个月"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -638,7 +646,7 @@
               "when": "2026-10-15T09:00:00Z",
               "act": "open-problem",
               "problem": "0004",
-              "title": "给院里独居老人订午餐"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -653,7 +661,7 @@
               "when": "2026-10-08T09:00:00Z",
               "act": "open-problem",
               "problem": "0005",
-              "title": "年底公共维修基金怎么花"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -668,7 +676,7 @@
               "when": "2026-10-18T16:02:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "车位分布图（实测）"
+              "title": "新建了它"
             }
           ]
         },
@@ -683,7 +691,7 @@
               "when": "2026-10-17T19:40:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "错峰共享方案 v2",
+              "title": "新建了它",
               "diff": [
                 {
                   "kind": "add",
@@ -720,14 +728,14 @@
               "when": "2026-10-12T08:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "地锁采购报价"
+              "title": "新建了它"
             },
             {
               "by": "chen",
               "when": "2026-10-12T08:20:00.000Z",
               "act": "adopt",
               "problem": "0001",
-              "title": "地锁采购报价"
+              "title": "采纳了提案，写进了它"
             }
           ]
         },
@@ -742,7 +750,7 @@
               "when": "2026-10-09T19:30:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "一周占位记录"
+              "title": "新建了它"
             }
           ]
         },
@@ -757,7 +765,7 @@
               "when": "2026-10-03T13:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "致物业的函（草稿）"
+              "title": "新建了它"
             }
           ]
         },
@@ -772,7 +780,7 @@
               "when": "2026-09-27T10:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "周边收费停车场价目"
+              "title": "新建了它"
             }
           ]
         },
@@ -787,7 +795,7 @@
               "when": "2026-09-20T07:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "外来车辆照片汇总"
+              "title": "新建了它"
             }
           ]
         },
@@ -802,7 +810,7 @@
               "when": "2026-09-18T18:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "错峰共享方案 v1"
+              "title": "新建了它"
             }
           ]
         },
@@ -817,7 +825,7 @@
               "when": "2026-09-11T17:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "住户问卷结果"
+              "title": "新建了它"
             }
           ]
         },
@@ -832,7 +840,7 @@
               "when": "2026-10-16T18:00:00.000Z",
               "act": "notice",
               "problem": "board",
-              "title": "10 月 25 日（周六）上午院内大扫除"
+              "title": "新建了它"
             }
           ]
         },
@@ -847,7 +855,7 @@
               "when": "2026-10-08T17:00:00.000Z",
               "act": "notice",
               "problem": "board",
-              "title": "停车方案 11 月 6 日在业委会表决"
+              "title": "新建了它"
             }
           ]
         },
@@ -862,7 +870,7 @@
               "when": "2026-10-13T06:40:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -877,7 +885,7 @@
               "when": "2026-10-17T20:30:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -892,7 +900,7 @@
               "when": "2026-10-18T07:10:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -907,7 +915,7 @@
               "when": "2026-10-16T18:31:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "10 月 25 日（周六）上午院内大扫除"
+              "title": "新建了它"
             }
           ]
         },
@@ -922,7 +930,7 @@
               "when": "2026-10-17T05:50:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "10 月 25 日（周六）上午院内大扫除"
+              "title": "新建了它"
             }
           ]
         },
@@ -937,7 +945,7 @@
               "when": "2026-10-17T10:02:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "10 月 25 日（周六）上午院内大扫除"
+              "title": "新建了它"
             }
           ]
         },
@@ -952,7 +960,7 @@
               "when": "2026-10-08T19:15:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "停车方案 11 月 6 日在业委会表决"
+              "title": "新建了它"
             }
           ]
         },
@@ -967,63 +975,63 @@
               "when": "2026-03-14T08:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "陈立"
+              "title": "让陈立入座"
             },
             {
               "by": "chen",
               "when": "2026-03-14T08:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "周小满"
+              "title": "让周小满入座"
             },
             {
               "by": "chen",
               "when": "2026-03-16T08:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "王阿姨"
+              "title": "让王阿姨入座"
             },
             {
               "by": "chen",
               "when": "2026-03-16T08:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "李建国"
+              "title": "让李建国入座"
             },
             {
               "by": "chen",
               "when": "2026-03-22T08:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "赵一鸣"
+              "title": "让赵一鸣入座"
             },
             {
               "by": "chen",
               "when": "2026-04-02T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "孙婷"
+              "title": "让孙婷入座"
             },
             {
               "by": "chen",
               "when": "2026-04-09T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "吴师傅"
+              "title": "让吴师傅入座"
             },
             {
               "by": "chen",
               "when": "2026-05-30T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "郑可"
+              "title": "让郑可入座"
             },
             {
               "by": "chen",
               "when": "2026-09-21T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "林晚"
+              "title": "让林晚入座"
             }
           ]
         }
@@ -1124,31 +1132,31 @@
         "recent": [
           {
             "by": "xu",
-            "act": "propose",
-            "title": "术语表：Ding an sich 统一译为“物自身”",
             "when": "2026-10-17T19:05:00.000Z",
-            "problem": "0002"
+            "problem": "0002",
+            "act": "propose",
+            "title": "发起提案《术语表：Ding an sich 统一译为“物自身”》"
           },
           {
             "by": "he",
-            "act": "add-work",
-            "title": "B 版演绎论证结构（第三稿）",
             "when": "2026-10-16T20:40:00.000Z",
-            "problem": "0001"
+            "problem": "0001",
+            "act": "add-work",
+            "title": "添加了成果《B 版演绎论证结构（第三稿）》"
           },
           {
             "by": "ge",
-            "act": "open-problem",
-            "title": "下学期读第二批判还是第三批判",
             "when": "2026-10-12T17:00:00.000Z",
-            "problem": "0004"
+            "problem": "0004",
+            "act": "open-problem",
+            "title": "提出了问题《下学期读第二批判还是第三批判》"
           },
           {
             "by": "he",
-            "act": "update-work",
-            "title": "术语对照表",
             "when": "2026-10-09T21:00:00.000Z",
-            "problem": "0002"
+            "problem": "0002",
+            "act": "update-work",
+            "title": "更新了《术语对照表》"
           }
         ],
         "proposals": [
@@ -1227,13 +1235,15 @@
                 "by": "xu",
                 "text": "可以。我会把术语表的提案先交上来，周五一起看。",
                 "when": "2026-10-17T10:40:00.000Z",
-                "writtenAt": "2026-10-17T10:40:00.000Z"
+                "writtenAt": "2026-10-17T10:40:00.000Z",
+                "id": "talk/board/b2/20261017T104000Z-xu.md"
               },
               {
                 "by": "tang",
                 "text": "周五我要晚到半小时。",
                 "when": "2026-10-17T16:03:00.000Z",
-                "writtenAt": "2026-10-17T16:03:00.000Z"
+                "writtenAt": "2026-10-17T16:03:00.000Z",
+                "id": "talk/board/b2/20261017T160300Z-tang.md"
               }
             ]
           },
@@ -1327,39 +1337,39 @@
           "events": [
             {
               "by": "luo",
-              "act": "open-problem",
-              "title": "",
               "when": "2026-09-04T20:10:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "open-problem",
+              "title": "提出了这个问题"
             },
             {
               "by": "su",
+              "when": "2026-09-05T06:00:00.000Z",
+              "problem": "0001",
               "act": "set-status",
               "status": "active",
-              "title": "",
-              "when": "2026-09-05T06:00:00.000Z",
-              "problem": "0001"
+              "title": "把问题标为进行中"
             },
             {
               "by": "su",
-              "act": "adopt",
-              "title": "二手文献清单",
               "when": "2026-09-26T07:00:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "adopt",
+              "title": "采纳了提案《二手文献清单》"
             },
             {
               "by": "tang",
-              "act": "add-work",
-              "title": "第三次讨论纪要",
               "when": "2026-10-02T20:30:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《第三次讨论纪要》"
             },
             {
               "by": "he",
-              "act": "add-work",
-              "title": "B 版演绎论证结构（第三稿）",
               "when": "2026-10-16T20:40:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《B 版演绎论证结构（第三稿）》"
             }
           ],
           "notes": [
@@ -1367,19 +1377,22 @@
               "by": "tang",
               "text": "我倾向于读成两步。§21 自己说了“证明的开端”，说明还没完。",
               "when": "2026-10-02T20:50:00.000Z",
-              "writtenAt": "2026-10-02T20:50:00.000Z"
+              "writtenAt": "2026-10-02T20:50:00.000Z",
+              "id": "talk/0001/20261002T205000Z-tang.md"
             },
             {
               "by": "luo",
               "text": "同意两步，但第二步到底多证了什么，我还是说不出来。",
               "when": "2026-10-09T21:10:00.000Z",
-              "writtenAt": "2026-10-09T21:10:00.000Z"
+              "writtenAt": "2026-10-09T21:10:00.000Z",
+              "id": "talk/0001/20261009T211000Z-luo.md"
             },
             {
               "by": "he",
               "text": "第三稿里把第二步写成“范围的扩展”：从“被统一的直观”扩到“我们的一切感性直观”。周五请挑错。",
               "when": "2026-10-16T20:45:00.000Z",
-              "writtenAt": "2026-10-16T20:45:00.000Z"
+              "writtenAt": "2026-10-16T20:45:00.000Z",
+              "id": "talk/0001/20261016T204500Z-he.md"
             }
           ]
         },
@@ -1441,14 +1454,15 @@
               "when": "2026-09-05T06:00:00.000Z",
               "act": "set-status",
               "problem": "0001",
-              "title": "active"
+              "title": "把问题标为进行中",
+              "status": "active"
             },
             {
               "by": "luo",
               "when": "2026-09-04T20:10:00.000Z",
               "act": "open-problem",
               "problem": "0001",
-              "title": "先验演绎到底证明了什么"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -1463,7 +1477,7 @@
               "when": "2026-10-01T09:00:00Z",
               "act": "open-problem",
               "problem": "0002",
-              "title": "“物自身”还是“物自体”"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -1478,7 +1492,7 @@
               "when": "2026-01-08T09:00:00Z",
               "act": "open-problem",
               "problem": "0003",
-              "title": "先读完《未来形而上学导论》"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -1493,7 +1507,7 @@
               "when": "2026-10-12T09:00:00Z",
               "act": "open-problem",
               "problem": "0004",
-              "title": "下学期读第二批判还是第三批判"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -1508,7 +1522,7 @@
               "when": "2026-10-16T20:40:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "B 版演绎论证结构（第三稿）"
+              "title": "新建了它"
             }
           ]
         },
@@ -1523,7 +1537,7 @@
               "when": "2026-09-20T20:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "术语对照表",
+              "title": "新建了它",
               "diff": [
                 {
                   "kind": "add",
@@ -1544,7 +1558,7 @@
               "when": "2026-10-09T21:00:00.000Z",
               "act": "update-work",
               "problem": "0001",
-              "title": "术语对照表",
+              "title": "改了它",
               "diff": [
                 {
                   "kind": "same",
@@ -1581,7 +1595,7 @@
               "when": "2026-10-02T20:30:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "第三次讨论纪要"
+              "title": "新建了它"
             }
           ]
         },
@@ -1596,14 +1610,14 @@
               "when": "2026-09-25T18:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "二手文献清单"
+              "title": "新建了它"
             },
             {
               "by": "su",
               "when": "2026-09-26T07:00:00.000Z",
               "act": "adopt",
               "problem": "0001",
-              "title": "二手文献清单"
+              "title": "采纳了提案，写进了它"
             }
           ]
         },
@@ -1618,7 +1632,7 @@
               "when": "2026-09-11T19:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "讲稿：范畴的客观有效性"
+              "title": "新建了它"
             }
           ]
         },
@@ -1633,7 +1647,7 @@
               "when": "2026-10-17T08:00:00.000Z",
               "act": "notice",
               "problem": "board",
-              "title": "本周改到周五晚上"
+              "title": "新建了它"
             }
           ]
         },
@@ -1648,7 +1662,7 @@
               "when": "2026-09-30T19:00:00.000Z",
               "act": "notice",
               "problem": "board",
-              "title": "纪要轮值表"
+              "title": "新建了它"
             }
           ]
         },
@@ -1663,7 +1677,7 @@
               "when": "2026-10-02T20:50:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -1678,7 +1692,7 @@
               "when": "2026-10-09T21:10:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -1693,7 +1707,7 @@
               "when": "2026-10-16T20:45:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -1708,7 +1722,7 @@
               "when": "2026-10-17T10:40:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "本周改到周五晚上"
+              "title": "新建了它"
             }
           ]
         },
@@ -1723,7 +1737,7 @@
               "when": "2026-10-17T16:03:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "本周改到周五晚上"
+              "title": "新建了它"
             }
           ]
         },
@@ -1738,42 +1752,42 @@
               "when": "2026-01-08T08:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "苏明哲"
+              "title": "让苏明哲入座"
             },
             {
               "by": "su",
               "when": "2026-01-08T08:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "何雨"
+              "title": "让何雨入座"
             },
             {
               "by": "su",
               "when": "2026-01-15T08:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "许清"
+              "title": "让许清入座"
             },
             {
               "by": "su",
               "when": "2026-01-15T08:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "罗森"
+              "title": "让罗森入座"
             },
             {
               "by": "su",
               "when": "2026-02-05T08:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "唐棠"
+              "title": "让唐棠入座"
             },
             {
               "by": "su",
               "when": "2026-04-30T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "葛文"
+              "title": "让葛文入座"
             }
           ]
         }
@@ -1891,31 +1905,31 @@
         "recent": [
           {
             "by": "jing",
-            "act": "add-work",
-            "title": "卫生间改造方案（第二版）",
             "when": "2026-10-18T14:40:00.000Z",
-            "problem": "0001"
+            "problem": "0001",
+            "act": "add-work",
+            "title": "添加了成果《卫生间改造方案（第二版）》"
           },
           {
             "by": "ping",
-            "act": "propose",
-            "title": "分摊改为四成、四成、两成",
             "when": "2026-10-17T21:30:00.000Z",
-            "problem": "0002"
+            "problem": "0002",
+            "act": "propose",
+            "title": "发起提案《分摊改为四成、四成、两成》"
           },
           {
             "by": "lei",
-            "act": "add-work",
-            "title": "费用分摊表",
             "when": "2026-10-15T19:00:00.000Z",
-            "problem": "0001"
+            "problem": "0001",
+            "act": "add-work",
+            "title": "添加了成果《费用分摊表》"
           },
           {
             "by": "mum",
-            "act": "open-problem",
-            "title": "妈想留下的旧家具",
             "when": "2026-10-14T08:00:00.000Z",
-            "problem": "0005"
+            "problem": "0005",
+            "act": "open-problem",
+            "title": "提出了问题《妈想留下的旧家具》"
           }
         ],
         "proposals": [
@@ -1991,13 +2005,15 @@
                 "by": "mum",
                 "text": "我包饺子。",
                 "when": "2026-10-18T17:52:00.000Z",
-                "writtenAt": "2026-10-18T17:52:00.000Z"
+                "writtenAt": "2026-10-18T17:52:00.000Z",
+                "id": "talk/board/b2/20261018T175200Z-mum.md"
               },
               {
                 "by": "ping",
                 "text": "我五点前到。",
                 "when": "2026-10-18T18:05:00.000Z",
-                "writtenAt": "2026-10-18T18:05:00.000Z"
+                "writtenAt": "2026-10-18T18:05:00.000Z",
+                "id": "talk/board/b2/20261018T180500Z-ping.md"
               }
             ]
           },
@@ -2012,7 +2028,8 @@
                 "by": "dad",
                 "text": "被子我自己带。",
                 "when": "2026-10-03T06:15:00.000Z",
-                "writtenAt": "2026-10-03T06:15:00.000Z"
+                "writtenAt": "2026-10-03T06:15:00.000Z",
+                "id": "talk/board/b1/20261003T061500Z-dad.md"
               }
             ]
           }
@@ -2104,39 +2121,39 @@
           "events": [
             {
               "by": "jing",
-              "act": "open-problem",
-              "title": "",
               "when": "2026-09-01T18:00:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "open-problem",
+              "title": "提出了这个问题"
             },
             {
               "by": "jing",
+              "when": "2026-09-05T08:00:00.000Z",
+              "problem": "0001",
               "act": "set-status",
               "status": "active",
-              "title": "",
-              "when": "2026-09-05T08:00:00.000Z",
-              "problem": "0001"
+              "title": "把问题标为进行中"
             },
             {
               "by": "lei",
-              "act": "add-work",
-              "title": "费用分摊表",
               "when": "2026-10-15T19:00:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《费用分摊表》"
             },
             {
               "by": "ping",
-              "act": "propose",
-              "title": "分摊改为四成、四成、两成",
               "when": "2026-10-17T21:30:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "propose",
+              "title": "发起提案《分摊改为四成、四成、两成》"
             },
             {
               "by": "jing",
-              "act": "add-work",
-              "title": "卫生间改造方案（第二版）",
               "when": "2026-10-18T14:40:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《卫生间改造方案（第二版）》"
             }
           ],
           "notes": [
@@ -2144,19 +2161,22 @@
               "by": "mum",
               "text": "扶手别装太高，我够不着。",
               "when": "2026-10-16T07:20:00.000Z",
-              "writtenAt": "2026-10-16T07:20:00.000Z"
+              "writtenAt": "2026-10-16T07:20:00.000Z",
+              "id": "talk/0001/20261016T072000Z-mum.md"
             },
             {
               "by": "lei",
               "text": "按 80 厘米装。妈，下回我带尺子来，您站着比一下。",
               "when": "2026-10-16T19:05:00.000Z",
-              "writtenAt": "2026-10-16T19:05:00.000Z"
+              "writtenAt": "2026-10-16T19:05:00.000Z",
+              "id": "talk/0001/20261016T190500Z-lei.md"
             },
             {
               "by": "yu",
               "text": "防滑砖我看了三款，照片传到“现状照片”里了，奶奶喜欢浅色那款。",
               "when": "2026-10-18T12:10:00.000Z",
-              "writtenAt": "2026-10-18T12:10:00.000Z"
+              "writtenAt": "2026-10-18T12:10:00.000Z",
+              "id": "talk/0001/20261018T121000Z-yu.md"
             }
           ]
         },
@@ -2233,14 +2253,15 @@
               "when": "2026-09-05T08:00:00.000Z",
               "act": "set-status",
               "problem": "0001",
-              "title": "active"
+              "title": "把问题标为进行中",
+              "status": "active"
             },
             {
               "by": "jing",
               "when": "2026-09-01T18:00:00.000Z",
               "act": "open-problem",
               "problem": "0001",
-              "title": "卫生间改成爸妈能放心用的"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -2255,7 +2276,7 @@
               "when": "2026-10-12T09:00:00Z",
               "act": "open-problem",
               "problem": "0002",
-              "title": "三家怎么分摊费用"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -2270,7 +2291,7 @@
               "when": "2026-09-20T09:00:00Z",
               "act": "open-problem",
               "problem": "0003",
-              "title": "找一个靠谱的施工队"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -2285,7 +2306,7 @@
               "when": "2026-09-15T09:00:00Z",
               "act": "open-problem",
               "problem": "0004",
-              "title": "施工期间爸妈住哪"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -2300,7 +2321,7 @@
               "when": "2026-10-14T09:00:00Z",
               "act": "open-problem",
               "problem": "0005",
-              "title": "妈想留下的旧家具"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -2315,7 +2336,7 @@
               "when": "2026-10-18T14:40:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "卫生间改造方案（第二版）"
+              "title": "新建了它"
             }
           ]
         },
@@ -2330,7 +2351,7 @@
               "when": "2026-10-15T19:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "费用分摊表",
+              "title": "新建了它",
               "diff": [
                 {
                   "kind": "add",
@@ -2367,7 +2388,7 @@
               "when": "2026-10-11T10:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "三家施工队报价"
+              "title": "新建了它"
             }
           ]
         },
@@ -2382,7 +2403,7 @@
               "when": "2026-10-06T16:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "现状照片和尺寸"
+              "title": "新建了它"
             }
           ]
         },
@@ -2397,7 +2418,7 @@
               "when": "2026-09-28T18:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "扶手和坐便选购清单"
+              "title": "新建了它"
             }
           ]
         },
@@ -2412,7 +2433,7 @@
               "when": "2026-10-18T17:30:00.000Z",
               "act": "notice",
               "problem": "board",
-              "title": "11 月 2 日（周日）家庭会，定施工队"
+              "title": "新建了它"
             }
           ]
         },
@@ -2427,7 +2448,7 @@
               "when": "2026-10-02T19:00:00.000Z",
               "act": "notice",
               "problem": "board",
-              "title": "爸妈 11 月 10 日起住小姨家"
+              "title": "新建了它"
             }
           ]
         },
@@ -2442,7 +2463,7 @@
               "when": "2026-10-16T07:20:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -2457,7 +2478,7 @@
               "when": "2026-10-16T19:05:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -2472,7 +2493,7 @@
               "when": "2026-10-18T12:10:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -2487,7 +2508,7 @@
               "when": "2026-10-18T17:52:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "11 月 2 日（周日）家庭会，定施工队"
+              "title": "新建了它"
             }
           ]
         },
@@ -2502,7 +2523,7 @@
               "when": "2026-10-18T18:05:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "11 月 2 日（周日）家庭会，定施工队"
+              "title": "新建了它"
             }
           ]
         },
@@ -2517,7 +2538,7 @@
               "when": "2026-10-03T06:15:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "爸妈 11 月 10 日起住小姨家"
+              "title": "新建了它"
             }
           ]
         },
@@ -2532,49 +2553,49 @@
               "when": "2026-09-01T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "何静"
+              "title": "让何静入座"
             },
             {
               "by": "jing",
               "when": "2026-09-01T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "何磊"
+              "title": "让何磊入座"
             },
             {
               "by": "jing",
               "when": "2026-09-01T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "何平"
+              "title": "让何平入座"
             },
             {
               "by": "jing",
               "when": "2026-09-02T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "妈妈"
+              "title": "让妈妈入座"
             },
             {
               "by": "jing",
               "when": "2026-09-02T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "爸爸"
+              "title": "让爸爸入座"
             },
             {
               "by": "jing",
               "when": "2026-09-03T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "李薇"
+              "title": "让李薇入座"
             },
             {
               "by": "jing",
               "when": "2026-09-10T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "小雨"
+              "title": "让小雨入座"
             }
           ]
         }
@@ -2657,31 +2678,31 @@
         "recent": [
           {
             "by": "ma",
-            "act": "add-work",
-            "title": "访谈记录（14 家餐馆）",
             "when": "2026-10-18T13:20:00.000Z",
-            "problem": "0001"
+            "problem": "0001",
+            "act": "add-work",
+            "title": "添加了成果《访谈记录（14 家餐馆）》"
           },
           {
             "by": "ma",
-            "act": "propose",
-            "title": "基础版降到每月 49 元",
             "when": "2026-10-17T21:10:00.000Z",
-            "problem": "0002"
+            "problem": "0002",
+            "act": "propose",
+            "title": "发起提案《基础版降到每月 49 元》"
           },
           {
             "by": "song",
-            "act": "update-work",
-            "title": "定价表",
             "when": "2026-10-14T09:00:00.000Z",
-            "problem": "0001"
+            "problem": "0001",
+            "act": "update-work",
+            "title": "更新了《定价表》"
           },
           {
             "by": "ma",
-            "act": "open-problem",
-            "title": "第一版能不能离线用",
             "when": "2026-10-10T11:00:00.000Z",
-            "problem": "0004"
+            "problem": "0004",
+            "act": "open-problem",
+            "title": "提出了问题《第一版能不能离线用》"
           }
         ],
         "proposals": [
@@ -2745,7 +2766,8 @@
                 "by": "ma",
                 "text": "好，我九点前把访谈记录整理完。",
                 "when": "2026-10-17T07:40:00.000Z",
-                "writtenAt": "2026-10-17T07:40:00.000Z"
+                "writtenAt": "2026-10-17T07:40:00.000Z",
+                "id": "talk/board/b1/20261017T074000Z-ma.md"
               }
             ]
           }
@@ -2819,39 +2841,39 @@
           "events": [
             {
               "by": "linz",
-              "act": "open-problem",
-              "title": "",
               "when": "2026-08-05T19:00:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "open-problem",
+              "title": "提出了这个问题"
             },
             {
               "by": "linz",
+              "when": "2026-08-06T07:00:00.000Z",
+              "problem": "0001",
               "act": "set-status",
               "status": "active",
-              "title": "",
-              "when": "2026-08-06T07:00:00.000Z",
-              "problem": "0001"
+              "title": "把问题标为进行中"
             },
             {
               "by": "linz",
-              "act": "add-work",
-              "title": "试用协议模板",
               "when": "2026-10-06T14:00:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《试用协议模板》"
             },
             {
               "by": "song",
-              "act": "update-work",
-              "title": "定价表",
               "when": "2026-10-14T09:00:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "update-work",
+              "title": "更新了《定价表》"
             },
             {
               "by": "ma",
-              "act": "add-work",
-              "title": "访谈记录（14 家餐馆）",
               "when": "2026-10-18T13:20:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《访谈记录（14 家餐馆）》"
             }
           ],
           "notes": [
@@ -2859,13 +2881,15 @@
               "by": "ma",
               "text": "第 9 家和第 12 家都说，只要能拍小票就愿意试。下周先去这两家。",
               "when": "2026-10-18T13:30:00.000Z",
-              "writtenAt": "2026-10-18T13:30:00.000Z"
+              "writtenAt": "2026-10-18T13:30:00.000Z",
+              "id": "talk/0001/20261018T133000Z-ma.md"
             },
             {
               "by": "linz",
               "text": "同意。去之前把演示视频剪到 60 秒以内。",
               "when": "2026-10-18T15:05:00.000Z",
-              "writtenAt": "2026-10-18T15:05:00.000Z"
+              "writtenAt": "2026-10-18T15:05:00.000Z",
+              "id": "talk/0001/20261018T150500Z-linz.md"
             }
           ]
         },
@@ -2927,14 +2951,15 @@
               "when": "2026-08-06T07:00:00.000Z",
               "act": "set-status",
               "problem": "0001",
-              "title": "active"
+              "title": "把问题标为进行中",
+              "status": "active"
             },
             {
               "by": "linz",
               "when": "2026-08-05T19:00:00.000Z",
               "act": "open-problem",
               "problem": "0001",
-              "title": "找到前十个付费用户"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -2949,7 +2974,7 @@
               "when": "2026-09-20T09:00:00Z",
               "act": "open-problem",
               "problem": "0002",
-              "title": "定价：按月还是按年"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -2964,7 +2989,7 @@
               "when": "2026-08-02T09:00:00Z",
               "act": "open-problem",
               "problem": "0003",
-              "title": "注册公司与开对公账户"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -2979,7 +3004,7 @@
               "when": "2026-10-10T09:00:00Z",
               "act": "open-problem",
               "problem": "0004",
-              "title": "第一版能不能离线用"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -2994,7 +3019,7 @@
               "when": "2026-10-18T13:20:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "访谈记录（14 家餐馆）"
+              "title": "新建了它"
             }
           ]
         },
@@ -3009,7 +3034,7 @@
               "when": "2026-10-14T09:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "定价表",
+              "title": "新建了它",
               "diff": [
                 {
                   "kind": "add",
@@ -3038,7 +3063,7 @@
               "when": "2026-10-06T14:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "试用协议模板"
+              "title": "新建了它"
             }
           ]
         },
@@ -3053,7 +3078,7 @@
               "when": "2026-09-29T08:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "演示视频脚本"
+              "title": "新建了它"
             }
           ]
         },
@@ -3068,7 +3093,7 @@
               "when": "2026-10-17T07:00:00.000Z",
               "act": "notice",
               "problem": "board",
-              "title": "下周二起，周会改到早上九点"
+              "title": "新建了它"
             }
           ]
         },
@@ -3083,7 +3108,7 @@
               "when": "2026-10-18T13:30:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -3098,7 +3123,7 @@
               "when": "2026-10-18T15:05:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -3113,7 +3138,7 @@
               "when": "2026-10-17T07:40:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "下周二起，周会改到早上九点"
+              "title": "新建了它"
             }
           ]
         },
@@ -3128,21 +3153,21 @@
               "when": "2026-08-01T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "林舟"
+              "title": "让林舟入座"
             },
             {
               "by": "linz",
               "when": "2026-08-01T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "宋雨桐"
+              "title": "让宋雨桐入座"
             },
             {
               "by": "linz",
               "when": "2026-08-03T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "马克"
+              "title": "让马克入座"
             }
           ]
         }
@@ -3243,31 +3268,31 @@
         "recent": [
           {
             "by": "fang",
-            "act": "add-work",
-            "title": "三处场地对比",
             "when": "2026-10-18T20:40:00.000Z",
-            "problem": "0001"
+            "problem": "0001",
+            "act": "add-work",
+            "title": "添加了成果《三处场地对比》"
           },
           {
             "by": "tao",
-            "act": "propose",
-            "title": "曲目单：用新歌《第七站》换掉《夏天的雨》",
             "when": "2026-10-16T23:20:00.000Z",
-            "problem": "0003"
+            "problem": "0003",
+            "act": "propose",
+            "title": "发起提案《曲目单：用新歌《第七站》换掉《夏天的雨》》"
           },
           {
             "by": "lu",
-            "act": "add-work",
-            "title": "曲目单",
             "when": "2026-10-12T21:10:00.000Z",
-            "problem": "0001"
+            "problem": "0001",
+            "act": "add-work",
+            "title": "添加了成果《曲目单》"
           },
           {
             "by": "susu",
-            "act": "add-work",
-            "title": "海报草图（三版）",
             "when": "2026-10-10T16:30:00.000Z",
-            "problem": "0002"
+            "problem": "0002",
+            "act": "add-work",
+            "title": "添加了成果《海报草图（三版）》"
           }
         ],
         "proposals": [
@@ -3335,13 +3360,15 @@
                 "by": "susu",
                 "text": "八点到，带相机。",
                 "when": "2026-10-15T11:10:00.000Z",
-                "writtenAt": "2026-10-15T11:10:00.000Z"
+                "writtenAt": "2026-10-15T11:10:00.000Z",
+                "id": "talk/board/b1/20261015T111000Z-susu.md"
               },
               {
                 "by": "ji",
                 "text": "能来，九点前到。",
                 "when": "2026-10-15T17:45:00.000Z",
-                "writtenAt": "2026-10-15T17:45:00.000Z"
+                "writtenAt": "2026-10-15T17:45:00.000Z",
+                "id": "talk/board/b1/20261015T174500Z-ji.md"
               }
             ]
           }
@@ -3424,39 +3451,39 @@
           "events": [
             {
               "by": "fang",
-              "act": "open-problem",
-              "title": "",
               "when": "2026-09-15T19:00:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "open-problem",
+              "title": "提出了这个问题"
             },
             {
               "by": "lu",
+              "when": "2026-09-16T08:00:00.000Z",
+              "problem": "0001",
               "act": "set-status",
               "status": "active",
-              "title": "",
-              "when": "2026-09-16T08:00:00.000Z",
-              "problem": "0001"
+              "title": "把问题标为进行中"
             },
             {
               "by": "lu",
-              "act": "add-work",
-              "title": "曲目单",
               "when": "2026-10-12T21:10:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《曲目单》"
             },
             {
               "by": "tao",
-              "act": "propose",
-              "title": "曲目单：用新歌《第七站》换掉《夏天的雨》",
               "when": "2026-10-16T23:20:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "propose",
+              "title": "发起提案《曲目单：用新歌《第七站》换掉《夏天的雨》》"
             },
             {
               "by": "fang",
-              "act": "add-work",
-              "title": "三处场地对比",
               "when": "2026-10-18T20:40:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《三处场地对比》"
             }
           ],
           "notes": [
@@ -3464,19 +3491,22 @@
               "by": "zhu",
               "text": "咖啡馆只能用电鼓，我不太愿意。",
               "when": "2026-10-18T20:55:00.000Z",
-              "writtenAt": "2026-10-18T20:55:00.000Z"
+              "writtenAt": "2026-10-18T20:55:00.000Z",
+              "id": "talk/0001/20261018T205500Z-zhu.md"
             },
             {
               "by": "fang",
               "text": "那就 livehouse 或者仓库。老季，仓库那边的音响你能借到吗？",
               "when": "2026-10-18T21:02:00.000Z",
-              "writtenAt": "2026-10-18T21:02:00.000Z"
+              "writtenAt": "2026-10-18T21:02:00.000Z",
+              "id": "talk/0001/20261018T210200Z-fang.md"
             },
             {
               "by": "ji",
               "text": "能借一套小的，四十个人够用。但搬的时候要两个人帮忙。",
               "when": "2026-10-18T21:20:00.000Z",
-              "writtenAt": "2026-10-18T21:20:00.000Z"
+              "writtenAt": "2026-10-18T21:20:00.000Z",
+              "id": "talk/0001/20261018T212000Z-ji.md"
             }
           ]
         },
@@ -3538,14 +3568,15 @@
               "when": "2026-09-16T08:00:00.000Z",
               "act": "set-status",
               "problem": "0001",
-              "title": "active"
+              "title": "把问题标为进行中",
+              "status": "active"
             },
             {
               "by": "fang",
               "when": "2026-09-15T19:00:00.000Z",
               "act": "open-problem",
               "problem": "0001",
-              "title": "演出场地定哪里"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -3560,7 +3591,7 @@
               "when": "2026-09-20T09:00:00Z",
               "act": "open-problem",
               "problem": "0002",
-              "title": "海报谁来做"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -3575,7 +3606,7 @@
               "when": "2026-10-11T09:00:00Z",
               "act": "open-problem",
               "problem": "0003",
-              "title": "曲目定八首还是十首"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -3590,7 +3621,7 @@
               "when": "2026-09-13T09:00:00Z",
               "act": "open-problem",
               "problem": "0004",
-              "title": "每周固定排练时间"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -3605,7 +3636,7 @@
               "when": "2026-10-18T20:40:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "三处场地对比"
+              "title": "新建了它"
             }
           ]
         },
@@ -3620,7 +3651,7 @@
               "when": "2026-10-16T18:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "演出预算"
+              "title": "新建了它"
             }
           ]
         },
@@ -3635,7 +3666,7 @@
               "when": "2026-10-12T21:10:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "曲目单",
+              "title": "新建了它",
               "diff": [
                 {
                   "kind": "add",
@@ -3672,7 +3703,7 @@
               "when": "2026-10-10T16:30:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "海报草图（三版）"
+              "title": "新建了它"
             }
           ]
         },
@@ -3687,7 +3718,7 @@
               "when": "2026-10-15T10:00:00.000Z",
               "act": "notice",
               "problem": "board",
-              "title": "本周三排练：从头到尾走一遍"
+              "title": "新建了它"
             }
           ]
         },
@@ -3702,7 +3733,7 @@
               "when": "2026-10-18T20:55:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -3717,7 +3748,7 @@
               "when": "2026-10-18T21:02:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -3732,7 +3763,7 @@
               "when": "2026-10-18T21:20:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -3747,7 +3778,7 @@
               "when": "2026-10-15T11:10:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "本周三排练：从头到尾走一遍"
+              "title": "新建了它"
             }
           ]
         },
@@ -3762,7 +3793,7 @@
               "when": "2026-10-15T17:45:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "本周三排练：从头到尾走一遍"
+              "title": "新建了它"
             }
           ]
         },
@@ -3777,42 +3808,42 @@
               "when": "2026-09-12T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "鹿鸣"
+              "title": "让鹿鸣入座"
             },
             {
               "by": "lu",
               "when": "2026-09-12T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "方圆"
+              "title": "让方圆入座"
             },
             {
               "by": "lu",
               "when": "2026-09-12T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "小朱"
+              "title": "让小朱入座"
             },
             {
               "by": "lu",
               "when": "2026-09-13T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "陶然"
+              "title": "让陶然入座"
             },
             {
               "by": "lu",
               "when": "2026-09-20T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "苏苏"
+              "title": "让苏苏入座"
             },
             {
               "by": "lu",
               "when": "2026-10-01T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "老季"
+              "title": "让老季入座"
             }
           ]
         }
@@ -3901,31 +3932,31 @@
         "recent": [
           {
             "by": "jiang",
-            "act": "add-work",
-            "title": "三月与十月的实验条件对照",
             "when": "2026-10-18T09:30:00.000Z",
-            "problem": "0001"
-          },
-          {
-            "by": "ye",
-            "act": "propose",
-            "title": "第 3 节：写明实验条件和复现差异",
-            "when": "2026-10-18T07:15:00.000Z",
-            "problem": "0001"
-          },
-          {
-            "by": "ye",
+            "problem": "0001",
             "act": "add-work",
-            "title": "第 3 节草稿",
+            "title": "添加了成果《三月与十月的实验条件对照》"
+          },
+          {
+            "by": "ye",
+            "when": "2026-10-18T07:15:00.000Z",
+            "problem": "0001",
+            "act": "propose",
+            "title": "发起提案《第 3 节：写明实验条件和复现差异》"
+          },
+          {
+            "by": "ye",
             "when": "2026-10-14T14:00:00.000Z",
-            "problem": "0001"
+            "problem": "0001",
+            "act": "add-work",
+            "title": "添加了成果《第 3 节草稿》"
           },
           {
             "by": "bai",
-            "act": "open-problem",
-            "title": "图 2 要不要换成对数坐标",
             "when": "2026-10-13T13:00:00.000Z",
-            "problem": "0002"
+            "problem": "0002",
+            "act": "open-problem",
+            "title": "提出了问题《图 2 要不要换成对数坐标》"
           }
         ],
         "proposals": [
@@ -3993,7 +4024,8 @@
                 "by": "ye",
                 "text": "好。我把复现差异的提案先交上来，周四一起看。",
                 "when": "2026-10-16T07:02:00.000Z",
-                "writtenAt": "2026-10-16T07:02:00.000Z"
+                "writtenAt": "2026-10-16T07:02:00.000Z",
+                "id": "talk/board/b1/20261016T070200Z-ye.md"
               }
             ]
           }
@@ -4076,39 +4108,39 @@
           "events": [
             {
               "by": "ye",
-              "act": "open-problem",
-              "title": "",
               "when": "2026-10-05T18:00:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "open-problem",
+              "title": "提出了这个问题"
             },
             {
               "by": "sunl",
+              "when": "2026-10-06T07:00:00.000Z",
+              "problem": "0001",
               "act": "set-status",
               "status": "active",
-              "title": "",
-              "when": "2026-10-06T07:00:00.000Z",
-              "problem": "0001"
+              "title": "把问题标为进行中"
             },
             {
               "by": "ye",
-              "act": "add-work",
-              "title": "第 3 节草稿",
               "when": "2026-10-14T14:00:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《第 3 节草稿》"
             },
             {
               "by": "ye",
-              "act": "propose",
-              "title": "第 3 节：写明实验条件和复现差异",
               "when": "2026-10-18T07:15:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "propose",
+              "title": "发起提案《第 3 节：写明实验条件和复现差异》"
             },
             {
               "by": "jiang",
-              "act": "add-work",
-              "title": "三月与十月的实验条件对照",
               "when": "2026-10-18T09:30:00.000Z",
-              "problem": "0001"
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《三月与十月的实验条件对照》"
             }
           ],
           "notes": [
@@ -4116,19 +4148,22 @@
               "by": "bai",
               "text": "十月配的油用的是新到的一批表面活性剂。",
               "when": "2026-10-16T08:20:00.000Z",
-              "writtenAt": "2026-10-16T08:20:00.000Z"
+              "writtenAt": "2026-10-16T08:20:00.000Z",
+              "id": "talk/0001/20261016T082000Z-bai.md"
             },
             {
               "by": "jiang",
               "text": "黏度高了两成，直径偏大说得通。下周用旧批次再做一次。",
               "when": "2026-10-17T12:05:00.000Z",
-              "writtenAt": "2026-10-17T12:05:00.000Z"
+              "writtenAt": "2026-10-17T12:05:00.000Z",
+              "id": "talk/0001/20261017T120500Z-jiang.md"
             },
             {
               "by": "ye",
               "text": "（在火车上写的）三月记录里室温是 21 度，现在实验室只有 17 度，可能也有关系。",
               "when": "2026-10-17T12:06:00.000Z",
-              "writtenAt": "2026-10-16T19:40:00.000Z"
+              "writtenAt": "2026-10-16T19:40:00.000Z",
+              "id": "talk/0001/20261016T194000Z-ye.md"
             }
           ]
         },
@@ -4190,14 +4225,15 @@
               "when": "2026-10-06T07:00:00.000Z",
               "act": "set-status",
               "problem": "0001",
-              "title": "active"
+              "title": "把问题标为进行中",
+              "status": "active"
             },
             {
               "by": "ye",
               "when": "2026-10-05T18:00:00.000Z",
               "act": "open-problem",
               "problem": "0001",
-              "title": "第 3 节的实验为什么复现不了"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -4212,7 +4248,7 @@
               "when": "2026-10-13T09:00:00Z",
               "act": "open-problem",
               "problem": "0002",
-              "title": "图 2 要不要换成对数坐标"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -4227,7 +4263,7 @@
               "when": "2026-09-22T09:00:00Z",
               "act": "open-problem",
               "problem": "0003",
-              "title": "讨论部分谁来写"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -4242,7 +4278,7 @@
               "when": "2026-08-01T09:00:00Z",
               "act": "open-problem",
               "problem": "0004",
-              "title": "原始数据整理上传"
+              "title": "提出了这个问题"
             }
           ]
         },
@@ -4257,7 +4293,7 @@
               "when": "2026-10-18T09:30:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "三月与十月的实验条件对照"
+              "title": "新建了它"
             }
           ]
         },
@@ -4272,7 +4308,7 @@
               "when": "2026-10-12T19:30:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "第 3 节草稿",
+              "title": "新建了它",
               "diff": [
                 {
                   "kind": "add",
@@ -4293,7 +4329,7 @@
               "when": "2026-10-13T08:15:00.000Z",
               "act": "update-work",
               "problem": "0001",
-              "title": "第 3 节草稿",
+              "title": "改了它",
               "diff": [
                 {
                   "kind": "same",
@@ -4318,7 +4354,7 @@
               "when": "2026-10-14T14:00:00.000Z",
               "act": "update-work",
               "problem": "0001",
-              "title": "第 3 节草稿",
+              "title": "改了它",
               "diff": [
                 {
                   "kind": "same",
@@ -4343,7 +4379,7 @@
               "when": "2026-10-11T17:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "复现记录（三次）"
+              "title": "新建了它"
             }
           ]
         },
@@ -4358,7 +4394,7 @@
               "when": "2026-10-09T20:00:00.000Z",
               "act": "add-work",
               "problem": "0001",
-              "title": "图 3：直径分布（三月 / 十月）"
+              "title": "新建了它"
             }
           ]
         },
@@ -4373,7 +4409,7 @@
               "when": "2026-10-16T06:30:00.000Z",
               "act": "notice",
               "problem": "board",
-              "title": "组会改到周四下午两点"
+              "title": "新建了它"
             }
           ]
         },
@@ -4388,7 +4424,7 @@
               "when": "2026-10-16T08:20:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -4403,7 +4439,7 @@
               "when": "2026-10-17T12:05:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -4418,7 +4454,7 @@
               "when": "2026-10-16T19:40:00.000Z",
               "act": "note",
               "problem": "0001",
-              "title": ""
+              "title": "新建了它"
             }
           ]
         },
@@ -4433,7 +4469,7 @@
               "when": "2026-10-16T07:02:00.000Z",
               "act": "note",
               "problem": "board",
-              "title": "组会改到周四下午两点"
+              "title": "新建了它"
             }
           ]
         },
@@ -4448,28 +4484,28 @@
               "when": "2026-07-01T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "孙岚"
+              "title": "让孙岚入座"
             },
             {
               "by": "sunl",
               "when": "2026-07-01T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "江河"
+              "title": "让江河入座"
             },
             {
               "by": "sunl",
               "when": "2026-07-02T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "叶舟"
+              "title": "让叶舟入座"
             },
             {
               "by": "sunl",
               "when": "2026-07-02T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "白杨"
+              "title": "让白杨入座"
             }
           ]
         }
