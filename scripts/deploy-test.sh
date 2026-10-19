@@ -40,8 +40,8 @@ case "$mode" in
   *) echo "unknown mode $mode"; exit 2 ;;
 esac
 
-export GIT_SSH_COMMAND="ssh -p $port -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=$work/known_hosts -o IdentitiesOnly=yes -i $work/host"
-stranger="ssh -p $port -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=$work/known_hosts -o IdentitiesOnly=yes -i $work/stranger"
+export GIT_SSH_COMMAND="ssh -p $port -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=$work/known_hosts -o IdentitiesOnly=yes -i $work/host"
+stranger="ssh -p $port -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=$work/known_hosts -o IdentitiesOnly=yes -i $work/stranger"
 echo "▌ member checks on 127.0.0.1:$port"
 check "host sees their teahouse (ssh -T)" bash -c "$GIT_SSH_COMMAND -T teahouse@127.0.0.1 | grep -q smoke"
 check "host clones" git clone -q teahouse@127.0.0.1:smoke "$work/clone"
