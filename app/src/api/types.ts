@@ -1,12 +1,12 @@
 // 引擎返回的数据模型：docs/CLIENT-API.md 第 3 节，逐字照搬。
 // 用户写的内容都是普通字符串（不分语言）；界面自身的文字走 i18n。
-// 标了"提议"的字段是 1 号在 PR #1 里提出、尚未写进合同的，全部可选，缺了界面照样能用。
+// 与 main 上的定稿（8e931bf）一致。标了"提议"的是合同里还没有的，全部可选。
 
 export type Role = 'host' | 'steward' | 'guest'
 export type Status = 'open' | 'active' | 'solved'
 export type WorkKind = 'doc' | 'plan' | 'table' | 'image' | 'file'
 export type Act =
-  | 'open-problem' | 'set-status' | 'add-work' | 'update-work' | 'note' | 'notice'
+  | 'open-problem' | 'set-status' | 'add-work' | 'update-work' | 'note' | 'remove-note' | 'notice'
   | 'propose' | 'adopt' | 'decline' | 'seat' | 'update'
 
 export interface SyncState {
@@ -26,7 +26,11 @@ export interface HouseSummary {
 export interface Member { id: string; name: string; role: Role; joined: string }
 export interface Event { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
 /** when = 进入茶馆的时间，writtenAt = 文件名里的时间戳 */
-export interface Note { by: string; text: string; when: string; writtenAt: string }
+export interface Note {
+  by: string; text: string; when: string; writtenAt: string
+  /** 提议：留言文件的仓库路径。removeNote 需要它，合同的 Note 里还没有 */
+  id?: string
+}
 export interface Notice { id: string; by: string; title: string; text: string; when: string; replies: Note[] }
 
 export interface Work {
@@ -35,7 +39,7 @@ export interface Work {
   size: number
   text?: string
   blob?: { hash: string; type: string; cached: boolean; purged?: boolean }
-  /** 提议：一句话说明，来自 frontmatter 的 note:，显示在成果卡片标题下面 */
+  /** 一句话说明（frontmatter 的 note:），显示在成果卡片标题下面 */
   note?: string
 }
 
@@ -65,18 +69,23 @@ export interface House {
 }
 
 export interface ArchiveNode {
-  id: string; label: string
+  id: string
+  /** 目录种类，由界面翻译 */
+  dir?: 'problems' | 'works' | 'board' | 'talk' | 'meta'
+  /** 只放用户写的内容（问题标题、公告标题、成员名） */
+  label?: string
   kind: 'dir' | 'problem' | WorkKind | 'notice' | 'note' | 'members'
   problem?: string; size?: number
   children?: ArchiveNode[]
-  /** 提议：目录的代码，由界面翻译；有它时界面不用 label */
-  dir?: 'problems' | 'works' | 'board' | 'talk' | 'meta'
 }
-export interface HistoryEntry { by: string; when: string; act: Act; problem: string; title: string; diff?: DiffLine[] }
+export interface HistoryEntry { by: string; when: string; act: Act; problem: string; title: string; status?: Status; diff?: DiffLine[] }
 
 export interface ApiError {
   code: 'not_found' | 'not_a_member' | 'forbidden' | 'invalid' | 'conflict'
       | 'offline' | 'relay_refused' | 'too_large' | 'internal'
+  /** 例如 { path: 'members' }，界面据此拼出本地化的句子 */
+  params?: Record<string, string>
+  /** 后备：界面不认识这个 code 时才显示 */
   message: string
   reasons?: string[]
 }
@@ -104,6 +113,7 @@ export interface Commands {
   addWork: [HouseArg & { problem: string; kind: WorkKind; title: string; text?: string; fromPath?: string }, WriteResult]
   updateWork: [HouseArg & { id: string; text?: string; fromPath?: string }, WriteResult]
   note: [HouseArg & { problem?: string; notice?: string; text: string }, WriteResult]
+  removeNote: [HouseArg & { id: string }, WriteResult]
   postNotice: [HouseArg & { title: string; text: string }, WriteResult]
   propose: [HouseArg & { problem: string; title: string; reason?: string; changes: Change[] }, WriteResult]
   withdraw: [HouseArg & { proposal: string }, WriteResult]

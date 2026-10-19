@@ -253,4 +253,5 @@ export default {
   'ev.notice': '张贴了公告《{ref}》',
   'ev.decline': '没有采纳提案《{ref}》',
   'ev.seat': '调整了座位',
+  'ev.removeNote': '删除了一条留言',
 }

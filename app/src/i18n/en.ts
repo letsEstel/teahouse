@@ -253,4 +253,5 @@ export default {
   'ev.notice': 'posted the notice “{ref}”',
   'ev.decline': 'did not adopt “{ref}”',
   'ev.seat': 'changed the seating',
+  'ev.removeNote': 'removed a note',
 }

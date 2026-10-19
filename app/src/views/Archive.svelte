@@ -41,7 +41,9 @@
   let exporting = $state(false)
 
   // 目录名由界面翻译（引擎给代码 dir）；用户写的内容（标题、名字）直接用 label
-  const label = (n: ArchiveNode) => (n.dir ? t(`archive.${n.dir}`) : n.label)
+  const label = (n: ArchiveNode) => (n.dir ? t(`archive.${n.dir}`) : n.kind === 'members' ? t('archive.members') : (n.label ?? ''))
+  // "按问题"视图里，问题文件就在问题的文件夹里，标成"问题说明"
+  const leafLabel = (n: ArchiveNode, depth: number) => (mode === 'problems' && depth > 0 && n.kind === 'problem' ? t('archive.problemFile') : label(n))
 
   const path = (n: ArchiveNode, target: string, trail: string[] = []): string[] | null => {
     if (!n.children) return n.id === target ? trail : null
@@ -115,7 +117,7 @@
     if (!file?.text) return
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([file.text], { type: 'text/plain;charset=utf-8' }))
-    a.download = `${file.node.label.replace(/[\\/:*?"<>|]/g, '_')}.${file.node.kind === 'table' ? 'csv' : file.node.kind === 'members' ? 'toml' : 'md'}`
+    a.download = `${label(file.node).replace(/[\\/:*?"<>|]/g, '_')}.${file.node.kind === 'table' ? 'csv' : file.node.kind === 'members' ? 'toml' : 'md'}`
     a.click()
     URL.revokeObjectURL(a.href)
   }
@@ -128,7 +130,7 @@
         {#if !n.children}
           <a class="row file" class:on={n.id === selected} href="#/{house.id}/archive/{encodeURIComponent(n.id)}" style:--d={depth} data-file={n.id}>
             <FileGlyph kind={n.kind} />
-            <span class="name">{label(n)}</span>
+            <span class="name">{leafLabel(n, depth)}</span>
           </a>
         {:else}
           <button class="row folder" style:--d={depth} aria-expanded={!closed[n.id]} onclick={() => (closed[n.id] = !closed[n.id])}>
@@ -176,7 +178,7 @@
 
       <div class="fhead">
         <FileGlyph kind={node.kind} />
-        <h2>{node.label}</h2>
+        <h2>{label(node)}</h2>
         <span class="meta">{t(`archive.kind.${node.kind}`)} · {size(node.size)}</span>
       </div>
 
@@ -216,7 +218,7 @@
           {#if image === 'fake:parking'}
             <ParkingMap />
           {:else if image}
-            <img class="img" src={image} alt={node.label} />
+            <img class="img" src={image} alt={label(node)} />
           {:else}
             <div class="binary image"><svg viewBox="0 0 120 80" aria-hidden="true"><rect x="1" y="1" width="118" height="78" fill="none" stroke="var(--ink)" stroke-width="2" /><circle cx="88" cy="24" r="8" fill="var(--ink)" /><polygon points="10,72 44,26 78,72" fill="var(--ink)" /></svg><p>{t('archive.fileOnly')}</p></div>
           {/if}

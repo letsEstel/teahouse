@@ -21,6 +21,7 @@ export function eventText(e: Event, inProblem = false): string {
     case 'adopt': return t('ev.merge', { ref })
     case 'decline': return t('ev.decline', { ref })
     case 'note': return t('ev.note')
+    case 'remove-note': return t('ev.removeNote')
     case 'notice': return t('ev.notice', { ref })
     case 'seat': return t('ev.seat')
   }

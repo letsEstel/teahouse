@@ -3,7 +3,7 @@
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import Diff from '../lib/Diff.svelte'
   import { member, self, host, type House, type Proposal } from '../api/view'
-  import { api, backend } from '../api/backend'
+  import { api } from '../api/backend'
   import { fit } from '../lib/fit'
   import { t, when, i18n } from '../i18n/index.svelte'
 
@@ -15,8 +15,7 @@
   let me = $derived(self(house))
   let owner = $derived(host(house))
   let state = $state<'pending' | 'merged' | 'rejected'>('pending')
-  // 采纳 / 不采纳走引擎。"撤回决定"只在假数据下有（真引擎推送后无法撤回，见 PR #1 的讨论）
-  const canUndo = backend.kind === 'fake'
+  // 采纳 / 不采纳走引擎。决定不能撤回（CLIENT-API 第 1.5 节）
   async function decide(adopt: boolean) {
     if (!p) return
     if (adopt) await api('adopt', { house: house.id, proposal: p.id })
@@ -123,7 +122,6 @@
                   ? t('prop.verdictMergedSub', { when: t('time.justNow') })
                   : t('prop.verdictRejectedSub', { name: author.name, when: t('time.justNow') })}</span>
               </div>
-              {#if canUndo}<button class="undo" onclick={() => (state = 'pending')}>{t('prop.undo')}</button>{/if}
             </div>
           {/if}
         {:else}
@@ -227,7 +225,6 @@
   .rejected .verdict i { background: none; border: 2px solid var(--ink); }
   .verdict b { display: block; font-family: var(--display); font-size: 22px; font-weight: var(--heavy); letter-spacing: var(--track-wide); }
   .verdict span { font-size: 13px; color: var(--ink-2); }
-  .undo { margin-left: auto; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--ink); }
   @keyframes land { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
 
   /* 窄窗口：列表 → 详情 两级页面 */

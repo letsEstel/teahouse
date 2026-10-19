@@ -252,4 +252,5 @@ export default {
   'ev.notice': 'hat den Aushang „{ref}“ angebracht',
   'ev.decline': 'hat „{ref}“ nicht übernommen',
   'ev.seat': 'hat die Plätze geändert',
+  'ev.removeNote': 'hat eine Notiz entfernt',
 }

@@ -60,16 +60,16 @@ function toEvent(e: FEvent, problem?: string): A.Event {
 }
 
 // 留言：数组顺序就是进入茶馆的先后。进入时间不早于前一条（离线写的那条晚到了）
-function toNotes(ns: FNote[]): A.Note[] {
+function toNotes(ns: FNote[], dir = ''): A.Note[] {
   let last = ''
   return ns.map((n) => {
     const written = iso(n.when)
     const when = written < last ? new Date(new Date(last).getTime() + 60_000).toISOString() : written
     last = when
-    return { by: n.by, text: L(n.text), when, writtenAt: written }
+    return { by: n.by, text: L(n.text), when, writtenAt: written, id: dir && `${dir}/${written.replace(/[-:]/g, '').slice(0, 15)}Z-${n.by}.md` }
   })
 }
-const toNotice = (n: FNotice): A.Notice => ({ id: n.id, by: n.by, title: L(n.title), text: L(n.text), when: iso(n.when), replies: toNotes(n.replies) })
+const toNotice = (n: FNotice): A.Notice => ({ id: n.id, by: n.by, title: L(n.title), text: L(n.text), when: iso(n.when), replies: toNotes(n.replies, `talk/board/${n.id}`) })
 
 function summary(h: FHouse, p: FProblem): A.ProblemSummary {
   return {
@@ -109,32 +109,31 @@ function toProblem(h: FHouse, p: FProblem): A.Problem {
     body: p.body.map((b) => ({ heading: L(b.heading), text: L(b.text) })),
     works: p.works.map((w) => toWork(p, w, files.find((f) => f.work === w))),
     events: [...p.events].reverse().map((e) => toEvent(e, p.id)),
-    notes: toNotes(p.notes ?? []),
+    notes: toNotes(p.notes ?? [], `talk/${p.id}`),
   }
 }
 
 // ---- 档案：节点、原始文件文本、来历 ----
 const fileId = (h: FHouse, f: AFile) => (f.work ? workPath(f.problem, f.work) : f.path)
 
-function nodeOf(h: FHouse, f: AFile, inProblem: boolean): A.ArchiveNode {
+// label 只放用户写的内容（合同第 3 节）；"问题说明""成员表"这类固定用语由界面翻译
+function nodeOf(h: FHouse, f: AFile): A.ArchiveNode {
   const name = (id: string) => L(h.members.find((m) => m.id === id)!.name)
-  const day = (s: string) => new Intl.DateTimeFormat(i18n.lang === 'zh' ? 'zh-CN' : i18n.lang, { month: 'short', day: 'numeric' }).format(new Date(s))
-  let label: string
-  switch (f.kind) {
-    case 'problem': label = inProblem ? t('archive.problemFile') : `${f.problem} · ${L(f.problemRef!.title)}`; break
-    case 'notice': label = L(f.notice!.title); break
-    case 'note': label = `${inProblem ? `${f.problem === 'board' ? t('archive.reply') : t('archive.note')} · ` : ''}${name(f.note!.by)} · ${day(f.note!.when)}`; break
-    case 'members': label = t('archive.members'); break
-    default: label = L(f.work!.title)
-  }
+  const stamp = (s: string) => new Date(s).toISOString().slice(0, 16).replace('T', ' ')
+  const label =
+    f.kind === 'problem' ? `${f.problem} · ${L(f.problemRef!.title)}`
+    : f.kind === 'notice' ? L(f.notice!.title)
+    : f.kind === 'note' ? `${name(f.note!.by)} · ${stamp(f.note!.when)}`
+    : f.kind === 'members' ? undefined
+    : L(f.work!.title)
   return { id: fileId(h, f), label, kind: f.kind, problem: f.problem, size: f.size }
 }
 
 function tree(h: FHouse, view: 'dirs' | 'problems'): A.ArchiveNode {
   const files = fakeArchive(h)
   const pl = (id: string) => `${id} · ${L(h.problems.find((p) => p.id === id)!.title)}`
-  const leaves = (pred: (f: AFile) => boolean, inProblem = false) => files.filter(pred).map((f) => nodeOf(h, f, inProblem))
-  const dir = (id: string, label: string, children: A.ArchiveNode[], code?: A.ArchiveNode['dir']): A.ArchiveNode => ({ id, label, kind: 'dir', dir: code, children })
+  const leaves = (pred: (f: AFile) => boolean, _inProblem = false) => files.filter(pred).map((f) => nodeOf(h, f))
+  const dir = (id: string, label: string, children: A.ArchiveNode[], code?: A.ArchiveNode['dir']): A.ArchiveNode => (code ? { id, dir: code, kind: 'dir', children } : { id, label, kind: 'dir', children })
   const meta = dir('meta', t('archive.meta'), leaves((f) => f.kind === 'members'), 'meta')
   if (view === 'dirs') {
     return dir('root', h.id, [
@@ -228,7 +227,7 @@ const handlers: Handlers = {
     const h = find(house)
     const f = h && fakeArchive(h).find((x) => fileId(h, x) === id)
     if (!h || !f) return fail('not_found', `no file ${id}`)
-    return ok({ node: nodeOf(h, f, false), text: rawText(h, f), history: history(h, f) })
+    return ok({ node: nodeOf(h, f), text: rawText(h, f), history: history(h, f) })
   },
   // 假数据里只有车位图是"图片"，界面认得这个特殊地址
   blob: ({ id }) => (id.includes('/w1-') ? ok('fake:parking') : fail('not_found', 'no blob in M0')),
@@ -236,6 +235,7 @@ const handlers: Handlers = {
   sync: () => ok(synced),
   join: () => fail('offline', 'M0 has no relay'),
 
+  removeNote: () => written(),
   note: ({ house, problem, notice, text: s }) => {
     const h = find(house)
     if (!h) return fail('not_found', house)
