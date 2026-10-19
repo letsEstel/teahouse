@@ -161,6 +161,7 @@ Act: add-work
 
 字段名使用 camelCase，时间使用 RFC 3339 UTC，**用户写的内容都是普通字符串**（不分语言）；界面自身的文字仍然走 i18n。
 角色使用 Relay 的名字：`host | steward | guest`（界面内部也已统一）。
+**已离座**：`House.me` / `HouseSummary.me` 为空字符串，表示本机钥匙不在座位表上；此时 `myRole` 没有意义，界面整间只读，但本地副本可以看、可以导出。
 **给人看的固定文字由界面翻译**：引擎只返回代码（目录种类、错误代码及参数），界面按中英德显示；只有用户自己写的内容（标题、正文、成员名）是原样字符串。
 **时间**：`when`（进入茶馆的时间）取把它带进 main 的那个第一父提交的 committer 时间，仅供显示，可能有设备时钟误差；**顺序**以第一父链为准，这是可靠的。可信的服务器时间以后由 Relay 另行记录。
 `Member.joined` 取第一次加入这个 id 的提交时间，`House.founded` 取根提交时间。
@@ -277,8 +278,10 @@ interface HistoryEntry { by: string; when: string; act: Act; problem: string; ti
 | `adopt` | `{ house, proposal }` | 老板 | `adopt`，同时删除提案分支 |
 | `decline` | `{ house, proposal, reason? }` | 老板 | `decline`，同时删除提案分支 |
 | `seat` | `{ house, remove?: id, role?: {id, role} }` | 老板 | `seat`（加人只走邀请） |
-| `invite` | `{ house, role?, name?, days? }` | 老板 | 无提交；返回邀请码 |
-| `redeem` | `{ relay, code, name }` | 尚未入座的人 | Relay 代写 `seat`；完成后自动克隆茶馆 |
+| `invite` | `{ house, role?, name?, days? }` | 老板 | 无提交；返回**完整邀请** `TH-XXXX-XXXX-XXXX-XXXX@<relay>[:端口]`（`@` 后是 Relay 地址，ssh 用户默认 `teahouse`），界面整段复制给对方 |
+| `redeem` | `{ relay, code, name }` | 尚未入座的人 | Relay 代写 `seat`；完成后自动克隆茶馆。界面从粘贴的整段文字里认出 `TH-…@地址` 或 `teahouse://地址/…`；只有邀请码时才多问地址 |
+| `drafts` | `{ house }` | 所有人 | 无提交；返回 `{ id, kind, title, text, when, reason? }[]`（被拒绝或离线时保存的草稿） |
+| `discardDraft` | `{ house, id }` | 所有人 | 无提交；删除一份草稿 |
 | `purgeBlob` | `{ house, id }` | 老板 | 删除附件内容，引用标成 purged |
 | `removeNote` | `{ house, id }` | 老板、伙计 | `remove-note` |
 
