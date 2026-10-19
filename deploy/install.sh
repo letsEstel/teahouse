@@ -151,6 +151,9 @@ else
 fi
 [ -f /etc/ssh/ssh_host_ed25519_key ] || ssh-keygen -A >/dev/null
 sshd_bin=$(command -v sshd || echo /usr/sbin/sshd)
+# Ubuntu 24.04 starts sshd by socket activation, so /run/sshd may not exist
+# yet; `sshd -t` refuses to run without it.
+install -d -m 0755 /run/sshd
 "$sshd_bin" -t || die "sshd 配置检查失败 · sshd -t failed"
 if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
   systemctl enable --now ssh >/dev/null 2>&1 || systemctl enable --now sshd >/dev/null 2>&1 || true
