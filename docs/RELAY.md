@@ -83,6 +83,10 @@ A new teahouse is prepared under `tmp/` and moved into `houses/` with one
 | 10 | Paths that would turn into `.teahouse/` on Windows or macOS checkouts (`.TeaHouse/`, `.teahouse./`, `TEAHOU~1`) are refused. | all |
 | 11 | At most 64 ref updates and 5 000 new commits per push; pack size ≤ 200 MiB; objects are fsck-checked on receive. | all |
 | 12 | Posts and notices (`talk/`, `board/`) are regular UTF-8 text files of at most 32 KiB, without control characters except tab and line breaks. A post's stamp is a real UTC time no more than 10 minutes ahead of the relay's clock; posts are shown in the order they entered `main`, never by stamp. | all |
+| 13 | Every pushed commit is signed (git ssh signature) by the device key of its author `<member-id>@teahouse`, and that key appears in a version of this teahouse's `members.toml` on `main`. Who may push is still decided by the current chart. Commits the relay writes itself (opening, succession, redeemed invitations) do not arrive by push; they are signed with the relay's own key and carry committer `Teahouse Relay`. | all |
+| 14 | On `main`, each problem number has at most one `problems/<id>-*.md`. (Proposals may collide; the host's engine renumbers on adoption.) | all |
+| 15 | Attachments live outside git: every `*.ref.md` is well-formed (`blob: sha256:…`, `size` ≤ 100 MiB, `type`), and unless marked `purged`, its blob is already in the attachment store with that size. Binary files over 1 MiB are refused in git. | all |
+| 16 | Invitations (`docs/INVITE.md` §2): only the host creates them; one-time, 1–30 days, stored hashed; redeeming needs a free seat (≤ 15), a free steward seat if the invitation is for a steward, and a key not yet in the house; rate-limited and audited. The relay writes the seat commit (author: the host). | host / anyone with a code |
 
 Laws 6–9 and 12 apply to every commit a push would add to `main` — including commits
 that came from someone else's proposal. A steward therefore cannot land a
@@ -139,7 +143,7 @@ one. A post that arrives through a merged proposal enters when the merge
 lands, not when the proposal was written. Within one step, order by file
 name. Clients name new posts with `teahouse_core::rules::format_stamp(now)`.
 
-### Signatures, numbers and attachments (step 3; table wording pending)
+### Signatures, numbers and attachments (laws 13–15)
 
 These checks are enforced since step 3 of CLIENT-API.md §7. Their wording for
 the table above is proposed to the reviewer and the user (CLIENT-API.md §8.2);
