@@ -95,7 +95,7 @@
       {/each}
 
       <div class="actions">
-        {#if me.role === 'boss'}
+        {#if me.role === 'host'}
           {#if state === 'pending'}
             <p class="consequence">{t('prop.adoptHint')}</p>
             <div class="buttons">
@@ -122,7 +122,7 @@
             {p.by === me.id ? t('prop.ownWaiting', { name: L(owner.name) }) : t('prop.waiting', { name: L(owner.name) })}
           </p>
           <div class="buttons">
-            {#if me.role === 'heir'}
+            {#if me.role === 'steward'}
               <div class="opt"><small>{t('prop.editDirectHint')}</small></div>
               <a class="primary" href="#/{house.id}/problem/{problem.id}"><i>→</i><span>{t('prop.editDirect')}</span></a>
             {:else}

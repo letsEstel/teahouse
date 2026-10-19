@@ -5,9 +5,9 @@
 </script>
 
 <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-  {#if role === 'boss'}
+  {#if role === 'host'}
     <rect x="1" y="1" width="18" height="18" fill="var(--red)" />
-  {:else if role === 'heir'}
+  {:else if role === 'steward'}
     <!-- 黄色本身在米白底上对比度不足：加一圈细墨线（任何尺寸都是 1px），颜色不变 -->
     <polygon points="10,1.6 19,18.6 1,18.6" fill="var(--yellow)" stroke="var(--ink)" stroke-width="1" stroke-linejoin="miter" vector-effect="non-scaling-stroke" />
   {:else if role === 'guest'}

@@ -15,8 +15,8 @@
 
   // 每个角色在首页的最主要动作
   let action = $derived(
-    me.role === 'boss' ? { label: t('act.invite'), hint: t('act.inviteHint', { n: free }), href: undefined }
-    : me.role === 'heir' ? { label: t('act.newProblem'), hint: t('act.newProblemHint'), href: `#/${house.id}/problems` }
+    me.role === 'host' ? { label: t('act.invite'), hint: t('act.inviteHint', { n: free }), href: undefined }
+    : me.role === 'steward' ? { label: t('act.newProblem'), hint: t('act.newProblemHint'), href: `#/${house.id}/problems` }
     : { label: t('act.newProposal'), hint: t('act.newProposalHint'), href: `#/${house.id}/propose` }
   )
 </script>
@@ -32,9 +32,9 @@
       <i class="bar"></i>
       <p>{L(house.sign)}</p>
       <div class="sign-by">
-        <Shape role="boss" size={10} />
+        <Shape role="host" size={10} />
         <span>{t('house.signBy', { name: L(owner.name) })}</span>
-        {#if me.role === 'boss'}<button class="edit">{t('house.signEdit')}</button>{/if}
+        {#if me.role === 'host'}<button class="edit">{t('house.signEdit')}</button>{/if}
       </div>
     </div>
 
@@ -87,8 +87,8 @@
   <section class="seats">
     <div data-tour="room"><Room {house} /></div>
     <div class="legend">
-      <span><Shape role="boss" size={12} />{t('role.boss')} <em class="num">{count('boss')}</em></span>
-      <span><Shape role="heir" size={12} />{t('role.heir')} · {t('role.heirNote')} <em class="num">{count('heir')}</em></span>
+      <span><Shape role="host" size={12} />{t('role.host')} <em class="num">{count('host')}</em></span>
+      <span><Shape role="steward" size={12} />{t('role.steward')} · {t('role.stewardNote')} <em class="num">{count('steward')}</em></span>
       <span><Shape role="guest" size={12} />{t('role.guest')} <em class="num">{count('guest')}</em></span>
       <span><Shape role={null} size={12} />{t('role.empty')} <em class="num">{free}</em></span>
     </div>

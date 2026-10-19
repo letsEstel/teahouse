@@ -17,8 +17,8 @@ export const startup: House = {
   capacity: 15,
   me: 'song',
   members: [
-    { id: 'linz', name: { zh: '林舟', en: 'Lin Zhou', de: 'Lin Zhou' }, role: 'boss', joined: '2026-08-01' },
-    { id: 'song', name: { zh: '宋雨桐', en: 'Song Yutong', de: 'Song Yutong' }, role: 'heir', joined: '2026-08-01' },
+    { id: 'linz', name: { zh: '林舟', en: 'Lin Zhou', de: 'Lin Zhou' }, role: 'host', joined: '2026-08-01' },
+    { id: 'song', name: { zh: '宋雨桐', en: 'Song Yutong', de: 'Song Yutong' }, role: 'steward', joined: '2026-08-01' },
     { id: 'ma', name: { zh: '马克', en: 'Ma Ke', de: 'Ma Ke' }, role: 'guest', joined: '2026-08-03' },
   ],
   problems: [

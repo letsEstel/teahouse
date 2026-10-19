@@ -18,8 +18,8 @@ export const band: House = {
   capacity: 15,
   me: 'lu',
   members: [
-    { id: 'lu', name: { zh: '鹿鸣', en: 'Lu Ming', de: 'Lu Ming' }, role: 'boss', joined: '2026-09-12' },
-    { id: 'fang', name: { zh: '方圆', en: 'Fang Yuan', de: 'Fang Yuan' }, role: 'heir', joined: '2026-09-12' },
+    { id: 'lu', name: { zh: '鹿鸣', en: 'Lu Ming', de: 'Lu Ming' }, role: 'host', joined: '2026-09-12' },
+    { id: 'fang', name: { zh: '方圆', en: 'Fang Yuan', de: 'Fang Yuan' }, role: 'steward', joined: '2026-09-12' },
     { id: 'zhu', name: { zh: '小朱', en: 'Xiao Zhu', de: 'Xiao Zhu' }, role: 'guest', joined: '2026-09-12' },
     { id: 'tao', name: { zh: '陶然', en: 'Tao Ran', de: 'Tao Ran' }, role: 'guest', joined: '2026-09-13' },
     { id: 'susu', name: { zh: '苏苏', en: 'Susu', de: 'Susu' }, role: 'guest', joined: '2026-09-20' },

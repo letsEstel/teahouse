@@ -17,8 +17,8 @@ export const family: House = {
   capacity: 15,
   me: 'lei',
   members: [
-    { id: 'jing', name: { zh: '何静', en: 'He Jing', de: 'He Jing' }, role: 'boss', joined: '2026-09-01' },
-    { id: 'lei', name: { zh: '何磊', en: 'He Lei', de: 'He Lei' }, role: 'heir', joined: '2026-09-01' },
+    { id: 'jing', name: { zh: '何静', en: 'He Jing', de: 'He Jing' }, role: 'host', joined: '2026-09-01' },
+    { id: 'lei', name: { zh: '何磊', en: 'He Lei', de: 'He Lei' }, role: 'steward', joined: '2026-09-01' },
     { id: 'ping', name: { zh: '何平', en: 'He Ping', de: 'He Ping' }, role: 'guest', joined: '2026-09-01' },
     { id: 'mum', name: { zh: '妈妈', en: 'Mum', de: 'Mama' }, role: 'guest', joined: '2026-09-02' },
     { id: 'dad', name: { zh: '爸爸', en: 'Dad', de: 'Papa' }, role: 'guest', joined: '2026-09-02' },

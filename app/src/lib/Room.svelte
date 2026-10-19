@@ -12,7 +12,7 @@
     [0, 2], [0, 3], [0, 4], [1, 4], [2, 4], [3, 4], [4, 4], [4, 3],
     [4, 1], [4, 0], [3, 0], [2, 0], [1, 0], [0, 0], [0, 1],
   ]
-  const rank = (m: Member) => (m.role === 'boss' ? 0 : m.role === 'heir' ? 1 : 2)
+  const rank = (m: Member) => (m.role === 'host' ? 0 : m.role === 'steward' ? 1 : 2)
   let seats = $derived.by(() => {
     const order = [...house.members].sort((a, b) => rank(a) - rank(b))
     return ring.slice(0, house.capacity).map(([r, c], i) => ({ r, c, m: order[i] ?? null, i }))

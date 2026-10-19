@@ -49,7 +49,7 @@ function workHistory(p: Problem, w: Work): HistEntry[] {
 
 export function archive(h: House): AFile[] {
   const files: AFile[] = []
-  const boss = h.members.find((m) => m.role === 'boss')!
+  const boss = h.members.find((m) => m.role === 'host')!
   for (const p of h.problems) {
     const status = p.events.filter((e) => e.act === 'open' || e.act === 'markActive' || e.act === 'markSolved')
     files.push({

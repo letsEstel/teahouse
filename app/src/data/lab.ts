@@ -18,8 +18,8 @@ export const lab: House = {
   capacity: 15,
   me: 'ye',
   members: [
-    { id: 'sunl', name: { zh: '孙岚', en: 'Sun Lan', de: 'Sun Lan' }, role: 'boss', joined: '2026-07-01' },
-    { id: 'jiang', name: { zh: '江河', en: 'Jiang He', de: 'Jiang He' }, role: 'heir', joined: '2026-07-01' },
+    { id: 'sunl', name: { zh: '孙岚', en: 'Sun Lan', de: 'Sun Lan' }, role: 'host', joined: '2026-07-01' },
+    { id: 'jiang', name: { zh: '江河', en: 'Jiang He', de: 'Jiang He' }, role: 'steward', joined: '2026-07-01' },
     { id: 'ye', name: { zh: '叶舟', en: 'Ye Zhou', de: 'Ye Zhou' }, role: 'guest', joined: '2026-07-02' },
     { id: 'bai', name: { zh: '白杨', en: 'Bai Yang', de: 'Bai Yang' }, role: 'guest', joined: '2026-07-02' },
   ],

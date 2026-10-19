@@ -14,8 +14,8 @@ export const wutong: House = {
   capacity: 15,
   me: 'chen',
   members: [
-    { id: 'chen', name: { zh: '陈立', en: 'Chen Li', de: 'Chen Li' }, role: 'boss', joined: '2026-03-14' },
-    { id: 'zhou', name: { zh: '周小满', en: 'Zhou Xiaoman', de: 'Zhou Xiaoman' }, role: 'heir', joined: '2026-03-14' },
+    { id: 'chen', name: { zh: '陈立', en: 'Chen Li', de: 'Chen Li' }, role: 'host', joined: '2026-03-14' },
+    { id: 'zhou', name: { zh: '周小满', en: 'Zhou Xiaoman', de: 'Zhou Xiaoman' }, role: 'steward', joined: '2026-03-14' },
     { id: 'wang', name: { zh: '王阿姨', en: 'Auntie Wang', de: 'Tante Wang' }, role: 'guest', joined: '2026-03-16' },
     { id: 'li', name: { zh: '李建国', en: 'Li Jianguo', de: 'Li Jianguo' }, role: 'guest', joined: '2026-03-16' },
     { id: 'zhao', name: { zh: '赵一鸣', en: 'Zhao Yiming', de: 'Zhao Yiming' }, role: 'guest', joined: '2026-03-22' },

@@ -205,7 +205,7 @@
 
       <div class="submit">
         <div class="to">
-          <Shape role="boss" size={12} />
+          <Shape role="host" size={12} />
           <div>
             <p class="consequence">{t('propose.submitHint', { name: L(owner.name) })}</p>
             {#if missing.length}<p class="missing">{t('propose.need', { what: missing.join(' · ') })}</p>{/if}

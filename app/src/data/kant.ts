@@ -17,8 +17,8 @@ export const kant: House = {
   capacity: 15,
   me: 'xu',
   members: [
-    { id: 'su', name: { zh: '苏明哲', en: 'Su Mingzhe', de: 'Su Mingzhe' }, role: 'boss', joined: '2026-01-08' },
-    { id: 'he', name: { zh: '何雨', en: 'He Yu', de: 'He Yu' }, role: 'heir', joined: '2026-01-08' },
+    { id: 'su', name: { zh: '苏明哲', en: 'Su Mingzhe', de: 'Su Mingzhe' }, role: 'host', joined: '2026-01-08' },
+    { id: 'he', name: { zh: '何雨', en: 'He Yu', de: 'He Yu' }, role: 'steward', joined: '2026-01-08' },
     { id: 'xu', name: { zh: '许清', en: 'Xu Qing', de: 'Xu Qing' }, role: 'guest', joined: '2026-01-15' },
     { id: 'luo', name: { zh: '罗森', en: 'Luo Sen', de: 'Luo Sen' }, role: 'guest', joined: '2026-01-15' },
     { id: 'tang', name: { zh: '唐棠', en: 'Tang Tang', de: 'Tang Tang' }, role: 'guest', joined: '2026-02-05' },
