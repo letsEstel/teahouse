@@ -319,4 +319,8 @@ export default {
   'seat.leftShort': 'no longer seated',
   'err.refusedDraft': 'Nothing you wrote is lost: it’s saved as a draft on this device, so you can fix it and try again.',
   'err.refusedWhy': 'The teahouse’s reasons:',
+  'demo.try': 'Look at the example teahouses first',
+  'demo.tryHint': 'Six example teahouses with made-up data: nothing syncs and nothing leaves this device.',
+  'demo.on': 'Examples · made-up data',
+  'demo.exit': 'Leave the examples',
 }

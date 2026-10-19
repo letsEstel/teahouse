@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { write } from '../api/backend'
+  import { write, inApp, demoMode, setDemo } from '../api/backend'
   import { t } from '../i18n/index.svelte'
   import type { HouseSummary } from '../api/types'
 
@@ -79,6 +79,14 @@
       </div>
     </section>
 
+    {#if inApp && !demoMode}
+      <!-- 还没拿到邀请时，先用假数据看看（只在打包好的应用里出现） -->
+      <div class="demo">
+        <button type="button" class="secondary" onclick={() => setDemo(true)}>{t('demo.try')}</button>
+        <p class="hint">{t('demo.tryHint')}</p>
+      </div>
+    {/if}
+
     <div class="submit">
       <div>
         <p class="consequence">{t('join.consequence')}</p>
@@ -116,6 +124,7 @@
   .field { display: flex; flex-direction: column; gap: 6px; max-width: 28em; }
   .hint { font-size: 13px; color: var(--ink-2); }
 
+  .demo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 24px 0; border-bottom: 1px solid var(--ink); }
   .submit { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px 32px; padding-top: 28px; }
   .submit > div { flex: 1 1 20em; }
   .missing { margin-top: 6px; font-size: 13px; font-weight: 700; }

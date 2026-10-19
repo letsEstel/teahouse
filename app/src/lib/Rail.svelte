@@ -3,7 +3,7 @@
   import { self, pad, type House } from '../api/view'
   import { i18n, langs, setLang, t, type Lang } from '../i18n/index.svelte'
   import { theme, themes, setTheme } from './theme.svelte'
-  import { api } from '../api/backend'
+  import { api, demoMode, setDemo } from '../api/backend'
   import type { HouseSummary, ArchiveNode } from '../api/types'
 
   // ≥1024：左侧竖栏；<1024：顶栏，茶馆列表收进下拉。
@@ -86,6 +86,9 @@
   </nav>
 
   <div class="foot">
+    {#if demoMode}
+      <div class="demo"><span>{t('demo.on')}</span><button onclick={() => setDemo(false)}>{t('demo.exit')}</button></div>
+    {/if}
     <div class="self">
       {#if seated}
         <Shape role={me.role} size={16} />
@@ -183,6 +186,9 @@
   .on .badge { background: var(--paper); color: var(--ink); }
 
   .foot { margin-top: auto; padding: 28px var(--in) 0; display: flex; flex-direction: column; gap: 20px; }
+  .demo { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 12px; border: 1.5px dashed var(--ink); padding: 6px 8px; }
+  .demo span { font-weight: 700; }
+  .demo button { border-bottom: 1px solid var(--ink); }
   .self { display: flex; align-items: center; gap: 14px; }
   .self-name { font-family: var(--display); font-weight: 700; font-size: 15px; line-height: 1.2; }
   .self .label { font-size: 10px; }
