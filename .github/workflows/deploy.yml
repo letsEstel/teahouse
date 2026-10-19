@@ -1,0 +1,44 @@
+# The shipped ways to run a relay must actually work: install.sh on a fresh
+# Ubuntu, and the Docker image. Each is installed exactly as a user would and
+# then exercised by real ssh/git members (scripts/deploy-test.sh).
+name: deploy
+
+on:
+  push:
+    paths: [deploy/**, relay/**, core/**, scripts/deploy-test.sh, .github/workflows/deploy.yml]
+  pull_request:
+    paths: [deploy/**, relay/**, core/**, scripts/deploy-test.sh, .github/workflows/deploy.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  install-sh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build relay
+        run: |
+          rustup toolchain install stable --profile minimal && rustup default stable
+          cargo build --release --locked -p teahouse-relay
+      - name: install.sh + member checks
+        run: sudo ./scripts/deploy-test.sh install target/release/teahouse-relay
+      - name: Package relay for download
+        run: |
+          mkdir -p dist/teahouse-relay
+          cp target/release/teahouse-relay dist/teahouse-relay/
+          cp -r deploy dist/teahouse-relay/
+          tar -C dist -czf teahouse-relay-linux-x86_64.tar.gz teahouse-relay
+      - uses: actions/upload-artifact@v4
+        with:
+          name: teahouse-relay-linux-x86_64
+          path: teahouse-relay-linux-x86_64.tar.gz
+
+  docker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Docker image + member checks
+        run: ./scripts/deploy-test.sh docker
