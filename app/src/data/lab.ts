@@ -89,7 +89,7 @@ export const lab: House = {
           ],
         },
         {
-          id: 'l3', kind: 'doc', by: 'bai', when: '2026-10-11T19:00',
+          id: 'l3', kind: 'table', by: 'bai', when: '2026-10-11T19:00',
           title: { zh: '复现记录（三次）', en: 'Reproduction log (three runs)', de: 'Reproduktionsprotokoll (drei Läufe)' },
           note: { zh: '每次 120 个液滴', en: '120 droplets per run', de: '120 Tröpfchen pro Lauf' },
         },

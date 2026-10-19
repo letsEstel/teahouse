@@ -10,7 +10,7 @@
     <line x1="13" y1="13" x2="27" y2="13" stroke="var(--ink)" stroke-width="2" />
     <line x1="13" y1="19" x2="27" y2="19" stroke="var(--ink)" stroke-width="2" />
     <line x1="13" y1="25" x2="22" y2="25" stroke="var(--ink)" stroke-width="2" />
-  {:else if kind === 'bill'}
+  {:else if kind === 'table'}
     <rect x="4" y="8" width="32" height="24" fill="none" stroke="var(--ink)" stroke-width="2" />
     <line x1="4" y1="16" x2="36" y2="16" stroke="var(--ink)" stroke-width="2" />
     <line x1="16" y1="16" x2="16" y2="32" stroke="var(--ink)" stroke-width="2" />

@@ -23,7 +23,7 @@ export default {
   'status.all': 'All',
 
   'kind.doc': 'Document',
-  'kind.bill': 'Bill',
+  'kind.table': 'Table',
   'kind.plan': 'Plan',
   'kind.image': 'Image',
 

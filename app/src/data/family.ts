@@ -72,7 +72,7 @@ export const family: House = {
           },
         },
         {
-          id: 'f2', kind: 'bill', by: 'lei', when: '2026-10-15T21:00', title: split,
+          id: 'f2', kind: 'table', by: 'lei', when: '2026-10-15T21:00', title: split,
           note: { zh: '三家平摊', en: 'Split three ways', de: 'Durch drei geteilt' },
           lines: [
             { zh: '项目　　　　金额', en: 'Item            Amount', de: 'Posten          Betrag' },
@@ -83,7 +83,7 @@ export const family: House = {
           ],
         },
         {
-          id: 'f3', kind: 'bill', by: 'ping', when: '2026-10-11T12:00',
+          id: 'f3', kind: 'table', by: 'ping', when: '2026-10-11T12:00',
           title: { zh: '三家施工队报价', en: 'Quotes from three builders', de: 'Angebote von drei Handwerkern' },
           note: { zh: '最便宜的那家不包垃圾清运', en: 'The cheapest one doesn’t take away rubble', de: 'Der günstigste entsorgt den Schutt nicht' },
         },
@@ -171,7 +171,7 @@ export const family: House = {
       files: [
         {
           title: split,
-          kind: 'bill',
+          kind: 'table',
           lines: [
             { kind: 'same', text: { zh: '项目　　　　金额', en: 'Item            Amount', de: 'Posten          Betrag' } },
             { kind: 'same', text: { zh: '卫生间改造　¥28,000', en: 'Bathroom        ¥28,000', de: 'Bad             28.000 ¥' } },

@@ -61,7 +61,7 @@
     !reason.trim() && t('propose.needReason'),
   ].filter(Boolean) as string[])
 
-  const kinds: WorkKind[] = ['doc', 'plan', 'bill', 'image']
+  const kinds: WorkKind[] = ['doc', 'plan', 'table', 'image']
 </script>
 
 <div class="wrap">

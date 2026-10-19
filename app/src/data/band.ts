@@ -77,7 +77,7 @@ export const band: House = {
           },
         },
         {
-          id: 'm2', kind: 'bill', by: 'fang', when: '2026-10-16T20:00',
+          id: 'm2', kind: 'table', by: 'fang', when: '2026-10-16T20:00',
           title: { zh: '演出预算', en: 'Gig budget', de: 'Budget für den Auftritt' },
           note: { zh: '按卖出 40 张票算', en: 'Assuming 40 tickets sold', de: 'Gerechnet mit 40 verkauften Karten' },
         },

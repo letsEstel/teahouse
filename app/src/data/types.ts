@@ -2,7 +2,7 @@ import type { Text } from '../i18n/index.svelte'
 
 export type Role = 'boss' | 'heir' | 'guest'
 export type Status = 'open' | 'active' | 'solved'
-export type WorkKind = 'doc' | 'bill' | 'plan' | 'image'
+export type WorkKind = 'doc' | 'table' | 'plan' | 'image'  // table：预算、报价、数据表都用它
 export type Act = 'addWork' | 'propose' | 'merge' | 'update' | 'markActive' | 'markSolved' | 'open' | 'openProblem'
 
 export interface Member { id: string; name: Text; role: Role; joined: string }

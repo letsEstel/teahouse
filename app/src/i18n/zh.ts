@@ -23,7 +23,7 @@ export default {
   'status.all': '全部',
 
   'kind.doc': '文档',
-  'kind.bill': '账单',
+  'kind.table': '表格',
   'kind.plan': '方案',
   'kind.image': '图片',
 
