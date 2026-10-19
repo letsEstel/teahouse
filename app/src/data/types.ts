@@ -1,8 +1,8 @@
 import type { Text } from '../i18n/index.svelte'
 
-export type Role = 'boss' | 'heir' | 'guest'
+export type Role = 'host' | 'steward' | 'guest'
 export type Status = 'open' | 'active' | 'solved'
-export type WorkKind = 'doc' | 'bill' | 'plan' | 'image'
+export type WorkKind = 'doc' | 'table' | 'plan' | 'image'  // table：预算、报价、数据表都用它
 export type Act = 'addWork' | 'propose' | 'merge' | 'update' | 'markActive' | 'markSolved' | 'open' | 'openProblem'
 
 export interface Member { id: string; name: Text; role: Role; joined: string }
@@ -18,6 +18,8 @@ export interface Work {
   preview?: { chart: 'parking' } | { excerpt: Text }
   /** 文本成果的正文（逐行），发起提案时可以在此基础上修改 */
   lines?: Text[]
+  /** 档案里"来历"的样例：这份成果每一次进入茶馆的改动（M1 起直接来自茶馆的历史） */
+  history?: { by: string; when: string; act: 'add' | 'update' | 'merge'; diff: DiffLine[] }[]
 }
 
 /** 写下来的一段话：公告的回应、问题下的讨论。每条都是一次提交。 */

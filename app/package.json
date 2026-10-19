@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "shoot": "node scripts/shoot.mjs",
-    "preview:publish": "node scripts/preview.mjs"
+    "preview:publish": "node scripts/preview.mjs",
+    "export-fixtures": "node scripts/export-fixtures.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.1.1",

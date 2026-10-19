@@ -14,8 +14,8 @@ export const wutong: House = {
   capacity: 15,
   me: 'chen',
   members: [
-    { id: 'chen', name: { zh: '陈立', en: 'Chen Li', de: 'Chen Li' }, role: 'boss', joined: '2026-03-14' },
-    { id: 'zhou', name: { zh: '周小满', en: 'Zhou Xiaoman', de: 'Zhou Xiaoman' }, role: 'heir', joined: '2026-03-14' },
+    { id: 'chen', name: { zh: '陈立', en: 'Chen Li', de: 'Chen Li' }, role: 'host', joined: '2026-03-14' },
+    { id: 'zhou', name: { zh: '周小满', en: 'Zhou Xiaoman', de: 'Zhou Xiaoman' }, role: 'steward', joined: '2026-03-14' },
     { id: 'wang', name: { zh: '王阿姨', en: 'Auntie Wang', de: 'Tante Wang' }, role: 'guest', joined: '2026-03-16' },
     { id: 'li', name: { zh: '李建国', en: 'Li Jianguo', de: 'Li Jianguo' }, role: 'guest', joined: '2026-03-16' },
     { id: 'zhao', name: { zh: '赵一鸣', en: 'Zhao Yiming', de: 'Zhao Yiming' }, role: 'guest', joined: '2026-03-22' },
@@ -82,7 +82,7 @@ export const wutong: House = {
           ],
         },
         {
-          id: 'w3', kind: 'bill', by: 'li', when: '2026-10-12T10:00',
+          id: 'w3', kind: 'table', by: 'li', when: '2026-10-12T10:00',
           title: { zh: '地锁采购报价', en: 'Parking lock quotes', de: 'Angebote für Parkbügel' },
           note: { zh: '三家对比，含安装', en: 'Three suppliers, installation included', de: 'Drei Anbieter, inklusive Montage' },
         },
@@ -92,7 +92,7 @@ export const wutong: House = {
           note: { zh: '每晚 21:00 拍照统计', en: 'Photographed every night at 21:00', de: 'Jeden Abend um 21:00 fotografiert' },
         },
         { id: 'w5', kind: 'doc', by: 'chen', when: '2026-10-03T15:00', title: { zh: '致物业的函（草稿）', en: 'Letter to the management (draft)', de: 'Schreiben an die Hausverwaltung (Entwurf)' } },
-        { id: 'w6', kind: 'bill', by: 'sun', when: '2026-09-27T12:00', title: { zh: '周边收费停车场价目', en: 'Nearby car park prices', de: 'Preise der Parkhäuser in der Nähe' } },
+        { id: 'w6', kind: 'table', by: 'sun', when: '2026-09-27T12:00', title: { zh: '周边收费停车场价目', en: 'Nearby car park prices', de: 'Preise der Parkhäuser in der Nähe' } },
         { id: 'w7', kind: 'image', by: 'wu', when: '2026-09-20T09:00', title: { zh: '外来车辆照片汇总', en: 'Photos of outside cars', de: 'Fotos der Fremdfahrzeuge' } },
         { id: 'w8', kind: 'plan', by: 'zhao', when: '2026-09-18T20:00', title: { zh: '错峰共享方案 v1', en: 'Time-sharing plan v1', de: 'Zeitversetzte Platzteilung v1' } },
         { id: 'w9', kind: 'doc', by: 'zheng', when: '2026-09-11T19:00', title: { zh: '住户问卷结果', en: 'Resident survey results', de: 'Ergebnisse der Anwohnerumfrage' } },
@@ -106,7 +106,7 @@ export const wutong: House = {
         { by: 'wang', act: 'open', when: '2026-03-16T09:00' },
       ],
       notes: [
-        { by: 'li', when: '2026-10-13T08:40', text: { zh: '地锁报价如果用不上，账单能不能留着？别的院子可能用得上。', en: 'If we don’t need the lock quotes, can we keep the bill anyway? Another courtyard might use it.', de: 'Wenn wir die Bügel-Angebote nicht brauchen, können wir die Rechnung trotzdem behalten? Ein anderer Hof kann sie vielleicht gebrauchen.' } },
+        { by: 'li', when: '2026-10-13T08:40', text: { zh: '地锁报价如果用不上，报价表能不能留着？别的院子可能用得上。', en: 'If we don’t need the lock quotes, can we keep the quote table anyway? Another courtyard might use it.', de: 'Wenn wir die Bügel-Angebote nicht brauchen, können wir die Angebotstabelle trotzdem behalten? Ein anderer Hof kann sie vielleicht gebrauchen.' } },
         { by: 'zhao', when: '2026-10-17T22:30', text: { zh: 'v2 里夜班住户要提前登记。登记表谁来收？', en: 'In v2 night-shift residents register in advance. Who collects the forms?', de: 'In v2 melden sich Nachtschicht-Anwohner vorher an. Wer sammelt die Formulare ein?' } },
         { by: 'zhou', when: '2026-10-18T09:10', text: { zh: '我来收。门卫室放一个本子，每周日拍照传到这里。', en: 'I will. There’ll be a notebook in the gatehouse; I’ll photograph it every Sunday and post it here.', de: 'Mache ich. Im Pförtnerhaus liegt ein Heft; ich fotografiere es jeden Sonntag und stelle es hier ein.' } },
       ],
@@ -197,11 +197,11 @@ export const wutong: House = {
         },
         {
           title: { zh: '地锁采购报价', en: 'Parking lock quotes', de: 'Angebote für Parkbügel' },
-          kind: 'bill',
+          kind: 'table',
           lines: [
             { kind: 'same', text: { zh: '供应商　　　单价　　数量　　小计', en: 'Supplier      Unit   Qty   Subtotal', de: 'Anbieter      Preis  Anz.  Summe' } },
             { kind: 'del', text: { zh: '安途五金　　¥186　　8　　　¥1,488', en: 'Antu Hardware   ¥186   8   ¥1,488', de: 'Antu Eisenwaren   186 ¥   8   1.488 ¥' } },
-            { kind: 'add', text: { zh: '（方案 v2 不再采购地锁，本账单作废留档）', en: '(Plan v2 buys no locks; this bill is void and kept for the record)', de: '(Plan v2 kauft keine Bügel; diese Rechnung ist ungültig und bleibt archiviert)' } },
+            { kind: 'add', text: { zh: '（方案 v2 不再采购地锁，本表作废留档）', en: '(Plan v2 buys no locks; this table is void and kept for the record)', de: '(Plan v2 kauft keine Bügel; diese Tabelle ist ungültig und bleibt archiviert)' } },
           ],
         },
       ],

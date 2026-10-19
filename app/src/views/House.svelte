@@ -2,21 +2,21 @@
   import Room from '../lib/Room.svelte'
   import Shape from '../lib/Shape.svelte'
   import { fit } from '../lib/fit'
-  import { member, self, boss, workCount, pad, type House, type Role } from '../data'
-  import { t, L, when, date, i18n } from '../i18n/index.svelte'
+  import { member, self, host, pad, eventText, nameLines, type House, type Role } from '../api/view'
+  import { t, when, date, i18n } from '../i18n/index.svelte'
 
   let { house }: { house: House } = $props()
   let me = $derived(self(house))
-  let owner = $derived(boss(house))
-  let works = $derived(house.problems.reduce((n, p) => n + workCount(p), 0))
+  let owner = $derived(host(house))
+  let works = $derived(house.problems.reduce((n, p) => n + p.workCount, 0))
   let free = $derived(house.capacity - house.members.length)
   let notice = $derived(house.board[0])
   const count = (r: Role) => house.members.filter((m) => m.role === r).length
 
   // 每个角色在首页的最主要动作
   let action = $derived(
-    me.role === 'boss' ? { label: t('act.invite'), hint: t('act.inviteHint', { n: free }), href: undefined }
-    : me.role === 'heir' ? { label: t('act.newProblem'), hint: t('act.newProblemHint'), href: `#/${house.id}/problems` }
+    me.role === 'host' ? { label: t('act.invite'), hint: t('act.inviteHint', { n: free }), href: undefined }
+    : me.role === 'steward' ? { label: t('act.newProblem'), hint: t('act.newProblemHint'), href: `#/${house.id}/problems` }
     : { label: t('act.newProposal'), hint: t('act.newProposalHint'), href: `#/${house.id}/propose` }
   )
 </script>
@@ -25,16 +25,16 @@
   <section class="intro">
     <div class="label">{t('house.founded', { date: date(house.founded) })}</div>
     <h1 use:fit={i18n.lang}>
-      {#each house.nameLines[i18n.lang] ?? house.nameLines.en as line}<span>{line}</span>{/each}
+      {#each nameLines(house.name, i18n.lang) as line}<span>{line}</span>{/each}
     </h1>
 
     <div class="sign">
       <i class="bar"></i>
-      <p>{L(house.sign)}</p>
+      <p>{house.signboard ?? ''}</p>
       <div class="sign-by">
-        <Shape role="boss" size={10} />
-        <span>{t('house.signBy', { name: L(owner.name) })}</span>
-        {#if me.role === 'boss'}<button class="edit">{t('house.signEdit')}</button>{/if}
+        <Shape role="host" size={10} />
+        <span>{t('house.signBy', { name: owner.name })}</span>
+        {#if me.role === 'host'}<button class="edit">{t('house.signEdit')}</button>{/if}
       </div>
     </div>
 
@@ -57,11 +57,11 @@
       {@const nm = member(house, notice.by)}
       <a class="notice" href="#/{house.id}/board">
         <div class="label nh">{t('board.latest')}</div>
-        <div class="nt">{L(notice.title)}</div>
-        <p class="nx">{L(notice.text)}</p>
+        <div class="nt">{notice.title}</div>
+        <p class="nx">{notice.text}</p>
         <div class="nb">
           <Shape role={nm.role} size={10} />
-          <span>{t('board.postedBy', { name: L(nm.name) })}</span>
+          <span>{t('board.postedBy', { name: nm.name })}</span>
           <span class="when">{when(notice.when)}</span>
           <span class="more">{t('board.replies', { n: notice.replies.length })} →</span>
         </div>
@@ -75,8 +75,8 @@
           {@const m = member(house, e.by)}
           <li>
             <Shape role={m.role} size={10} />
-            <span class="who">{L(m.name)}</span>
-            <span class="what">{t(`ev.${e.act}`, { ref: e.ref ? L(e.ref) : '' })}</span>
+            <span class="who">{m.name}</span>
+            <span class="what">{eventText(e)}</span>
             <span class="when">{when(e.when)}</span>
           </li>
         {/each}
@@ -87,8 +87,8 @@
   <section class="seats">
     <div data-tour="room"><Room {house} /></div>
     <div class="legend">
-      <span><Shape role="boss" size={12} />{t('role.boss')} <em class="num">{count('boss')}</em></span>
-      <span><Shape role="heir" size={12} />{t('role.heir')} · {t('role.heirNote')} <em class="num">{count('heir')}</em></span>
+      <span><Shape role="host" size={12} />{t('role.host')} <em class="num">{count('host')}</em></span>
+      <span><Shape role="steward" size={12} />{t('role.steward')} · {t('role.stewardNote')} <em class="num">{count('steward')}</em></span>
       <span><Shape role="guest" size={12} />{t('role.guest')} <em class="num">{count('guest')}</em></span>
       <span><Shape role={null} size={12} />{t('role.empty')} <em class="num">{free}</em></span>
     </div>

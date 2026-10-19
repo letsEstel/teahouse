@@ -57,7 +57,7 @@ const reasons = {
   de: 'Wir lesen Li Qiuling, also durchgehend 物自身; 本体 bleibt für Noumenon.',
 }
 async function fillProposal(p, lang) {
-  await p.click('[data-work=k2]')
+  await p.click('[data-work*="/k2-"]')
   const body = p.locator('textarea[name=body]')
   const v = await body.inputValue()
   await body.fill(v.replace('Ding an sich — 物自体', 'Ding an sich — 物自身').replace(/(Noumenon — 本体)[、,] ?物自体/, '$1'))
@@ -75,6 +75,7 @@ for (const h of houses) {
     { name: `${h}-problems`, hash: `#/${h}/problems` },
     { name: `${h}-problem`, hash: `#/${h}/problem/0001` },
     { name: `${h}-proposal`, hash: `#/${h}/proposal/p1` },
+    { name: `${h}-archive`, hash: `#/${h}/archive` },
   )
 }
 screens.push(
@@ -89,18 +90,33 @@ screens.push(
   { name: 'wutong-rail-open', hash: '#/wutong/house', act: (p) => p.click('button.more'), widths: [1920, 1366] },
   { name: 'wutong-switch', hash: '#/wutong/house', act: (p) => p.click('button.switch'), widths: [900], full: false },
 )
+// 档案（第 6 轮）
+screens.push(
+  { name: 'kant-archive-history', hash: '#/kant/archive/' + encodeURIComponent('works/0001/k2-glossary-of-terms.md'), act: (p) => p.click('.entry') },
+  { name: 'wutong-archive-byproblem', hash: '#/wutong/archive/' + encodeURIComponent('works/0001/w1-parking-map-measured.png.ref.md'), act: (p) => p.click('.seg button:nth-child(2)'), widths: [1920, 1366] },
+  { name: 'startup-archive-table', hash: '#/startup/archive/' + encodeURIComponent('works/0001/s2-price-list.csv') },
+  { name: 'wutong-archive-members', hash: '#/wutong/archive/' + encodeURIComponent('.teahouse/members.toml'), act: (p) => p.click('.entry') },
+  { name: 'lab-archive-export', hash: '#/lab/archive/' + encodeURIComponent('works/0001/l2-draft-of-section-3.md'), act: (p) => p.click('.export button') },
+  { name: 'wutong-archive-list', hash: '#/wutong/archive', widths: [900, 390] },
+)
 // 本轮保存的图
 const save = {
-  'wutong-house': {}, 'wutong-rail-open': {}, 'wutong-switch': { saveAt: 900 },
-  'startup-house': {}, 'startup-problem': {},
-  'band-house': { saveDe: true }, 'band-problem': {}, 'band-proposal': {},
-  'lab-house': {}, 'lab-problem': { saveDe: true }, 'lab-proposal': {}, 'lab-board': {},
+  'wutong-archive': {},
+  'kant-archive-history': { saveDe: true },
+  'wutong-archive-byproblem': {},
+  'startup-archive-table': {},
+  'wutong-archive-members': {},
+  'lab-archive-export': {},
 }
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
+// 窄窗口和手机：档案是"文件树 → 文件"两级页面
+screens.push(
+  { name: 'wutong-archive-tree', hash: '#/wutong/archive', widths: [900], save: true, saveAt: 900, full: false },
+  { name: 'kant-archive-phone', hash: '#/kant/archive/' + encodeURIComponent('works/0001/k2-glossary-of-terms.md'), act: (p) => p.click('.entry'), widths: [390], save: true, saveAt: 390 },
+)
 // 夜间模式：布局不变，只拍默认组
 screens.push(
-  { name: 'band-house-dark', hash: '#/band/house', theme: 'dark', only1366: true, save: true },
-  { name: 'lab-problem-dark', hash: '#/lab/problem/0001', theme: 'dark', only1366: true, save: true },
+  { name: 'kant-archive-history-dark', hash: '#/kant/archive/' + encodeURIComponent('works/0001/k2-glossary-of-terms.md'), act: (p) => p.click('.entry'), theme: 'dark', only1366: true, save: true },
 )
 
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
@@ -190,6 +206,7 @@ try {
         checked++
         if (!keep(s, w, lang)) continue
         // 整页截图：把视口拉到整页高度再拍，这样固定的侧栏也是整页高（Playwright 的 fullPage 不会拉伸它）
+        if (s.full !== false) await page.evaluate(() => window.scrollTo(0, 0))
         const full = s.full !== false && (await page.evaluate(() => document.documentElement.scrollHeight))
         if (full && full > h) { await page.setViewportSize({ width: w, height: full }); await page.waitForTimeout(150) }
         await page.screenshot({ path: join(out, file) })

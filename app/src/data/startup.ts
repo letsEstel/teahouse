@@ -17,8 +17,8 @@ export const startup: House = {
   capacity: 15,
   me: 'song',
   members: [
-    { id: 'linz', name: { zh: '林舟', en: 'Lin Zhou', de: 'Lin Zhou' }, role: 'boss', joined: '2026-08-01' },
-    { id: 'song', name: { zh: '宋雨桐', en: 'Song Yutong', de: 'Song Yutong' }, role: 'heir', joined: '2026-08-01' },
+    { id: 'linz', name: { zh: '林舟', en: 'Lin Zhou', de: 'Lin Zhou' }, role: 'host', joined: '2026-08-01' },
+    { id: 'song', name: { zh: '宋雨桐', en: 'Song Yutong', de: 'Song Yutong' }, role: 'steward', joined: '2026-08-01' },
     { id: 'ma', name: { zh: '马克', en: 'Ma Ke', de: 'Ma Ke' }, role: 'guest', joined: '2026-08-03' },
   ],
   problems: [
@@ -66,7 +66,7 @@ export const startup: House = {
           },
         },
         {
-          id: 's2', kind: 'bill', by: 'song', when: '2026-10-14T11:00', title: pricing,
+          id: 's2', kind: 'table', by: 'song', when: '2026-10-14T11:00', title: pricing,
           note: { zh: '基础版 / 连锁版', en: 'Basic / chain', de: 'Basis / Kette' },
           lines: [
             { zh: '版本　　　月付　　年付', en: 'Plan        Monthly   Yearly', de: 'Tarif       Monatlich   Jährlich' },
@@ -151,7 +151,7 @@ export const startup: House = {
       files: [
         {
           title: pricing,
-          kind: 'bill',
+          kind: 'table',
           lines: [
             { kind: 'same', text: { zh: '版本　　　月付　　年付', en: 'Plan        Monthly   Yearly', de: 'Tarif       Monatlich   Jährlich' } },
             { kind: 'del', text: { zh: '基础版　　¥69　　 ¥690', en: 'Basic       ¥69       ¥690', de: 'Basis       69 ¥        690 ¥' } },

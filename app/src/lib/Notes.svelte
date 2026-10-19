@@ -1,22 +1,25 @@
 <script lang="ts">
   import Shape from './Shape.svelte'
-  import { member, type House, type Note } from '../data'
-  import { t, L, when } from '../i18n/index.svelte'
+  import { member, type House, type Note } from '../api/view'
+  import { t, when, date } from '../i18n/index.svelte'
   // 写下来的话：像信纸上的段落一样排，不做气泡。
   // 一条留言一个作者，写下不改；老板和伙计可以删除（管理）。
+  // 顺序是进入茶馆的先后（引擎给出）；显示写下的时间 writtenAt。
+  // 写下的时间早于前一条的（离线写、晚到的），用灰色小字注明"写于 …"。
   let { house, notes, ondelete }: { house: House; notes: Note[]; ondelete?: (n: Note) => void } = $props()
   let confirming = $state<Note | null>(null)
 </script>
 
 <ol class="notes">
-  {#each notes as n}
+  {#each notes as n, i}
     {@const m = member(house, n.by)}
+    {@const late = i > 0 && n.writtenAt < notes[i - 1].writtenAt}
     <li>
       <div class="who">
         <Shape role={m.role} size={10} />
-        <b>{L(m.name)}</b>
+        <b>{m.name}</b>
         <span class="role">{t(`role.${m.role}`)}</span>
-        <span class="when">{when(n.when)}</span>
+        <span class="when">{late ? t('note.writtenAt', { date: date(n.writtenAt, 'short') }) : when(n.writtenAt)}</span>
         {#if ondelete}
           {#if confirming === n}
             <button class="del sure" title={t('note.deleteHint')} onclick={() => { ondelete(n); confirming = null }}>{t('note.confirm')}</button>
@@ -25,7 +28,7 @@
           {/if}
         {/if}
       </div>
-      <p>{L(n.text)}</p>
+      <p>{n.text}</p>
     </li>
   {/each}
 </ol>

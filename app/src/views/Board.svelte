@@ -2,33 +2,35 @@
   import Shape from '../lib/Shape.svelte'
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
-  import { member, self, pad, type House, type Notice, type Note } from '../data'
-  import { t, L, when, NOW } from '../i18n/index.svelte'
+  import { member, self, pad, type House, type Notice, type Note } from '../api/view'
+  import { api } from '../api/backend'
+  import { t, when } from '../i18n/index.svelte'
 
   // 公告板：老板和伙计张贴，所有人可以在下面回应。每条公告是 board/ 下的一个文件。
-  let { house }: { house: House } = $props()
+  // 写入都走引擎（postNotice / note），写完 refresh() 重新读取茶馆。
+  let { house, refresh }: { house: House; refresh: () => void } = $props()
   let me = $derived(self(house))
   let canPost = $derived(me.role !== 'guest')
-
-  // M0：写下的内容只留在本页（M1 起每一条都是一次提交）
-  let notices = $state<Notice[]>([])
-  $effect.pre(() => { notices = house.board.map((n) => ({ ...n, replies: [...n.replies] })) })
   let posting = $state(false)
   let replying = $state<string | null>(null)
-  const now = () => NOW.toISOString()
+  // 删除留言：CLIENT-API 还没有这个命令（已在 PR #1 提出），M0 只从页面上去掉
+  let hidden = $state<Note[]>([])
+  let notices = $derived(house.board.map((n) => ({ ...n, replies: n.replies.filter((r) => !hidden.some((h) => h.writtenAt === r.writtenAt && h.by === r.by)) })))
 
-  function post(text: string, title: string) {
-    notices.unshift({ id: `b${notices.length + 1}`, by: me.id, when: now(), title: { zh: title, en: title }, text: { zh: text, en: text }, replies: [] })
+  async function post(text: string, title: string) {
+    await api('postNotice', { house: house.id, title, text })
     posting = false
+    refresh()
   }
   // 茶客的留言直接写进茶馆；老板和伙计可以删除留言
   let writeHint = $derived(me.role === 'guest' ? t('write.hintGuest') : '')
-  function remove(n: Notice, note: Note) {
-    n.replies = n.replies.filter((r) => r !== note)
+  function remove(_n: Notice, note: Note) {
+    hidden = [...hidden, note]
   }
-  function reply(n: Notice, text: string) {
-    n.replies.push({ by: me.id, when: now(), text: { zh: text, en: text } })
+  async function reply(n: Notice, text: string) {
+    await api('note', { house: house.id, notice: n.id, text })
     replying = null
+    refresh()
   }
 </script>
 
@@ -63,13 +65,13 @@
         <div class="no num">{pad(notices.length - i)}</div>
         <div class="body">
           {#if i === 0}<div class="label tag">{t('board.latest')}</div>{/if}
-          <h2>{L(n.title)}</h2>
+          <h2>{n.title}</h2>
           <div class="by">
             <Shape role={m.role} size={10} />
-            <span>{t('board.postedBy', { name: L(m.name) })} · {t(`role.${m.role}`)}</span>
+            <span>{t('board.postedBy', { name: m.name })} · {t(`role.${m.role}`)}</span>
             <span class="when">{when(n.when)}</span>
           </div>
-          <p class="text">{L(n.text)}</p>
+          <p class="text">{n.text}</p>
 
           <div class="replies">
             <div class="label rh">{t('board.replies', { n: n.replies.length })}</div>

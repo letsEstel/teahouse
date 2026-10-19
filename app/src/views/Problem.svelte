@@ -5,32 +5,46 @@
   import ParkingMap from '../lib/ParkingMap.svelte'
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
-  import { member, self, workCount, pad, type House, type Note } from '../data'
-  import { t, L, when, date, NOW } from '../i18n/index.svelte'
+  import { member, self, pad, eventText, type House, type Note, type Problem } from '../api/view'
+  import { api } from '../api/backend'
+  import { t, when, date } from '../i18n/index.svelte'
 
   let { house, id }: { house: House; id: string } = $props()
-  let p = $derived(house.problems.find((x) => x.id === id) ?? house.problems[0])
-  let author = $derived(member(house, p.by))
+  let p = $state<Problem | null>(null)
+  let image = $state<string | null>(null)   // 首张成果是图片时，本地缓存里的地址
+  async function load() {
+    const fresh = await api('problem', { house: house.id, problem: id })
+    const first = fresh.works[0]
+    image = first?.kind === 'image' ? await api('blob', { house: house.id, id: first.id }).catch(() => null) : null
+    p = fresh
+  }
+  $effect(() => { load() })
+
+  let author = $derived(p && member(house, p.by))
   let me = $derived(self(house))
-  let feature = $derived(p.works[0])
-  let rest = $derived(p.works.slice(1))
+  let feature = $derived(p?.works[0])
+  let rest = $derived(p?.works.slice(1) ?? [])
+  // 经过：引擎按时间顺序给出，这里最新的在上
+  let events = $derived(p ? [...p.events].reverse() : [])
 
   let action = $derived(
     me.role === 'guest'
-      ? { label: t('act.proposeWork'), hint: t('act.proposeWorkHint'), href: `#/${house.id}/propose/${p.id}` }
+      ? { label: t('act.proposeWork'), hint: t('act.proposeWorkHint'), href: `#/${house.id}/propose/${id}` }
       : { label: t('act.addWork'), hint: t('act.addWorkHint'), href: undefined }
   )
 
-  // 问题下的讨论。M0：写下的只留在本页（M1 起每条留言是一次提交）
-  let notes = $state<Note[]>([])
-  $effect.pre(() => { notes = [...(p.notes ?? [])] })
-  function remove(n: Note) {
-    notes = notes.filter((x) => x !== n)
+  // 问题下的讨论：留言直接写进茶馆（茶客也一样）
+  async function write(text: string) {
+    await api('note', { house: house.id, problem: id, text })
+    await load()
   }
-  function write(text: string) {
-    notes.push({ by: me.id, when: NOW.toISOString(), text: { zh: text, en: text } })
+  // 删除留言：CLIENT-API 第 4 节还没有这个命令（已在 PR #1 提出），M0 只从页面上去掉
+  function remove(n: Note) {
+    if (p) p.notes = p.notes.filter((x) => x !== n)
   }
 </script>
+
+{#if p && author}
 
 <div class="wrap">
   <a class="back label" href="#/{house.id}/problems">← {t('problem.back')}</a>
@@ -39,11 +53,11 @@
     <div class="no num">{p.id}</div>
     <div class="head">
       <StatusMark status={p.status} />
-      <h1>{L(p.title)}</h1>
+      <h1>{p.title}</h1>
       <div class="meta">
-        <span><Shape role={author.role} size={10} />{t('problem.raisedBy', { name: L(author.name) })} · {t(`role.${author.role}`)}</span>
+        <span><Shape role={author.role} size={10} />{t('problem.raisedBy', { name: author.name })} · {t(`role.${author.role}`)}</span>
         <span>{t('problem.since', { date: date(p.opened, 'short') })}</span>
-        <span>{t('problem.works', { n: workCount(p) })}</span>
+        <span>{t('problem.works', { n: p.workCount })}</span>
       </div>
     </div>
   </header>
@@ -52,22 +66,22 @@
     <section class="brief">
       {#each p.body as b, i}
         <div class="para">
-          <div class="label">{pad(i + 1)} · {L(b.heading)}</div>
-          <p>{L(b.text)}</p>
+          <div class="label">{pad(i + 1)} · {b.heading}</div>
+          <p>{b.text}</p>
         </div>
       {:else}
-        <p class="quiet">{L(p.summary)}</p>
+        <p class="quiet">{p.summary}</p>
       {/each}
 
-      {#if p.events.length}
+      {#if events.length}
         <div class="label tl-head">{t('problem.history')}</div>
         <ol class="timeline">
-          {#each p.events as e}
+          {#each events as e}
             {@const m = member(house, e.by)}
             <li>
               <span class="node"><Shape role={m.role} size={12} /></span>
               <div>
-                <div class="ev"><b>{L(m.name)}</b> {t(`ev.${e.act}`, { ref: e.ref ? L(e.ref) : '' })}</div>
+                <div class="ev"><b>{m.name}</b> {eventText(e, true)}</div>
                 <div class="when">{when(e.when)}</div>
               </div>
             </li>
@@ -89,7 +103,7 @@
         </div>
       </div>
 
-      {#if workCount(p) === 0}
+      {#if p.workCount === 0}
         <div class="empty">
           <svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><rect x="1.5" y="1.5" width="45" height="45" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="6 5" /></svg>
           <p>{t('problem.empty')}</p>
@@ -100,22 +114,24 @@
         {#if feature}
           {@const fm = member(house, feature.by)}
           <article class="tile feature">
-            {#if feature.preview}
+            {#if image || feature.text}
               <div class="preview">
-                {#if 'chart' in feature.preview}
+                {#if image === 'fake:parking'}
                   <ParkingMap />
+                {:else if image}
+                  <img src={image} alt={feature.title} />
                 {:else}
-                  <blockquote>{L(feature.preview.excerpt)}</blockquote>
+                  <blockquote>{feature.text}</blockquote>
                 {/if}
               </div>
             {/if}
             <div class="tile-foot">
               <div>
                 <div class="kind label">{t(`kind.${feature.kind}`)} · {t('problem.latest')}</div>
-                <div class="t">{L(feature.title)}</div>
-                {#if feature.note}<div class="note">{L(feature.note)}</div>{/if}
+                <div class="t">{feature.title}</div>
+                {#if feature.note}<div class="note">{feature.note}</div>{/if}
               </div>
-              <div class="by"><Shape role={fm.role} size={10} />{L(fm.name)}<span>{when(feature.when)}</span></div>
+              <div class="by"><Shape role={fm.role} size={10} />{fm.name}<span>{when(feature.when)}</span></div>
             </div>
           </article>
         {/if}
@@ -127,9 +143,9 @@
               <WorkGlyph kind={w.kind} size={32} />
               <span class="kind label">{t(`kind.${w.kind}`)}</span>
             </div>
-            <div class="t hyphenate">{L(w.title)}</div>
-            {#if w.note}<div class="note hyphenate">{L(w.note)}</div>{/if}
-            <div class="by"><Shape role={wm.role} size={10} /><b>{L(wm.name)}</b><span>{when(w.when)}</span></div>
+            <div class="t hyphenate">{w.title}</div>
+            {#if w.note}<div class="note hyphenate">{w.note}</div>{/if}
+            <div class="by"><Shape role={wm.role} size={10} /><b>{wm.name}</b><span>{when(w.when)}</span></div>
           </article>
         {/each}
       </div>
@@ -139,8 +155,8 @@
           <h2>{t('talk.title')}</h2>
           <p class="consequence">{t('talk.lede')}</p>
         </div>
-        {#if notes.length}
-          <Notes {house} {notes} ondelete={me.role !== 'guest' ? remove : undefined} />
+        {#if p.notes.length}
+          <Notes {house} notes={p.notes} ondelete={me.role !== 'guest' ? remove : undefined} />
         {:else}
           <p class="quiet none">{t('talk.none')}</p>
         {/if}
@@ -149,6 +165,8 @@
     </section>
   </div>
 </div>
+
+{/if}
 
 <style>
   .wrap { padding: calc(var(--pad-top) * 0.75) var(--pad-x) 80px; }
@@ -228,6 +246,7 @@
   .feature { grid-column: 1 / -1; padding: 0; min-height: 0; }
   .preview { padding: 28px 28px 22px; border-bottom: 1px solid var(--ink); }
   .preview > :global(figure) { max-width: 720px; }
+  .preview img { display: block; max-width: 100%; }
   blockquote {
     white-space: pre-line;
     font-family: var(--display);

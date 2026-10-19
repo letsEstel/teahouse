@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Status } from '../data'
+  import type { Status } from '../api/view'
   import { t } from '../i18n/index.svelte'
   // 状态只用明度表达：空心 = 待认领，半满 = 进行中，实心 = 已办成
   let { status, label = true }: { status: Status; label?: boolean } = $props()
