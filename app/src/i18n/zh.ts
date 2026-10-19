@@ -196,4 +196,5 @@ export default {
 
   'rail.showAll': '全部 {n} 间',
   'rail.collapse': '收起',
+  'note.writtenAt': '写于 {date}',
 }

@@ -91,15 +91,20 @@ screens.push(
 )
 // 本轮保存的图
 const save = {
-  'wutong-house': {}, 'wutong-rail-open': {}, 'wutong-switch': { saveAt: 900 },
-  'startup-house': {}, 'startup-problem': {},
-  'band-house': { saveDe: true }, 'band-problem': {}, 'band-proposal': {},
-  'lab-house': {}, 'lab-problem': { saveDe: true }, 'lab-proposal': {}, 'lab-board': {},
+  'lab-problem': { saveDe: true },      // 离线留言旁的"写于 …"；复现记录是"表格"
+  'band-problem': {},                   // 演出预算是"表格"
+  'wutong-problem': {},
+  'wutong-house': {},
 }
+// 手机宽度（390）另存几张：本轮修了手机布局
+screens.push(
+  { name: 'wutong-house-phone', hash: '#/wutong/house', widths: [390], save: true, saveAt: 390 },
+  { name: 'lab-problem-phone', hash: '#/lab/problem/0001', widths: [390], save: true, saveAt: 390 },
+  { name: 'wutong-proposal-phone', hash: '#/wutong/proposal/p1', widths: [390], save: true, saveAt: 390 },
+)
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
 // 夜间模式：布局不变，只拍默认组
 screens.push(
-  { name: 'band-house-dark', hash: '#/band/house', theme: 'dark', only1366: true, save: true },
   { name: 'lab-problem-dark', hash: '#/lab/problem/0001', theme: 'dark', only1366: true, save: true },
 )
 

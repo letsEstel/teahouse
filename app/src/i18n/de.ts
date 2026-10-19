@@ -195,4 +195,5 @@ export default {
 
   'rail.showAll': 'Alle {n} Teehäuser',
   'rail.collapse': 'Weniger zeigen',
+  'note.writtenAt': 'geschrieben am {date}',
 }

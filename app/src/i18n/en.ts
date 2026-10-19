@@ -196,4 +196,5 @@ export default {
 
   'rail.showAll': 'All {n} teahouses',
   'rail.collapse': 'Show less',
+  'note.writtenAt': 'written {date}',
 }
