@@ -190,17 +190,49 @@ impl Git {
     }
 
     /// Reads `path` at `commit`, or `None` if the path does not exist there.
+    /// The content of the file at `path` in `commit`; `None` if there is none.
+    /// One `git cat-file --batch` in the usual case.
     pub fn read_file(&self, commit: &str, path: &str) -> Result<Option<Vec<u8>>> {
         let spec = format!("{commit}:{path}");
-        let out = self.run_raw(["cat-file", "-e", spec.as_str()], None)?;
-        if !out.status.success() {
-            return Ok(None);
+        if spec.contains('\n') {
+            // --batch reads object names line by line; a path with a newline
+            // would name a different object. Ask with arguments instead.
+            return self.read_file_by_args(&spec, commit, path);
         }
-        let kind = self.run_str(&["cat-file", "-t", &spec])?;
+        let out = self.run_input(
+            &["cat-file", "--batch"],
+            Some(format!("{spec}\n").as_bytes()),
+        )?;
+        let Some(nl) = out.iter().position(|&b| b == b'\n') else {
+            bail!("unexpected cat-file output for {spec}");
+        };
+        let header = String::from_utf8_lossy(&out[..nl]).into_owned();
+        let parts: Vec<&str> = header.split(' ').collect();
+        let (kind, size) = match parts.as_slice() {
+            [oid, kind, size] if is_oid(oid) => (*kind, size.parse::<usize>().ok()),
+            _ if header.ends_with(" missing") => return Ok(None),
+            _ => bail!("cat-file {spec}: {header}"),
+        };
         if kind != "blob" {
             bail!("{path} at {commit} is a {kind}, expected a file");
         }
-        Ok(Some(self.run(&["cat-file", "blob", &spec])?))
+        let body = &out[nl + 1..];
+        match size {
+            Some(n) if body.len() == n + 1 && body[n] == b'\n' => Ok(Some(body[..n].to_vec())),
+            _ => bail!("cat-file {spec}: truncated or malformed output"),
+        }
+    }
+
+    fn read_file_by_args(&self, spec: &str, commit: &str, path: &str) -> Result<Option<Vec<u8>>> {
+        let out = self.run_raw(["cat-file", "-e", spec], None)?;
+        if !out.status.success() {
+            return Ok(None);
+        }
+        let kind = self.run_str(&["cat-file", "-t", spec])?;
+        if kind != "blob" {
+            bail!("{path} at {commit} is a {kind}, expected a file");
+        }
+        Ok(Some(self.run(&["cat-file", "blob", spec])?))
     }
 
     pub fn is_ancestor(&self, ancestor: &str, descendant: &str) -> Result<bool> {

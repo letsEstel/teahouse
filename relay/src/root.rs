@@ -178,10 +178,12 @@ impl House {
 }
 
 pub fn members_at(git: &Git, rev: &str) -> Result<Members> {
-    let Some(oid) = git.resolve(rev)? else {
-        bail!("{rev} does not exist");
-    };
-    let Some(bytes) = git.read_file(&oid, MEMBERS_PATH)? else {
+    // One git process when all is well; the authorized-keys scan calls this
+    // for every teahouse on every ssh connection.
+    let Some(bytes) = git.read_file(rev, MEMBERS_PATH)? else {
+        if git.resolve(rev)?.is_none() {
+            bail!("{rev} does not exist");
+        }
         bail!("{MEMBERS_PATH} is missing at {rev}");
     };
     let text = match String::from_utf8(bytes) {

@@ -1366,3 +1366,19 @@ fn posts_and_notices_are_text_of_at_most_32_kib() {
     w.commit(&zhou, "照片\n\nProblem: 0001");
     w.push_ok(&zhou, &["main"]);
 }
+
+#[test]
+fn file_names_with_newlines_cannot_dodge_the_text_check() {
+    // git paths may contain '\n'. Reading objects line by line (cat-file
+    // --batch) would read `<commit>:board/a` here, find nothing, and skip
+    // the check. The relay must still look at the real file.
+    let w = World::new();
+    let _ = w.wutong();
+    let zhou = w.clone("zhou", "wutong");
+    let name = "board/a\nrefs/heads/main:.teahouse/members.toml";
+    let p = zhou.join(name);
+    fs::create_dir_all(p.parent().unwrap()).unwrap();
+    fs::write(p, b"\x89PNG\r\n\x1a\n\0\0").unwrap();
+    w.commit(&zhou, "x\n\nProblem: board");
+    w.push_denied(&zhou, &["main"], "is not UTF-8 text");
+}
