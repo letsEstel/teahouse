@@ -272,6 +272,7 @@ impl Snapshot {
             .filter_map(|(p, _)| {
                 let pp = format::parse_post_path(p)?;
                 Some(Note {
+                    id: p.to_string(),
                     by: pp.member.to_string(),
                     text: texts.get(p).map(|b| text_of(b)).unwrap_or_default(),
                     when: when(self.added_step(p)?.time),
@@ -828,9 +829,19 @@ impl Snapshot {
         }
         let mut root = Dir::default();
         for f in self.tree.values() {
+            // A table's title file belongs to the table (§1.2).
+            if f.path.starts_with("works/")
+                && format::classify_work(&f.path, None) == WorkFile::TableMeta
+            {
+                continue;
+            }
             let mut d = &mut root;
             let mut parts: Vec<&str> = f.path.split('/').collect();
             parts.pop();
+            // Files at the top (README.md) belong to the teahouse itself.
+            if parts.is_empty() {
+                parts.push(".teahouse");
+            }
             for p in parts {
                 d = d.dirs.entry(p).or_default();
             }
@@ -951,13 +962,24 @@ impl Snapshot {
                 children: Some(notices),
             });
         }
+        // The seating chart, README.md and anything not filed above.
         let rest: Vec<ArchiveNode> = self
             .tree
             .values()
             .filter(|f| !placed.contains(f.path.as_str()))
             .map(|f| self.leaf(f, titles, texts))
             .collect();
-        children.extend(rest);
+        if !rest.is_empty() {
+            children.push(ArchiveNode {
+                id: ".teahouse".into(),
+                dir: Some("meta"),
+                label: None,
+                kind: NodeKind::Dir,
+                problem: None,
+                size: None,
+                children: Some(rest),
+            });
+        }
         ArchiveNode {
             id: String::new(),
             dir: None,
@@ -1021,6 +1043,12 @@ impl Snapshot {
 
     /// The local path of an attachment's content.
     pub fn blob(&self, path: &str) -> Result<String> {
+        Ok(self.blob_file(path)?.0.to_string_lossy().into_owned())
+    }
+
+    /// The cached file of an attachment and its media type. Only ever a
+    /// file in this engine's attachment cache, named by its hash.
+    pub fn blob_file(&self, path: &str) -> Result<(PathBuf, String)> {
         let text = self
             .tree
             .get(path)
@@ -1046,7 +1074,7 @@ impl Snapshot {
         }
         let local = self.blobs_dir.join(&r.hash);
         if local.is_file() {
-            return Ok(local.to_string_lossy().into_owned());
+            return Ok((local, r.mime));
         }
         Err(Error::new(
             Code::Offline,

@@ -81,7 +81,45 @@ fn refuse(req: Request, status: u16, why: &str) {
 }
 
 /// Handles one request; `call` runs a command.
-fn handle(mut req: Request, port: u16, call: &dyn Fn(&str, Value) -> Value) {
+/// `a%20b` → `a b`; `+` is a space. `None` for malformed escapes or
+/// non-UTF-8 results.
+fn percent_decode(s: &str) -> Option<String> {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        match b[i] {
+            b'%' => {
+                let hex = std::str::from_utf8(b.get(i + 1..i + 3)?).ok()?;
+                out.push(u8::from_str_radix(hex, 16).ok()?);
+                i += 3;
+            }
+            b'+' => {
+                out.push(b' ');
+                i += 1;
+            }
+            c => {
+                out.push(c);
+                i += 1;
+            }
+        }
+    }
+    String::from_utf8(out).ok()
+}
+
+/// The value of `key` in a query string.
+fn query_param(query: &str, key: &str) -> Option<String> {
+    query
+        .split('&')
+        .filter_map(|kv| kv.split_once('='))
+        .find(|(k, _)| *k == key)
+        .and_then(|(_, v)| percent_decode(v))
+}
+
+/// Looks up an attachment's cached file and media type.
+type BlobLookup<'a> = &'a dyn Fn(&str, &str) -> crate::error::Result<(std::path::PathBuf, String)>;
+
+fn handle(mut req: Request, port: u16, call: &dyn Fn(&str, Value) -> Value, blob: BlobLookup<'_>) {
     if !host_ok(get(&req, "Host"), port) {
         return refuse(req, 403, "wrong Host");
     }
@@ -91,7 +129,10 @@ fn handle(mut req: Request, port: u16, call: &dyn Fn(&str, Value) -> Value) {
             return refuse(req, 403, "requests from other sites are refused");
         }
     }
-    let url = req.url().split('?').next().unwrap_or("").to_string();
+    let (url, query) = match req.url().split_once('?') {
+        Some((u, q)) => (u.to_string(), q.to_string()),
+        None => (req.url().to_string(), String::new()),
+    };
     match (req.method().clone(), url.as_str()) {
         (Method::Options, _) => {
             let mut r = Response::empty(204)
@@ -109,6 +150,43 @@ fn handle(mut req: Request, port: u16, call: &dyn Fn(&str, Value) -> Value) {
                 200,
                 origin.as_deref(),
             ));
+        }
+        // Read-only: a file from this engine's attachment cache, for <img>
+        // in the development interface (Tauri uses convertFileSrc).
+        (Method::Get, "/v1/blob") => {
+            let (Some(house), Some(id)) = (query_param(&query, "house"), query_param(&query, "id"))
+            else {
+                let v = json!({ "ok": false, "error": { "code": "invalid", "message": "need house and id" } });
+                let _ = req.respond(json_response(&v, 400, origin.as_deref()));
+                return;
+            };
+            match blob(&house, &id).and_then(|(path, mime)| Ok((std::fs::File::open(path)?, mime)))
+            {
+                Ok((file, mime)) => {
+                    let mut r = Response::from_file(file)
+                        .with_header(header("Content-Type", &mime))
+                        .with_header(header("X-Content-Type-Options", "nosniff"))
+                        // An SVG or HTML attachment must not run as a page.
+                        .with_header(header(
+                            "Content-Security-Policy",
+                            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+                        ))
+                        .with_header(header("Cache-Control", "private, max-age=3600"));
+                    if let Some(o) = &origin {
+                        r = r.with_header(header("Access-Control-Allow-Origin", o));
+                    }
+                    let _ = req.respond(r);
+                }
+                Err(e) => {
+                    let status = if e.code == crate::error::Code::NotFound {
+                        404
+                    } else {
+                        409
+                    };
+                    let v = json!({ "ok": false, "error": e });
+                    let _ = req.respond(json_response(&v, status, origin.as_deref()));
+                }
+            }
         }
         (Method::Post, path) if path.starts_with("/v1/") => {
             let command = path["/v1/".len()..].to_string();
@@ -184,7 +262,11 @@ pub fn serve(client: Client, opts: Options) -> std::io::Result<()> {
             let c = client.lock().unwrap_or_else(|p| p.into_inner());
             c.call(cmd, args)
         };
-        handle(req, port, &call);
+        let blob = |house: &str, id: &str| {
+            let c = client.lock().unwrap_or_else(|p| p.into_inner());
+            c.snapshot(house)?.blob_file(id)
+        };
+        handle(req, port, &call, &blob);
     }
     Ok(())
 }
@@ -192,6 +274,20 @@ pub fn serve(client: Client, opts: Options) -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn queries() {
+        let q = "house=wutong&id=works%2F0001%2F%E8%BD%A6%E4%BD%8D.png.ref.md&x=a+b";
+        assert_eq!(query_param(q, "house").as_deref(), Some("wutong"));
+        assert_eq!(
+            query_param(q, "id").as_deref(),
+            Some("works/0001/车位.png.ref.md")
+        );
+        assert_eq!(query_param(q, "x").as_deref(), Some("a b"));
+        assert_eq!(query_param(q, "y"), None);
+        assert_eq!(percent_decode("%E8%BD"), None);
+        assert_eq!(percent_decode("%zz"), None);
+    }
 
     #[test]
     fn origins_and_hosts() {

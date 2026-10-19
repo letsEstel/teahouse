@@ -411,6 +411,7 @@ fn house_has_members_problems_board_proposals_and_decisions() {
     assert_eq!(
         board[0]["replies"],
         json!([{
+            "id": "talk/board/water/20261018T050000Z-zhao.md",
             "by": "zhao",
             "text": "知道了，谢谢。",
             "when": when(T0 + 5 * HOUR),
@@ -618,11 +619,20 @@ fn archive_in_both_views() {
             (json!("problems"), json!("problems"), n.clone()),
             (json!("talk"), json!("talk"), n.clone()),
             (json!("works"), json!("works"), n.clone()),
-            (json!("README.md"), n.clone(), json!("README.md")),
         ]
     );
+    // The teahouse's own files, README.md included, are under meta.
+    let meta_dir: Vec<(&str, &str)> = dirs["children"][0]["children"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|n| (n["id"].as_str().unwrap(), n["kind"].as_str().unwrap()))
+        .collect();
+    assert_eq!(
+        meta_dir,
+        [(".teahouse/members.toml", "members"), ("README.md", "doc")]
+    );
     let members = &dirs["children"][0]["children"][0];
-    assert_eq!(members["kind"], "members");
     assert!(members.get("label").is_none());
     let works0001 = &dirs["children"][4]["children"][0];
     assert_eq!(
@@ -630,16 +640,12 @@ fn archive_in_both_views() {
         (json!("works/0001"), n.clone(), json!("小区停车位不好找"))
     );
     assert_eq!(works0001["problem"], "0001");
-    let meta = works0001["children"]
+    // A table's title file is not listed on its own (§1.2).
+    assert!(works0001["children"]
         .as_array()
         .unwrap()
         .iter()
-        .find(|n| n["id"] == "works/0001/车位.csv.meta.md")
-        .unwrap();
-    assert_eq!(
-        (&meta["kind"], &meta["label"]),
-        (&json!("file"), &json!("车位.csv.meta.md"))
-    );
+        .all(|n| n["id"] != "works/0001/车位.csv.meta.md"));
     let talk = &dirs["children"][3]["children"];
     assert_eq!(
         shape(&talk[1]),
@@ -690,11 +696,16 @@ fn archive_in_both_views() {
     assert_eq!(shape(board), (json!("board"), json!("board"), n.clone()));
     assert_eq!(board["children"][0]["label"], "周六停水");
     assert_eq!(board["children"][0]["children"][0]["kind"], "note");
-    let rest: Vec<&str> = probs["children"].as_array().unwrap()[2..]
+    let meta = &probs["children"][2];
+    assert_eq!(shape(meta), (json!(".teahouse"), json!("meta"), n.clone()));
+    let rest: Vec<&str> = meta["children"]
+        .as_array()
+        .unwrap()
         .iter()
         .map(|n| n["kind"].as_str().unwrap())
         .collect();
     assert_eq!(rest, ["members", "doc"]);
+    assert_eq!(probs["children"].as_array().unwrap().len(), 3);
 
     let e = err(&c, "archive", json!({ "house": "wutong", "view": "tree" }));
     assert_eq!(e["code"], "invalid");

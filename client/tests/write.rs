@@ -807,6 +807,29 @@ fn serve_answers_local_pages_only() {
         body,
     );
     assert_eq!(st, 415);
+    // Attachments: only from this engine's cache, by attachment id.
+    let photo = w.tmp.0.join("p.png");
+    fs::write(&photo, b"fake png").unwrap();
+    li.ok(
+        "addWork",
+        json!({ "house": "wutong", "problem": "0001", "kind": "image", "title": "车位", "fromPath": photo }),
+    );
+    let id = "works%2F0001%2F%E8%BD%A6%E4%BD%8D.png.ref.md";
+    let (st, out) = request(
+        &format!("GET /v1/blob?house=wutong&id={id} HTTP/1.1\r\n{host}"),
+        "",
+    );
+    assert_eq!((st, out.as_str()), (200, "fake png"));
+    let (st, _) = request(
+        &format!("GET /v1/blob?house=wutong&id=.teahouse%2Fmembers.toml HTTP/1.1\r\n{host}"),
+        "",
+    );
+    assert_eq!(st, 404, "only attachments, never other files");
+    let (st, _) = request(
+        &format!("GET /v1/blob?house=..%2F..&id=x HTTP/1.1\r\n{host}"),
+        "",
+    );
+    assert_eq!(st, 404);
     let (st, out) = request(
         &format!("OPTIONS /v1/problem HTTP/1.1\r\n{host}Origin: http://localhost:5173\r\n"),
         "",

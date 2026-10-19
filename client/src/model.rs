@@ -124,6 +124,8 @@ pub struct Event {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Note {
+    /// The post's path in the repository.
+    pub id: String,
     pub by: String,
     pub text: String,
     /// When it entered the teahouse's `main`.
