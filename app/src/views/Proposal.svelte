@@ -101,7 +101,7 @@
         </div>
       {/each}
 
-      <div class="actions">
+      <div class="actions" data-write>
         {#if me.role === 'host'}
           {#if state === 'pending'}
             <p class="consequence">{t('prop.adoptHint')}</p>

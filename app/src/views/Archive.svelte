@@ -187,10 +187,10 @@
       <div class="tools">
         {#if node.kind !== 'note' && node.kind !== 'members'}
           {#if me.role === 'guest'}
-            <a class="primary small" href="#/{house.id}/propose/{node.problem === 'meta' ? '' : node.problem}"><i>+</i><span>{t('archive.proposeEdit')}</span></a>
-            <span class="consequence">{t('archive.proposeHint')}</span>
+            <a class="primary small" data-write href="#/{house.id}/propose/{node.problem === 'meta' ? '' : node.problem}"><i>+</i><span>{t('archive.proposeEdit')}</span></a>
+            <span class="consequence" data-write>{t('archive.proposeHint')}</span>
           {:else if node.problem && node.problem !== 'board' && node.problem !== 'meta'}
-            <a class="secondary small" href="#/{house.id}/problem/{node.problem}">{t('archive.edit')}</a>
+            <a class="secondary small" data-write href="#/{house.id}/problem/{node.problem}">{t('archive.edit')}</a>
           {/if}
         {/if}
         <button class="secondary small" onclick={download} disabled={!file.text} title={file.text ? '' : t('archive.noFile')}>↓ {t('archive.download')}</button>

@@ -39,21 +39,21 @@
     <h1>{t('board.title')}</h1>
     {#if canPost}
       {#if posting}
-        <div class="compose">
+        <div class="compose" data-write>
           <Write title titlePlaceholder={t('board.titlePh')} placeholder={t('board.bodyPh')} rows={5} onsubmit={post} />
         </div>
       {:else}
-        <div class="action">
+        <div class="action" data-write>
           <button class="primary" onclick={() => (posting = true)}><i>+</i><span>{t('board.post')}</span></button>
           <p class="consequence">{t('board.postHint')}</p>
         </div>
       {/if}
     {:else}
-      <div class="action">
+      <div class="action" data-write>
         <a class="primary" href="#/{house.id}/propose/board"><i>+</i><span>{t('board.suggest')}</span></a>
         <p class="consequence">{t('board.suggestHint')}</p>
       </div>
-      <p class="consequence guest">{t('board.guestNote')}</p>
+      <p class="consequence guest" data-write>{t('board.guestNote')}</p>
     {/if}
   </header>
 
@@ -78,7 +78,7 @@
             {#if replying === n.id}
               <Write placeholder={t('board.replyPh')} rows={2} hint={writeHint} onsubmit={(text) => reply(n, text)} />
             {:else}
-              <button class="reply" onclick={() => (replying = n.id)}>{t('board.reply')} →</button>
+              <button class="reply" data-write onclick={() => (replying = n.id)}>{t('board.reply')} →</button>
             {/if}
           </div>
         </div>

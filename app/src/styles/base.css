@@ -182,3 +182,6 @@ a { color: inherit; text-decoration: none; }
     transition: none !important;
   }
 }
+
+/* 已离座：所有写入口（标了 data-write 的）都收起来，只留读和带走 */
+main.readonly [data-write] { display: none !important; }

@@ -22,9 +22,9 @@
         <span class="when">{late ? t('note.writtenAt', { date: date(n.writtenAt, 'short') }) : when(n.writtenAt)}</span>
         {#if ondelete}
           {#if confirming === n}
-            <button class="del sure" title={t('note.deleteHint')} onclick={() => { ondelete(n); confirming = null }}>{t('note.confirm')}</button>
+            <button class="del sure" data-write title={t('note.deleteHint')} onclick={() => { ondelete(n); confirming = null }}>{t('note.confirm')}</button>
           {:else}
-            <button class="del" title={t('note.deleteHint')} onclick={() => (confirming = n)}>{t('note.delete')}</button>
+            <button class="del" data-write title={t('note.deleteHint')} onclick={() => (confirming = n)}>{t('note.delete')}</button>
           {/if}
         {/if}
       </div>

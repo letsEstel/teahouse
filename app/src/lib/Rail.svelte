@@ -7,7 +7,7 @@
   import type { HouseSummary, ArchiveNode } from '../api/types'
 
   // ≥1024：左侧竖栏；<1024：顶栏，茶馆列表收进下拉。
-  let { house, houses, section }: { house: House; houses: HouseSummary[]; section: 'house' | 'board' | 'problems' | 'proposals' | 'archive' } = $props()
+  let { house, houses, section, seated = true }: { house: House; houses: HouseSummary[]; seated?: boolean; section: 'house' | 'board' | 'problems' | 'proposals' | 'archive' } = $props()
   let me = $derived(self(house))
   let open = $state(false)
   // 档案里的文件数（只读本地，很快）
@@ -57,6 +57,14 @@
             <i></i><span>{h.name}</span>
           </a>
         </li>
+        {#if h.id === house.id}
+          <!-- 当前茶馆的同步状态，紧跟在名字下面 -->
+          <li class="current syncli">
+            <p class="syncline {house.sync.state}" title={house.sync.message ?? ''}>
+              <i></i>{house.sync.state === 'ahead' ? t('sync.short.ahead', { n: house.sync.unpushed }) : t(`sync.short.${house.sync.state}`)}
+            </p>
+          </li>
+        {/if}
       {/each}
       <li class="join"><a href="#/join" onclick={() => (open = false)}>+ {t('rail.join')}</a></li>
     </ul>
@@ -79,11 +87,19 @@
 
   <div class="foot">
     <div class="self">
-      <Shape role={me.role} size={16} />
-      <div>
-        <div class="self-name">{me.name}</div>
-        <div class="label">{t('self.you', { role: t(`role.${me.role}`) })}</div>
-      </div>
+      {#if seated}
+        <Shape role={me.role} size={16} />
+        <div>
+          <div class="self-name">{me.name}</div>
+          <div class="label">{t('self.you', { role: t(`role.${me.role}`) })}</div>
+        </div>
+      {:else}
+        <Shape role={null} size={16} />
+        <div>
+          <div class="self-name">{t('seat.readonly')}</div>
+          <div class="label">{t('seat.leftShort')}</div>
+        </div>
+      {/if}
     </div>
     <div class="switches">
       <div class="langs" role="group" aria-label={t('rail.lang')}>
@@ -123,6 +139,14 @@
 
   .houses { margin: 48px 0 24px; padding: 0 var(--in); position: relative; }
   .head { margin-bottom: 8px; }
+  /* 同步状态：一个小几何记号 + 一句话，只用墨色 */
+  .syncline { display: flex; align-items: center; gap: 8px; margin: 0 0 6px 19px; font-size: 12px; color: var(--ink-2); }
+  .syncline i { flex: none; width: 9px; height: 9px; border: 1.5px solid var(--ink); border-radius: 50%; position: relative; overflow: hidden; }
+  .syncline.synced i { background: var(--ink); }
+  .syncline.ahead i::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: var(--ink); }
+  .syncline.behind i::before { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 50%; background: var(--ink); }
+  .syncline.error i { border-radius: 0; background: var(--ink); }
+  .syncline:not(.synced) { color: var(--ink); font-weight: 700; }
   .switch { display: none; }
   ul { list-style: none; }
   ul a { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; font-size: 14px; color: var(--ink-2); line-height: 1.35; }
@@ -202,6 +226,7 @@
 
     .houses { grid-area: houses; margin: 0; padding: 0 0 0 var(--in); border-left: 1px solid var(--ink); align-self: stretch; display: flex; }
     .head { display: none; }
+    .syncli { display: none !important; }
     .switch {
       display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0;
       font-family: var(--display); font-weight: 700; font-size: 16px;

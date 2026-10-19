@@ -62,7 +62,7 @@
     <p class="code num">{code}</p>
     <p class="consequence">{t('invite.ready', { n: days })}</p>
     <div class="go">
-      <button class="primary" onclick={copy}><i>{copied ? '✓' : '⧉'}</i><span>{copied ? t('invite.copied') : t('invite.copy')}</span></button>
+      <button class="primary" onclick={copy}><i>{#if copied}<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><polyline points="3,9.5 7.5,14 15,4.5" fill="none" stroke="currentColor" stroke-width="2.2" /></svg>{:else}<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="5.5" width="10" height="11" fill="none" stroke="currentColor" stroke-width="2" /><rect x="6.5" y="1.5" width="10" height="11" fill="currentColor" /></svg>{/if}</i><span>{copied ? t('invite.copied') : t('invite.copy')}</span></button>
       <button class="secondary" onclick={() => (code = null)}>{t('invite.another')}</button>
     </div>
   {/if}

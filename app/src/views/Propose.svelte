@@ -107,7 +107,7 @@
       </div>
     </section>
   {:else}
-    <form onsubmit={(e) => { e.preventDefault(); submit() }}>
+    <form data-write onsubmit={(e) => { e.preventDefault(); submit() }}>
       <!-- 01 面向哪个问题 -->
       <section class="step">
         <div class="sn num">01</div>

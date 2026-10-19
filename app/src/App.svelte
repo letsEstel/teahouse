@@ -10,6 +10,7 @@
   import Archive from './views/Archive.svelte'
   import Join from './views/Join.svelte'
   import ErrorBar from './lib/ErrorBar.svelte'
+  import StatusBar from './lib/StatusBar.svelte'
   import { api, BackendError } from './api/backend'
   import { errorText } from './api/errors.svelte'
   import { t } from './i18n/index.svelte'
@@ -59,6 +60,8 @@
       }
     })()
   })
+  // 已离座：引擎给的 me 在座位表里找不到（CLIENT-API 第 2 节）→ 整间茶馆只读
+  let seated = $derived(!!house && house.members.some((m) => m.id === house!.me))
   let section = $derived(
     route.page === 'problems' || route.page === 'problem' ? 'problems'
     : route.page === 'proposals' || route.page === 'proposal' || route.page === 'propose' ? 'proposals'
@@ -72,9 +75,10 @@
     <Join {houses} onjoined={(seat) => { location.hash = `#/${seat.id}/house`; refresh() }} />
   </main>
 {:else if house}
-<Rail {house} {houses} {section} />
-<main>
+<Rail {house} {houses} {section} {seated} />
+<main class:readonly={!seated}>
   <ErrorBar />
+  <StatusBar {house} {seated} {refresh} />
   {#key hash + i18n.lang + house.id}
     <div class="page">
       {#if route.page === 'problems'}

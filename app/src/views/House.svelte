@@ -36,11 +36,11 @@
       <div class="sign-by">
         <Shape role="host" size={10} />
         <span>{t('house.signBy', { name: owner.name })}</span>
-        {#if me.role === 'host'}<button class="edit">{t('house.signEdit')}</button>{/if}
+        {#if me.role === 'host'}<button class="edit" data-write>{t('house.signEdit')}</button>{/if}
       </div>
     </div>
 
-    <div class="action" data-tour="action">
+    <div class="action" data-tour="action" data-write>
       {#if action.href}
         <a class="primary" href={action.href}><i>+</i><span>{action.label}</span></a>
       {:else}

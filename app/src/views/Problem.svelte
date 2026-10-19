@@ -93,7 +93,7 @@
     <section class="works">
       <div class="works-head">
         <h2>{t('problem.worksHead')}</h2>
-        <div class="action">
+        <div class="action" data-write>
           <p class="consequence">{action.hint}</p>
           {#if action.href}
             <a class="primary" href={action.href}><i>+</i><span>{action.label}</span></a>
@@ -160,7 +160,7 @@
         {:else}
           <p class="quiet none">{t('talk.none')}</p>
         {/if}
-        <div class="talk-write"><Write placeholder={t('talk.placeholder')} hint={me.role === 'guest' ? t('write.hintGuest') : ''} onsubmit={write} /></div>
+        <div class="talk-write" data-write><Write placeholder={t('talk.placeholder')} hint={me.role === 'guest' ? t('write.hintGuest') : ''} onsubmit={write} /></div>
       </section>
     </section>
   </div>
