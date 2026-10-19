@@ -1,14 +1,21 @@
 <script lang="ts">
   import Shape from './Shape.svelte'
-  import { houses, self, pad, type House } from '../data'
-  import { i18n, langs, setLang, t, L, type Lang } from '../i18n/index.svelte'
+  import { self, pad, type House } from '../api/view'
+  import { i18n, langs, setLang, t, type Lang } from '../i18n/index.svelte'
   import { theme, themes, setTheme } from './theme.svelte'
-  import { archive } from '../data/archive'
+  import { api } from '../api/backend'
+  import type { HouseSummary, ArchiveNode } from '../api/types'
 
   // ≥1024：左侧竖栏；<1024：顶栏，茶馆列表收进下拉。
-  let { house, section }: { house: House; section: 'house' | 'board' | 'problems' | 'proposals' | 'archive' } = $props()
+  let { house, houses, section }: { house: House; houses: HouseSummary[]; section: 'house' | 'board' | 'problems' | 'proposals' | 'archive' } = $props()
   let me = $derived(self(house))
   let open = $state(false)
+  // 档案里的文件数（只读本地，很快）
+  let files = $state(0)
+  const leaves = (n: ArchiveNode): number => (n.children ? n.children.reduce((a, c) => a + leaves(c), 0) : 1)
+  $effect(() => {
+    api('archive', { house: house.id, view: 'dirs' }).then((root) => (files = leaves(root)))
+  })
   // 茶馆超过 4 间时，宽屏侧栏默认只列出当前这间，点"全部"展开（展开后列表可滚动）
   const MANY = 4
   let many = $derived(houses.length > MANY)
@@ -19,7 +26,7 @@
     { key: 'board', no: '02', name: t('nav.board'), href: `#/${house.id}/board`, count: pad(house.board.length), badge: false },
     { key: 'problems', no: '03', name: t('nav.problems'), href: `#/${house.id}/problems`, count: pad(house.problems.length), badge: false },
     { key: 'proposals', no: '04', name: t('nav.proposals'), href: `#/${house.id}/proposals`, count: pad(house.proposals.length), badge: house.proposals.length > 0 },
-    { key: 'archive', no: '05', name: t('nav.archive'), href: `#/${house.id}/archive`, count: pad(archive(house).length), badge: false },
+    { key: 'archive', no: '05', name: t('nav.archive'), href: `#/${house.id}/archive`, count: pad(files), badge: false },
   ])
   const short: Record<Lang, string> = { zh: '中', en: 'EN', de: 'DE' }
   const full: Record<Lang, string> = { zh: '中文', en: 'English', de: 'Deutsch' }
@@ -41,13 +48,13 @@
   <div class="houses">
     <div class="label head">{t('rail.houses')}</div>
     <button class="switch" aria-expanded={open} aria-label={t('rail.switch')} onclick={() => (open = !open)}>
-      <span>{L(house.name)}</span><i class:up={open}></i>
+      <span>{house.name}</span><i class:up={open}></i>
     </button>
     <ul class:open class:folded={many && !expanded} class:scroll={many && expanded}>
       {#each houses as h}
         <li class:current={h.id === house.id}>
           <a href="#/{h.id}/house" class:on={h.id === house.id} onclick={() => { open = false; expanded = false }}>
-            <i></i><span>{L(h.name)}</span>
+            <i></i><span>{h.name}</span>
           </a>
         </li>
       {/each}
@@ -73,7 +80,7 @@
     <div class="self">
       <Shape role={me.role} size={16} />
       <div>
-        <div class="self-name">{L(me.name)}</div>
+        <div class="self-name">{me.name}</div>
         <div class="label">{t('self.you', { role: t(`role.${me.role}`) })}</div>
       </div>
     </div>

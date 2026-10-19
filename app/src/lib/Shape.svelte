@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Role } from '../data'
+  import type { Role } from '../api/view'
   // 老板 = 红方，伙计 = 黄三角（带细墨线），茶客 = 蓝圆，空座 = 墨线圆
   let { role = null, size = 14 }: { role?: Role | null; size?: number } = $props()
 </script>

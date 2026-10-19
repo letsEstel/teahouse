@@ -245,4 +245,12 @@ export default {
   'archive.kind.note': '留言',
   'archive.kind.members': '成员表',
   'archive.files': { other: '{n} 个文件' },
+  'propose.titleModify': '修改《{title}》',
+  'propose.titleAdd': '添加《{title}》',
+  'kind.file': '附件',
+  'archive.kind.file': '附件',
+  'ev.note': '写了一条留言',
+  'ev.notice': '张贴了公告《{ref}》',
+  'ev.decline': '没有采纳提案《{ref}》',
+  'ev.seat': '调整了座位',
 }

@@ -2,9 +2,10 @@
   import Shape from '../lib/Shape.svelte'
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import Diff from '../lib/Diff.svelte'
-  import { member, self, boss, type House, type Proposal } from '../data'
+  import { member, self, host, type House, type Proposal } from '../api/view'
+  import { api, backend } from '../api/backend'
   import { fit } from '../lib/fit'
-  import { t, L, when, i18n } from '../i18n/index.svelte'
+  import { t, when, i18n } from '../i18n/index.svelte'
 
   // id 为空时是"提案列表"：宽屏显示列表 + 第一份提案，窄屏只显示列表（两级页面）。
   let { house, id }: { house: House; id?: string } = $props()
@@ -12,12 +13,20 @@
   let author = $derived(p && member(house, p.by))
   let problem = $derived(p && house.problems.find((x) => x.id === p.problem)!)
   let me = $derived(self(house))
-  let owner = $derived(boss(house))
+  let owner = $derived(host(house))
   let state = $state<'pending' | 'merged' | 'rejected'>('pending')
+  // 采纳 / 不采纳走引擎。"撤回决定"只在假数据下有（真引擎推送后无法撤回，见 PR #1 的讨论）
+  const canUndo = backend.kind === 'fake'
+  async function decide(adopt: boolean) {
+    if (!p) return
+    if (adopt) await api('adopt', { house: house.id, proposal: p.id })
+    else await api('decline', { house: house.id, proposal: p.id })
+    state = adopt ? 'merged' : 'rejected'
+  }
 
   const tally = (f: Proposal['files'][number]) => ({
-    add: f.lines.filter((l) => l.kind === 'add').length,
-    del: f.lines.filter((l) => l.kind === 'del').length,
+    add: (f.lines ?? []).filter((l) => l.kind === 'add').length,
+    del: (f.lines ?? []).filter((l) => l.kind === 'del').length,
   })
 </script>
 
@@ -33,8 +42,8 @@
         <li class:on={q.id === p?.id}>
           <a href="#/{house.id}/proposal/{q.id}">
             <span class="q-no num">{q.problem}{#if q.by === me.id}<span class="mine">{t('prop.yours')}</span>{/if}</span>
-            <span class="q-t hyphenate">{L(q.title)}</span>
-            <span class="q-by"><Shape role={m.role} size={9} />{L(m.name)} · {when(q.when)}</span>
+            <span class="q-t hyphenate">{q.title}</span>
+            <span class="q-by"><Shape role={m.role} size={9} />{m.name} · {when(q.when)}</span>
           </a>
         </li>
       {:else}
@@ -46,8 +55,8 @@
     <ul class="done">
       {#each house.decided as h}
         <li>
-          <span class="q-t">{L(h.title)}</span>
-          <span class="q-by">{L(member(house, h.by).name)} · {t(`prop.${h.result}`)} · {when(h.when)}</span>
+          <span class="q-t">{h.title}</span>
+          <span class="q-by">{member(house, h.by).name} · {t(h.result === 'adopted' ? 'prop.merged' : 'prop.rejected')} · {when(h.when)}</span>
         </li>
       {/each}
     </ul>
@@ -57,19 +66,19 @@
     <section class="review" class:merged={state === 'merged'} class:rejected={state === 'rejected'}>
       <a class="back label" href="#/{house.id}/proposals">← {t('prop.back')}</a>
       <div class="crumb label">
-        {t('prop.forProblem')} <a href="#/{house.id}/problem/{problem.id}"><span class="num">{problem.id}</span> {L(problem.title)}</a>
+        {t('prop.forProblem')} <a href="#/{house.id}/problem/{problem.id}"><span class="num">{problem.id}</span> {problem.title}</a>
       </div>
 
-      <h2>{L(p.title)}</h2>
+      <h2>{p.title}</h2>
 
       <div class="who">
-        <span class="person"><Shape role={author.role} size={14} /><b>{L(author.name)}</b>{t(`role.${author.role}`)}</span>
+        <span class="person"><Shape role={author.role} size={14} /><b>{author.name}</b>{t(`role.${author.role}`)}</span>
         <span>{when(p.when)}</span>
         <span>{t('prop.changes', { n: p.files.length })}</span>
       </div>
 
       {#if p.reason}
-        <blockquote>{L(p.reason)}</blockquote>
+        <blockquote>{p.reason}</blockquote>
       {/if}
 
       {#each p.files as f}
@@ -78,18 +87,18 @@
           <div class="file-head">
             <WorkGlyph kind={f.kind} size={24} />
             <span class="kind label">{t(`kind.${f.kind}`)}</span>
-            <span class="ft">{L(f.title)}</span>
+            <span class="ft">{f.title}</span>
             <span class="tally">{state === 'merged' ? t('prop.mergedText') : t('prop.tally', tl)}</span>
           </div>
           {#if state === 'merged'}
             <!-- 采纳后：直接显示合并后的正文，没有标记和行号 -->
             <div class="doc">
-              {#each f.lines.filter((l) => l.kind !== 'del') as l}
-                <p class:gap={!L(l.text)}>{L(l.text)}</p>
+              {#each (f.lines ?? []).filter((l) => l.kind !== 'del') as l}
+                <p class:gap={!l.text}>{l.text}</p>
               {/each}
             </div>
           {:else}
-            <Diff lines={f.lines} muted={state === 'rejected'} />
+            <Diff lines={f.lines ?? []} muted={state === 'rejected'} />
           {/if}
         </div>
       {/each}
@@ -100,10 +109,10 @@
             <p class="consequence">{t('prop.adoptHint')}</p>
             <div class="buttons">
               <div class="opt">
-                <button class="secondary reject" onclick={() => (state = 'rejected')}>{t('prop.reject')}</button>
-                <small>{t('prop.rejectNote', { name: L(author.name) })}</small>
+                <button class="secondary reject" onclick={() => decide(false)}>{t('prop.reject')}</button>
+                <small>{t('prop.rejectNote', { name: author.name })}</small>
               </div>
-              <button class="primary adopt" onclick={() => (state = 'merged')}><i><b></b></i><span>{t('prop.adopt')}</span></button>
+              <button class="primary adopt" onclick={() => decide(true)}><i><b></b></i><span>{t('prop.adopt')}</span></button>
             </div>
           {:else}
             <div class="verdict">
@@ -112,14 +121,14 @@
                 <b>{state === 'merged' ? t('prop.verdictMerged') : t('prop.verdictRejected')}</b>
                 <span>{state === 'merged'
                   ? t('prop.verdictMergedSub', { when: t('time.justNow') })
-                  : t('prop.verdictRejectedSub', { name: L(author.name), when: t('time.justNow') })}</span>
+                  : t('prop.verdictRejectedSub', { name: author.name, when: t('time.justNow') })}</span>
               </div>
-              <button class="undo" onclick={() => (state = 'pending')}>{t('prop.undo')}</button>
+              {#if canUndo}<button class="undo" onclick={() => (state = 'pending')}>{t('prop.undo')}</button>{/if}
             </div>
           {/if}
         {:else}
           <p class="consequence wait">
-            {p.by === me.id ? t('prop.ownWaiting', { name: L(owner.name) }) : t('prop.waiting', { name: L(owner.name) })}
+            {p.by === me.id ? t('prop.ownWaiting', { name: owner.name }) : t('prop.waiting', { name: owner.name })}
           </p>
           <div class="buttons">
             {#if me.role === 'steward'}

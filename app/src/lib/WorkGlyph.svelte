@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { WorkKind } from '../data'
+  import type { WorkKind } from '../api/view'
   // 成果类型的几何符号，只用墨色线条
   let { kind, size = 40 }: { kind: WorkKind; size?: number } = $props()
 </script>
@@ -18,6 +18,10 @@
   {:else if kind === 'plan'}
     <circle cx="14" cy="14" r="9" fill="none" stroke="var(--ink)" stroke-width="2" />
     <rect x="18" y="18" width="18" height="18" fill="none" stroke="var(--ink)" stroke-width="2" />
+  {:else if kind === 'file'}
+    <!-- 附件：方框，一半实心 -->
+    <rect x="6" y="6" width="28" height="28" fill="none" stroke="var(--ink)" stroke-width="2" />
+    <rect x="6" y="6" width="14" height="28" fill="var(--ink)" />
   {:else}
     <rect x="4" y="4" width="32" height="32" fill="none" stroke="var(--ink)" stroke-width="2" />
     <circle cx="27" cy="13" r="4" fill="var(--ink)" />

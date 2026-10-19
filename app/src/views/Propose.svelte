@@ -3,14 +3,15 @@
   import StatusMark from '../lib/StatusMark.svelte'
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import { diffLines } from '../lib/diff'
-  import { self, boss, type House, type WorkKind } from '../data'
-  import { t, L } from '../i18n/index.svelte'
+  import { self, host, type House, type WorkKind, type Problem } from '../api/view'
+  import { api } from '../api/backend'
+  import { t } from '../i18n/index.svelte'
 
   // 发起提案（茶客的核心动作）：面向哪个问题 → 改什么 → 为什么 → 交给老板。
   // arg：问题编号，或 "new" 表示提议一个新问题。
   let { house, arg }: { house: House; arg?: string } = $props()
   let me = $derived(self(house))
-  let owner = $derived(boss(house))
+  let owner = $derived(host(house))
 
   let target = $state<string | null>(null)     // 问题编号或 'new'
   let mode = $state<'modify' | 'add'>('modify')
@@ -26,12 +27,20 @@
     target = arg === 'new' || arg === 'board' || house.problems.some((p) => p.id === arg) ? arg! : null
   })
 
-  let problem = $derived(house.problems.find((p) => p.id === target))
-  let works = $derived(problem?.works ?? [])
+  // 选中的问题：从引擎读完整内容（成果的正文）
+  let full = $state<Problem | null>(null)
+  $effect(() => {
+    const id = target
+    full = null
+    if (id && id !== 'new' && id !== 'board') api('problem', { house: house.id, problem: id }).then((p) => { if (target === id) full = p })
+  })
+  let works = $derived(full?.works ?? [])
   let work = $derived(works.find((w) => w.id === workId))
   // 这个问题没有可改的成果时，只能添加
   let effMode = $derived(target === 'new' || target === 'board' ? 'new' : works.length ? mode : 'add')
-  let original = $derived(work?.lines?.map(L) ?? [])
+  // 文本类成果（文档、方案、表格）可以直接改；图片和附件只能换新文件
+  let editable = $derived(work?.text !== undefined)
+  let original = $derived(work?.text?.split('\n') ?? [])
 
   function pickProblem(id: string) {
     target = id
@@ -40,8 +49,7 @@
   }
   function pickWork(id: string) {
     workId = id
-    const w = works.find((x) => x.id === id)
-    body = w?.lines ? w.lines.map(L).join('\n') : ''
+    body = works.find((x) => x.id === id)?.text ?? ''
   }
   function setMode(m: 'modify' | 'add') {
     mode = m
@@ -49,11 +57,11 @@
     body = ''
   }
 
-  let preview = $derived(effMode === 'modify' && work?.lines ? diffLines(original, body.split('\n')) : [])
+  let preview = $derived(effMode === 'modify' && editable ? diffLines(original, body.split('\n')) : [])
   let changed = $derived(
     effMode === 'new' ? newTitle.trim() !== '' && body.trim() !== ''
     : effMode === 'add' ? newTitle.trim() !== '' && body.trim() !== ''
-    : !!work && (work.lines ? preview.some((l) => l.kind !== 'same') : false)
+    : !!work && (editable ? preview.some((l) => l.kind !== 'same') : false)
   )
   let missing = $derived([
     !target && t('propose.needProblem'),
@@ -62,13 +70,26 @@
   ].filter(Boolean) as string[])
 
   const kinds: WorkKind[] = ['doc', 'plan', 'table', 'image']
+
+  // 交给引擎：问题 → propose；新问题 → openProblem；公告 → postNotice（茶客的这两种会被引擎转成提案）
+  async function submit() {
+    if (missing.length) return
+    if (target === 'board') await api('postNotice', { house: house.id, title: newTitle, text: body })
+    else if (target === 'new') await api('openProblem', { house: house.id, title: newTitle, body: [{ heading: '', text: body }] })
+    else if (target) {
+      const title = effMode === 'modify' && work ? t('propose.titleModify', { title: work.title }) : t('propose.titleAdd', { title: newTitle })
+      const change = effMode === 'modify' && work ? { id: work.id, kind: work.kind, title: work.title, text: body } : { kind: newKind, title: newTitle, text: body }
+      await api('propose', { house: house.id, problem: target, title, reason, changes: [change] })
+    }
+    sent = true
+  }
 </script>
 
 <div class="wrap">
   <header>
     <a class="back label" href="#/{house.id}/proposals">← {t('prop.back')}</a>
     <h1>{t('propose.title')}</h1>
-    <p class="lede">{t('propose.lede', { name: L(owner.name) })}</p>
+    <p class="lede">{t('propose.lede', { name: owner.name })}</p>
     {#if me.role !== 'guest'}<p class="consequence role-note">{t('propose.notGuest', { role: t(`role.${me.role}`) })}</p>{/if}
   </header>
 
@@ -76,7 +97,7 @@
     <section class="done">
       <i></i>
       <div>
-        <h2>{t('propose.done', { name: L(owner.name) })}</h2>
+        <h2>{t('propose.done', { name: owner.name })}</h2>
         <p class="consequence">{t('propose.doneSub')}</p>
         <div class="done-actions">
           <a class="primary" href="#/{house.id}/proposals"><i>→</i><span>{t('propose.viewAll')}</span></a>
@@ -85,7 +106,7 @@
       </div>
     </section>
   {:else}
-    <form onsubmit={(e) => { e.preventDefault(); if (!missing.length) sent = true }}>
+    <form onsubmit={(e) => { e.preventDefault(); submit() }}>
       <!-- 01 面向哪个问题 -->
       <section class="step">
         <div class="sn num">01</div>
@@ -95,7 +116,7 @@
             {#each house.problems.filter((p) => p.status !== 'solved') as p}
               <button type="button" role="radio" aria-checked={target === p.id} class="choice" class:on={target === p.id} data-problem={p.id} onclick={() => pickProblem(p.id)}>
                 <span class="num cid">{p.id}</span>
-                <span class="ctitle">{L(p.title)}</span>
+                <span class="ctitle">{p.title}</span>
                 <StatusMark status={p.status} label={false} />
               </button>
             {/each}
@@ -139,12 +160,12 @@
                 {#each works as w}
                   <button type="button" role="radio" aria-checked={workId === w.id} class="work" class:on={workId === w.id} data-work={w.id} onclick={() => pickWork(w.id)}>
                     <WorkGlyph kind={w.kind} size={22} />
-                    <span>{L(w.title)}</span>
+                    <span>{w.title}</span>
                   </button>
                 {/each}
               </div>
               {#if work}
-                {#if work.lines}
+                {#if editable}
                   <div class="editor">
                     <label class="field">
                       <span class="label">{t('propose.editor')}</span>
@@ -207,7 +228,7 @@
         <div class="to">
           <Shape role="host" size={12} />
           <div>
-            <p class="consequence">{t('propose.submitHint', { name: L(owner.name) })}</p>
+            <p class="consequence">{t('propose.submitHint', { name: owner.name })}</p>
             {#if missing.length}<p class="missing">{t('propose.need', { what: missing.join(' · ') })}</p>{/if}
           </div>
         </div>

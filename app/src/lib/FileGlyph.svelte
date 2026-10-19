@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { FileKind } from '../data/archive'
-  // 档案里的几何图标，只用墨色：■ 文档 ▦ 表格 ▲ 图片 ◆ 方案 ● 问题 ▬ 公告 ▫ 留言 ⊞ 成员表 □ 目录
-  let { kind, open = false }: { kind: FileKind | 'folder'; open?: boolean } = $props()
+  import type { ArchiveNode } from '../api/types'
+  // 档案里的几何图标，只用墨色：■ 文档 ▦ 表格 ▲ 图片 ◆ 方案 ● 问题 ▬ 公告 ▫ 留言 ⊞ 成员表 ◫ 附件 □ 目录
+  let { kind, open = false }: { kind: ArchiveNode['kind']; open?: boolean } = $props()
 </script>
 
 <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-  {#if kind === 'folder'}
+  {#if kind === 'dir'}
     <rect x="0.75" y="0.75" width="10.5" height="10.5" fill="none" stroke="var(--ink)" stroke-width="1.5" />
     {#if open}<rect x="3.5" y="3.5" width="5" height="5" fill="var(--ink)" />{/if}
   {:else if kind === 'doc'}
@@ -22,6 +22,9 @@
     <circle cx="6" cy="6" r="5" fill="var(--ink)" />
   {:else if kind === 'notice'}
     <rect x="0.5" y="3.5" width="11" height="5" fill="var(--ink)" />
+  {:else if kind === 'file'}
+    <rect x="0.75" y="0.75" width="10.5" height="10.5" fill="none" stroke="var(--ink)" stroke-width="1.5" />
+    <rect x="0.75" y="0.75" width="5.25" height="10.5" fill="var(--ink)" />
   {:else if kind === 'note'}
     <rect x="2.75" y="2.75" width="6.5" height="6.5" fill="none" stroke="var(--ink)" stroke-width="1.5" />
   {:else}

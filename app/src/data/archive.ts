@@ -31,6 +31,7 @@ export interface AFile {
 const bytes = (...xs: (string | undefined)[]) => new TextEncoder().encode(xs.filter(Boolean).join('\n')).length
 // 图片没有真实内容，按编号给一个稳定的假大小
 const fakeSize = (id: string) => 140_000 + ([...id].reduce((n, c) => n * 31 + c.charCodeAt(0), 7) % 700_000)
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x'
 const stamp = (iso: string) => iso.replace(/[-:]/g, '').slice(0, 13) + '00Z'
 const ext = (k: Work['kind']) => (k === 'image' ? 'png' : k === 'table' ? 'csv' : 'md')
 
@@ -54,7 +55,7 @@ export function archive(h: House): AFile[] {
     const status = p.events.filter((e) => e.act === 'open' || e.act === 'markActive' || e.act === 'markSolved')
     files.push({
       id: `p-${p.id}`,
-      path: `problems/${p.id}.md`,
+      path: `problems/${p.id}-${slug(p.title.en)}.md`,
       kind: 'problem',
       problem: p.id,
       problemRef: p,

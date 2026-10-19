@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { DiffLine } from '../data'
-  import { L } from '../i18n/index.svelte'
+  import type { DiffLine } from '../api/view'
+  import {} from '../i18n/index.svelte'
   // 差异视图（提案审阅、档案里的"来历"共用）：
   // 新增 = 墨黑实线标记 + 墨色正文；删除 = 删除线 + 灰色。不借用角色色。
   let { lines, muted = false }: { lines: DiffLine[]; muted?: boolean } = $props()
@@ -10,7 +10,7 @@
   {#each lines as l, i}
     <div class="line {l.kind}">
       <span class="ln num">{String(i + 1).padStart(2, '0')}</span>
-      <span class="tx">{L(l.text) || ' '}</span>
+      <span class="tx">{l.text || ' '}</span>
     </div>
   {/each}
 </div>

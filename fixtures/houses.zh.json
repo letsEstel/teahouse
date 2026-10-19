@@ -1,0 +1,4479 @@
+{
+  "format": "teahouse-fixtures/1",
+  "about": "六间示例茶馆（中文），形状照 docs/CLIENT-API.md 第 3 节；files[].text 是仓库里的文件原文（第 1 节的格式），图片没有原文。由 app/ 的 npm run export-fixtures 生成，不要手改。",
+  "houses": [
+    {
+      "house": {
+        "id": "wutong",
+        "name": "梧桐里三号院",
+        "signboard": "院里四十二户。车位、垃圾、楼道灯，咱们自己管。",
+        "founded": "2026-03-14T09:00:00Z",
+        "capacity": 15,
+        "me": "chen",
+        "members": [
+          {
+            "id": "chen",
+            "name": "陈立",
+            "role": "host",
+            "joined": "2026-03-14T09:00:00Z"
+          },
+          {
+            "id": "zhou",
+            "name": "周小满",
+            "role": "steward",
+            "joined": "2026-03-14T09:00:00Z"
+          },
+          {
+            "id": "wang",
+            "name": "王阿姨",
+            "role": "guest",
+            "joined": "2026-03-16T09:00:00Z"
+          },
+          {
+            "id": "li",
+            "name": "李建国",
+            "role": "guest",
+            "joined": "2026-03-16T09:00:00Z"
+          },
+          {
+            "id": "zhao",
+            "name": "赵一鸣",
+            "role": "guest",
+            "joined": "2026-03-22T09:00:00Z"
+          },
+          {
+            "id": "sun",
+            "name": "孙婷",
+            "role": "guest",
+            "joined": "2026-04-02T09:00:00Z"
+          },
+          {
+            "id": "wu",
+            "name": "吴师傅",
+            "role": "guest",
+            "joined": "2026-04-09T09:00:00Z"
+          },
+          {
+            "id": "zheng",
+            "name": "郑可",
+            "role": "guest",
+            "joined": "2026-05-30T09:00:00Z"
+          },
+          {
+            "id": "lin",
+            "name": "林晚",
+            "role": "guest",
+            "joined": "2026-09-21T09:00:00Z"
+          }
+        ],
+        "problems": [
+          {
+            "id": "0001",
+            "title": "小区停车位不好找",
+            "summary": "晚上七点以后院内车位全满，外来车占位，住户只能停到两条街外。",
+            "status": "active",
+            "by": "wang",
+            "opened": "2026-03-16T09:00:00Z",
+            "updated": "2026-10-18T16:02:00.000Z",
+            "workCount": 9,
+            "pendingProposals": 1
+          },
+          {
+            "id": "0002",
+            "title": "垃圾分类点的气味",
+            "summary": "夏季分类点紧挨 2 号楼窗下，异味严重，需要挪位置或加清运频次。",
+            "status": "active",
+            "by": "sun",
+            "opened": "2026-06-02T09:00:00Z",
+            "updated": "2026-10-17T08:00:00.000Z",
+            "workCount": 5,
+            "pendingProposals": 1
+          },
+          {
+            "id": "0003",
+            "title": "楼道灯坏了三个月",
+            "summary": "3 号楼 4–6 层声控灯失灵。已找到电工，费用由维修基金支出。",
+            "status": "solved",
+            "by": "wu",
+            "opened": "2026-04-10T09:00:00Z",
+            "updated": "2026-07-21T09:00:00Z",
+            "workCount": 4,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0004",
+            "title": "给院里独居老人订午餐",
+            "summary": "院内 6 位独居老人，想联系附近食堂按周订餐、轮流送到门口。",
+            "status": "open",
+            "by": "lin",
+            "opened": "2026-10-15T09:00:00Z",
+            "updated": "2026-10-15T09:00:00Z",
+            "workCount": 2,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0005",
+            "title": "年底公共维修基金怎么花",
+            "summary": "账上余 3.2 万元，需要在 12 月业委会前列出优先级清单。",
+            "status": "open",
+            "by": "chen",
+            "opened": "2026-10-08T09:00:00Z",
+            "updated": "2026-10-14T09:00:00Z",
+            "workCount": 3,
+            "pendingProposals": 0
+          }
+        ],
+        "recent": [
+          {
+            "by": "zhou",
+            "act": "add-work",
+            "title": "车位分布图（实测）",
+            "when": "2026-10-18T16:02:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "zhao",
+            "act": "propose",
+            "title": "把夜间临时停车改为错峰共享",
+            "when": "2026-10-17T20:14:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "sun",
+            "act": "add-work",
+            "title": "清运时间表",
+            "when": "2026-10-17T08:00:00.000Z",
+            "problem": "0002"
+          },
+          {
+            "by": "lin",
+            "act": "open-problem",
+            "title": "给院里独居老人订午餐",
+            "when": "2026-10-15T06:30:00.000Z",
+            "problem": "0004"
+          },
+          {
+            "by": "chen",
+            "act": "add-work",
+            "title": "维修基金余额明细",
+            "when": "2026-10-14T17:00:00.000Z",
+            "problem": "0005"
+          }
+        ],
+        "proposals": [
+          {
+            "id": "p1",
+            "title": "把夜间临时停车改为错峰共享",
+            "by": "zhao",
+            "problem": "0001",
+            "when": "2026-10-17T20:14:00.000Z",
+            "reason": "v1 只解决了夜间外来车，没有考虑夜班住户。问卷里有 11 户上夜班，白天车位空着、晚上回来没地方。改成按时段共享，不需要装地锁。",
+            "files": [
+              {
+                "path": "works/0001/time-sharing-plan.md",
+                "title": "错峰共享方案",
+                "kind": "plan",
+                "change": "modify",
+                "lines": [
+                  {
+                    "kind": "same",
+                    "text": "一、适用范围"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "院内全部 42 个地面车位。"
+                  },
+                  {
+                    "kind": "same",
+                    "text": ""
+                  },
+                  {
+                    "kind": "same",
+                    "text": "二、时段划分"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "19:00–07:00 禁止外来车辆进入，由门卫登记放行。"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "07:00–19:00 为日间时段：登记的夜班住户可停任意空位。"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "19:00–07:00 为夜间时段：车位优先归属固定住户，夜班住户须在 19:30 前驶离。"
+                  },
+                  {
+                    "kind": "same",
+                    "text": ""
+                  },
+                  {
+                    "kind": "same",
+                    "text": "三、执行方式"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "在 8 个高频被占车位安装地锁，钥匙由住户自管。"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "不安装地锁。每个车位喷涂编号，在院门口张贴当日共享表。"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "违规三次的车辆，由伙计统一联系车主。"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "外来车辆仍需门卫登记。"
+                  }
+                ]
+              },
+              {
+                "path": "works/0001/parking-lock-quotes.csv",
+                "title": "地锁采购报价",
+                "kind": "table",
+                "change": "modify",
+                "lines": [
+                  {
+                    "kind": "same",
+                    "text": "供应商　　　单价　　数量　　小计"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "安途五金　　¥186　　8　　　¥1,488"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "（方案 v2 不再采购地锁，本表作废留档）"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "p2",
+            "title": "补充 2 号楼窗下实测气味记录",
+            "by": "sun",
+            "problem": "0002",
+            "when": "2026-10-16T07:00:00.000Z",
+            "files": []
+          }
+        ],
+        "decided": [
+          {
+            "id": "d0",
+            "title": "地锁采购报价",
+            "by": "li",
+            "result": "adopted",
+            "when": "2026-10-12T09:00:00Z"
+          },
+          {
+            "id": "d1",
+            "title": "楼道灯维修费用分摊",
+            "by": "wu",
+            "result": "adopted",
+            "when": "2026-07-20T09:00:00Z"
+          },
+          {
+            "id": "d2",
+            "title": "停车位按楼栋抽签",
+            "by": "zheng",
+            "result": "declined",
+            "when": "2026-06-03T09:00:00Z"
+          }
+        ],
+        "board": [
+          {
+            "id": "b2",
+            "by": "chen",
+            "title": "10 月 25 日（周六）上午院内大扫除",
+            "text": "九点在 2 号楼前集合，工具由物业提供。顺便给车位喷编号，需要四个人帮忙。能来的在下面写一句。",
+            "when": "2026-10-16T18:00:00.000Z",
+            "replies": [
+              {
+                "by": "wang",
+                "text": "我来，带两把扫帚。",
+                "when": "2026-10-16T18:31:00.000Z",
+                "writtenAt": "2026-10-16T18:31:00.000Z"
+              },
+              {
+                "by": "wu",
+                "text": "喷漆的活我熟，算我一个。",
+                "when": "2026-10-17T05:50:00.000Z",
+                "writtenAt": "2026-10-17T05:50:00.000Z"
+              },
+              {
+                "by": "lin",
+                "text": "上午要陪老人看病，下午可以来收尾。",
+                "when": "2026-10-17T10:02:00.000Z",
+                "writtenAt": "2026-10-17T10:02:00.000Z"
+              }
+            ]
+          },
+          {
+            "id": "b1",
+            "by": "zhou",
+            "title": "停车方案 11 月 6 日在业委会表决",
+            "text": "表决前一周定稿。有意见请写在“小区停车位不好找”下面，别只在群里说，群里的话会被冲掉。",
+            "when": "2026-10-08T17:00:00.000Z",
+            "replies": [
+              {
+                "by": "zhao",
+                "text": "收到，v2 周末前提交。",
+                "when": "2026-10-08T19:15:00.000Z",
+                "writtenAt": "2026-10-08T19:15:00.000Z"
+              }
+            ]
+          }
+        ],
+        "sync": {
+          "state": "synced",
+          "unpushed": 0,
+          "lastSync": "2026-10-18T18:10:00.000Z"
+        }
+      },
+      "problems": [
+        {
+          "id": "0001",
+          "title": "小区停车位不好找",
+          "summary": "晚上七点以后院内车位全满，外来车占位，住户只能停到两条街外。",
+          "status": "active",
+          "by": "wang",
+          "opened": "2026-03-16T09:00:00Z",
+          "updated": "2026-10-18T16:02:00.000Z",
+          "workCount": 9,
+          "pendingProposals": 1,
+          "body": [
+            {
+              "heading": "现状",
+              "text": "院内共 42 个车位，登记住户车辆 57 辆。晚高峰（19:00 以后）车位全满，其中约 8 个被外来车辆长期占用。"
+            },
+            {
+              "heading": "目标",
+              "text": "年底前让每户至少有一个可预期的停车位置；外来车辆占位降到 2 个以下。"
+            },
+            {
+              "heading": "约束",
+              "text": "不新增地面硬化；物业不额外收费；方案需要业委会表决通过。"
+            }
+          ],
+          "works": [
+            {
+              "id": "works/0001/w1-parking-map-measured.png.ref.md",
+              "kind": "image",
+              "title": "车位分布图（实测）",
+              "by": "zhou",
+              "when": "2026-10-18T16:02:00.000Z",
+              "size": 150465,
+              "note": "42 个车位逐一标号",
+              "blob": {
+                "hash": "sha256:fake-w1",
+                "type": "image/png",
+                "cached": true
+              }
+            },
+            {
+              "id": "works/0001/w2-time-sharing-plan-v2.md",
+              "kind": "plan",
+              "title": "错峰共享方案 v2",
+              "by": "zhao",
+              "when": "2026-10-17T19:40:00.000Z",
+              "size": 269,
+              "text": "一、适用范围\n院内全部 42 个地面车位。\n二、时段划分\n07:00–19:00 为日间时段：登记的夜班住户可停任意空位。\n19:00–07:00 为夜间时段：车位优先归属固定住户。",
+              "note": "白天空位开放给夜班住户"
+            },
+            {
+              "id": "works/0001/w3-parking-lock-quotes.csv",
+              "kind": "table",
+              "title": "地锁采购报价",
+              "by": "li",
+              "when": "2026-10-12T08:00:00.000Z",
+              "size": 43,
+              "note": "三家对比，含安装"
+            },
+            {
+              "id": "works/0001/w4-one-week-of-occupancy-notes.md",
+              "kind": "doc",
+              "title": "一周占位记录",
+              "by": "wang",
+              "when": "2026-10-09T19:30:00.000Z",
+              "size": 44,
+              "note": "每晚 21:00 拍照统计"
+            },
+            {
+              "id": "works/0001/w5-letter-to-the-management-draft.md",
+              "kind": "doc",
+              "title": "致物业的函（草稿）",
+              "by": "chen",
+              "when": "2026-10-03T13:00:00.000Z",
+              "size": 27
+            },
+            {
+              "id": "works/0001/w6-nearby-car-park-prices.csv",
+              "kind": "table",
+              "title": "周边收费停车场价目",
+              "by": "sun",
+              "when": "2026-09-27T10:00:00.000Z",
+              "size": 27
+            },
+            {
+              "id": "works/0001/w7-photos-of-outside-cars.png.ref.md",
+              "kind": "image",
+              "title": "外来车辆照片汇总",
+              "by": "wu",
+              "when": "2026-09-20T07:00:00.000Z",
+              "size": 150471,
+              "blob": {
+                "hash": "sha256:fake-w7",
+                "type": "image/png",
+                "cached": true
+              }
+            },
+            {
+              "id": "works/0001/w8-time-sharing-plan-v1.md",
+              "kind": "plan",
+              "title": "错峰共享方案 v1",
+              "by": "zhao",
+              "when": "2026-09-18T18:00:00.000Z",
+              "size": 21
+            },
+            {
+              "id": "works/0001/w9-resident-survey-results.md",
+              "kind": "doc",
+              "title": "住户问卷结果",
+              "by": "zheng",
+              "when": "2026-09-11T17:00:00.000Z",
+              "size": 18
+            }
+          ],
+          "events": [
+            {
+              "by": "wang",
+              "act": "open-problem",
+              "title": "",
+              "when": "2026-03-16T08:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "chen",
+              "act": "set-status",
+              "status": "active",
+              "title": "",
+              "when": "2026-09-18T18:30:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "wang",
+              "act": "update-work",
+              "title": "一周占位记录",
+              "when": "2026-10-09T19:30:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "chen",
+              "act": "adopt",
+              "title": "地锁采购报价",
+              "when": "2026-10-12T08:20:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "zhao",
+              "act": "propose",
+              "title": "把夜间临时停车改为错峰共享",
+              "when": "2026-10-17T20:14:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "zhou",
+              "act": "add-work",
+              "title": "车位分布图（实测）",
+              "when": "2026-10-18T16:02:00.000Z",
+              "problem": "0001"
+            }
+          ],
+          "notes": [
+            {
+              "by": "li",
+              "text": "地锁报价如果用不上，报价表能不能留着？别的院子可能用得上。",
+              "when": "2026-10-13T06:40:00.000Z",
+              "writtenAt": "2026-10-13T06:40:00.000Z"
+            },
+            {
+              "by": "zhao",
+              "text": "v2 里夜班住户要提前登记。登记表谁来收？",
+              "when": "2026-10-17T20:30:00.000Z",
+              "writtenAt": "2026-10-17T20:30:00.000Z"
+            },
+            {
+              "by": "zhou",
+              "text": "我来收。门卫室放一个本子，每周日拍照传到这里。",
+              "when": "2026-10-18T07:10:00.000Z",
+              "writtenAt": "2026-10-18T07:10:00.000Z"
+            }
+          ]
+        },
+        {
+          "id": "0002",
+          "title": "垃圾分类点的气味",
+          "summary": "夏季分类点紧挨 2 号楼窗下，异味严重，需要挪位置或加清运频次。",
+          "status": "active",
+          "by": "sun",
+          "opened": "2026-06-02T09:00:00Z",
+          "updated": "2026-10-17T08:00:00.000Z",
+          "workCount": 5,
+          "pendingProposals": 1,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0003",
+          "title": "楼道灯坏了三个月",
+          "summary": "3 号楼 4–6 层声控灯失灵。已找到电工，费用由维修基金支出。",
+          "status": "solved",
+          "by": "wu",
+          "opened": "2026-04-10T09:00:00Z",
+          "updated": "2026-07-21T09:00:00Z",
+          "workCount": 4,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0004",
+          "title": "给院里独居老人订午餐",
+          "summary": "院内 6 位独居老人，想联系附近食堂按周订餐、轮流送到门口。",
+          "status": "open",
+          "by": "lin",
+          "opened": "2026-10-15T09:00:00Z",
+          "updated": "2026-10-15T09:00:00Z",
+          "workCount": 2,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0005",
+          "title": "年底公共维修基金怎么花",
+          "summary": "账上余 3.2 万元，需要在 12 月业委会前列出优先级清单。",
+          "status": "open",
+          "by": "chen",
+          "opened": "2026-10-08T09:00:00Z",
+          "updated": "2026-10-14T09:00:00Z",
+          "workCount": 3,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        }
+      ],
+      "files": [
+        {
+          "path": "problems/0001-hard-to-find-a-parking-space.md",
+          "kind": "problem",
+          "problem": "0001",
+          "text": "---\ntitle: 小区停车位不好找\nstatus: active\n---\n晚上七点以后院内车位全满，外来车占位，住户只能停到两条街外。\n\n## 现状\n院内共 42 个车位，登记住户车辆 57 辆。晚高峰（19:00 以后）车位全满，其中约 8 个被外来车辆长期占用。\n\n## 目标\n年底前让每户至少有一个可预期的停车位置；外来车辆占位降到 2 个以下。\n\n## 约束\n不新增地面硬化；物业不额外收费；方案需要业委会表决通过。",
+          "history": [
+            {
+              "by": "chen",
+              "when": "2026-09-18T18:30:00.000Z",
+              "act": "set-status",
+              "problem": "0001",
+              "title": "active"
+            },
+            {
+              "by": "wang",
+              "when": "2026-03-16T08:00:00.000Z",
+              "act": "open-problem",
+              "problem": "0001",
+              "title": "小区停车位不好找"
+            }
+          ]
+        },
+        {
+          "path": "problems/0002-the-smell-at-the-recycling-point.md",
+          "kind": "problem",
+          "problem": "0002",
+          "text": "---\ntitle: 垃圾分类点的气味\nstatus: active\n---\n夏季分类点紧挨 2 号楼窗下，异味严重，需要挪位置或加清运频次。",
+          "history": [
+            {
+              "by": "sun",
+              "when": "2026-06-02T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0002",
+              "title": "垃圾分类点的气味"
+            }
+          ]
+        },
+        {
+          "path": "problems/0003-stairwell-lights-out-for-three-months.md",
+          "kind": "problem",
+          "problem": "0003",
+          "text": "---\ntitle: 楼道灯坏了三个月\nstatus: solved\n---\n3 号楼 4–6 层声控灯失灵。已找到电工，费用由维修基金支出。",
+          "history": [
+            {
+              "by": "wu",
+              "when": "2026-04-10T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0003",
+              "title": "楼道灯坏了三个月"
+            }
+          ]
+        },
+        {
+          "path": "problems/0004-lunch-for-neighbours-who-live-alone.md",
+          "kind": "problem",
+          "problem": "0004",
+          "text": "---\ntitle: 给院里独居老人订午餐\nstatus: open\n---\n院内 6 位独居老人，想联系附近食堂按周订餐、轮流送到门口。",
+          "history": [
+            {
+              "by": "lin",
+              "when": "2026-10-15T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0004",
+              "title": "给院里独居老人订午餐"
+            }
+          ]
+        },
+        {
+          "path": "problems/0005-how-to-spend-the-repair-fund-by-year-end.md",
+          "kind": "problem",
+          "problem": "0005",
+          "text": "---\ntitle: 年底公共维修基金怎么花\nstatus: open\n---\n账上余 3.2 万元，需要在 12 月业委会前列出优先级清单。",
+          "history": [
+            {
+              "by": "chen",
+              "when": "2026-10-08T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0005",
+              "title": "年底公共维修基金怎么花"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/w1-parking-map-measured.png.ref.md",
+          "kind": "image",
+          "problem": "0001",
+          "text": "---\ntitle: 车位分布图（实测）\nblob: sha256:fake-w1\nsize: 150465\ntype: image/png\n---\n42 个车位逐一标号",
+          "history": [
+            {
+              "by": "zhou",
+              "when": "2026-10-18T16:02:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "车位分布图（实测）"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/w2-time-sharing-plan-v2.md",
+          "kind": "plan",
+          "problem": "0001",
+          "text": "---\ntitle: 错峰共享方案 v2\nkind: plan\nnote: 白天空位开放给夜班住户\n---\n一、适用范围\n院内全部 42 个地面车位。\n二、时段划分\n07:00–19:00 为日间时段：登记的夜班住户可停任意空位。\n19:00–07:00 为夜间时段：车位优先归属固定住户。",
+          "history": [
+            {
+              "by": "zhao",
+              "when": "2026-10-17T19:40:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "错峰共享方案 v2",
+              "diff": [
+                {
+                  "kind": "add",
+                  "text": "一、适用范围"
+                },
+                {
+                  "kind": "add",
+                  "text": "院内全部 42 个地面车位。"
+                },
+                {
+                  "kind": "add",
+                  "text": "二、时段划分"
+                },
+                {
+                  "kind": "add",
+                  "text": "07:00–19:00 为日间时段：登记的夜班住户可停任意空位。"
+                },
+                {
+                  "kind": "add",
+                  "text": "19:00–07:00 为夜间时段：车位优先归属固定住户。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "works/0001/w3-parking-lock-quotes.csv",
+          "kind": "table",
+          "problem": "0001",
+          "text": null,
+          "history": [
+            {
+              "by": "li",
+              "when": "2026-10-12T08:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "地锁采购报价"
+            },
+            {
+              "by": "chen",
+              "when": "2026-10-12T08:20:00.000Z",
+              "act": "adopt",
+              "problem": "0001",
+              "title": "地锁采购报价"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/w4-one-week-of-occupancy-notes.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 一周占位记录\nnote: 每晚 21:00 拍照统计\n---\n",
+          "history": [
+            {
+              "by": "wang",
+              "when": "2026-10-09T19:30:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "一周占位记录"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/w5-letter-to-the-management-draft.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 致物业的函（草稿）\n---\n",
+          "history": [
+            {
+              "by": "chen",
+              "when": "2026-10-03T13:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "致物业的函（草稿）"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/w6-nearby-car-park-prices.csv",
+          "kind": "table",
+          "problem": "0001",
+          "text": null,
+          "history": [
+            {
+              "by": "sun",
+              "when": "2026-09-27T10:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "周边收费停车场价目"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/w7-photos-of-outside-cars.png.ref.md",
+          "kind": "image",
+          "problem": "0001",
+          "text": "---\ntitle: 外来车辆照片汇总\nblob: sha256:fake-w7\nsize: 150471\ntype: image/png\n---",
+          "history": [
+            {
+              "by": "wu",
+              "when": "2026-09-20T07:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "外来车辆照片汇总"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/w8-time-sharing-plan-v1.md",
+          "kind": "plan",
+          "problem": "0001",
+          "text": "---\ntitle: 错峰共享方案 v1\nkind: plan\n---\n",
+          "history": [
+            {
+              "by": "zhao",
+              "when": "2026-09-18T18:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "错峰共享方案 v1"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/w9-resident-survey-results.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 住户问卷结果\n---\n",
+          "history": [
+            {
+              "by": "zheng",
+              "when": "2026-09-11T17:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "住户问卷结果"
+            }
+          ]
+        },
+        {
+          "path": "board/b2.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 10 月 25 日（周六）上午院内大扫除\n---\n九点在 2 号楼前集合，工具由物业提供。顺便给车位喷编号，需要四个人帮忙。能来的在下面写一句。",
+          "history": [
+            {
+              "by": "chen",
+              "when": "2026-10-16T18:00:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "10 月 25 日（周六）上午院内大扫除"
+            }
+          ]
+        },
+        {
+          "path": "board/b1.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 停车方案 11 月 6 日在业委会表决\n---\n表决前一周定稿。有意见请写在“小区停车位不好找”下面，别只在群里说，群里的话会被冲掉。",
+          "history": [
+            {
+              "by": "zhou",
+              "when": "2026-10-08T17:00:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "停车方案 11 月 6 日在业委会表决"
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261013T084000Z-li.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "地锁报价如果用不上，报价表能不能留着？别的院子可能用得上。",
+          "history": [
+            {
+              "by": "li",
+              "when": "2026-10-13T06:40:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261017T223000Z-zhao.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "v2 里夜班住户要提前登记。登记表谁来收？",
+          "history": [
+            {
+              "by": "zhao",
+              "when": "2026-10-17T20:30:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261018T091000Z-zhou.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "我来收。门卫室放一个本子，每周日拍照传到这里。",
+          "history": [
+            {
+              "by": "zhou",
+              "when": "2026-10-18T07:10:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b2/20261016T203100Z-wang.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "我来，带两把扫帚。",
+          "history": [
+            {
+              "by": "wang",
+              "when": "2026-10-16T18:31:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "10 月 25 日（周六）上午院内大扫除"
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b2/20261017T075000Z-wu.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "喷漆的活我熟，算我一个。",
+          "history": [
+            {
+              "by": "wu",
+              "when": "2026-10-17T05:50:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "10 月 25 日（周六）上午院内大扫除"
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b2/20261017T120200Z-lin.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "上午要陪老人看病，下午可以来收尾。",
+          "history": [
+            {
+              "by": "lin",
+              "when": "2026-10-17T10:02:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "10 月 25 日（周六）上午院内大扫除"
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b1/20261008T211500Z-zhao.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "收到，v2 周末前提交。",
+          "history": [
+            {
+              "by": "zhao",
+              "when": "2026-10-08T19:15:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "停车方案 11 月 6 日在业委会表决"
+            }
+          ]
+        },
+        {
+          "path": ".teahouse/members.toml",
+          "kind": "members",
+          "problem": "meta",
+          "text": "[[member]]\nid = \"chen\"\nname = \"陈立\"\nrole = \"host\"\njoined = 2026-03-14\n\n[[member]]\nid = \"zhou\"\nname = \"周小满\"\nrole = \"steward\"\njoined = 2026-03-14\n\n[[member]]\nid = \"wang\"\nname = \"王阿姨\"\nrole = \"guest\"\njoined = 2026-03-16\n\n[[member]]\nid = \"li\"\nname = \"李建国\"\nrole = \"guest\"\njoined = 2026-03-16\n\n[[member]]\nid = \"zhao\"\nname = \"赵一鸣\"\nrole = \"guest\"\njoined = 2026-03-22\n\n[[member]]\nid = \"sun\"\nname = \"孙婷\"\nrole = \"guest\"\njoined = 2026-04-02\n\n[[member]]\nid = \"wu\"\nname = \"吴师傅\"\nrole = \"guest\"\njoined = 2026-04-09\n\n[[member]]\nid = \"zheng\"\nname = \"郑可\"\nrole = \"guest\"\njoined = 2026-05-30\n\n[[member]]\nid = \"lin\"\nname = \"林晚\"\nrole = \"guest\"\njoined = 2026-09-21",
+          "history": [
+            {
+              "by": "chen",
+              "when": "2026-03-14T08:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "陈立"
+            },
+            {
+              "by": "chen",
+              "when": "2026-03-14T08:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "周小满"
+            },
+            {
+              "by": "chen",
+              "when": "2026-03-16T08:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "王阿姨"
+            },
+            {
+              "by": "chen",
+              "when": "2026-03-16T08:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "李建国"
+            },
+            {
+              "by": "chen",
+              "when": "2026-03-22T08:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "赵一鸣"
+            },
+            {
+              "by": "chen",
+              "when": "2026-04-02T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "孙婷"
+            },
+            {
+              "by": "chen",
+              "when": "2026-04-09T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "吴师傅"
+            },
+            {
+              "by": "chen",
+              "when": "2026-05-30T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "郑可"
+            },
+            {
+              "by": "chen",
+              "when": "2026-09-21T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "林晚"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "house": {
+        "id": "kant",
+        "name": "康德读书会",
+        "signboard": "每周四晚，一次读十页。读不懂的地方，写成问题。",
+        "founded": "2026-01-08T09:00:00Z",
+        "capacity": 15,
+        "me": "xu",
+        "members": [
+          {
+            "id": "su",
+            "name": "苏明哲",
+            "role": "host",
+            "joined": "2026-01-08T09:00:00Z"
+          },
+          {
+            "id": "he",
+            "name": "何雨",
+            "role": "steward",
+            "joined": "2026-01-08T09:00:00Z"
+          },
+          {
+            "id": "xu",
+            "name": "许清",
+            "role": "guest",
+            "joined": "2026-01-15T09:00:00Z"
+          },
+          {
+            "id": "luo",
+            "name": "罗森",
+            "role": "guest",
+            "joined": "2026-01-15T09:00:00Z"
+          },
+          {
+            "id": "tang",
+            "name": "唐棠",
+            "role": "guest",
+            "joined": "2026-02-05T09:00:00Z"
+          },
+          {
+            "id": "ge",
+            "name": "葛文",
+            "role": "guest",
+            "joined": "2026-04-30T09:00:00Z"
+          }
+        ],
+        "problems": [
+          {
+            "id": "0001",
+            "title": "先验演绎到底证明了什么",
+            "summary": "A 版和 B 版的论证路线不同，读了三遍还是说不清它们各自证明了什么。",
+            "status": "active",
+            "by": "luo",
+            "opened": "2026-09-04T09:00:00Z",
+            "updated": "2026-10-16T20:40:00.000Z",
+            "workCount": 5,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0002",
+            "title": "“物自身”还是“物自体”",
+            "summary": "两个译本用词不同，讨论时总在打架。需要定一个，写进术语表。",
+            "status": "active",
+            "by": "xu",
+            "opened": "2026-10-01T09:00:00Z",
+            "updated": "2026-10-17T19:05:00.000Z",
+            "workCount": 3,
+            "pendingProposals": 1
+          },
+          {
+            "id": "0003",
+            "title": "先读完《未来形而上学导论》",
+            "summary": "作为进入第一批判的准备。八周读完，每周一人领读。",
+            "status": "solved",
+            "by": "su",
+            "opened": "2026-01-08T09:00:00Z",
+            "updated": "2026-03-05T09:00:00Z",
+            "workCount": 8,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0004",
+            "title": "下学期读第二批判还是第三批判",
+            "summary": "十二月前决定，好让大家提前买书。",
+            "status": "open",
+            "by": "ge",
+            "opened": "2026-10-12T09:00:00Z",
+            "updated": "2026-10-12T09:00:00Z",
+            "workCount": 0,
+            "pendingProposals": 0
+          }
+        ],
+        "recent": [
+          {
+            "by": "xu",
+            "act": "propose",
+            "title": "术语表：Ding an sich 统一译为“物自身”",
+            "when": "2026-10-17T19:05:00.000Z",
+            "problem": "0002"
+          },
+          {
+            "by": "he",
+            "act": "add-work",
+            "title": "B 版演绎论证结构（第三稿）",
+            "when": "2026-10-16T20:40:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "ge",
+            "act": "open-problem",
+            "title": "下学期读第二批判还是第三批判",
+            "when": "2026-10-12T17:00:00.000Z",
+            "problem": "0004"
+          },
+          {
+            "by": "he",
+            "act": "update-work",
+            "title": "术语对照表",
+            "when": "2026-10-09T21:00:00.000Z",
+            "problem": "0002"
+          }
+        ],
+        "proposals": [
+          {
+            "id": "p1",
+            "title": "术语表：Ding an sich 统一译为“物自身”",
+            "by": "xu",
+            "problem": "0002",
+            "when": "2026-10-17T19:05:00.000Z",
+            "reason": "我们以李秋零译本为准，它用“物自身”。术语表里两种写法混用，纪要也跟着乱。统一之后，“本体”留给 Noumenon。",
+            "files": [
+              {
+                "path": "works/0002/glossary-of-terms.md",
+                "title": "术语对照表",
+                "kind": "doc",
+                "change": "modify",
+                "lines": [
+                  {
+                    "kind": "same",
+                    "text": "Anschauung — 直观"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "Erscheinung — 显象"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "Ding an sich — 物自体"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "Ding an sich — 物自身（李秋零译本用法）"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "Noumenon — 本体、物自体"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "Noumenon — 本体（不再与物自身混用）"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "Verstand — 知性"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "decided": [
+          {
+            "id": "d0",
+            "title": "二手文献清单",
+            "by": "ge",
+            "result": "adopted",
+            "when": "2026-09-26T09:00:00Z"
+          },
+          {
+            "id": "d1",
+            "title": "改成每两周读一次",
+            "by": "luo",
+            "result": "declined",
+            "when": "2026-05-14T09:00:00Z"
+          }
+        ],
+        "board": [
+          {
+            "id": "b2",
+            "by": "su",
+            "title": "本周改到周五晚上",
+            "text": "周四我出差。周五 19:30，地点不变。读 B 版 §24–§27，十二页。",
+            "when": "2026-10-17T08:00:00.000Z",
+            "replies": [
+              {
+                "by": "xu",
+                "text": "可以。我会把术语表的提案先交上来，周五一起看。",
+                "when": "2026-10-17T10:40:00.000Z",
+                "writtenAt": "2026-10-17T10:40:00.000Z"
+              },
+              {
+                "by": "tang",
+                "text": "周五我要晚到半小时。",
+                "when": "2026-10-17T16:03:00.000Z",
+                "writtenAt": "2026-10-17T16:03:00.000Z"
+              }
+            ]
+          },
+          {
+            "id": "b1",
+            "by": "he",
+            "title": "纪要轮值表",
+            "text": "每次读书会由一人写纪要，按座位顺时针轮。纪要当晚交，挂在对应的问题下面。",
+            "when": "2026-09-30T19:00:00.000Z",
+            "replies": []
+          }
+        ],
+        "sync": {
+          "state": "synced",
+          "unpushed": 0,
+          "lastSync": "2026-10-18T18:10:00.000Z"
+        }
+      },
+      "problems": [
+        {
+          "id": "0001",
+          "title": "先验演绎到底证明了什么",
+          "summary": "A 版和 B 版的论证路线不同，读了三遍还是说不清它们各自证明了什么。",
+          "status": "active",
+          "by": "luo",
+          "opened": "2026-09-04T09:00:00Z",
+          "updated": "2026-10-16T20:40:00.000Z",
+          "workCount": 5,
+          "pendingProposals": 0,
+          "body": [
+            {
+              "heading": "卡在哪里",
+              "text": "B 版 §20 说范畴对一切直观有效，§26 又重新证明一遍。两节是重复，还是两步论证？"
+            },
+            {
+              "heading": "想弄清",
+              "text": "能用一页纸写出 B 版演绎的论证结构，每个人都同意。"
+            },
+            {
+              "heading": "读法",
+              "text": "以李秋零译本为准，对照德文原文；二手文献只用来检验，不替代原文。"
+            }
+          ],
+          "works": [
+            {
+              "id": "works/0001/k1-structure-of-the-b-deduction-3rd-draft.md",
+              "kind": "plan",
+              "title": "B 版演绎论证结构（第三稿）",
+              "by": "he",
+              "when": "2026-10-16T20:40:00.000Z",
+              "size": 62,
+              "text": "第一步（§15–§20）：凡是被统觉统一起来的直观，都服从范畴。\n第二步（§21–§26）：我们的一切感性直观，都能被统觉统一。\n所以：范畴对一切经验对象有效。",
+              "note": "§15–§27，分两步"
+            },
+            {
+              "id": "works/0001/k2-glossary-of-terms.md",
+              "kind": "doc",
+              "title": "术语对照表",
+              "by": "he",
+              "when": "2026-10-09T21:00:00.000Z",
+              "size": 161,
+              "text": "Anschauung — 直观\nErscheinung — 显象\nDing an sich — 物自体\nNoumenon — 本体、物自体\nVerstand — 知性",
+              "note": "中德对照，41 条"
+            },
+            {
+              "id": "works/0001/k3-notes-from-the-third-session.md",
+              "kind": "doc",
+              "title": "第三次讨论纪要",
+              "by": "tang",
+              "when": "2026-10-02T20:30:00.000Z",
+              "size": 21
+            },
+            {
+              "id": "works/0001/k4-secondary-literature-list.md",
+              "kind": "doc",
+              "title": "二手文献清单",
+              "by": "ge",
+              "when": "2026-09-25T18:00:00.000Z",
+              "size": 48,
+              "note": "Henrich、Allison、邓晓芒"
+            },
+            {
+              "id": "works/0001/k5-talk-the-objective-validity-of-the-categories.md",
+              "kind": "doc",
+              "title": "讲稿：范畴的客观有效性",
+              "by": "su",
+              "when": "2026-09-11T19:00:00.000Z",
+              "size": 33
+            }
+          ],
+          "events": [
+            {
+              "by": "luo",
+              "act": "open-problem",
+              "title": "",
+              "when": "2026-09-04T20:10:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "su",
+              "act": "set-status",
+              "status": "active",
+              "title": "",
+              "when": "2026-09-05T06:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "su",
+              "act": "adopt",
+              "title": "二手文献清单",
+              "when": "2026-09-26T07:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "tang",
+              "act": "add-work",
+              "title": "第三次讨论纪要",
+              "when": "2026-10-02T20:30:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "he",
+              "act": "add-work",
+              "title": "B 版演绎论证结构（第三稿）",
+              "when": "2026-10-16T20:40:00.000Z",
+              "problem": "0001"
+            }
+          ],
+          "notes": [
+            {
+              "by": "tang",
+              "text": "我倾向于读成两步。§21 自己说了“证明的开端”，说明还没完。",
+              "when": "2026-10-02T20:50:00.000Z",
+              "writtenAt": "2026-10-02T20:50:00.000Z"
+            },
+            {
+              "by": "luo",
+              "text": "同意两步，但第二步到底多证了什么，我还是说不出来。",
+              "when": "2026-10-09T21:10:00.000Z",
+              "writtenAt": "2026-10-09T21:10:00.000Z"
+            },
+            {
+              "by": "he",
+              "text": "第三稿里把第二步写成“范围的扩展”：从“被统一的直观”扩到“我们的一切感性直观”。周五请挑错。",
+              "when": "2026-10-16T20:45:00.000Z",
+              "writtenAt": "2026-10-16T20:45:00.000Z"
+            }
+          ]
+        },
+        {
+          "id": "0002",
+          "title": "“物自身”还是“物自体”",
+          "summary": "两个译本用词不同，讨论时总在打架。需要定一个，写进术语表。",
+          "status": "active",
+          "by": "xu",
+          "opened": "2026-10-01T09:00:00Z",
+          "updated": "2026-10-17T19:05:00.000Z",
+          "workCount": 3,
+          "pendingProposals": 1,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0003",
+          "title": "先读完《未来形而上学导论》",
+          "summary": "作为进入第一批判的准备。八周读完，每周一人领读。",
+          "status": "solved",
+          "by": "su",
+          "opened": "2026-01-08T09:00:00Z",
+          "updated": "2026-03-05T09:00:00Z",
+          "workCount": 8,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0004",
+          "title": "下学期读第二批判还是第三批判",
+          "summary": "十二月前决定，好让大家提前买书。",
+          "status": "open",
+          "by": "ge",
+          "opened": "2026-10-12T09:00:00Z",
+          "updated": "2026-10-12T09:00:00Z",
+          "workCount": 0,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        }
+      ],
+      "files": [
+        {
+          "path": "problems/0001-what-does-the-transcendental-deduction-actually-prove.md",
+          "kind": "problem",
+          "problem": "0001",
+          "text": "---\ntitle: 先验演绎到底证明了什么\nstatus: active\n---\nA 版和 B 版的论证路线不同，读了三遍还是说不清它们各自证明了什么。\n\n## 卡在哪里\nB 版 §20 说范畴对一切直观有效，§26 又重新证明一遍。两节是重复，还是两步论证？\n\n## 想弄清\n能用一页纸写出 B 版演绎的论证结构，每个人都同意。\n\n## 读法\n以李秋零译本为准，对照德文原文；二手文献只用来检验，不替代原文。",
+          "history": [
+            {
+              "by": "su",
+              "when": "2026-09-05T06:00:00.000Z",
+              "act": "set-status",
+              "problem": "0001",
+              "title": "active"
+            },
+            {
+              "by": "luo",
+              "when": "2026-09-04T20:10:00.000Z",
+              "act": "open-problem",
+              "problem": "0001",
+              "title": "先验演绎到底证明了什么"
+            }
+          ]
+        },
+        {
+          "path": "problems/0002-ding-an-sich-or.md",
+          "kind": "problem",
+          "problem": "0002",
+          "text": "---\ntitle: “物自身”还是“物自体”\nstatus: active\n---\n两个译本用词不同，讨论时总在打架。需要定一个，写进术语表。",
+          "history": [
+            {
+              "by": "xu",
+              "when": "2026-10-01T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0002",
+              "title": "“物自身”还是“物自体”"
+            }
+          ]
+        },
+        {
+          "path": "problems/0003-finish-the-prolegomena-first.md",
+          "kind": "problem",
+          "problem": "0003",
+          "text": "---\ntitle: 先读完《未来形而上学导论》\nstatus: solved\n---\n作为进入第一批判的准备。八周读完，每周一人领读。",
+          "history": [
+            {
+              "by": "su",
+              "when": "2026-01-08T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0003",
+              "title": "先读完《未来形而上学导论》"
+            }
+          ]
+        },
+        {
+          "path": "problems/0004-next-term-the-second-or-the-third-critique.md",
+          "kind": "problem",
+          "problem": "0004",
+          "text": "---\ntitle: 下学期读第二批判还是第三批判\nstatus: open\n---\n十二月前决定，好让大家提前买书。",
+          "history": [
+            {
+              "by": "ge",
+              "when": "2026-10-12T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0004",
+              "title": "下学期读第二批判还是第三批判"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/k1-structure-of-the-b-deduction-3rd-draft.md",
+          "kind": "plan",
+          "problem": "0001",
+          "text": "---\ntitle: B 版演绎论证结构（第三稿）\nkind: plan\nnote: §15–§27，分两步\n---\n第一步（§15–§20）：凡是被统觉统一起来的直观，都服从范畴。\n第二步（§21–§26）：我们的一切感性直观，都能被统觉统一。\n所以：范畴对一切经验对象有效。",
+          "history": [
+            {
+              "by": "he",
+              "when": "2026-10-16T20:40:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "B 版演绎论证结构（第三稿）"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/k2-glossary-of-terms.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 术语对照表\nnote: 中德对照，41 条\n---\nAnschauung — 直观\nErscheinung — 显象\nDing an sich — 物自体\nNoumenon — 本体、物自体\nVerstand — 知性",
+          "history": [
+            {
+              "by": "he",
+              "when": "2026-09-20T20:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "术语对照表",
+              "diff": [
+                {
+                  "kind": "add",
+                  "text": "Anschauung — 直观"
+                },
+                {
+                  "kind": "add",
+                  "text": "Erscheinung — 显象"
+                },
+                {
+                  "kind": "add",
+                  "text": "Ding an sich — 物自体"
+                }
+              ]
+            },
+            {
+              "by": "he",
+              "when": "2026-10-09T21:00:00.000Z",
+              "act": "update-work",
+              "problem": "0001",
+              "title": "术语对照表",
+              "diff": [
+                {
+                  "kind": "same",
+                  "text": "Anschauung — 直观"
+                },
+                {
+                  "kind": "same",
+                  "text": "Erscheinung — 显象"
+                },
+                {
+                  "kind": "same",
+                  "text": "Ding an sich — 物自体"
+                },
+                {
+                  "kind": "add",
+                  "text": "Noumenon — 本体、物自体"
+                },
+                {
+                  "kind": "add",
+                  "text": "Verstand — 知性"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "works/0001/k3-notes-from-the-third-session.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 第三次讨论纪要\n---\n",
+          "history": [
+            {
+              "by": "tang",
+              "when": "2026-10-02T20:30:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "第三次讨论纪要"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/k4-secondary-literature-list.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 二手文献清单\nnote: Henrich、Allison、邓晓芒\n---\n",
+          "history": [
+            {
+              "by": "ge",
+              "when": "2026-09-25T18:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "二手文献清单"
+            },
+            {
+              "by": "su",
+              "when": "2026-09-26T07:00:00.000Z",
+              "act": "adopt",
+              "problem": "0001",
+              "title": "二手文献清单"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/k5-talk-the-objective-validity-of-the-categories.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 讲稿：范畴的客观有效性\n---\n",
+          "history": [
+            {
+              "by": "su",
+              "when": "2026-09-11T19:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "讲稿：范畴的客观有效性"
+            }
+          ]
+        },
+        {
+          "path": "board/b2.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 本周改到周五晚上\n---\n周四我出差。周五 19:30，地点不变。读 B 版 §24–§27，十二页。",
+          "history": [
+            {
+              "by": "su",
+              "when": "2026-10-17T08:00:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "本周改到周五晚上"
+            }
+          ]
+        },
+        {
+          "path": "board/b1.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 纪要轮值表\n---\n每次读书会由一人写纪要，按座位顺时针轮。纪要当晚交，挂在对应的问题下面。",
+          "history": [
+            {
+              "by": "he",
+              "when": "2026-09-30T19:00:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "纪要轮值表"
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261002T225000Z-tang.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "我倾向于读成两步。§21 自己说了“证明的开端”，说明还没完。",
+          "history": [
+            {
+              "by": "tang",
+              "when": "2026-10-02T20:50:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261009T231000Z-luo.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "同意两步，但第二步到底多证了什么，我还是说不出来。",
+          "history": [
+            {
+              "by": "luo",
+              "when": "2026-10-09T21:10:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261016T224500Z-he.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "第三稿里把第二步写成“范围的扩展”：从“被统一的直观”扩到“我们的一切感性直观”。周五请挑错。",
+          "history": [
+            {
+              "by": "he",
+              "when": "2026-10-16T20:45:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b2/20261017T124000Z-xu.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "可以。我会把术语表的提案先交上来，周五一起看。",
+          "history": [
+            {
+              "by": "xu",
+              "when": "2026-10-17T10:40:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "本周改到周五晚上"
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b2/20261017T180300Z-tang.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "周五我要晚到半小时。",
+          "history": [
+            {
+              "by": "tang",
+              "when": "2026-10-17T16:03:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "本周改到周五晚上"
+            }
+          ]
+        },
+        {
+          "path": ".teahouse/members.toml",
+          "kind": "members",
+          "problem": "meta",
+          "text": "[[member]]\nid = \"su\"\nname = \"苏明哲\"\nrole = \"host\"\njoined = 2026-01-08\n\n[[member]]\nid = \"he\"\nname = \"何雨\"\nrole = \"steward\"\njoined = 2026-01-08\n\n[[member]]\nid = \"xu\"\nname = \"许清\"\nrole = \"guest\"\njoined = 2026-01-15\n\n[[member]]\nid = \"luo\"\nname = \"罗森\"\nrole = \"guest\"\njoined = 2026-01-15\n\n[[member]]\nid = \"tang\"\nname = \"唐棠\"\nrole = \"guest\"\njoined = 2026-02-05\n\n[[member]]\nid = \"ge\"\nname = \"葛文\"\nrole = \"guest\"\njoined = 2026-04-30",
+          "history": [
+            {
+              "by": "su",
+              "when": "2026-01-08T08:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "苏明哲"
+            },
+            {
+              "by": "su",
+              "when": "2026-01-08T08:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "何雨"
+            },
+            {
+              "by": "su",
+              "when": "2026-01-15T08:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "许清"
+            },
+            {
+              "by": "su",
+              "when": "2026-01-15T08:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "罗森"
+            },
+            {
+              "by": "su",
+              "when": "2026-02-05T08:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "唐棠"
+            },
+            {
+              "by": "su",
+              "when": "2026-04-30T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "葛文"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "house": {
+        "id": "family",
+        "name": "爸妈的老房子",
+        "signboard": "入冬之前，让爸妈住进不漏风、不用爬高的家。钱和力气，三家一起出。",
+        "founded": "2026-09-01T09:00:00Z",
+        "capacity": 15,
+        "me": "lei",
+        "members": [
+          {
+            "id": "jing",
+            "name": "何静",
+            "role": "host",
+            "joined": "2026-09-01T09:00:00Z"
+          },
+          {
+            "id": "lei",
+            "name": "何磊",
+            "role": "steward",
+            "joined": "2026-09-01T09:00:00Z"
+          },
+          {
+            "id": "ping",
+            "name": "何平",
+            "role": "guest",
+            "joined": "2026-09-01T09:00:00Z"
+          },
+          {
+            "id": "mum",
+            "name": "妈妈",
+            "role": "guest",
+            "joined": "2026-09-02T09:00:00Z"
+          },
+          {
+            "id": "dad",
+            "name": "爸爸",
+            "role": "guest",
+            "joined": "2026-09-02T09:00:00Z"
+          },
+          {
+            "id": "wei",
+            "name": "李薇",
+            "role": "guest",
+            "joined": "2026-09-03T09:00:00Z"
+          },
+          {
+            "id": "yu",
+            "name": "小雨",
+            "role": "guest",
+            "joined": "2026-09-10T09:00:00Z"
+          }
+        ],
+        "problems": [
+          {
+            "id": "0001",
+            "title": "卫生间改成爸妈能放心用的",
+            "summary": "蹲坑、没扶手、门口有台阶。爸去年冬天在这里滑倒过一次。",
+            "status": "active",
+            "by": "jing",
+            "opened": "2026-09-01T09:00:00Z",
+            "updated": "2026-10-18T14:40:00.000Z",
+            "workCount": 5,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0002",
+            "title": "三家怎么分摊费用",
+            "summary": "平摊最简单，但老三今年刚换工作。",
+            "status": "active",
+            "by": "lei",
+            "opened": "2026-10-12T09:00:00Z",
+            "updated": "2026-10-17T21:30:00.000Z",
+            "workCount": 1,
+            "pendingProposals": 1
+          },
+          {
+            "id": "0003",
+            "title": "找一个靠谱的施工队",
+            "summary": "三家报价都在成果里。要看过他们做过的老房子再定。",
+            "status": "active",
+            "by": "ping",
+            "opened": "2026-09-20T09:00:00Z",
+            "updated": "2026-10-11T09:00:00Z",
+            "workCount": 3,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0004",
+            "title": "施工期间爸妈住哪",
+            "summary": "小姨家有空房，已经说好了，11 月 10 日搬过去。",
+            "status": "solved",
+            "by": "wei",
+            "opened": "2026-09-15T09:00:00Z",
+            "updated": "2026-10-02T09:00:00Z",
+            "workCount": 1,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0005",
+            "title": "妈想留下的旧家具",
+            "summary": "樟木箱、缝纫机、外公做的方凳。装修时放哪？",
+            "status": "open",
+            "by": "mum",
+            "opened": "2026-10-14T09:00:00Z",
+            "updated": "2026-10-14T09:00:00Z",
+            "workCount": 0,
+            "pendingProposals": 0
+          }
+        ],
+        "recent": [
+          {
+            "by": "jing",
+            "act": "add-work",
+            "title": "卫生间改造方案（第二版）",
+            "when": "2026-10-18T14:40:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "ping",
+            "act": "propose",
+            "title": "分摊改为四成、四成、两成",
+            "when": "2026-10-17T21:30:00.000Z",
+            "problem": "0002"
+          },
+          {
+            "by": "lei",
+            "act": "add-work",
+            "title": "费用分摊表",
+            "when": "2026-10-15T19:00:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "mum",
+            "act": "open-problem",
+            "title": "妈想留下的旧家具",
+            "when": "2026-10-14T08:00:00.000Z",
+            "problem": "0005"
+          }
+        ],
+        "proposals": [
+          {
+            "id": "p1",
+            "title": "分摊改为四成、四成、两成",
+            "by": "ping",
+            "problem": "0002",
+            "when": "2026-10-17T21:30:00.000Z",
+            "reason": "我九月刚换工作，试用期工资少一截。今年我先出两成，明年三月前把差额补给大姐和二哥。",
+            "files": [
+              {
+                "path": "works/0002/cost-split.csv",
+                "title": "费用分摊表",
+                "kind": "table",
+                "change": "modify",
+                "lines": [
+                  {
+                    "kind": "same",
+                    "text": "项目　　　　金额"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "卫生间改造　¥28,000"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "何静　　　　三分之一"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "何磊　　　　三分之一"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "何平　　　　三分之一"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "何静　　　　40%"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "何磊　　　　40%"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "何平　　　　20%（明年三月前补齐差额）"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "decided": [
+          {
+            "id": "d0",
+            "title": "施工期间住小姨家",
+            "by": "wei",
+            "result": "adopted",
+            "when": "2026-10-02T09:00:00Z"
+          }
+        ],
+        "board": [
+          {
+            "id": "b2",
+            "by": "jing",
+            "title": "11 月 2 日（周日）家庭会，定施工队",
+            "text": "下午三点在爸妈家。请大家先看完三家报价和施工队做过的房子照片。能来的在下面回一句。",
+            "when": "2026-10-18T17:30:00.000Z",
+            "replies": [
+              {
+                "by": "mum",
+                "text": "我包饺子。",
+                "when": "2026-10-18T17:52:00.000Z",
+                "writtenAt": "2026-10-18T17:52:00.000Z"
+              },
+              {
+                "by": "ping",
+                "text": "我五点前到。",
+                "when": "2026-10-18T18:05:00.000Z",
+                "writtenAt": "2026-10-18T18:05:00.000Z"
+              }
+            ]
+          },
+          {
+            "id": "b1",
+            "by": "lei",
+            "title": "爸妈 11 月 10 日起住小姨家",
+            "text": "我开车送。冬衣和药先打包好，缺什么我再回来拿。",
+            "when": "2026-10-02T19:00:00.000Z",
+            "replies": [
+              {
+                "by": "dad",
+                "text": "被子我自己带。",
+                "when": "2026-10-03T06:15:00.000Z",
+                "writtenAt": "2026-10-03T06:15:00.000Z"
+              }
+            ]
+          }
+        ],
+        "sync": {
+          "state": "synced",
+          "unpushed": 0,
+          "lastSync": "2026-10-18T18:10:00.000Z"
+        }
+      },
+      "problems": [
+        {
+          "id": "0001",
+          "title": "卫生间改成爸妈能放心用的",
+          "summary": "蹲坑、没扶手、门口有台阶。爸去年冬天在这里滑倒过一次。",
+          "status": "active",
+          "by": "jing",
+          "opened": "2026-09-01T09:00:00Z",
+          "updated": "2026-10-18T14:40:00.000Z",
+          "workCount": 5,
+          "pendingProposals": 0,
+          "body": [
+            {
+              "heading": "现状",
+              "text": "蹲坑，没有扶手，门口一级 12 厘米的台阶，热水器装在门背后。爸去年一月在这里滑倒过。"
+            },
+            {
+              "heading": "目标",
+              "text": "坐便、淋浴区不留门槛、两处扶手、防滑地砖。十二月前完工。"
+            },
+            {
+              "heading": "约束",
+              "text": "预算三万以内；施工期间爸妈住小姨家，最多三周。"
+            }
+          ],
+          "works": [
+            {
+              "id": "works/0001/f1-bathroom-plan-2nd-version.md",
+              "kind": "plan",
+              "title": "卫生间改造方案（第二版）",
+              "by": "jing",
+              "when": "2026-10-18T14:40:00.000Z",
+              "size": 70,
+              "text": "拆掉门口台阶，地面整体找坡到地漏。\n蹲坑改坐便，旁边装一处竖扶手；淋浴区装一处横扶手，离地 80 厘米。\n热水器移到门对面的墙上，开关做低。",
+              "note": "对比了三家施工队的建议"
+            },
+            {
+              "id": "works/0001/f2-cost-split.csv",
+              "kind": "table",
+              "title": "费用分摊表",
+              "by": "lei",
+              "when": "2026-10-15T19:00:00.000Z",
+              "size": 173,
+              "text": "项目,金额\n卫生间改造,\"¥28,000\"\n何静,三分之一\n何磊,三分之一\n何平,三分之一",
+              "note": "三家平摊"
+            },
+            {
+              "id": "works/0001/f3-quotes-from-three-builders.csv",
+              "kind": "table",
+              "title": "三家施工队报价",
+              "by": "ping",
+              "when": "2026-10-11T10:00:00.000Z",
+              "size": 58,
+              "note": "最便宜的那家不包垃圾清运"
+            },
+            {
+              "id": "works/0001/f4-photos-and-measurements.png.ref.md",
+              "kind": "image",
+              "title": "现状照片和尺寸",
+              "by": "yu",
+              "when": "2026-10-06T16:00:00.000Z",
+              "size": 149941,
+              "blob": {
+                "hash": "sha256:fake-f4",
+                "type": "image/png",
+                "cached": true
+              }
+            },
+            {
+              "id": "works/0001/f5-shopping-list-rails-and-toilet.md",
+              "kind": "doc",
+              "title": "扶手和坐便选购清单",
+              "by": "wei",
+              "when": "2026-09-28T18:00:00.000Z",
+              "size": 46,
+              "note": "附适老化标准"
+            }
+          ],
+          "events": [
+            {
+              "by": "jing",
+              "act": "open-problem",
+              "title": "",
+              "when": "2026-09-01T18:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "jing",
+              "act": "set-status",
+              "status": "active",
+              "title": "",
+              "when": "2026-09-05T08:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "lei",
+              "act": "add-work",
+              "title": "费用分摊表",
+              "when": "2026-10-15T19:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "ping",
+              "act": "propose",
+              "title": "分摊改为四成、四成、两成",
+              "when": "2026-10-17T21:30:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "jing",
+              "act": "add-work",
+              "title": "卫生间改造方案（第二版）",
+              "when": "2026-10-18T14:40:00.000Z",
+              "problem": "0001"
+            }
+          ],
+          "notes": [
+            {
+              "by": "mum",
+              "text": "扶手别装太高，我够不着。",
+              "when": "2026-10-16T07:20:00.000Z",
+              "writtenAt": "2026-10-16T07:20:00.000Z"
+            },
+            {
+              "by": "lei",
+              "text": "按 80 厘米装。妈，下回我带尺子来，您站着比一下。",
+              "when": "2026-10-16T19:05:00.000Z",
+              "writtenAt": "2026-10-16T19:05:00.000Z"
+            },
+            {
+              "by": "yu",
+              "text": "防滑砖我看了三款，照片传到“现状照片”里了，奶奶喜欢浅色那款。",
+              "when": "2026-10-18T12:10:00.000Z",
+              "writtenAt": "2026-10-18T12:10:00.000Z"
+            }
+          ]
+        },
+        {
+          "id": "0002",
+          "title": "三家怎么分摊费用",
+          "summary": "平摊最简单，但老三今年刚换工作。",
+          "status": "active",
+          "by": "lei",
+          "opened": "2026-10-12T09:00:00Z",
+          "updated": "2026-10-17T21:30:00.000Z",
+          "workCount": 1,
+          "pendingProposals": 1,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0003",
+          "title": "找一个靠谱的施工队",
+          "summary": "三家报价都在成果里。要看过他们做过的老房子再定。",
+          "status": "active",
+          "by": "ping",
+          "opened": "2026-09-20T09:00:00Z",
+          "updated": "2026-10-11T09:00:00Z",
+          "workCount": 3,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0004",
+          "title": "施工期间爸妈住哪",
+          "summary": "小姨家有空房，已经说好了，11 月 10 日搬过去。",
+          "status": "solved",
+          "by": "wei",
+          "opened": "2026-09-15T09:00:00Z",
+          "updated": "2026-10-02T09:00:00Z",
+          "workCount": 1,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0005",
+          "title": "妈想留下的旧家具",
+          "summary": "樟木箱、缝纫机、外公做的方凳。装修时放哪？",
+          "status": "open",
+          "by": "mum",
+          "opened": "2026-10-14T09:00:00Z",
+          "updated": "2026-10-14T09:00:00Z",
+          "workCount": 0,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        }
+      ],
+      "files": [
+        {
+          "path": "problems/0001-make-the-bathroom-safe-for-mum-and-dad.md",
+          "kind": "problem",
+          "problem": "0001",
+          "text": "---\ntitle: 卫生间改成爸妈能放心用的\nstatus: active\n---\n蹲坑、没扶手、门口有台阶。爸去年冬天在这里滑倒过一次。\n\n## 现状\n蹲坑，没有扶手，门口一级 12 厘米的台阶，热水器装在门背后。爸去年一月在这里滑倒过。\n\n## 目标\n坐便、淋浴区不留门槛、两处扶手、防滑地砖。十二月前完工。\n\n## 约束\n预算三万以内；施工期间爸妈住小姨家，最多三周。",
+          "history": [
+            {
+              "by": "jing",
+              "when": "2026-09-05T08:00:00.000Z",
+              "act": "set-status",
+              "problem": "0001",
+              "title": "active"
+            },
+            {
+              "by": "jing",
+              "when": "2026-09-01T18:00:00.000Z",
+              "act": "open-problem",
+              "problem": "0001",
+              "title": "卫生间改成爸妈能放心用的"
+            }
+          ]
+        },
+        {
+          "path": "problems/0002-how-the-three-families-split-the-cost.md",
+          "kind": "problem",
+          "problem": "0002",
+          "text": "---\ntitle: 三家怎么分摊费用\nstatus: active\n---\n平摊最简单，但老三今年刚换工作。",
+          "history": [
+            {
+              "by": "lei",
+              "when": "2026-10-12T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0002",
+              "title": "三家怎么分摊费用"
+            }
+          ]
+        },
+        {
+          "path": "problems/0003-find-a-builder-we-can-trust.md",
+          "kind": "problem",
+          "problem": "0003",
+          "text": "---\ntitle: 找一个靠谱的施工队\nstatus: active\n---\n三家报价都在成果里。要看过他们做过的老房子再定。",
+          "history": [
+            {
+              "by": "ping",
+              "when": "2026-09-20T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0003",
+              "title": "找一个靠谱的施工队"
+            }
+          ]
+        },
+        {
+          "path": "problems/0004-where-mum-and-dad-stay-during-the-work.md",
+          "kind": "problem",
+          "problem": "0004",
+          "text": "---\ntitle: 施工期间爸妈住哪\nstatus: solved\n---\n小姨家有空房，已经说好了，11 月 10 日搬过去。",
+          "history": [
+            {
+              "by": "wei",
+              "when": "2026-09-15T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0004",
+              "title": "施工期间爸妈住哪"
+            }
+          ]
+        },
+        {
+          "path": "problems/0005-the-old-furniture-mum-wants-to-keep.md",
+          "kind": "problem",
+          "problem": "0005",
+          "text": "---\ntitle: 妈想留下的旧家具\nstatus: open\n---\n樟木箱、缝纫机、外公做的方凳。装修时放哪？",
+          "history": [
+            {
+              "by": "mum",
+              "when": "2026-10-14T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0005",
+              "title": "妈想留下的旧家具"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/f1-bathroom-plan-2nd-version.md",
+          "kind": "plan",
+          "problem": "0001",
+          "text": "---\ntitle: 卫生间改造方案（第二版）\nkind: plan\nnote: 对比了三家施工队的建议\n---\n拆掉门口台阶，地面整体找坡到地漏。\n蹲坑改坐便，旁边装一处竖扶手；淋浴区装一处横扶手，离地 80 厘米。\n热水器移到门对面的墙上，开关做低。",
+          "history": [
+            {
+              "by": "jing",
+              "when": "2026-10-18T14:40:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "卫生间改造方案（第二版）"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/f2-cost-split.csv",
+          "kind": "table",
+          "problem": "0001",
+          "text": "项目,金额\n卫生间改造,\"¥28,000\"\n何静,三分之一\n何磊,三分之一\n何平,三分之一",
+          "history": [
+            {
+              "by": "lei",
+              "when": "2026-10-15T19:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "费用分摊表",
+              "diff": [
+                {
+                  "kind": "add",
+                  "text": "项目　　　　金额"
+                },
+                {
+                  "kind": "add",
+                  "text": "卫生间改造　¥28,000"
+                },
+                {
+                  "kind": "add",
+                  "text": "何静　　　　三分之一"
+                },
+                {
+                  "kind": "add",
+                  "text": "何磊　　　　三分之一"
+                },
+                {
+                  "kind": "add",
+                  "text": "何平　　　　三分之一"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "works/0001/f3-quotes-from-three-builders.csv",
+          "kind": "table",
+          "problem": "0001",
+          "text": null,
+          "history": [
+            {
+              "by": "ping",
+              "when": "2026-10-11T10:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "三家施工队报价"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/f4-photos-and-measurements.png.ref.md",
+          "kind": "image",
+          "problem": "0001",
+          "text": "---\ntitle: 现状照片和尺寸\nblob: sha256:fake-f4\nsize: 149941\ntype: image/png\n---",
+          "history": [
+            {
+              "by": "yu",
+              "when": "2026-10-06T16:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "现状照片和尺寸"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/f5-shopping-list-rails-and-toilet.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 扶手和坐便选购清单\nnote: 附适老化标准\n---\n",
+          "history": [
+            {
+              "by": "wei",
+              "when": "2026-09-28T18:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "扶手和坐便选购清单"
+            }
+          ]
+        },
+        {
+          "path": "board/b2.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 11 月 2 日（周日）家庭会，定施工队\n---\n下午三点在爸妈家。请大家先看完三家报价和施工队做过的房子照片。能来的在下面回一句。",
+          "history": [
+            {
+              "by": "jing",
+              "when": "2026-10-18T17:30:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "11 月 2 日（周日）家庭会，定施工队"
+            }
+          ]
+        },
+        {
+          "path": "board/b1.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 爸妈 11 月 10 日起住小姨家\n---\n我开车送。冬衣和药先打包好，缺什么我再回来拿。",
+          "history": [
+            {
+              "by": "lei",
+              "when": "2026-10-02T19:00:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "爸妈 11 月 10 日起住小姨家"
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261016T092000Z-mum.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "扶手别装太高，我够不着。",
+          "history": [
+            {
+              "by": "mum",
+              "when": "2026-10-16T07:20:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261016T210500Z-lei.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "按 80 厘米装。妈，下回我带尺子来，您站着比一下。",
+          "history": [
+            {
+              "by": "lei",
+              "when": "2026-10-16T19:05:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261018T141000Z-yu.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "防滑砖我看了三款，照片传到“现状照片”里了，奶奶喜欢浅色那款。",
+          "history": [
+            {
+              "by": "yu",
+              "when": "2026-10-18T12:10:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b2/20261018T195200Z-mum.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "我包饺子。",
+          "history": [
+            {
+              "by": "mum",
+              "when": "2026-10-18T17:52:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "11 月 2 日（周日）家庭会，定施工队"
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b2/20261018T200500Z-ping.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "我五点前到。",
+          "history": [
+            {
+              "by": "ping",
+              "when": "2026-10-18T18:05:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "11 月 2 日（周日）家庭会，定施工队"
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b1/20261003T081500Z-dad.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "被子我自己带。",
+          "history": [
+            {
+              "by": "dad",
+              "when": "2026-10-03T06:15:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "爸妈 11 月 10 日起住小姨家"
+            }
+          ]
+        },
+        {
+          "path": ".teahouse/members.toml",
+          "kind": "members",
+          "problem": "meta",
+          "text": "[[member]]\nid = \"jing\"\nname = \"何静\"\nrole = \"host\"\njoined = 2026-09-01\n\n[[member]]\nid = \"lei\"\nname = \"何磊\"\nrole = \"steward\"\njoined = 2026-09-01\n\n[[member]]\nid = \"ping\"\nname = \"何平\"\nrole = \"guest\"\njoined = 2026-09-01\n\n[[member]]\nid = \"mum\"\nname = \"妈妈\"\nrole = \"guest\"\njoined = 2026-09-02\n\n[[member]]\nid = \"dad\"\nname = \"爸爸\"\nrole = \"guest\"\njoined = 2026-09-02\n\n[[member]]\nid = \"wei\"\nname = \"李薇\"\nrole = \"guest\"\njoined = 2026-09-03\n\n[[member]]\nid = \"yu\"\nname = \"小雨\"\nrole = \"guest\"\njoined = 2026-09-10",
+          "history": [
+            {
+              "by": "jing",
+              "when": "2026-09-01T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "何静"
+            },
+            {
+              "by": "jing",
+              "when": "2026-09-01T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "何磊"
+            },
+            {
+              "by": "jing",
+              "when": "2026-09-01T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "何平"
+            },
+            {
+              "by": "jing",
+              "when": "2026-09-02T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "妈妈"
+            },
+            {
+              "by": "jing",
+              "when": "2026-09-02T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "爸爸"
+            },
+            {
+              "by": "jing",
+              "when": "2026-09-03T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "李薇"
+            },
+            {
+              "by": "jing",
+              "when": "2026-09-10T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "小雨"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "house": {
+        "id": "startup",
+        "name": "三人创业团队",
+        "signboard": "让小餐馆不再手写账本。年底前，十个付费用户。",
+        "founded": "2026-08-01T09:00:00Z",
+        "capacity": 15,
+        "me": "song",
+        "members": [
+          {
+            "id": "linz",
+            "name": "林舟",
+            "role": "host",
+            "joined": "2026-08-01T09:00:00Z"
+          },
+          {
+            "id": "song",
+            "name": "宋雨桐",
+            "role": "steward",
+            "joined": "2026-08-01T09:00:00Z"
+          },
+          {
+            "id": "ma",
+            "name": "马克",
+            "role": "guest",
+            "joined": "2026-08-03T09:00:00Z"
+          }
+        ],
+        "problems": [
+          {
+            "id": "0001",
+            "title": "找到前十个付费用户",
+            "summary": "现在 3 家在试用，0 家付费。年底前要到 10 家。",
+            "status": "active",
+            "by": "linz",
+            "opened": "2026-08-05T09:00:00Z",
+            "updated": "2026-10-18T13:20:00.000Z",
+            "workCount": 4,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0002",
+            "title": "定价：按月还是按年",
+            "summary": "小餐馆现金流紧，年付可能吓跑人；月付流失率又高。",
+            "status": "active",
+            "by": "song",
+            "opened": "2026-09-20T09:00:00Z",
+            "updated": "2026-10-17T21:10:00.000Z",
+            "workCount": 2,
+            "pendingProposals": 1
+          },
+          {
+            "id": "0003",
+            "title": "注册公司与开对公账户",
+            "summary": "已在 9 月完成，营业执照和开户回单都在成果里。",
+            "status": "solved",
+            "by": "linz",
+            "opened": "2026-08-02T09:00:00Z",
+            "updated": "2026-09-12T09:00:00Z",
+            "workCount": 4,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0004",
+            "title": "第一版能不能离线用",
+            "summary": "后厨信号差。离线要多做三周，值不值得？",
+            "status": "open",
+            "by": "ma",
+            "opened": "2026-10-10T09:00:00Z",
+            "updated": "2026-10-10T09:00:00Z",
+            "workCount": 1,
+            "pendingProposals": 0
+          }
+        ],
+        "recent": [
+          {
+            "by": "ma",
+            "act": "add-work",
+            "title": "访谈记录（14 家餐馆）",
+            "when": "2026-10-18T13:20:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "ma",
+            "act": "propose",
+            "title": "基础版降到每月 49 元",
+            "when": "2026-10-17T21:10:00.000Z",
+            "problem": "0002"
+          },
+          {
+            "by": "song",
+            "act": "update-work",
+            "title": "定价表",
+            "when": "2026-10-14T09:00:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "ma",
+            "act": "open-problem",
+            "title": "第一版能不能离线用",
+            "when": "2026-10-10T11:00:00.000Z",
+            "problem": "0004"
+          }
+        ],
+        "proposals": [
+          {
+            "id": "p1",
+            "title": "基础版降到每月 49 元",
+            "by": "ma",
+            "problem": "0002",
+            "when": "2026-10-17T21:10:00.000Z",
+            "reason": "14 家里有 9 家说现在用的记账软件不超过 50 元。69 元一出口就被比下去了。连锁版不动。",
+            "files": [
+              {
+                "path": "works/0002/price-list.csv",
+                "title": "定价表",
+                "kind": "table",
+                "change": "modify",
+                "lines": [
+                  {
+                    "kind": "same",
+                    "text": "版本　　　月付　　年付"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "基础版　　¥69　　 ¥690"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "基础版　　¥49　　 ¥490"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "连锁版　　¥199　　¥1,990"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "前三个月半价，仅限前十家。"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "decided": [
+          {
+            "id": "d0",
+            "title": "用拍小票代替手动录入",
+            "by": "ma",
+            "result": "adopted",
+            "when": "2026-09-02T09:00:00Z"
+          }
+        ],
+        "board": [
+          {
+            "id": "b1",
+            "by": "linz",
+            "title": "下周二起，周会改到早上九点",
+            "text": "中午要跑餐馆，只有早上能凑齐三个人。会上只看三件事：付费用户数、流失原因、下周谁去拜访哪几家。",
+            "when": "2026-10-17T07:00:00.000Z",
+            "replies": [
+              {
+                "by": "ma",
+                "text": "好，我九点前把访谈记录整理完。",
+                "when": "2026-10-17T07:40:00.000Z",
+                "writtenAt": "2026-10-17T07:40:00.000Z"
+              }
+            ]
+          }
+        ],
+        "sync": {
+          "state": "synced",
+          "unpushed": 0,
+          "lastSync": "2026-10-18T18:10:00.000Z"
+        }
+      },
+      "problems": [
+        {
+          "id": "0001",
+          "title": "找到前十个付费用户",
+          "summary": "现在 3 家在试用，0 家付费。年底前要到 10 家。",
+          "status": "active",
+          "by": "linz",
+          "opened": "2026-08-05T09:00:00Z",
+          "updated": "2026-10-18T13:20:00.000Z",
+          "workCount": 4,
+          "pendingProposals": 0,
+          "body": [
+            {
+              "heading": "现状",
+              "text": "访谈了 14 家餐馆，3 家愿意试用。试用的都说好用，但没人主动问价格。"
+            },
+            {
+              "heading": "目标",
+              "text": "12 月 31 日前，10 家餐馆按月付费，且连续用满一个月。"
+            }
+          ],
+          "works": [
+            {
+              "id": "works/0001/s1-interview-notes-14-restaurants.md",
+              "kind": "doc",
+              "title": "访谈记录（14 家餐馆）",
+              "by": "ma",
+              "when": "2026-10-18T13:20:00.000Z",
+              "size": 61,
+              "text": "“月底对账要花老板娘两个晚上。”——第 9 家，面馆，6 张桌\n“只要能拍小票就行，别让我打字。”——第 12 家，烧烤，11 张桌",
+              "note": "按城区和店面大小整理"
+            },
+            {
+              "id": "works/0001/s2-price-list.csv",
+              "kind": "table",
+              "title": "定价表",
+              "by": "song",
+              "when": "2026-10-14T09:00:00.000Z",
+              "size": 131,
+              "text": "版本,月付,年付\n基础版,¥69,¥690\n连锁版,¥199,\"¥1,990\"",
+              "note": "基础版 / 连锁版"
+            },
+            {
+              "id": "works/0001/s3-trial-agreement-template.md",
+              "kind": "doc",
+              "title": "试用协议模板",
+              "by": "linz",
+              "when": "2026-10-06T14:00:00.000Z",
+              "size": 18
+            },
+            {
+              "id": "works/0001/s4-demo-video-script.md",
+              "kind": "plan",
+              "title": "演示视频脚本",
+              "by": "song",
+              "when": "2026-09-29T08:00:00.000Z",
+              "size": 49,
+              "note": "90 秒，拍小票到出月报"
+            }
+          ],
+          "events": [
+            {
+              "by": "linz",
+              "act": "open-problem",
+              "title": "",
+              "when": "2026-08-05T19:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "linz",
+              "act": "set-status",
+              "status": "active",
+              "title": "",
+              "when": "2026-08-06T07:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "linz",
+              "act": "add-work",
+              "title": "试用协议模板",
+              "when": "2026-10-06T14:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "song",
+              "act": "update-work",
+              "title": "定价表",
+              "when": "2026-10-14T09:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "ma",
+              "act": "add-work",
+              "title": "访谈记录（14 家餐馆）",
+              "when": "2026-10-18T13:20:00.000Z",
+              "problem": "0001"
+            }
+          ],
+          "notes": [
+            {
+              "by": "ma",
+              "text": "第 9 家和第 12 家都说，只要能拍小票就愿意试。下周先去这两家。",
+              "when": "2026-10-18T13:30:00.000Z",
+              "writtenAt": "2026-10-18T13:30:00.000Z"
+            },
+            {
+              "by": "linz",
+              "text": "同意。去之前把演示视频剪到 60 秒以内。",
+              "when": "2026-10-18T15:05:00.000Z",
+              "writtenAt": "2026-10-18T15:05:00.000Z"
+            }
+          ]
+        },
+        {
+          "id": "0002",
+          "title": "定价：按月还是按年",
+          "summary": "小餐馆现金流紧，年付可能吓跑人；月付流失率又高。",
+          "status": "active",
+          "by": "song",
+          "opened": "2026-09-20T09:00:00Z",
+          "updated": "2026-10-17T21:10:00.000Z",
+          "workCount": 2,
+          "pendingProposals": 1,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0003",
+          "title": "注册公司与开对公账户",
+          "summary": "已在 9 月完成，营业执照和开户回单都在成果里。",
+          "status": "solved",
+          "by": "linz",
+          "opened": "2026-08-02T09:00:00Z",
+          "updated": "2026-09-12T09:00:00Z",
+          "workCount": 4,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0004",
+          "title": "第一版能不能离线用",
+          "summary": "后厨信号差。离线要多做三周，值不值得？",
+          "status": "open",
+          "by": "ma",
+          "opened": "2026-10-10T09:00:00Z",
+          "updated": "2026-10-10T09:00:00Z",
+          "workCount": 1,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        }
+      ],
+      "files": [
+        {
+          "path": "problems/0001-find-our-first-ten-paying-customers.md",
+          "kind": "problem",
+          "problem": "0001",
+          "text": "---\ntitle: 找到前十个付费用户\nstatus: active\n---\n现在 3 家在试用，0 家付费。年底前要到 10 家。\n\n## 现状\n访谈了 14 家餐馆，3 家愿意试用。试用的都说好用，但没人主动问价格。\n\n## 目标\n12 月 31 日前，10 家餐馆按月付费，且连续用满一个月。",
+          "history": [
+            {
+              "by": "linz",
+              "when": "2026-08-06T07:00:00.000Z",
+              "act": "set-status",
+              "problem": "0001",
+              "title": "active"
+            },
+            {
+              "by": "linz",
+              "when": "2026-08-05T19:00:00.000Z",
+              "act": "open-problem",
+              "problem": "0001",
+              "title": "找到前十个付费用户"
+            }
+          ]
+        },
+        {
+          "path": "problems/0002-pricing-monthly-or-yearly.md",
+          "kind": "problem",
+          "problem": "0002",
+          "text": "---\ntitle: 定价：按月还是按年\nstatus: active\n---\n小餐馆现金流紧，年付可能吓跑人；月付流失率又高。",
+          "history": [
+            {
+              "by": "song",
+              "when": "2026-09-20T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0002",
+              "title": "定价：按月还是按年"
+            }
+          ]
+        },
+        {
+          "path": "problems/0003-register-the-company-and-open-a-business-account.md",
+          "kind": "problem",
+          "problem": "0003",
+          "text": "---\ntitle: 注册公司与开对公账户\nstatus: solved\n---\n已在 9 月完成，营业执照和开户回单都在成果里。",
+          "history": [
+            {
+              "by": "linz",
+              "when": "2026-08-02T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0003",
+              "title": "注册公司与开对公账户"
+            }
+          ]
+        },
+        {
+          "path": "problems/0004-should-the-first-version-work-offline.md",
+          "kind": "problem",
+          "problem": "0004",
+          "text": "---\ntitle: 第一版能不能离线用\nstatus: open\n---\n后厨信号差。离线要多做三周，值不值得？",
+          "history": [
+            {
+              "by": "ma",
+              "when": "2026-10-10T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0004",
+              "title": "第一版能不能离线用"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/s1-interview-notes-14-restaurants.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 访谈记录（14 家餐馆）\nnote: 按城区和店面大小整理\n---\n“月底对账要花老板娘两个晚上。”——第 9 家，面馆，6 张桌\n“只要能拍小票就行，别让我打字。”——第 12 家，烧烤，11 张桌",
+          "history": [
+            {
+              "by": "ma",
+              "when": "2026-10-18T13:20:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "访谈记录（14 家餐馆）"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/s2-price-list.csv",
+          "kind": "table",
+          "problem": "0001",
+          "text": "版本,月付,年付\n基础版,¥69,¥690\n连锁版,¥199,\"¥1,990\"",
+          "history": [
+            {
+              "by": "song",
+              "when": "2026-10-14T09:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "定价表",
+              "diff": [
+                {
+                  "kind": "add",
+                  "text": "版本　　　月付　　年付"
+                },
+                {
+                  "kind": "add",
+                  "text": "基础版　　¥69　　 ¥690"
+                },
+                {
+                  "kind": "add",
+                  "text": "连锁版　　¥199　　¥1,990"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "works/0001/s3-trial-agreement-template.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 试用协议模板\n---\n",
+          "history": [
+            {
+              "by": "linz",
+              "when": "2026-10-06T14:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "试用协议模板"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/s4-demo-video-script.md",
+          "kind": "plan",
+          "problem": "0001",
+          "text": "---\ntitle: 演示视频脚本\nkind: plan\nnote: 90 秒，拍小票到出月报\n---\n",
+          "history": [
+            {
+              "by": "song",
+              "when": "2026-09-29T08:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "演示视频脚本"
+            }
+          ]
+        },
+        {
+          "path": "board/b1.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 下周二起，周会改到早上九点\n---\n中午要跑餐馆，只有早上能凑齐三个人。会上只看三件事：付费用户数、流失原因、下周谁去拜访哪几家。",
+          "history": [
+            {
+              "by": "linz",
+              "when": "2026-10-17T07:00:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "下周二起，周会改到早上九点"
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261018T153000Z-ma.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "第 9 家和第 12 家都说，只要能拍小票就愿意试。下周先去这两家。",
+          "history": [
+            {
+              "by": "ma",
+              "when": "2026-10-18T13:30:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261018T170500Z-linz.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "同意。去之前把演示视频剪到 60 秒以内。",
+          "history": [
+            {
+              "by": "linz",
+              "when": "2026-10-18T15:05:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b1/20261017T094000Z-ma.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "好，我九点前把访谈记录整理完。",
+          "history": [
+            {
+              "by": "ma",
+              "when": "2026-10-17T07:40:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "下周二起，周会改到早上九点"
+            }
+          ]
+        },
+        {
+          "path": ".teahouse/members.toml",
+          "kind": "members",
+          "problem": "meta",
+          "text": "[[member]]\nid = \"linz\"\nname = \"林舟\"\nrole = \"host\"\njoined = 2026-08-01\n\n[[member]]\nid = \"song\"\nname = \"宋雨桐\"\nrole = \"steward\"\njoined = 2026-08-01\n\n[[member]]\nid = \"ma\"\nname = \"马克\"\nrole = \"guest\"\njoined = 2026-08-03",
+          "history": [
+            {
+              "by": "linz",
+              "when": "2026-08-01T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "林舟"
+            },
+            {
+              "by": "linz",
+              "when": "2026-08-01T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "宋雨桐"
+            },
+            {
+              "by": "linz",
+              "when": "2026-08-03T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "马克"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "house": {
+        "id": "band",
+        "name": "旧鞋带乐队",
+        "signboard": "十二月，第一场演出。四十张票，不亏钱就算赢。",
+        "founded": "2026-09-12T09:00:00Z",
+        "capacity": 15,
+        "me": "lu",
+        "members": [
+          {
+            "id": "lu",
+            "name": "鹿鸣",
+            "role": "host",
+            "joined": "2026-09-12T09:00:00Z"
+          },
+          {
+            "id": "fang",
+            "name": "方圆",
+            "role": "steward",
+            "joined": "2026-09-12T09:00:00Z"
+          },
+          {
+            "id": "zhu",
+            "name": "小朱",
+            "role": "guest",
+            "joined": "2026-09-12T09:00:00Z"
+          },
+          {
+            "id": "tao",
+            "name": "陶然",
+            "role": "guest",
+            "joined": "2026-09-13T09:00:00Z"
+          },
+          {
+            "id": "susu",
+            "name": "苏苏",
+            "role": "guest",
+            "joined": "2026-09-20T09:00:00Z"
+          },
+          {
+            "id": "ji",
+            "name": "老季",
+            "role": "guest",
+            "joined": "2026-10-01T09:00:00Z"
+          }
+        ],
+        "problems": [
+          {
+            "id": "0001",
+            "title": "演出场地定哪里",
+            "summary": "看了三处地方，各有各的毛病。要能现场打鼓，还要能卖出四十张票。",
+            "status": "active",
+            "by": "fang",
+            "opened": "2026-09-15T09:00:00Z",
+            "updated": "2026-10-18T20:40:00.000Z",
+            "workCount": 4,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0002",
+            "title": "海报谁来做",
+            "summary": "苏苏答应画，但要先定场地和日期才能出终稿。",
+            "status": "active",
+            "by": "lu",
+            "opened": "2026-09-20T09:00:00Z",
+            "updated": "2026-10-10T09:00:00Z",
+            "workCount": 3,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0003",
+            "title": "曲目定八首还是十首",
+            "summary": "十首会更完整，但新歌《第七站》还没排熟。",
+            "status": "open",
+            "by": "tao",
+            "opened": "2026-10-11T09:00:00Z",
+            "updated": "2026-10-17T09:00:00Z",
+            "workCount": 1,
+            "pendingProposals": 1
+          },
+          {
+            "id": "0004",
+            "title": "每周固定排练时间",
+            "summary": "定在周三晚上七点到十点，地方是方圆家楼下的琴房。",
+            "status": "solved",
+            "by": "zhu",
+            "opened": "2026-09-13T09:00:00Z",
+            "updated": "2026-09-18T09:00:00Z",
+            "workCount": 1,
+            "pendingProposals": 0
+          }
+        ],
+        "recent": [
+          {
+            "by": "fang",
+            "act": "add-work",
+            "title": "三处场地对比",
+            "when": "2026-10-18T20:40:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "tao",
+            "act": "propose",
+            "title": "曲目单：用新歌《第七站》换掉《夏天的雨》",
+            "when": "2026-10-16T23:20:00.000Z",
+            "problem": "0003"
+          },
+          {
+            "by": "lu",
+            "act": "add-work",
+            "title": "曲目单",
+            "when": "2026-10-12T21:10:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "susu",
+            "act": "add-work",
+            "title": "海报草图（三版）",
+            "when": "2026-10-10T16:30:00.000Z",
+            "problem": "0002"
+          }
+        ],
+        "proposals": [
+          {
+            "id": "p1",
+            "title": "曲目单：用新歌《第七站》换掉《夏天的雨》",
+            "by": "tao",
+            "problem": "0003",
+            "when": "2026-10-16T23:20:00.000Z",
+            "reason": "《夏天的雨》和《天台》太像了，连着听会腻。《第七站》上周排了两遍，副歌已经稳了。",
+            "files": [
+              {
+                "path": "works/0003/setlist.md",
+                "title": "曲目单",
+                "kind": "doc",
+                "change": "modify",
+                "lines": [
+                  {
+                    "kind": "same",
+                    "text": "1. 旧鞋带"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "2. 夏天的雨"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "2. 第七站（新歌）"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "3. 十三路末班车"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "4. 天台"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "5. 慢一点（翻唱）"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "decided": [
+          {
+            "id": "d0",
+            "title": "排练定在周三晚上",
+            "by": "zhu",
+            "result": "adopted",
+            "when": "2026-09-18T09:00:00Z"
+          }
+        ],
+        "board": [
+          {
+            "id": "b1",
+            "by": "lu",
+            "title": "本周三排练：从头到尾走一遍",
+            "text": "按曲目单顺序，中间不停。苏苏会来拍几张照片做海报。老季如果有空，帮忙听一下音量。",
+            "when": "2026-10-15T10:00:00.000Z",
+            "replies": [
+              {
+                "by": "susu",
+                "text": "八点到，带相机。",
+                "when": "2026-10-15T11:10:00.000Z",
+                "writtenAt": "2026-10-15T11:10:00.000Z"
+              },
+              {
+                "by": "ji",
+                "text": "能来，九点前到。",
+                "when": "2026-10-15T17:45:00.000Z",
+                "writtenAt": "2026-10-15T17:45:00.000Z"
+              }
+            ]
+          }
+        ],
+        "sync": {
+          "state": "synced",
+          "unpushed": 0,
+          "lastSync": "2026-10-18T18:10:00.000Z"
+        }
+      },
+      "problems": [
+        {
+          "id": "0001",
+          "title": "演出场地定哪里",
+          "summary": "看了三处地方，各有各的毛病。要能现场打鼓，还要能卖出四十张票。",
+          "status": "active",
+          "by": "fang",
+          "opened": "2026-09-15T09:00:00Z",
+          "updated": "2026-10-18T20:40:00.000Z",
+          "workCount": 4,
+          "pendingProposals": 0,
+          "body": [
+            {
+              "heading": "现状",
+              "text": "看了三处：学校旁的小 livehouse（80 人，场租 1500 元）、咖啡馆二楼（40 人，不收场租但有最低消费）、朋友的仓库（地方大，没有音响）。"
+            },
+            {
+              "heading": "目标",
+              "text": "12 月 13 日或 20 日，周六晚上，一个能卖出四十张票的地方。"
+            },
+            {
+              "heading": "约束",
+              "text": "总预算三千元；鼓必须能真打，只能用电鼓的地方不考虑。"
+            }
+          ],
+          "works": [
+            {
+              "id": "works/0001/m1-three-venues-compared.md",
+              "kind": "plan",
+              "title": "三处场地对比",
+              "by": "fang",
+              "when": "2026-10-18T20:40:00.000Z",
+              "size": 52,
+              "text": "livehouse：80 人，场租 1500，音响齐全，鼓可以真打。\n咖啡馆：40 人，不收场租，最低消费 1200，只能用电鼓。\n仓库：人数不限，不收钱，没有音响，要老季借一套。",
+              "note": "容量、费用、能不能打鼓"
+            },
+            {
+              "id": "works/0001/m2-gig-budget.csv",
+              "kind": "table",
+              "title": "演出预算",
+              "by": "fang",
+              "when": "2026-10-16T18:00:00.000Z",
+              "size": 35,
+              "note": "按卖出 40 张票算"
+            },
+            {
+              "id": "works/0001/m3-setlist.md",
+              "kind": "doc",
+              "title": "曲目单",
+              "by": "lu",
+              "when": "2026-10-12T21:10:00.000Z",
+              "size": 118,
+              "text": "1. 旧鞋带\n2. 夏天的雨\n3. 十三路末班车\n4. 天台\n5. 慢一点（翻唱）",
+              "note": "八首，约 40 分钟"
+            },
+            {
+              "id": "works/0001/m4-poster-sketches-three-versions.png.ref.md",
+              "kind": "image",
+              "title": "海报草图（三版）",
+              "by": "susu",
+              "when": "2026-10-10T16:30:00.000Z",
+              "size": 150158,
+              "blob": {
+                "hash": "sha256:fake-m4",
+                "type": "image/png",
+                "cached": true
+              }
+            }
+          ],
+          "events": [
+            {
+              "by": "fang",
+              "act": "open-problem",
+              "title": "",
+              "when": "2026-09-15T19:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "lu",
+              "act": "set-status",
+              "status": "active",
+              "title": "",
+              "when": "2026-09-16T08:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "lu",
+              "act": "add-work",
+              "title": "曲目单",
+              "when": "2026-10-12T21:10:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "tao",
+              "act": "propose",
+              "title": "曲目单：用新歌《第七站》换掉《夏天的雨》",
+              "when": "2026-10-16T23:20:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "fang",
+              "act": "add-work",
+              "title": "三处场地对比",
+              "when": "2026-10-18T20:40:00.000Z",
+              "problem": "0001"
+            }
+          ],
+          "notes": [
+            {
+              "by": "zhu",
+              "text": "咖啡馆只能用电鼓，我不太愿意。",
+              "when": "2026-10-18T20:55:00.000Z",
+              "writtenAt": "2026-10-18T20:55:00.000Z"
+            },
+            {
+              "by": "fang",
+              "text": "那就 livehouse 或者仓库。老季，仓库那边的音响你能借到吗？",
+              "when": "2026-10-18T21:02:00.000Z",
+              "writtenAt": "2026-10-18T21:02:00.000Z"
+            },
+            {
+              "by": "ji",
+              "text": "能借一套小的，四十个人够用。但搬的时候要两个人帮忙。",
+              "when": "2026-10-18T21:20:00.000Z",
+              "writtenAt": "2026-10-18T21:20:00.000Z"
+            }
+          ]
+        },
+        {
+          "id": "0002",
+          "title": "海报谁来做",
+          "summary": "苏苏答应画，但要先定场地和日期才能出终稿。",
+          "status": "active",
+          "by": "lu",
+          "opened": "2026-09-20T09:00:00Z",
+          "updated": "2026-10-10T09:00:00Z",
+          "workCount": 3,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0003",
+          "title": "曲目定八首还是十首",
+          "summary": "十首会更完整，但新歌《第七站》还没排熟。",
+          "status": "open",
+          "by": "tao",
+          "opened": "2026-10-11T09:00:00Z",
+          "updated": "2026-10-17T09:00:00Z",
+          "workCount": 1,
+          "pendingProposals": 1,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0004",
+          "title": "每周固定排练时间",
+          "summary": "定在周三晚上七点到十点，地方是方圆家楼下的琴房。",
+          "status": "solved",
+          "by": "zhu",
+          "opened": "2026-09-13T09:00:00Z",
+          "updated": "2026-09-18T09:00:00Z",
+          "workCount": 1,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        }
+      ],
+      "files": [
+        {
+          "path": "problems/0001-where-do-we-play.md",
+          "kind": "problem",
+          "problem": "0001",
+          "text": "---\ntitle: 演出场地定哪里\nstatus: active\n---\n看了三处地方，各有各的毛病。要能现场打鼓，还要能卖出四十张票。\n\n## 现状\n看了三处：学校旁的小 livehouse（80 人，场租 1500 元）、咖啡馆二楼（40 人，不收场租但有最低消费）、朋友的仓库（地方大，没有音响）。\n\n## 目标\n12 月 13 日或 20 日，周六晚上，一个能卖出四十张票的地方。\n\n## 约束\n总预算三千元；鼓必须能真打，只能用电鼓的地方不考虑。",
+          "history": [
+            {
+              "by": "lu",
+              "when": "2026-09-16T08:00:00.000Z",
+              "act": "set-status",
+              "problem": "0001",
+              "title": "active"
+            },
+            {
+              "by": "fang",
+              "when": "2026-09-15T19:00:00.000Z",
+              "act": "open-problem",
+              "problem": "0001",
+              "title": "演出场地定哪里"
+            }
+          ]
+        },
+        {
+          "path": "problems/0002-who-makes-the-poster.md",
+          "kind": "problem",
+          "problem": "0002",
+          "text": "---\ntitle: 海报谁来做\nstatus: active\n---\n苏苏答应画，但要先定场地和日期才能出终稿。",
+          "history": [
+            {
+              "by": "lu",
+              "when": "2026-09-20T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0002",
+              "title": "海报谁来做"
+            }
+          ]
+        },
+        {
+          "path": "problems/0003-eight-songs-or-ten.md",
+          "kind": "problem",
+          "problem": "0003",
+          "text": "---\ntitle: 曲目定八首还是十首\nstatus: open\n---\n十首会更完整，但新歌《第七站》还没排熟。",
+          "history": [
+            {
+              "by": "tao",
+              "when": "2026-10-11T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0003",
+              "title": "曲目定八首还是十首"
+            }
+          ]
+        },
+        {
+          "path": "problems/0004-a-fixed-weekly-rehearsal-time.md",
+          "kind": "problem",
+          "problem": "0004",
+          "text": "---\ntitle: 每周固定排练时间\nstatus: solved\n---\n定在周三晚上七点到十点，地方是方圆家楼下的琴房。",
+          "history": [
+            {
+              "by": "zhu",
+              "when": "2026-09-13T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0004",
+              "title": "每周固定排练时间"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/m1-three-venues-compared.md",
+          "kind": "plan",
+          "problem": "0001",
+          "text": "---\ntitle: 三处场地对比\nkind: plan\nnote: 容量、费用、能不能打鼓\n---\nlivehouse：80 人，场租 1500，音响齐全，鼓可以真打。\n咖啡馆：40 人，不收场租，最低消费 1200，只能用电鼓。\n仓库：人数不限，不收钱，没有音响，要老季借一套。",
+          "history": [
+            {
+              "by": "fang",
+              "when": "2026-10-18T20:40:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "三处场地对比"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/m2-gig-budget.csv",
+          "kind": "table",
+          "problem": "0001",
+          "text": null,
+          "history": [
+            {
+              "by": "fang",
+              "when": "2026-10-16T18:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "演出预算"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/m3-setlist.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 曲目单\nnote: 八首，约 40 分钟\n---\n1. 旧鞋带\n2. 夏天的雨\n3. 十三路末班车\n4. 天台\n5. 慢一点（翻唱）",
+          "history": [
+            {
+              "by": "lu",
+              "when": "2026-10-12T21:10:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "曲目单",
+              "diff": [
+                {
+                  "kind": "add",
+                  "text": "1. 旧鞋带"
+                },
+                {
+                  "kind": "add",
+                  "text": "2. 夏天的雨"
+                },
+                {
+                  "kind": "add",
+                  "text": "3. 十三路末班车"
+                },
+                {
+                  "kind": "add",
+                  "text": "4. 天台"
+                },
+                {
+                  "kind": "add",
+                  "text": "5. 慢一点（翻唱）"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "works/0001/m4-poster-sketches-three-versions.png.ref.md",
+          "kind": "image",
+          "problem": "0001",
+          "text": "---\ntitle: 海报草图（三版）\nblob: sha256:fake-m4\nsize: 150158\ntype: image/png\n---",
+          "history": [
+            {
+              "by": "susu",
+              "when": "2026-10-10T16:30:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "海报草图（三版）"
+            }
+          ]
+        },
+        {
+          "path": "board/b1.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 本周三排练：从头到尾走一遍\n---\n按曲目单顺序，中间不停。苏苏会来拍几张照片做海报。老季如果有空，帮忙听一下音量。",
+          "history": [
+            {
+              "by": "lu",
+              "when": "2026-10-15T10:00:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "本周三排练：从头到尾走一遍"
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261018T225500Z-zhu.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "咖啡馆只能用电鼓，我不太愿意。",
+          "history": [
+            {
+              "by": "zhu",
+              "when": "2026-10-18T20:55:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261018T230200Z-fang.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "那就 livehouse 或者仓库。老季，仓库那边的音响你能借到吗？",
+          "history": [
+            {
+              "by": "fang",
+              "when": "2026-10-18T21:02:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261018T232000Z-ji.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "能借一套小的，四十个人够用。但搬的时候要两个人帮忙。",
+          "history": [
+            {
+              "by": "ji",
+              "when": "2026-10-18T21:20:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b1/20261015T131000Z-susu.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "八点到，带相机。",
+          "history": [
+            {
+              "by": "susu",
+              "when": "2026-10-15T11:10:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "本周三排练：从头到尾走一遍"
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b1/20261015T194500Z-ji.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "能来，九点前到。",
+          "history": [
+            {
+              "by": "ji",
+              "when": "2026-10-15T17:45:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "本周三排练：从头到尾走一遍"
+            }
+          ]
+        },
+        {
+          "path": ".teahouse/members.toml",
+          "kind": "members",
+          "problem": "meta",
+          "text": "[[member]]\nid = \"lu\"\nname = \"鹿鸣\"\nrole = \"host\"\njoined = 2026-09-12\n\n[[member]]\nid = \"fang\"\nname = \"方圆\"\nrole = \"steward\"\njoined = 2026-09-12\n\n[[member]]\nid = \"zhu\"\nname = \"小朱\"\nrole = \"guest\"\njoined = 2026-09-12\n\n[[member]]\nid = \"tao\"\nname = \"陶然\"\nrole = \"guest\"\njoined = 2026-09-13\n\n[[member]]\nid = \"susu\"\nname = \"苏苏\"\nrole = \"guest\"\njoined = 2026-09-20\n\n[[member]]\nid = \"ji\"\nname = \"老季\"\nrole = \"guest\"\njoined = 2026-10-01",
+          "history": [
+            {
+              "by": "lu",
+              "when": "2026-09-12T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "鹿鸣"
+            },
+            {
+              "by": "lu",
+              "when": "2026-09-12T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "方圆"
+            },
+            {
+              "by": "lu",
+              "when": "2026-09-12T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "小朱"
+            },
+            {
+              "by": "lu",
+              "when": "2026-09-13T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "陶然"
+            },
+            {
+              "by": "lu",
+              "when": "2026-09-20T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "苏苏"
+            },
+            {
+              "by": "lu",
+              "when": "2026-10-01T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "老季"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "house": {
+        "id": "lab",
+        "name": "液滴论文小组",
+        "signboard": "四个人，一篇论文，一月投稿。每个数字都要能复现。",
+        "founded": "2026-07-01T09:00:00Z",
+        "capacity": 15,
+        "me": "ye",
+        "members": [
+          {
+            "id": "sunl",
+            "name": "孙岚",
+            "role": "host",
+            "joined": "2026-07-01T09:00:00Z"
+          },
+          {
+            "id": "jiang",
+            "name": "江河",
+            "role": "steward",
+            "joined": "2026-07-01T09:00:00Z"
+          },
+          {
+            "id": "ye",
+            "name": "叶舟",
+            "role": "guest",
+            "joined": "2026-07-02T09:00:00Z"
+          },
+          {
+            "id": "bai",
+            "name": "白杨",
+            "role": "guest",
+            "joined": "2026-07-02T09:00:00Z"
+          }
+        ],
+        "problems": [
+          {
+            "id": "0001",
+            "title": "第 3 节的实验为什么复现不了",
+            "summary": "三月测得液滴直径 42 μm，十月重做三次都在 51 μm 左右。",
+            "status": "active",
+            "by": "ye",
+            "opened": "2026-10-05T09:00:00Z",
+            "updated": "2026-10-18T09:30:00.000Z",
+            "workCount": 4,
+            "pendingProposals": 1
+          },
+          {
+            "id": "0002",
+            "title": "图 2 要不要换成对数坐标",
+            "summary": "流速跨了三个数量级，线性坐标下小流速的点挤在一起。",
+            "status": "open",
+            "by": "bai",
+            "opened": "2026-10-13T09:00:00Z",
+            "updated": "2026-10-13T09:00:00Z",
+            "workCount": 2,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0003",
+            "title": "讨论部分谁来写",
+            "summary": "江河先写框架，孙老师改。要等第 3 节的问题定下来。",
+            "status": "active",
+            "by": "sunl",
+            "opened": "2026-09-22T09:00:00Z",
+            "updated": "2026-10-08T09:00:00Z",
+            "workCount": 1,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0004",
+            "title": "原始数据整理上传",
+            "summary": "按期刊要求整理好，已经上传到数据仓库，拿到了编号。",
+            "status": "solved",
+            "by": "jiang",
+            "opened": "2026-08-01T09:00:00Z",
+            "updated": "2026-09-02T09:00:00Z",
+            "workCount": 2,
+            "pendingProposals": 0
+          }
+        ],
+        "recent": [
+          {
+            "by": "jiang",
+            "act": "add-work",
+            "title": "三月与十月的实验条件对照",
+            "when": "2026-10-18T09:30:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "ye",
+            "act": "propose",
+            "title": "第 3 节：写明实验条件和复现差异",
+            "when": "2026-10-18T07:15:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "ye",
+            "act": "add-work",
+            "title": "第 3 节草稿",
+            "when": "2026-10-14T14:00:00.000Z",
+            "problem": "0001"
+          },
+          {
+            "by": "bai",
+            "act": "open-problem",
+            "title": "图 2 要不要换成对数坐标",
+            "when": "2026-10-13T13:00:00.000Z",
+            "problem": "0002"
+          }
+        ],
+        "proposals": [
+          {
+            "id": "p1",
+            "title": "第 3 节：写明实验条件和复现差异",
+            "by": "ye",
+            "problem": "0001",
+            "when": "2026-10-18T07:15:00.000Z",
+            "reason": "不管最后找没找到原因，审稿人都该看到两次的条件。先把能确定的写进去。",
+            "files": [
+              {
+                "path": "works/0001/draft-of-section-3.md",
+                "title": "第 3 节草稿",
+                "kind": "doc",
+                "change": "modify",
+                "lines": [
+                  {
+                    "kind": "same",
+                    "text": "3 实验"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "液滴在 T 型通道中生成，分散相流速 2 μL/min。"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "液滴直径为 42 ± 3 μm（n = 120）。"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "三月测得液滴直径为 42 ± 3 μm（n = 120，室温 21 °C）。"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "十月用新批次表面活性剂重复实验，直径为 51 ± 4 μm；差异与连续相黏度升高一致（见补充材料 S2）。"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "图 3 给出直径分布。"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "decided": [
+          {
+            "id": "d0",
+            "title": "原始数据按期刊格式整理",
+            "by": "jiang",
+            "result": "adopted",
+            "when": "2026-09-02T09:00:00Z"
+          }
+        ],
+        "board": [
+          {
+            "id": "b1",
+            "by": "sunl",
+            "title": "组会改到周四下午两点",
+            "text": "每人带上自己负责的那一节，打印出来。第 3 节先讨论。",
+            "when": "2026-10-16T06:30:00.000Z",
+            "replies": [
+              {
+                "by": "ye",
+                "text": "好。我把复现差异的提案先交上来，周四一起看。",
+                "when": "2026-10-16T07:02:00.000Z",
+                "writtenAt": "2026-10-16T07:02:00.000Z"
+              }
+            ]
+          }
+        ],
+        "sync": {
+          "state": "synced",
+          "unpushed": 0,
+          "lastSync": "2026-10-18T18:10:00.000Z"
+        }
+      },
+      "problems": [
+        {
+          "id": "0001",
+          "title": "第 3 节的实验为什么复现不了",
+          "summary": "三月测得液滴直径 42 μm，十月重做三次都在 51 μm 左右。",
+          "status": "active",
+          "by": "ye",
+          "opened": "2026-10-05T09:00:00Z",
+          "updated": "2026-10-18T09:30:00.000Z",
+          "workCount": 4,
+          "pendingProposals": 1,
+          "body": [
+            {
+              "heading": "现状",
+              "text": "三月的数据里液滴直径是 42 ± 3 μm，十月重做三次都是 51 μm 左右。芯片、泵和配方，记录上都说是一样的。"
+            },
+            {
+              "heading": "目标",
+              "text": "找到差异的来源；找不到，就在论文里如实写出条件。"
+            },
+            {
+              "heading": "约束",
+              "text": "一月投稿前要定。新芯片要六周才到，只能用手上的两片。"
+            }
+          ],
+          "works": [
+            {
+              "id": "works/0001/l1-march-vs-october-conditions.md",
+              "kind": "plan",
+              "title": "三月与十月的实验条件对照",
+              "by": "jiang",
+              "when": "2026-10-18T09:30:00.000Z",
+              "size": 64,
+              "text": "芯片：A-07 → A-07（同一片）\n连续相黏度：9.8 → 12.1 mPa·s（十月用了新批次的表面活性剂）\n室温：21 °C → 17 °C",
+              "note": "逐项对照实验记录本"
+            },
+            {
+              "id": "works/0001/l2-draft-of-section-3.md",
+              "kind": "doc",
+              "title": "第 3 节草稿",
+              "by": "ye",
+              "when": "2026-10-14T14:00:00.000Z",
+              "size": 185,
+              "text": "3 实验\n液滴在 T 型通道中生成，分散相流速 2 μL/min。\n液滴直径为 42 ± 3 μm（n = 120）。\n图 3 给出直径分布。",
+              "note": "实验部分，约 600 字"
+            },
+            {
+              "id": "works/0001/l3-reproduction-log-three-runs.csv",
+              "kind": "table",
+              "title": "复现记录（三次）",
+              "by": "bai",
+              "when": "2026-10-11T17:00:00.000Z",
+              "size": 45,
+              "note": "每次 120 个液滴"
+            },
+            {
+              "id": "works/0001/l4-figure-3-size-distribution-march-october.png.ref.md",
+              "kind": "image",
+              "title": "图 3：直径分布（三月 / 十月）",
+              "by": "ye",
+              "when": "2026-10-09T20:00:00.000Z",
+              "size": 150127,
+              "blob": {
+                "hash": "sha256:fake-l4",
+                "type": "image/png",
+                "cached": true
+              }
+            }
+          ],
+          "events": [
+            {
+              "by": "ye",
+              "act": "open-problem",
+              "title": "",
+              "when": "2026-10-05T18:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "sunl",
+              "act": "set-status",
+              "status": "active",
+              "title": "",
+              "when": "2026-10-06T07:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "ye",
+              "act": "add-work",
+              "title": "第 3 节草稿",
+              "when": "2026-10-14T14:00:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "ye",
+              "act": "propose",
+              "title": "第 3 节：写明实验条件和复现差异",
+              "when": "2026-10-18T07:15:00.000Z",
+              "problem": "0001"
+            },
+            {
+              "by": "jiang",
+              "act": "add-work",
+              "title": "三月与十月的实验条件对照",
+              "when": "2026-10-18T09:30:00.000Z",
+              "problem": "0001"
+            }
+          ],
+          "notes": [
+            {
+              "by": "bai",
+              "text": "十月配的油用的是新到的一批表面活性剂。",
+              "when": "2026-10-16T08:20:00.000Z",
+              "writtenAt": "2026-10-16T08:20:00.000Z"
+            },
+            {
+              "by": "jiang",
+              "text": "黏度高了两成，直径偏大说得通。下周用旧批次再做一次。",
+              "when": "2026-10-17T12:05:00.000Z",
+              "writtenAt": "2026-10-17T12:05:00.000Z"
+            },
+            {
+              "by": "ye",
+              "text": "（在火车上写的）三月记录里室温是 21 度，现在实验室只有 17 度，可能也有关系。",
+              "when": "2026-10-17T12:06:00.000Z",
+              "writtenAt": "2026-10-16T19:40:00.000Z"
+            }
+          ]
+        },
+        {
+          "id": "0002",
+          "title": "图 2 要不要换成对数坐标",
+          "summary": "流速跨了三个数量级，线性坐标下小流速的点挤在一起。",
+          "status": "open",
+          "by": "bai",
+          "opened": "2026-10-13T09:00:00Z",
+          "updated": "2026-10-13T09:00:00Z",
+          "workCount": 2,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0003",
+          "title": "讨论部分谁来写",
+          "summary": "江河先写框架，孙老师改。要等第 3 节的问题定下来。",
+          "status": "active",
+          "by": "sunl",
+          "opened": "2026-09-22T09:00:00Z",
+          "updated": "2026-10-08T09:00:00Z",
+          "workCount": 1,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0004",
+          "title": "原始数据整理上传",
+          "summary": "按期刊要求整理好，已经上传到数据仓库，拿到了编号。",
+          "status": "solved",
+          "by": "jiang",
+          "opened": "2026-08-01T09:00:00Z",
+          "updated": "2026-09-02T09:00:00Z",
+          "workCount": 2,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        }
+      ],
+      "files": [
+        {
+          "path": "problems/0001-why-can-t-we-reproduce-the-section-3-experiment.md",
+          "kind": "problem",
+          "problem": "0001",
+          "text": "---\ntitle: 第 3 节的实验为什么复现不了\nstatus: active\n---\n三月测得液滴直径 42 μm，十月重做三次都在 51 μm 左右。\n\n## 现状\n三月的数据里液滴直径是 42 ± 3 μm，十月重做三次都是 51 μm 左右。芯片、泵和配方，记录上都说是一样的。\n\n## 目标\n找到差异的来源；找不到，就在论文里如实写出条件。\n\n## 约束\n一月投稿前要定。新芯片要六周才到，只能用手上的两片。",
+          "history": [
+            {
+              "by": "sunl",
+              "when": "2026-10-06T07:00:00.000Z",
+              "act": "set-status",
+              "problem": "0001",
+              "title": "active"
+            },
+            {
+              "by": "ye",
+              "when": "2026-10-05T18:00:00.000Z",
+              "act": "open-problem",
+              "problem": "0001",
+              "title": "第 3 节的实验为什么复现不了"
+            }
+          ]
+        },
+        {
+          "path": "problems/0002-should-figure-2-use-a-log-scale.md",
+          "kind": "problem",
+          "problem": "0002",
+          "text": "---\ntitle: 图 2 要不要换成对数坐标\nstatus: open\n---\n流速跨了三个数量级，线性坐标下小流速的点挤在一起。",
+          "history": [
+            {
+              "by": "bai",
+              "when": "2026-10-13T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0002",
+              "title": "图 2 要不要换成对数坐标"
+            }
+          ]
+        },
+        {
+          "path": "problems/0003-who-writes-the-discussion.md",
+          "kind": "problem",
+          "problem": "0003",
+          "text": "---\ntitle: 讨论部分谁来写\nstatus: active\n---\n江河先写框架，孙老师改。要等第 3 节的问题定下来。",
+          "history": [
+            {
+              "by": "sunl",
+              "when": "2026-09-22T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0003",
+              "title": "讨论部分谁来写"
+            }
+          ]
+        },
+        {
+          "path": "problems/0004-tidy-up-and-upload-the-raw-data.md",
+          "kind": "problem",
+          "problem": "0004",
+          "text": "---\ntitle: 原始数据整理上传\nstatus: solved\n---\n按期刊要求整理好，已经上传到数据仓库，拿到了编号。",
+          "history": [
+            {
+              "by": "jiang",
+              "when": "2026-08-01T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0004",
+              "title": "原始数据整理上传"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/l1-march-vs-october-conditions.md",
+          "kind": "plan",
+          "problem": "0001",
+          "text": "---\ntitle: 三月与十月的实验条件对照\nkind: plan\nnote: 逐项对照实验记录本\n---\n芯片：A-07 → A-07（同一片）\n连续相黏度：9.8 → 12.1 mPa·s（十月用了新批次的表面活性剂）\n室温：21 °C → 17 °C",
+          "history": [
+            {
+              "by": "jiang",
+              "when": "2026-10-18T09:30:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "三月与十月的实验条件对照"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/l2-draft-of-section-3.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 第 3 节草稿\nnote: 实验部分，约 600 字\n---\n3 实验\n液滴在 T 型通道中生成，分散相流速 2 μL/min。\n液滴直径为 42 ± 3 μm（n = 120）。\n图 3 给出直径分布。",
+          "history": [
+            {
+              "by": "ye",
+              "when": "2026-10-12T19:30:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "第 3 节草稿",
+              "diff": [
+                {
+                  "kind": "add",
+                  "text": "3 实验"
+                },
+                {
+                  "kind": "add",
+                  "text": "液滴在 T 型通道中生成，分散相流速 2 μl/min。"
+                },
+                {
+                  "kind": "add",
+                  "text": "液滴直径为 42 ± 3 μm（n = 120）。"
+                }
+              ]
+            },
+            {
+              "by": "jiang",
+              "when": "2026-10-13T08:15:00.000Z",
+              "act": "update-work",
+              "problem": "0001",
+              "title": "第 3 节草稿",
+              "diff": [
+                {
+                  "kind": "same",
+                  "text": "3 实验"
+                },
+                {
+                  "kind": "del",
+                  "text": "液滴在 T 型通道中生成，分散相流速 2 μl/min。"
+                },
+                {
+                  "kind": "add",
+                  "text": "液滴在 T 型通道中生成，分散相流速 2 μL/min。"
+                },
+                {
+                  "kind": "same",
+                  "text": "液滴直径为 42 ± 3 μm（n = 120）。"
+                }
+              ]
+            },
+            {
+              "by": "ye",
+              "when": "2026-10-14T14:00:00.000Z",
+              "act": "update-work",
+              "problem": "0001",
+              "title": "第 3 节草稿",
+              "diff": [
+                {
+                  "kind": "same",
+                  "text": "液滴直径为 42 ± 3 μm（n = 120）。"
+                },
+                {
+                  "kind": "add",
+                  "text": "图 3 给出直径分布。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "works/0001/l3-reproduction-log-three-runs.csv",
+          "kind": "table",
+          "problem": "0001",
+          "text": null,
+          "history": [
+            {
+              "by": "bai",
+              "when": "2026-10-11T17:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "复现记录（三次）"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/l4-figure-3-size-distribution-march-october.png.ref.md",
+          "kind": "image",
+          "problem": "0001",
+          "text": "---\ntitle: 图 3：直径分布（三月 / 十月）\nblob: sha256:fake-l4\nsize: 150127\ntype: image/png\n---",
+          "history": [
+            {
+              "by": "ye",
+              "when": "2026-10-09T20:00:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "图 3：直径分布（三月 / 十月）"
+            }
+          ]
+        },
+        {
+          "path": "board/b1.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 组会改到周四下午两点\n---\n每人带上自己负责的那一节，打印出来。第 3 节先讨论。",
+          "history": [
+            {
+              "by": "sunl",
+              "when": "2026-10-16T06:30:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "组会改到周四下午两点"
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261016T102000Z-bai.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "十月配的油用的是新到的一批表面活性剂。",
+          "history": [
+            {
+              "by": "bai",
+              "when": "2026-10-16T08:20:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261017T140500Z-jiang.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "黏度高了两成，直径偏大说得通。下周用旧批次再做一次。",
+          "history": [
+            {
+              "by": "jiang",
+              "when": "2026-10-17T12:05:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261016T214000Z-ye.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "（在火车上写的）三月记录里室温是 21 度，现在实验室只有 17 度，可能也有关系。",
+          "history": [
+            {
+              "by": "ye",
+              "when": "2026-10-16T19:40:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": ""
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b1/20261016T090200Z-ye.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "好。我把复现差异的提案先交上来，周四一起看。",
+          "history": [
+            {
+              "by": "ye",
+              "when": "2026-10-16T07:02:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "组会改到周四下午两点"
+            }
+          ]
+        },
+        {
+          "path": ".teahouse/members.toml",
+          "kind": "members",
+          "problem": "meta",
+          "text": "[[member]]\nid = \"sunl\"\nname = \"孙岚\"\nrole = \"host\"\njoined = 2026-07-01\n\n[[member]]\nid = \"jiang\"\nname = \"江河\"\nrole = \"steward\"\njoined = 2026-07-01\n\n[[member]]\nid = \"ye\"\nname = \"叶舟\"\nrole = \"guest\"\njoined = 2026-07-02\n\n[[member]]\nid = \"bai\"\nname = \"白杨\"\nrole = \"guest\"\njoined = 2026-07-02",
+          "history": [
+            {
+              "by": "sunl",
+              "when": "2026-07-01T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "孙岚"
+            },
+            {
+              "by": "sunl",
+              "when": "2026-07-01T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "江河"
+            },
+            {
+              "by": "sunl",
+              "when": "2026-07-02T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "叶舟"
+            },
+            {
+              "by": "sunl",
+              "when": "2026-07-02T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "白杨"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

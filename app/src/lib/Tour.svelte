@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { self, type House } from '../data'
+  import { self, type House } from '../api/view'
   import { t } from '../i18n/index.svelte'
 
   // 第一次进入一间茶馆时的 3 步引导：座位 → 问题 → 你能做什么。

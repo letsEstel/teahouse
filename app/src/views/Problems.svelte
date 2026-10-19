@@ -1,8 +1,8 @@
 <script lang="ts">
   import Shape from '../lib/Shape.svelte'
   import StatusMark from '../lib/StatusMark.svelte'
-  import { member, self, workCount, pad, type House, type Status } from '../data'
-  import { t, L, when } from '../i18n/index.svelte'
+  import { member, self, pad, type House, type Status } from '../api/view'
+  import { t, when } from '../i18n/index.svelte'
 
   // 列表和看板是同一份数据的两种视图
   let { house, view = 'list' }: { house: House; view?: 'list' | 'kanban' } = $props()
@@ -71,11 +71,11 @@
             {@const pr = pending(p.id)}
             <a class="card" class:solved={c === 'solved'} href="#/{house.id}/problem/{p.id}">
               <span class="num cno">{p.id}</span>
-              <span class="ct">{L(p.title)}</span>
+              <span class="ct">{p.title}</span>
               <span class="cmeta">
-                <span><b class="num">{workCount(p)}</b> {t('problems.works', { n: workCount(p) })}</span>
+                <span><b class="num">{p.workCount}</b> {t('problems.works', { n: p.workCount })}</span>
                 {#if pr}<span><em class="badge">{pr}</em> {t('problems.pending')}</span>{/if}
-                <span class="by"><Shape role={m.role} size={9} />{L(m.name)}</span>
+                <span class="by"><Shape role={m.role} size={9} />{m.name}</span>
               </span>
             </a>
           {:else}
@@ -94,14 +94,14 @@
           <a href="#/{house.id}/problem/{p.id}">
             <span class="no num">{p.id}</span>
             <span class="body">
-              <span class="title">{L(p.title)}</span>
-              <span class="summary">{L(p.summary)}</span>
+              <span class="title">{p.title}</span>
+              <span class="summary">{p.summary}</span>
             </span>
             <span class="meta">
               <span class="st"><StatusMark status={p.status} /></span>
-              <span class="works"><b class="num">{workCount(p)}</b> {t('problems.works', { n: workCount(p) })}</span>
+              <span class="works"><b class="num">{p.workCount}</b> {t('problems.works', { n: p.workCount })}</span>
               <span class="pr">{#if pr}<em class="badge">{pr}</em> {t('problems.pending')}{/if}</span>
-              <span class="by"><Shape role={m.role} size={10} />{L(m.name)}</span>
+              <span class="by"><Shape role={m.role} size={10} />{m.name}</span>
               <span class="when num">{when(p.updated)}</span>
             </span>
           </a>

@@ -244,4 +244,12 @@ export default {
   'archive.kind.note': 'Notiz',
   'archive.kind.members': 'Mitgliederliste',
   'archive.files': { one: '{n} Datei', other: '{n} Dateien' },
+  'propose.titleModify': '„{title}“ ändern',
+  'propose.titleAdd': '„{title}“ hinzufügen',
+  'kind.file': 'Anhang',
+  'archive.kind.file': 'Anhang',
+  'ev.note': 'hat eine Notiz geschrieben',
+  'ev.notice': 'hat den Aushang „{ref}“ angebracht',
+  'ev.decline': 'hat „{ref}“ nicht übernommen',
+  'ev.seat': 'hat die Plätze geändert',
 }

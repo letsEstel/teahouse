@@ -8,7 +8,8 @@
   import Board from './views/Board.svelte'
   import Propose from './views/Propose.svelte'
   import Archive from './views/Archive.svelte'
-  import { findHouse } from './data'
+  import { api } from './api/backend'
+  import type { House as HouseData, HouseSummary } from './api/types'
   import { i18n } from './i18n/index.svelte'
 
   // 路由：#/<茶馆>/<界面>/<参数>，例如 #/wutong/problem/0001、#/kant/propose/0001、#/wutong/problems/kanban
@@ -21,9 +22,26 @@
 
   let route = $derived.by(() => {
     const [, h, page, arg] = hash.split('/')
-    return { house: findHouse(h), page: page || 'house', arg }
+    return { houseId: h, page: page || 'house', arg: arg ? decodeURIComponent(arg) : arg }
   })
-  let house = $derived(route.house)
+
+  // 数据只经过 api()（src/api/backend.ts）。写入之后调用 refresh() 重新读取。
+  let houses = $state<HouseSummary[]>([])
+  let house = $state<HouseData | null>(null)
+  let version = $state(0)
+  const refresh = () => version++
+  $effect(() => {
+    const id = route.houseId
+    void i18n.lang  // 假数据的内容跟着界面语言变；真引擎里这一行无害
+    void version
+    ;(async () => {
+      const list = await api('houses', {})
+      const target = list.find((x) => x.id === id) ?? list[0]
+      const h = await api('house', { house: target.id })
+      houses = list
+      house = h
+    })()
+  })
   let section = $derived(
     route.page === 'problems' || route.page === 'problem' ? 'problems'
     : route.page === 'proposals' || route.page === 'proposal' || route.page === 'propose' ? 'proposals'
@@ -31,14 +49,15 @@
   ) as 'house' | 'board' | 'problems' | 'proposals' | 'archive'
 </script>
 
-<Rail {house} {section} />
+{#if house}
+<Rail {house} {houses} {section} />
 <main>
-  {#key hash + i18n.lang}
+  {#key hash + i18n.lang + house.id}
     <div class="page">
       {#if route.page === 'problems'}
         <Problems {house} view={route.arg === 'kanban' ? 'kanban' : 'list'} />
       {:else if route.page === 'board'}
-        <Board {house} />
+        <Board {house} {refresh} />
       {:else if route.page === 'archive'}
         <Archive {house} id={route.arg || undefined} />
       {:else if route.page === 'propose'}
@@ -55,6 +74,7 @@
 </main>
 {#if route.page === 'house'}
   {#key house.id}<Tour {house} />{/key}
+{/if}
 {/if}
 
 <style>

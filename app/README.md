@@ -24,8 +24,20 @@ URL 参数：`?lang=zh|en|de` 指定语言（否则用上次的选择或系统�
 
 各间茶馆里"你"的角色不同（老板：梧桐里、旧鞋带乐队；伙计：爸妈的老房子、三人创业团队；茶客：康德读书会、液滴论文小组），用来检查每种角色看到的主要动作。
 
+## 数据从哪里来（CLIENT-API 第 7 节第 1 步）
+
+界面只通过 `src/api/backend.ts` 里的 `api(命令名, 参数)` 读写数据，命令和数据模型照 `docs/CLIENT-API.md`（类型在 `src/api/types.ts`）。
+现在接的是 `FakeBackend`（`src/api/fake.ts`）：把 `src/data/` 里的六间示例茶馆包装成合同的形状，档案里的文件原文按第 1 节的格式生成。
+第 2 步换成 `HttpBackend`（本机 7377 端口），第 4 步换成 `TauriBackend`；界面代码不用改。
+
+```bash
+npm run export-fixtures   # 导出 ../fixtures/houses.zh.json，给引擎种真的 git 仓库
+```
+
 ## 目录
 
+- `src/api/` 合同类型、`Backend` 接口、FakeBackend、界面用的小工具（`view.ts`）。
+- `src/data/` 示例茶馆的假数据（三种语言），只有 FakeBackend 读它。
 - `src/i18n/` 翻译：`zh.ts` / `en.ts` / `de.ts`，界面文字一律用 `t('键')`；日期时间用 `when()` / `date()` 本地化。
 - `src/styles/base.css` 颜色语义表、断点、按钮样式。
 - `src/lib/fit.ts` 超大标题按容器宽度缩小，不换行。

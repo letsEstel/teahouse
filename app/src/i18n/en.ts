@@ -245,4 +245,12 @@ export default {
   'archive.kind.note': 'Note',
   'archive.kind.members': 'Member list',
   'archive.files': { one: '{n} file', other: '{n} files' },
+  'propose.titleModify': 'Change “{title}”',
+  'propose.titleAdd': 'Add “{title}”',
+  'kind.file': 'Attachment',
+  'archive.kind.file': 'Attachment',
+  'ev.note': 'wrote a note',
+  'ev.notice': 'posted the notice “{ref}”',
+  'ev.decline': 'did not adopt “{ref}”',
+  'ev.seat': 'changed the seating',
 }
