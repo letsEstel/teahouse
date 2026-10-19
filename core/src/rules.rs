@@ -80,6 +80,20 @@ pub fn format_stamp(epoch: i64) -> String {
     )
 }
 
+/// RFC 3339 UTC (`2026-10-18T21:20:05Z`), the time format of the client API.
+pub fn format_rfc3339(epoch: i64) -> String {
+    let s = format_stamp(epoch);
+    format!(
+        "{}-{}-{}T{}:{}:{}Z",
+        &s[0..4],
+        &s[4..6],
+        &s[6..8],
+        &s[9..11],
+        &s[11..13],
+        &s[13..15]
+    )
+}
+
 /// Howard Hinnant's days→civil algorithm (proleptic Gregorian).
 fn civil_from_days(z: i64) -> (i64, i64, i64) {
     let z = z + 719_468;
@@ -369,6 +383,8 @@ mod tests {
             assert_eq!(stamp_epoch(&format_stamp(t)), Some(t), "{t}");
         }
         assert_eq!(format_stamp(1_792_358_405), "20261018T212005Z");
+        assert_eq!(format_rfc3339(1_792_358_405), "2026-10-18T21:20:05Z");
+        assert_eq!(format_rfc3339(0), "1970-01-01T00:00:00Z");
         for bad in [
             "20260229T000000Z", // 2026 is not a leap year
             "21000229T000000Z", // nor is 2100

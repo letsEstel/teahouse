@@ -1,0 +1,23 @@
+[package]
+name = "teahouse-client"
+description = "Teahouse client engine: a local clone of each teahouse, read and written through the commands of docs/CLIENT-API.md."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "teahouse-client"
+path = "src/main.rs"
+
+[dependencies]
+teahouse-core = { path = "../core" }
+# The engine's answers are the JSON of CLIENT-API.md §3; hand-written JSON
+# escaping is where bugs hide. Both are the de-facto standard and stable.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# The engine must not run an external git program: it has to compile into
+# the Android app as-is (CLIENT-API.md §2 and §7). libgit2 is git's own
+# library form; vendored so every target builds the same version. Network
+# features (ssh) come with sync in step 2.
+git2 = { version = "0.21", default-features = false, features = ["vendored-libgit2"] }
