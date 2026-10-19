@@ -6,24 +6,23 @@
 ## 1. 流程
 
 ```
-老板在网页上点"邀请" ──HTTPS──▶ 服务器: POST /v1/invite {house, role?, name?}
+老板的客户端 ──ssh──▶ relay: invite <house> [--role guest|steward] [--name 王阿姨]
                        ◀── 邀请码  TH-7KQ2-M9XF-3RDP-WC5L（一次性，默认 7 天有效）
 老板通过微信等任何渠道把邀请码发给对方
-新人打开网页（自动生成设备钥匙）──HTTPS──▶ 服务器: POST /v1/invite/redeem {code, name, publicKey, 签名}
-服务器校验 → 以老板的名义向 main 提交一次座位变更（Act: seat），走同一道 pre-receive → 新人入座
+新人的客户端（自动生成设备密钥）──ssh──▶ relay: redeem TH-… --name 王阿姨
+relay 校验 → 以老板的名义向 main 提交一次座位变更（Act: seat）→ 新人入座
 ```
-（运维也可以在服务器上用 `teahouse-relay invite …` 命令创建邀请，效果相同。）
 
 ## 2. 规则（拟写入规则表）
 
-1. **只有老板能创建邀请**（网页上的"邀请"按钮，或服务器上的 `teahouse-relay invite` 命令）。邀请的状态保存在 Relay 上（`<root>/invites/<house>/`），**只保存邀请码的哈希值**，原文只出现一次，就是发给老板的那一次。邀请码不进入 git 仓库。
+1. **只有老板能创建邀请**，通过 `ssh relay invite …`。邀请的状态保存在 Relay 上（`<root>/invites/<house>/`），**只保存邀请码的哈希值**，原文只出现一次，就是发给老板的那一次。邀请码不进入 git 仓库。
 2. **邀请码**：128 位随机数，用 Crockford Base32 编码，分组显示，带前缀 `TH-`。一次性使用，默认 7 天有效（老板可以设为 1 到 30 天）。老板可以随时撤销（`ssh relay uninvite <house> <前四位>`）。
 3. **角色写在邀请里**：默认是茶客。如果邀请时写了 `--role steward`，前提是兑现时茶馆还没有伙计，否则兑现失败。兑现的人不能自己选角色。
 4. **兑现时必须满足全部条件，否则整个兑现失败、什么都不改**：邀请码有效且未用过；茶馆还有空座（≤ 15）；这把公钥不在这间茶馆里；名字和成员 id 合法且不重复（id 由 Relay 根据名字生成，冲突时加数字后缀）。
 5. **座位变更由 Relay 代笔**：Relay 以"老板的名义"写一个提交（作者是老板，提交者是 `Teahouse Relay`），只改 `members.toml`，带上 `Problem: meta`、`Act: seat` 和 `Invite: <邀请码前四位>` 三个 trailer。这是唯一一种不经过推送、由 Relay 直接写入 main 的提交，并且同样要通过 pre-receive 的全部检查（走同一套校验函数）。
-6. **没有座位的人只能做一件事**：兑换接口 `POST /v1/invite/redeem` 不需要登录，但只接受"邀请码 + 名字 + 公钥 + 用这把私钥对邀请码的签名"（证明对方确实持有私钥），除此之外不返回任何茶馆信息。sshd 不对陌生密钥开放。
+6. **陌生密钥只能做一件事**：`AuthorizedKeysCommand` 对**不在任何茶馆里**的密钥，只返回一行 `restrict,command="teahouse-relay redeem-shell <key>"`。这个入口只接受 `redeem` 命令，不能读写任何茶馆，也不能列出茶馆。
 7. **防暴力尝试**：同一把密钥 1 小时内最多失败 5 次；全局每分钟最多 30 次兑现尝试；每次尝试都写审计日志（`invite.created`、`invite.redeemed`、`invite.failed`、`invite.revoked`）。128 位邀请码本身已经不可能被猜中，限速是为了不让日志被刷爆。
-8. **设备配对**（多设备）复用同一套机制：已入座的成员可以给**自己**创建一个"设备邀请"（网页上的"添加一台设备"），兑现后给同一个成员 id 追加一把公钥。这需要 `members.toml` 支持一个成员拥有多把密钥：`key` 字段改为 `keys = [...]`，或者允许重复的 `[[member.key]]` 表。**这一条改动了座位表格式，单独定稿后再做。**
+8. **设备配对**（多设备）复用同一套机制：已入座的成员可以给**自己**创建一个"设备邀请"（`ssh relay pair <house>`），兑现后给同一个成员 id 追加一把公钥。这需要 `members.toml` 支持一个成员拥有多把密钥：`key` 字段改为 `keys = [...]`，或者允许重复的 `[[member.key]]` 表。**这一条改动了座位表格式，单独定稿后再做。**
 
 ## 3. 不做的事
 
