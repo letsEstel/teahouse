@@ -99,11 +99,13 @@
   function forWhat(e: HistoryEntry) {
     return e.problem === 'board' ? t('archive.forBoard') : e.problem === 'meta' ? t('archive.forMeta') : t('archive.for', { problem: problemLabel(e.problem) })
   }
+  // 和"经过"一样：title 是提交说明的原话，有就直接显示；没有时才按动作给通用说法
   function actText(e: HistoryEntry) {
+    if (e.title) return e.title
     switch (e.act) {
       case 'open-problem': return t('ev.open')
-      case 'set-status': return t(e.title === 'solved' ? 'ev.markSolved' : 'ev.markActive')
-      case 'seat': return t('archive.act.seat', { name: e.title })
+      case 'set-status': return t(e.status === 'solved' ? 'ev.markSolved' : 'ev.markActive')
+      case 'seat': return t('ev.seat')
       case 'adopt': return t('archive.act.merge')
       case 'update-work':
       case 'update': return t('archive.act.update')

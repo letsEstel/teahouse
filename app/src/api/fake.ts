@@ -45,17 +45,20 @@ function toWork(p: FProblem, w: FWork, file?: AFile): A.Work {
 }
 
 // ---- 动作 ----
+// 合同 1.4：title 是提交说明的第一行，也就是界面上直接显示的那句话。
+// 假数据按当前界面语言生成这句话（真引擎里是作者写下或引擎生成的原话）。
 function toEvent(e: FEvent, problem?: string): A.Event {
-  const title = e.ref ? L(e.ref) : ''
+  const ref = e.ref ? L(e.ref) : ''
+  const base = { by: e.by, when: iso(e.when), problem }
   switch (e.act) {
-    case 'addWork': return { by: e.by, act: 'add-work', title, when: iso(e.when), problem }
-    case 'update': return { by: e.by, act: 'update-work', title, when: iso(e.when), problem }
-    case 'merge': return { by: e.by, act: 'adopt', title, when: iso(e.when), problem }
-    case 'propose': return { by: e.by, act: 'propose', title, when: iso(e.when), problem }
-    case 'open':
-    case 'openProblem': return { by: e.by, act: 'open-problem', title, when: iso(e.when), problem }
-    case 'markActive': return { by: e.by, act: 'set-status', status: 'active', title, when: iso(e.when), problem }
-    case 'markSolved': return { by: e.by, act: 'set-status', status: 'solved', title, when: iso(e.when), problem }
+    case 'addWork': return { ...base, act: 'add-work', title: t('ev.addWork', { ref }) }
+    case 'update': return { ...base, act: 'update-work', title: t('ev.update', { ref }) }
+    case 'merge': return { ...base, act: 'adopt', title: t('ev.merge', { ref }) }
+    case 'propose': return { ...base, act: 'propose', title: t('ev.propose', { ref }) }
+    case 'open': return { ...base, act: 'open-problem', title: t('ev.open') }
+    case 'openProblem': return { ...base, act: 'open-problem', title: t('ev.openProblem', { ref }) }
+    case 'markActive': return { ...base, act: 'set-status', status: 'active', title: t('ev.markActive') }
+    case 'markSolved': return { ...base, act: 'set-status', status: 'solved', title: t('ev.markSolved') }
   }
 }
 
@@ -183,20 +186,17 @@ function rawText(h: FHouse, f: AFile): string | undefined {
 
 function history(h: FHouse, f: AFile): A.HistoryEntry[] {
   const name = (id: string) => L(h.members.find((m) => m.id === id)!.name)
-  const title = f.work ? L(f.work.title) : f.notice ? L(f.notice.title) : f.problemRef ? L(f.problemRef.title) : ''
+  // title 是提交说明的原话（合同 1.4），假数据按当前语言生成
   return f.history.map((e) => {
-    const act: A.Act =
-      e.act === 'add' ? (f.kind === 'note' ? 'note' : f.kind === 'notice' ? 'notice' : f.kind === 'problem' ? 'open-problem' : 'add-work')
-      : e.act === 'update' ? 'update-work'
-      : e.act === 'merge' ? 'adopt'
-      : e.act === 'open' ? 'open-problem'
-      : e.act === 'seat' ? 'seat'
-      : 'set-status'
-    return {
-      by: e.by, when: iso(e.when), act, problem: e.problem,
-      title: e.act === 'seat' ? name(e.who!) : e.act === 'markSolved' ? 'solved' : e.act === 'markActive' ? 'active' : title,
-      diff: e.diff?.map((d) => ({ kind: d.kind, text: L(d.text) })),
-    }
+    const [act, title]: [A.Act, string] =
+      e.act === 'add' ? [f.kind === 'note' ? 'note' : f.kind === 'notice' ? 'notice' : f.kind === 'problem' ? 'open-problem' : 'add-work', f.kind === 'problem' ? t('ev.open') : t('archive.act.add')]
+      : e.act === 'update' ? ['update-work', t('archive.act.update')]
+      : e.act === 'merge' ? ['adopt', t('archive.act.merge')]
+      : e.act === 'open' ? ['open-problem', t('ev.open')]
+      : e.act === 'seat' ? ['seat', t('archive.act.seat', { name: name(e.who!) })]
+      : ['set-status', t(e.act === 'markSolved' ? 'ev.markSolved' : 'ev.markActive')]
+    const status: A.Status | undefined = e.act === 'markSolved' ? 'solved' : e.act === 'markActive' ? 'active' : undefined
+    return { by: e.by, when: iso(e.when), act, problem: e.problem, title, status, diff: e.diff?.map((d) => ({ kind: d.kind, text: L(d.text) })) }
   })
 }
 
