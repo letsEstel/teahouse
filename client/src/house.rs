@@ -59,7 +59,8 @@ impl Snapshot {
         let Some(head) = git.resolve("refs/heads/main")? else {
             return Err(Error::not_found(format!(
                 "teahouse {id} has no main yet / 茶馆 {id} 还没有内容"
-            )));
+            ))
+            .with("house", id));
         };
         let tree: BTreeMap<String, TreeFile> = git
             .ls_tree(&head)?
@@ -549,9 +550,9 @@ impl Snapshot {
 
     pub fn problem(&self, pid: &str) -> Result<crate::model::Problem> {
         let Some((slug, path)) = self.problem_path(pid) else {
-            return Err(Error::not_found(format!(
-                "no problem {pid} / 没有问题 {pid}"
-            )));
+            return Err(
+                Error::not_found(format!("no problem {pid} / 没有问题 {pid}")).with("problem", pid),
+            );
         };
         let works_prefix = format!("works/{pid}/");
         let talk_prefix = format!("talk/{pid}/");
@@ -675,12 +676,11 @@ impl Snapshot {
         let fm_title = fm.as_ref().and_then(|m| m.get("title")).map(str::to_string);
         let name = format::file_title(path);
         let (kind, label, problem) = if path == MEMBERS_PATH {
-            (NodeKind::Members, "座位表".to_string(), None)
+            (NodeKind::Members, None, None)
         } else if let Some((id, _)) = format::parse_problem_path(path) {
-            let t = titles.get(id).cloned().unwrap_or_default();
             (
                 NodeKind::Problem,
-                format!("{id} · {t}"),
+                titles.get(id).cloned(),
                 Some(id.to_string()),
             )
         } else if let Some((pid, _)) = format::parse_work_path(path) {
@@ -699,28 +699,24 @@ impl Snapshot {
                 // Only the title of a table: shown by its file name.
                 WorkFile::TableMeta => (NodeKind::File, file_name(path).to_string()),
             };
-            (kind, title, Some(pid.to_string()))
+            (kind, Some(title), Some(pid.to_string()))
         } else if let Some(n) = format::parse_notice_path(path) {
             (
                 NodeKind::Notice,
-                fm_title.unwrap_or_else(|| n.to_string()),
+                Some(fm_title.unwrap_or_else(|| n.to_string())),
                 None,
             )
         } else if let Some(pp) = format::parse_post_path(path) {
+            // The member's name; the time is in the id (the stamp).
             let who = self
                 .members
                 .by_id(pp.member)
                 .map_or(pp.member, |m| m.name.as_str());
-            let at = format_rfc3339(pp.written);
             let problem = match pp.topic {
                 TalkTopic::Problem(id) => Some(id.to_string()),
                 TalkTopic::Board(_) => None,
             };
-            (
-                NodeKind::Note,
-                format!("{who} · {} {}", &at[..10], &at[11..16]),
-                problem,
-            )
+            (NodeKind::Note, Some(who.to_string()), problem)
         } else {
             let lower = path.to_lowercase();
             let kind = if lower.ends_with(".md") {
@@ -732,12 +728,13 @@ impl Snapshot {
             };
             (
                 kind,
-                fm_title.unwrap_or_else(|| file_name(path).to_string()),
+                Some(fm_title.unwrap_or_else(|| file_name(path).to_string())),
                 None,
             )
         };
         ArchiveNode {
             id: path.to_string(),
+            dir: None,
             label,
             kind,
             problem,
@@ -762,21 +759,32 @@ impl Snapshot {
         self.read_many(&paths)
     }
 
-    fn dir_label(&self, dir: &str, titles: &HashMap<String, String>) -> String {
+    /// A directory's kind code (translated by the interface) or, for
+    /// directories named after something people wrote, that title.
+    fn dir_label(
+        &self,
+        dir: &str,
+        titles: &HashMap<String, String>,
+        texts: &HashMap<String, Vec<u8>>,
+    ) -> (Option<&'static str>, Option<String>) {
         let parts: Vec<&str> = dir.split('/').collect();
-        let with_title = |id: &str| match titles.get(id) {
-            Some(t) => format!("{id} · {t}"),
-            None => id.to_string(),
-        };
         match parts.as_slice() {
-            ["problems"] => "问题".into(),
-            ["works"] => "成果".into(),
-            ["board"] => "公告".into(),
-            ["talk"] => "讨论".into(),
-            [".teahouse"] => "座位表".into(),
-            ["talk", "board"] => "公告的回应".into(),
-            ["works" | "talk", id] => with_title(id),
-            _ => parts.last().copied().unwrap_or(dir).to_string(),
+            ["problems"] => (Some("problems"), None),
+            ["works"] => (Some("works"), None),
+            ["board"] | ["talk", "board"] => (Some("board"), None),
+            ["talk"] => (Some("talk"), None),
+            [".teahouse"] => (Some("meta"), None),
+            ["works" | "talk", id] if titles.contains_key(*id) => (None, titles.get(*id).cloned()),
+            ["talk", "board", notice] => {
+                let title = texts.get(&format!("board/{notice}.md")).and_then(|b| {
+                    format::split_frontmatter(&text_of(b))
+                        .0
+                        .get("title")
+                        .map(str::to_string)
+                });
+                (None, Some(title.unwrap_or_else(|| notice.to_string())))
+            }
+            _ => (None, Some(parts.last().copied().unwrap_or(dir).to_string())),
         }
     }
 
@@ -816,7 +824,8 @@ impl Snapshot {
         fn build(
             s: &Snapshot,
             path: String,
-            label: String,
+            code: Option<&'static str>,
+            label: Option<String>,
             d: &Dir<'_>,
             titles: &HashMap<String, String>,
             texts: &HashMap<String, Vec<u8>>,
@@ -830,8 +839,8 @@ impl Snapshot {
                     } else {
                         format!("{path}/{name}")
                     };
-                    let label = s.dir_label(&p, titles);
-                    build(s, p, label, sub, titles, texts)
+                    let (code, label) = s.dir_label(&p, titles, texts);
+                    build(s, p, code, label, sub, titles, texts)
                 })
                 .collect();
             children.extend(d.files.iter().map(|f| s.leaf(f, titles, texts)));
@@ -842,6 +851,7 @@ impl Snapshot {
                 .map(str::to_string);
             ArchiveNode {
                 id: path,
+                dir: code,
                 label,
                 kind: NodeKind::Dir,
                 problem,
@@ -852,7 +862,8 @@ impl Snapshot {
         build(
             self,
             String::new(),
-            self.members.name.clone(),
+            None,
+            Some(self.members.name.clone()),
             &root,
             titles,
             texts,
@@ -917,7 +928,8 @@ impl Snapshot {
         if !notices.is_empty() {
             children.push(ArchiveNode {
                 id: "board".into(),
-                label: "公告".into(),
+                dir: Some("board"),
+                label: None,
                 kind: NodeKind::Dir,
                 problem: None,
                 size: None,
@@ -933,7 +945,8 @@ impl Snapshot {
         children.extend(rest);
         ArchiveNode {
             id: String::new(),
-            label: self.members.name.clone(),
+            dir: None,
+            label: Some(self.members.name.clone()),
             kind: NodeKind::Dir,
             problem: None,
             size: None,
@@ -943,7 +956,9 @@ impl Snapshot {
 
     pub fn file(&self, path: &str) -> Result<FileView> {
         let Some(f) = self.tree.get(path) else {
-            return Err(Error::not_found(format!("no file {path} / 没有这个文件")));
+            return Err(
+                Error::not_found(format!("no file {path} / 没有这个文件")).with("path", path)
+            );
         };
         let titles = self.problem_titles()?;
         let small = f.size.unwrap_or(0) <= MAX_INLINE;
@@ -998,16 +1013,21 @@ impl Snapshot {
             .map(|_| self.read_many(&[path]))
             .transpose()?
             .and_then(|mut m| m.remove(path))
-            .ok_or_else(|| Error::not_found(format!("{path} is not an attachment / 不是附件")))?;
+            .ok_or_else(|| {
+                Error::not_found(format!("{path} is not an attachment / 不是附件"))
+                    .with("path", path)
+            })?;
         let r = format::parse_blob_ref(&text_of(&text)).ok_or_else(|| {
             Error::invalid(format!(
                 "{path}: malformed attachment reference / 附件引用格式不对"
             ))
         })?;
         if r.purged {
-            return Err(Error::not_found(
-                "the host removed this attachment / 老板已删除这个附件",
-            ));
+            return Err(
+                Error::not_found("the host removed this attachment / 老板已删除这个附件")
+                    .with("path", path)
+                    .with("reason", "purged"),
+            );
         }
         let local = self.blobs_dir.join(&r.hash);
         if local.is_file() {
@@ -1016,7 +1036,8 @@ impl Snapshot {
         Err(Error::new(
             Code::Offline,
             "attachment not downloaded yet / 附件还没有下载",
-        ))
+        )
+        .with("path", path))
     }
 }
 

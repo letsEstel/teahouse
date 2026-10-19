@@ -380,6 +380,8 @@ pub fn infer_act(trailer: Option<&str>, changes: &[(char, String)]) -> Act {
         Act::Notice
     } else if any(&|c, p| c == 'A' && p.starts_with("talk/")) {
         Act::Note
+    } else if any(&|c, p| c == 'D' && p.starts_with("talk/")) {
+        Act::RemoveNote
     } else {
         Act::Update
     }
@@ -582,6 +584,11 @@ mod tests {
             infer_act(None, &ch(&[('A', "talk/0001/20261018T212005Z-wang.md")])),
             Act::Note
         );
+        assert_eq!(
+            infer_act(None, &ch(&[('D', "talk/0001/20261018T212005Z-wang.md")])),
+            Act::RemoveNote
+        );
+        assert_eq!(infer_act(Some("remove-note"), &[]), Act::RemoveNote);
         assert_eq!(
             infer_act(None, &ch(&[('M', ".teahouse/members.toml")])),
             Act::Seat

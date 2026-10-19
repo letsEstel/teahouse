@@ -39,6 +39,7 @@ pub enum Act {
     AddWork,
     UpdateWork,
     Note,
+    RemoveNote,
     Notice,
     Propose,
     Adopt,
@@ -55,6 +56,7 @@ impl Act {
             "add-work" => Act::AddWork,
             "update-work" => Act::UpdateWork,
             "note" => Act::Note,
+            "remove-note" => Act::RemoveNote,
             "notice" => Act::Notice,
             "propose" => Act::Propose,
             "adopt" => Act::Adopt,
@@ -309,8 +311,14 @@ impl From<WorkKind> for NodeKind {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ArchiveNode {
+    /// The repository path.
     pub id: String,
-    pub label: String,
+    /// `problems | works | board | talk | meta`: the interface translates it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dir: Option<&'static str>,
+    /// Only what people wrote: titles, names.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
     pub kind: NodeKind,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub problem: Option<String>,

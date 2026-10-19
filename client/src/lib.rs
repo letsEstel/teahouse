@@ -61,7 +61,8 @@ impl Client {
         if !valid_house_id(house) || !dir.join(".git").exists() {
             return Err(Error::not_found(format!(
                 "no teahouse {house:?} on this device / 本机没有这间茶馆"
-            )));
+            ))
+            .with("house", house));
         }
         Snapshot::load(
             house,

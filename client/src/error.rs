@@ -1,6 +1,7 @@
 //! The engine's errors: `ApiError` of CLIENT-API.md §5.
 
 use serde::Serialize;
+use std::collections::BTreeMap;
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -20,7 +21,10 @@ pub enum Code {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Error {
     pub code: Code,
-    /// One sentence for people, Chinese and English like the relay's.
+    /// What the interface needs to word the error itself, e.g. `{path}`.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub params: BTreeMap<String, String>,
+    /// A fallback sentence, for codes the interface does not know.
     pub message: String,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub reasons: Vec<String>,
@@ -32,9 +36,16 @@ impl Error {
     pub fn new(code: Code, message: impl Into<String>) -> Error {
         Error {
             code,
+            params: BTreeMap::new(),
             message: message.into(),
             reasons: Vec::new(),
         }
+    }
+
+    /// Adds a parameter for the interface's own wording.
+    pub fn with(mut self, key: &str, value: impl Into<String>) -> Error {
+        self.params.insert(key.to_string(), value.into());
+        self
     }
 
     pub fn internal(message: impl Into<String>) -> Error {

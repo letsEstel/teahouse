@@ -588,6 +588,7 @@ fn problem_has_body_works_events_and_notes_in_entry_order() {
         json!({ "house": "wutong", "problem": "0002" }),
     );
     assert_eq!(e["code"], "not_found");
+    assert_eq!(e["params"], json!({ "problem": "0002" }));
 }
 
 #[test]
@@ -595,28 +596,40 @@ fn archive_in_both_views() {
     let tmp = Tmp::new("archive");
     let (root, _h) = world(&tmp);
     let c = Client::new(&root);
+    // Directory kinds are codes for the interface to translate; labels are
+    // only what people wrote.
+    let shape = |n: &Value| (n["id"].clone(), n["dir"].clone(), n["label"].clone());
 
     let dirs = ok(&c, "archive", json!({ "house": "wutong", "view": "dirs" }));
     assert_eq!(dirs["kind"], "dir");
     assert_eq!(dirs["label"], "梧桐里三号院");
-    let top: Vec<(&str, &str)> = dirs["children"]
+    let top: Vec<_> = dirs["children"]
         .as_array()
         .unwrap()
         .iter()
-        .map(|n| (n["id"].as_str().unwrap(), n["label"].as_str().unwrap()))
+        .map(shape)
         .collect();
+    let n = Value::Null;
     assert_eq!(
         top,
         [
-            (".teahouse", "座位表"),
-            ("board", "公告"),
-            ("problems", "问题"),
-            ("talk", "讨论"),
-            ("works", "成果"),
-            ("README.md", "README.md"),
+            (json!(".teahouse"), json!("meta"), n.clone()),
+            (json!("board"), json!("board"), n.clone()),
+            (json!("problems"), json!("problems"), n.clone()),
+            (json!("talk"), json!("talk"), n.clone()),
+            (json!("works"), json!("works"), n.clone()),
+            (json!("README.md"), n.clone(), json!("README.md")),
         ]
     );
+    let members = &dirs["children"][0]["children"][0];
+    assert_eq!(members["kind"], "members");
+    assert!(members.get("label").is_none());
     let works0001 = &dirs["children"][4]["children"][0];
+    assert_eq!(
+        shape(works0001),
+        (json!("works/0001"), n.clone(), json!("小区停车位不好找"))
+    );
+    assert_eq!(works0001["problem"], "0001");
     let meta = works0001["children"]
         .as_array()
         .unwrap()
@@ -627,9 +640,12 @@ fn archive_in_both_views() {
         (&meta["kind"], &meta["label"]),
         (&json!("file"), &json!("车位.csv.meta.md"))
     );
-    assert_eq!(works0001["id"], "works/0001");
-    assert_eq!(works0001["label"], "0001 · 小区停车位不好找");
-    assert_eq!(works0001["problem"], "0001");
+    let talk = &dirs["children"][3]["children"];
+    assert_eq!(
+        shape(&talk[1]),
+        (json!("talk/board"), json!("board"), n.clone())
+    );
+    assert_eq!(talk[1]["children"][0]["label"], "周六停水");
 
     let probs = ok(
         &c,
@@ -638,7 +654,8 @@ fn archive_in_both_views() {
     );
     let p = &probs["children"][0];
     assert_eq!(p["kind"], "problem");
-    assert_eq!(p["label"], "0001 · 小区停车位不好找");
+    assert_eq!(p["label"], "小区停车位不好找");
+    assert_eq!(p["problem"], "0001");
     let kids: Vec<(&str, &str)> = p["children"]
         .as_array()
         .unwrap()
@@ -653,17 +670,24 @@ fn archive_in_both_views() {
         6 + 3,
         "six works, three notes, no title file: {kids:?}"
     );
-    let notes: Vec<&str> = kids.iter().filter(|k| k.0 == "note").map(|k| k.1).collect();
+    // Notes in entry order; the label is the member's name, the id has the stamp.
+    let notes: Vec<(&str, &str)> = p["children"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|n| n["kind"] == "note")
+        .map(|n| (n["label"].as_str().unwrap(), n["id"].as_str().unwrap()))
+        .collect();
     assert_eq!(
         notes,
         [
-            "小赵 · 2026-10-18 06:00",
-            "李师傅 · 2026-10-17 23:00",
-            "小赵 · 2026-10-18 08:00"
+            ("小赵", "talk/0001/20261018T060000Z-zhao.md"),
+            ("李师傅", "talk/0001/20261017T230000Z-li.md"),
+            ("小赵", "talk/0001/20261018T080000Z-zhao.md"),
         ]
     );
     let board = &probs["children"][1];
-    assert_eq!(board["label"], "公告");
+    assert_eq!(shape(board), (json!("board"), json!("board"), n.clone()));
     assert_eq!(board["children"][0]["label"], "周六停水");
     assert_eq!(board["children"][0]["children"][0]["kind"], "note");
     let rest: Vec<&str> = probs["children"].as_array().unwrap()[2..]
@@ -688,6 +712,7 @@ fn file_has_text_and_history_with_diffs() {
     );
     assert_eq!(v["node"]["kind"], "table");
     assert_eq!(v["node"]["label"], "各楼车位统计");
+    assert!(v["node"].get("dir").is_none());
     assert_eq!(v["text"], "楼号,车位\n1,12\n2,31\n");
     let h = v["history"].as_array().unwrap();
     assert_eq!(h.len(), 2);
