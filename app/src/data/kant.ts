@@ -83,6 +83,26 @@ export const kant: House = {
         {
           id: 'k2', kind: 'doc', by: 'he', when: '2026-10-09T23:00', title: glossary,
           note: { zh: '中德对照，41 条', en: 'Chinese–German, 41 entries', de: 'Chinesisch–Deutsch, 41 Einträge' },
+          history: [
+            {
+              by: 'he', when: '2026-09-20T22:00', act: 'add',
+              diff: [
+                { kind: 'add', text: { zh: 'Anschauung — 直观', en: 'Anschauung — 直观 (intuition)', de: 'Anschauung — 直观' } },
+                { kind: 'add', text: { zh: 'Erscheinung — 显象', en: 'Erscheinung — 显象 (appearance)', de: 'Erscheinung — 显象' } },
+                { kind: 'add', text: { zh: 'Ding an sich — 物自体', en: 'Ding an sich — 物自体 (thing in itself)', de: 'Ding an sich — 物自体' } },
+              ],
+            },
+            {
+              by: 'he', when: '2026-10-09T23:00', act: 'update',
+              diff: [
+                { kind: 'same', text: { zh: 'Anschauung — 直观', en: 'Anschauung — 直观 (intuition)', de: 'Anschauung — 直观' } },
+                { kind: 'same', text: { zh: 'Erscheinung — 显象', en: 'Erscheinung — 显象 (appearance)', de: 'Erscheinung — 显象' } },
+                { kind: 'same', text: { zh: 'Ding an sich — 物自体', en: 'Ding an sich — 物自体 (thing in itself)', de: 'Ding an sich — 物自体' } },
+                { kind: 'add', text: { zh: 'Noumenon — 本体、物自体', en: 'Noumenon — 本体, 物自体', de: 'Noumenon — 本体, 物自体' } },
+                { kind: 'add', text: { zh: 'Verstand — 知性', en: 'Verstand — 知性 (understanding)', de: 'Verstand — 知性' } },
+              ],
+            },
+          ],
           lines: [
             { zh: 'Anschauung — 直观', en: 'Anschauung — 直观 (intuition)', de: 'Anschauung — 直观' },
             { zh: 'Erscheinung — 显象', en: 'Erscheinung — 显象 (appearance)', de: 'Erscheinung — 显象' },

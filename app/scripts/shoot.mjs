@@ -75,6 +75,7 @@ for (const h of houses) {
     { name: `${h}-problems`, hash: `#/${h}/problems` },
     { name: `${h}-problem`, hash: `#/${h}/problem/0001` },
     { name: `${h}-proposal`, hash: `#/${h}/proposal/p1` },
+    { name: `${h}-archive`, hash: `#/${h}/archive/p-0001` },
   )
 }
 screens.push(
@@ -89,23 +90,33 @@ screens.push(
   { name: 'wutong-rail-open', hash: '#/wutong/house', act: (p) => p.click('button.more'), widths: [1920, 1366] },
   { name: 'wutong-switch', hash: '#/wutong/house', act: (p) => p.click('button.switch'), widths: [900], full: false },
 )
+// 档案（第 6 轮）
+screens.push(
+  { name: 'kant-archive-history', hash: '#/kant/archive/w-k2', act: (p) => p.click('.entry') },
+  { name: 'wutong-archive-byproblem', hash: '#/wutong/archive/w-w1', act: (p) => p.click('.seg button:nth-child(2)'), widths: [1920, 1366] },
+  { name: 'startup-archive-table', hash: '#/startup/archive/w-s2' },
+  { name: 'wutong-archive-members', hash: '#/wutong/archive/members', act: (p) => p.click('.entry') },
+  { name: 'lab-archive-export', hash: '#/lab/archive/w-l2', act: (p) => p.click('.export button') },
+  { name: 'wutong-archive-list', hash: '#/wutong/archive', widths: [900, 390] },
+)
 // 本轮保存的图
 const save = {
-  'lab-problem': { saveDe: true },      // 离线留言旁的"写于 …"；复现记录是"表格"
-  'band-problem': {},                   // 演出预算是"表格"
-  'wutong-problem': {},
-  'wutong-house': {},
+  'wutong-archive': {},
+  'kant-archive-history': { saveDe: true },
+  'wutong-archive-byproblem': {},
+  'startup-archive-table': {},
+  'wutong-archive-members': {},
+  'lab-archive-export': {},
 }
-// 手机宽度（390）另存几张：本轮修了手机布局
-screens.push(
-  { name: 'wutong-house-phone', hash: '#/wutong/house', widths: [390], save: true, saveAt: 390 },
-  { name: 'lab-problem-phone', hash: '#/lab/problem/0001', widths: [390], save: true, saveAt: 390 },
-  { name: 'wutong-proposal-phone', hash: '#/wutong/proposal/p1', widths: [390], save: true, saveAt: 390 },
-)
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
+// 窄窗口和手机：档案是"文件树 → 文件"两级页面
+screens.push(
+  { name: 'wutong-archive-tree', hash: '#/wutong/archive', widths: [900], save: true, saveAt: 900, full: false },
+  { name: 'kant-archive-phone', hash: '#/kant/archive/w-k2', act: (p) => p.click('.entry'), widths: [390], save: true, saveAt: 390 },
+)
 // 夜间模式：布局不变，只拍默认组
 screens.push(
-  { name: 'lab-problem-dark', hash: '#/lab/problem/0001', theme: 'dark', only1366: true, save: true },
+  { name: 'kant-archive-history-dark', hash: '#/kant/archive/w-k2', act: (p) => p.click('.entry'), theme: 'dark', only1366: true, save: true },
 )
 
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
@@ -195,6 +206,7 @@ try {
         checked++
         if (!keep(s, w, lang)) continue
         // 整页截图：把视口拉到整页高度再拍，这样固定的侧栏也是整页高（Playwright 的 fullPage 不会拉伸它）
+        if (s.full !== false) await page.evaluate(() => window.scrollTo(0, 0))
         const full = s.full !== false && (await page.evaluate(() => document.documentElement.scrollHeight))
         if (full && full > h) { await page.setViewportSize({ width: w, height: full }); await page.waitForTimeout(150) }
         await page.screenshot({ path: join(out, file) })

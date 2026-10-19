@@ -1,6 +1,7 @@
 <script lang="ts">
   import Shape from '../lib/Shape.svelte'
   import WorkGlyph from '../lib/WorkGlyph.svelte'
+  import Diff from '../lib/Diff.svelte'
   import { member, self, boss, type House, type Proposal } from '../data'
   import { fit } from '../lib/fit'
   import { t, L, when, i18n } from '../i18n/index.svelte'
@@ -88,14 +89,7 @@
               {/each}
             </div>
           {:else}
-            <div class="lines">
-              {#each f.lines as l, i}
-                <div class="line {l.kind}">
-                  <span class="ln num">{String(i + 1).padStart(2, '0')}</span>
-                  <span class="tx">{L(l.text) || ' '}</span>
-                </div>
-              {/each}
-            </div>
+            <Diff lines={f.lines} muted={state === 'rejected'} />
           {/if}
         </div>
       {/each}
@@ -195,25 +189,6 @@
   .file-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 14px 0; border-bottom: 1px solid var(--ink); }
   .ft { font-family: var(--display); font-size: 17px; font-weight: 700; letter-spacing: var(--track); }
   .tally { margin-left: auto; font-size: 13px; color: var(--ink-2); }
-
-  /* 差异：新增 = 墨黑实线标记 + 墨色正文；删除 = 删除线 + 灰色。不借用角色色。 */
-  .lines { padding: 6px 0 4px; }
-  .line {
-    display: grid;
-    grid-template-columns: 34px 16px minmax(0, 1fr);
-    align-items: baseline;
-    font-size: 15px;
-    line-height: 1.75;
-    padding: 3px 0;
-    position: relative;
-  }
-  .ln { font-size: 11px; color: var(--ink-3); }
-  .tx { grid-column: 3; white-space: pre-wrap; }
-  .line.add::before { content: ''; position: absolute; left: 34px; top: 5px; bottom: 5px; width: 5px; background: var(--ink); }
-  .line.add .tx { font-weight: 500; }
-  .line.del .tx { color: var(--ink-3); text-decoration: line-through; text-decoration-thickness: 1.5px; }
-  .rejected .line.add .tx { color: var(--ink-3); font-weight: 400; }
-  .rejected .line.add::before { background: var(--ink-3); }
 
   .doc { padding: 14px 0 6px; animation: settle 520ms var(--ease) both; }
   .doc p { font-size: 15px; line-height: 1.75; padding: 3px 0; white-space: pre-wrap; }

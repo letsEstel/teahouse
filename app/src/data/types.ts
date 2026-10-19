@@ -18,6 +18,8 @@ export interface Work {
   preview?: { chart: 'parking' } | { excerpt: Text }
   /** 文本成果的正文（逐行），发起提案时可以在此基础上修改 */
   lines?: Text[]
+  /** 档案里"来历"的样例：这份成果每一次进入茶馆的改动（M1 起直接来自茶馆的历史） */
+  history?: { by: string; when: string; act: 'add' | 'update' | 'merge'; diff: DiffLine[] }[]
 }
 
 /** 写下来的一段话：公告的回应、问题下的讨论。每条都是一次提交。 */

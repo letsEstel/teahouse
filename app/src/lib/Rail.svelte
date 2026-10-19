@@ -3,9 +3,10 @@
   import { houses, self, pad, type House } from '../data'
   import { i18n, langs, setLang, t, L, type Lang } from '../i18n/index.svelte'
   import { theme, themes, setTheme } from './theme.svelte'
+  import { archive } from '../data/archive'
 
   // ≥1024：左侧竖栏；<1024：顶栏，茶馆列表收进下拉。
-  let { house, section }: { house: House; section: 'house' | 'board' | 'problems' | 'proposals' } = $props()
+  let { house, section }: { house: House; section: 'house' | 'board' | 'problems' | 'proposals' | 'archive' } = $props()
   let me = $derived(self(house))
   let open = $state(false)
   // 茶馆超过 4 间时，宽屏侧栏默认只列出当前这间，点"全部"展开（展开后列表可滚动）
@@ -18,6 +19,7 @@
     { key: 'board', no: '02', name: t('nav.board'), href: `#/${house.id}/board`, count: pad(house.board.length), badge: false },
     { key: 'problems', no: '03', name: t('nav.problems'), href: `#/${house.id}/problems`, count: pad(house.problems.length), badge: false },
     { key: 'proposals', no: '04', name: t('nav.proposals'), href: `#/${house.id}/proposals`, count: pad(house.proposals.length), badge: house.proposals.length > 0 },
+    { key: 'archive', no: '05', name: t('nav.archive'), href: `#/${house.id}/archive`, count: pad(archive(house).length), badge: false },
   ])
   const short: Record<Lang, string> = { zh: '中', en: 'EN', de: 'DE' }
   const full: Record<Lang, string> = { zh: '中文', en: 'English', de: 'Deutsch' }
@@ -210,7 +212,7 @@
     .more { display: none; }
     ul a { padding: 8px 0; }
 
-    nav { grid-area: nav; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+    nav { grid-area: nav; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
     nav a { grid-template-columns: minmax(0, 1fr) auto; border-bottom: 0; padding: 12px var(--in); }
     nav a + a { border-left: 1px solid var(--ink); }
     .no { display: none; }

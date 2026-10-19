@@ -80,6 +80,32 @@ export const lab: House = {
         },
         {
           id: 'l2', kind: 'doc', by: 'ye', when: '2026-10-14T16:00', title: section3,
+          history: [
+            {
+              by: 'ye', when: '2026-10-12T21:30', act: 'add',
+              diff: [
+                { kind: 'add', text: { zh: '3 实验', en: '3 Experiment', de: '3 Experiment' } },
+                { kind: 'add', text: { zh: '液滴在 T 型通道中生成，分散相流速 2 μl/min。', en: 'Droplets were formed in a T-junction at a dispersed-phase flow rate of 2 μl/min.', de: 'Die Tröpfchen entstanden in einer T-Kreuzung bei 2 μl/min Durchfluss der dispersen Phase.' } },
+                { kind: 'add', text: { zh: '液滴直径为 42 ± 3 μm（n = 120）。', en: 'Droplet diameter was 42 ± 3 μm (n = 120).', de: 'Der Tröpfchendurchmesser betrug 42 ± 3 μm (n = 120).' } },
+              ],
+            },
+            {
+              by: 'jiang', when: '2026-10-13T10:15', act: 'update',
+              diff: [
+                { kind: 'same', text: { zh: '3 实验', en: '3 Experiment', de: '3 Experiment' } },
+                { kind: 'del', text: { zh: '液滴在 T 型通道中生成，分散相流速 2 μl/min。', en: 'Droplets were formed in a T-junction at a dispersed-phase flow rate of 2 μl/min.', de: 'Die Tröpfchen entstanden in einer T-Kreuzung bei 2 μl/min Durchfluss der dispersen Phase.' } },
+                { kind: 'add', text: { zh: '液滴在 T 型通道中生成，分散相流速 2 μL/min。', en: 'Droplets were formed in a T-junction at a dispersed-phase flow rate of 2 μL/min.', de: 'Die Tröpfchen entstanden in einer T-Kreuzung bei 2 μL/min Durchfluss der dispersen Phase.' } },
+                { kind: 'same', text: { zh: '液滴直径为 42 ± 3 μm（n = 120）。', en: 'Droplet diameter was 42 ± 3 μm (n = 120).', de: 'Der Tröpfchendurchmesser betrug 42 ± 3 μm (n = 120).' } },
+              ],
+            },
+            {
+              by: 'ye', when: '2026-10-14T16:00', act: 'update',
+              diff: [
+                { kind: 'same', text: { zh: '液滴直径为 42 ± 3 μm（n = 120）。', en: 'Droplet diameter was 42 ± 3 μm (n = 120).', de: 'Der Tröpfchendurchmesser betrug 42 ± 3 μm (n = 120).' } },
+                { kind: 'add', text: { zh: '图 3 给出直径分布。', en: 'Figure 3 shows the size distribution.', de: 'Abbildung 3 zeigt die Größenverteilung.' } },
+              ],
+            },
+          ],
           note: { zh: '实验部分，约 600 字', en: 'Methods, about 600 words', de: 'Methodenteil, etwa 600 Wörter' },
           lines: [
             { zh: '3 实验', en: '3 Experiment', de: '3 Experiment' },

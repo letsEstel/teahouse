@@ -7,6 +7,7 @@
   import Proposal from './views/Proposal.svelte'
   import Board from './views/Board.svelte'
   import Propose from './views/Propose.svelte'
+  import Archive from './views/Archive.svelte'
   import { findHouse } from './data'
   import { i18n } from './i18n/index.svelte'
 
@@ -26,8 +27,8 @@
   let section = $derived(
     route.page === 'problems' || route.page === 'problem' ? 'problems'
     : route.page === 'proposals' || route.page === 'proposal' || route.page === 'propose' ? 'proposals'
-    : route.page === 'board' ? 'board' : 'house'
-  ) as 'house' | 'board' | 'problems' | 'proposals'
+    : route.page === 'board' ? 'board' : route.page === 'archive' ? 'archive' : 'house'
+  ) as 'house' | 'board' | 'problems' | 'proposals' | 'archive'
 </script>
 
 <Rail {house} {section} />
@@ -38,6 +39,8 @@
         <Problems {house} view={route.arg === 'kanban' ? 'kanban' : 'list'} />
       {:else if route.page === 'board'}
         <Board {house} />
+      {:else if route.page === 'archive'}
+        <Archive {house} id={route.arg || undefined} />
       {:else if route.page === 'propose'}
         <Propose {house} arg={route.arg} />
       {:else if route.page === 'problem'}
