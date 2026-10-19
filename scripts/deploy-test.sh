@@ -57,5 +57,10 @@ git reset -q --hard origin/main
 refused "stranger cannot clone" bash -c "GIT_SSH_COMMAND='$stranger' git clone -q teahouse@127.0.0.1:smoke $work/x"
 refused "no shell for members" bash -c "$GIT_SSH_COMMAND teahouse@127.0.0.1 bash -c id"
 check "stranger reaches only redeem (bad code refused politely)" bash -c "$stranger -T teahouse@127.0.0.1 redeem TH-0000-0000-0000-0000 --name X 2>&1 | grep -qiE 'invit|邀请'"
+if [ "$fail" -gt 0 ] && [ "$mode" = install ]; then
+  echo "▌ diagnostics"
+  namei -l /usr/local/bin/teahouse-relay 2>&1 | sed 's/^/    /'
+  (journalctl --no-pager -n 200 2>/dev/null | grep -iE 'sshd|teahouse' | grep -iE 'unsafe|refus|denied|invalid|error|fail' | tail -12) | sed 's/^/    /'
+fi
 echo "▌ $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
