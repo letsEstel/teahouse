@@ -318,4 +318,8 @@ export default {
   'seat.leftShort': 'kein Platz mehr',
   'err.refusedDraft': 'Nichts ist verloren: Dein Text liegt als Entwurf auf diesem Gerät, du kannst ihn korrigieren und es erneut versuchen.',
   'err.refusedWhy': 'Die Gründe des Teehauses:',
+  'demo.try': 'Erst die Beispiel-Teehäuser ansehen',
+  'demo.tryHint': 'Sechs Beispiel-Teehäuser mit erfundenen Daten: Nichts wird synchronisiert, nichts verlässt dieses Gerät.',
+  'demo.on': 'Beispiele · erfundene Daten',
+  'demo.exit': 'Beispiele verlassen',
 }

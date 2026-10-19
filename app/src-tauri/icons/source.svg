@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- 茶馆的标志：一间方形的屋子，中间一张圆桌，底边正中是门 -->
+  <rect width="1024" height="1024" fill="#f1ece2"/>
+  <rect x="212" y="212" width="600" height="600" fill="none" stroke="#141414" stroke-width="56"/>
+  <circle cx="512" cy="512" r="146" fill="#141414"/>
+  <rect x="440" y="770" width="144" height="80" fill="#f1ece2"/>
+</svg>

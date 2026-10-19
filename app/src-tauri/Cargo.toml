@@ -1,0 +1,34 @@
+[package]
+name = "teahouse-app"
+version = "0.1.0"
+description = "Teahouse desktop and Android client: the Tauri shell around app/ (the interface) and client/ (the engine)."
+edition = "2021"
+rust-version = "1.77"
+license = "UNLICENSED"
+
+# A workspace of its own: the root workspace's CI (fmt, clippy, tests of core/relay/client)
+# must not need the system libraries a Tauri build pulls in (webkit2gtk on Linux).
+# This crate is built by .github/workflows/app.yml instead.
+[workspace]
+
+[lib]
+name = "teahouse_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# The shell. protocol-asset lets the interface show attachments from the engine's
+# local blob cache through convertFileSrc (CLIENT-API.md §4, blob).
+tauri = { version = "2", features = ["protocol-asset"] }
+serde_json = "1"
+# The engine: every command of CLIENT-API.md §4 goes through Client::call.
+teahouse-client = { path = "../../client" }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "s"
+strip = true
+panic = "abort"

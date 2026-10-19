@@ -319,4 +319,8 @@ export default {
   'seat.leftShort': '已离座',
   'err.refusedDraft': '你写的内容没有丢：已经存进这台设备的草稿，改好之后可以再交一次。',
   'err.refusedWhy': '茶馆给出的理由：',
+  'demo.try': '先看看示例茶馆',
+  'demo.tryHint': '六间示例茶馆，全是假数据：不会同步，也不会离开这台设备。',
+  'demo.on': '示例 · 假数据',
+  'demo.exit': '退出示例',
 }
