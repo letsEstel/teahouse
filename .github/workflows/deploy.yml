@@ -23,7 +23,15 @@ jobs:
           rustup toolchain install stable --profile minimal && rustup default stable
           cargo build --release --locked -p teahouse-relay
       - name: install.sh + member checks
-        run: sudo ./scripts/deploy-test.sh install target/release/teahouse-relay
+        run: |
+          set +e
+          sudo ./scripts/deploy-test.sh install target/release/teahouse-relay 2>&1 | tee deploy-test.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            sudo journalctl -u ssh --no-pager -n 40 >> deploy-test.log 2>&1 || true
+            echo "::error title=deploy-test (install)::$(tail -n 60 deploy-test.log | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}')"
+            exit 1
+          fi
       - name: Package relay for download
         run: |
           mkdir -p dist/teahouse-relay
@@ -41,4 +49,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Docker image + member checks
-        run: ./scripts/deploy-test.sh docker
+        run: |
+          set +e
+          ./scripts/deploy-test.sh docker 2>&1 | tee deploy-test.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            docker logs th-smoke >> deploy-test.log 2>&1 || true
+            echo "::error title=deploy-test (docker)::$(tail -n 60 deploy-test.log | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}')"
+            exit 1
+          fi
