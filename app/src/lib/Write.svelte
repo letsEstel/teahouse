@@ -14,17 +14,22 @@
     titlePlaceholder?: string
     rows?: number
     hint?: string
-    onsubmit: (text: string, title: string) => void
+    /** 返回 false 表示没写进去（出错了），这时保留输入框里的内容 */
+    onsubmit: (text: string, title: string) => void | boolean | Promise<void | boolean>
   } = $props()
 
   let text = $state('')
   let head = $state('')
   let ready = $derived(text.trim().length > 0 && (!title || head.trim().length > 0))
 
-  function submit(e: SubmitEvent) {
+  let busy = $state(false)
+  async function submit(e: SubmitEvent) {
     e.preventDefault()
-    if (!ready) return
-    onsubmit(text.trim(), head.trim())
+    if (!ready || busy) return
+    busy = true
+    const ok = await onsubmit(text.trim(), head.trim())
+    busy = false
+    if (ok === false) return
     text = ''
     head = ''
   }
@@ -37,7 +42,7 @@
   <textarea bind:value={text} {placeholder} aria-label={placeholder} {rows}></textarea>
   <div class="foot">
     <p class="consequence">{hint || t('write.hint')}</p>
-    <button class="submit" type="submit" disabled={!ready}>{t('write.submit')}</button>
+    <button class="submit" type="submit" disabled={!ready || busy}>{t('write.submit')}</button>
   </div>
 </form>
 

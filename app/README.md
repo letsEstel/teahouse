@@ -28,7 +28,17 @@ URL 参数：`?lang=zh|en|de` 指定语言（否则用上次的选择或系统�
 
 界面只通过 `src/api/backend.ts` 里的 `api(命令名, 参数)` 读写数据，命令和数据模型照 `docs/CLIENT-API.md`（类型在 `src/api/types.ts`）。
 现在接的是 `FakeBackend`（`src/api/fake.ts`）：把 `src/data/` 里的六间示例茶馆包装成合同的形状，档案里的文件原文按第 1 节的格式生成。
-第 2 步换成 `HttpBackend`（本机 7377 端口），第 4 步换成 `TauriBackend`；界面代码不用改。
+第 4 步换成 `TauriBackend`；界面代码不用改。
+
+**接真引擎（第 2 步，开发期）**：设 `VITE_BACKEND=local`，界面改用 `HttpBackend`，`POST http://127.0.0.1:7377/v1/<命令>`（引擎的 `serve`）。
+引擎的 `serve` 还没做好时，可以让 Vite 开发服务器把请求转给引擎的命令行：
+
+```bash
+TEAHOUSE_ENGINE_CLI=<teahouse-client 的路径> TEAHOUSE_CLIENT_ROOT=<引擎根目录> npm run dev:engine
+```
+
+（`scripts/engine-bridge.mjs`：`/v1/<命令>` → `teahouse-client --root <根目录> call <命令> <参数>`；附件经 `/v1/__file` 读取，只允许读根目录里面的文件。）
+写入失败时，页面顶部出现一条按错误代码本地化的提示，输入框里写的内容保留；连不上引擎时显示"打不开这间茶馆"和重试按钮。
 
 ```bash
 npm run export-fixtures   # 导出 ../fixtures/houses.zh.json，给引擎种真的 git 仓库

@@ -4,7 +4,7 @@
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import { diffLines } from '../lib/diff'
   import { self, host, type House, type WorkKind, type Problem } from '../api/view'
-  import { api } from '../api/backend'
+  import { api, write } from '../api/backend'
   import { t } from '../i18n/index.svelte'
 
   // 发起提案（茶客的核心动作）：面向哪个问题 → 改什么 → 为什么 → 交给老板。
@@ -74,14 +74,15 @@
   // 交给引擎：问题 → propose；新问题 → openProblem；公告 → postNotice（茶客的这两种会被引擎转成提案）
   async function submit() {
     if (missing.length) return
-    if (target === 'board') await api('postNotice', { house: house.id, title: newTitle, text: body })
-    else if (target === 'new') await api('openProblem', { house: house.id, title: newTitle, body: [{ heading: '', text: body }] })
+    let done: unknown = null
+    if (target === 'board') done = await write('postNotice', { house: house.id, title: newTitle, text: body })
+    else if (target === 'new') done = await write('openProblem', { house: house.id, title: newTitle, body: [{ heading: '', text: body }] })
     else if (target) {
       const title = effMode === 'modify' && work ? t('propose.titleModify', { title: work.title }) : t('propose.titleAdd', { title: newTitle })
       const change = effMode === 'modify' && work ? { id: work.id, kind: work.kind, title: work.title, text: body } : { kind: newKind, title: newTitle, text: body }
-      await api('propose', { house: house.id, problem: target, title, reason, changes: [change] })
+      done = await write('propose', { house: house.id, problem: target, title, reason, changes: [change] })
     }
-    sent = true
+    if (done) sent = true
   }
 </script>
 

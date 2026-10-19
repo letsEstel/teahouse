@@ -10,7 +10,8 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "shoot": "node scripts/shoot.mjs",
     "preview:publish": "node scripts/preview.mjs",
-    "export-fixtures": "node scripts/export-fixtures.mjs"
+    "export-fixtures": "node scripts/export-fixtures.mjs",
+    "dev:engine": "VITE_BACKEND=local VITE_BACKEND_URL= vite"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.1.1",

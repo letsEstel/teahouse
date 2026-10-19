@@ -3,7 +3,7 @@
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
   import { member, self, pad, type House, type Notice, type Note } from '../api/view'
-  import { api } from '../api/backend'
+  import { write } from '../api/backend'
   import { t, when } from '../i18n/index.svelte'
 
   // 公告板：老板和伙计张贴，所有人可以在下面回应。每条公告是 board/ 下的一个文件。
@@ -18,7 +18,7 @@
   let notices = $derived(house.board.map((n) => ({ ...n, replies: n.replies.filter((r) => !hidden.some((h) => h.writtenAt === r.writtenAt && h.by === r.by)) })))
 
   async function post(text: string, title: string) {
-    await api('postNotice', { house: house.id, title, text })
+    if (!(await write('postNotice', { house: house.id, title, text }))) return false
     posting = false
     refresh()
   }
@@ -28,7 +28,7 @@
     hidden = [...hidden, note]
   }
   async function reply(n: Notice, text: string) {
-    await api('note', { house: house.id, notice: n.id, text })
+    if (!(await write('note', { house: house.id, notice: n.id, text }))) return false
     replying = null
     refresh()
   }
