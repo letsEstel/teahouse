@@ -158,6 +158,10 @@ pub struct Work {
     pub by: String,
     pub when: String,
     pub size: u64,
+    /// One line under the title: frontmatter `note:` (for a table, in its
+    /// `.csv.meta.md`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -323,6 +327,8 @@ pub struct HistoryEntry {
     pub act: Act,
     pub problem: String,
     pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<Status>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub diff: Option<Vec<DiffLine>>,
 }

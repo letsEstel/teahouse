@@ -221,9 +221,12 @@ pub fn sections(body: &str) -> Vec<(String, String)> {
     out
 }
 
-/// A short summary of a problem: the first non-empty line of its body,
-/// at most 120 characters.
+/// A problem's summary: the text before its first `##` heading; failing
+/// that, the first line of its body, at most 120 characters.
 pub fn summary(body: &[(String, String)]) -> String {
+    if let Some((_, intro)) = body.first().filter(|(h, _)| h.is_empty()) {
+        return intro.trim().to_string();
+    }
     let line = body
         .iter()
         .flat_map(|(_, t)| t.lines())
@@ -494,6 +497,7 @@ mod tests {
             ]
         );
         assert_eq!(summary(&p.body), "开场白");
+        assert_eq!(summary(&p.body[1..]), "院内 42 个车位");
         assert_eq!(parse_problem("", "0003", "").title, "0003");
         assert_eq!(parse_problem("", "0003", "slug").title, "slug");
     }

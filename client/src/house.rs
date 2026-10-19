@@ -602,6 +602,7 @@ impl Snapshot {
         };
         let step = self.touched_step(&f.path);
         let mut title = fm.as_ref().and_then(|m| m.get("title")).map(str::to_string);
+        let mut note = fm.as_ref().and_then(|m| m.get("note")).map(str::to_string);
         let mut size = f.size.unwrap_or(0);
         let mut blob = None;
         let mut body = None;
@@ -614,12 +615,12 @@ impl Snapshot {
             WorkKind::Table => {
                 body = text.clone();
                 let meta = format!("{}.meta.md", f.path);
-                title = texts.get(&meta).map(|b| text_of(b)).and_then(|t| {
-                    format::split_frontmatter(&t)
-                        .0
-                        .get("title")
-                        .map(str::to_string)
-                });
+                let meta = texts
+                    .get(&meta)
+                    .map(|b| format::split_frontmatter(&text_of(b)).0)
+                    .unwrap_or_default();
+                title = meta.get("title").map(str::to_string);
+                note = meta.get("note").map(str::to_string);
             }
             WorkKind::Image | WorkKind::File => {
                 if let Some(r) = text.as_deref().and_then(format::parse_blob_ref) {
@@ -640,6 +641,7 @@ impl Snapshot {
             by: step.map(|s| self.by(s)).unwrap_or_default(),
             when: step.map(|s| when(s.time)).unwrap_or_default(),
             size,
+            note,
             text: body,
             blob,
         })
@@ -976,6 +978,7 @@ impl Snapshot {
                 act: ev.act,
                 problem: s.problem.first().cloned().unwrap_or_default(),
                 title: ev.title,
+                status: ev.status,
                 diff,
             });
         }

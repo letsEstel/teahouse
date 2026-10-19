@@ -176,7 +176,7 @@ fn world(tmp: &Tmp) -> (PathBuf, House) {
             ("works/0001/车位.csv", Some("楼号,车位\n1,12\n2,30\n")),
             (
                 "works/0001/车位.csv.meta.md",
-                Some("---\ntitle: 各楼车位统计\n---\n"),
+                Some("---\ntitle: 各楼车位统计\nnote: 42 个车位逐一标号\n---\n"),
             ),
             ("works/0001/车位照片.png.ref.md", Some(&image_ref)),
             ("works/0001/合同.pdf.ref.md", Some(&pdf_ref)),
@@ -517,6 +517,8 @@ fn problem_has_body_works_events_and_notes_in_entry_order() {
     let table = by_id("车位.csv");
     assert_eq!(table["kind"], "table");
     assert_eq!(table["title"], "各楼车位统计");
+    assert_eq!(table["note"], "42 个车位逐一标号");
+    assert!(plan.get("note").is_none());
     assert_eq!(table["text"], "楼号,车位\n1,12\n2,31\n");
     assert_eq!(table["when"], when(T0 + 12 * HOUR));
     let img = by_id("车位照片.png.ref.md");
@@ -692,6 +694,7 @@ fn file_has_text_and_history_with_diffs() {
     assert_eq!(h[0]["act"], "add-work");
     assert_eq!(h[0]["by"], "li");
     assert_eq!(h[1]["title"], "更正 2 号楼车位数");
+    assert!(h[1].get("status").is_none());
     assert_eq!(h[1]["problem"], "0001");
     assert_eq!(
         h[1]["diff"],
@@ -701,6 +704,17 @@ fn file_has_text_and_history_with_diffs() {
             { "kind": "del", "text": "2,30" },
             { "kind": "add", "text": "2,31" },
         ])
+    );
+
+    let p = ok(
+        &c,
+        "file",
+        json!({ "house": "wutong", "id": "problems/0001-parking.md" }),
+    );
+    let last = p["history"].as_array().unwrap().last().unwrap().clone();
+    assert_eq!(
+        (&last["act"], &last["status"]),
+        (&json!("set-status"), &json!("active"))
     );
 
     let bin = ok(
