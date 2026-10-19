@@ -45,7 +45,7 @@ stranger="ssh -p $port -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChe
 echo "▌ member checks on 127.0.0.1:$port"
 check "host sees their teahouse (ssh -T)" bash -c "$GIT_SSH_COMMAND -T teahouse@127.0.0.1 | grep -q smoke"
 check "host clones" git clone -q teahouse@127.0.0.1:smoke "$work/clone"
-cd "$work/clone"
+cd "$work/clone" || { echo "▌ $pass passed, $((fail+1)) failed (no clone)"; exit 1; }
 git config user.name Tester; git config user.email tester@teahouse
 git config gpg.format ssh; git config user.signingkey "$work/host.pub"; git config commit.gpgsign true
 mkdir -p problems; printf -- '---\ntitle: 第一个问题\nstatus: open\n---\n测试\n' > problems/0001-first.md
@@ -59,7 +59,7 @@ refused "no shell for members" bash -c "$GIT_SSH_COMMAND teahouse@127.0.0.1 bash
 check "stranger reaches only redeem (bad code refused politely)" bash -c "$stranger -T teahouse@127.0.0.1 redeem TH-0000-0000-0000-0000 --name X 2>&1 | grep -qiE 'invit|邀请'"
 if [ "$fail" -gt 0 ] && [ "$mode" = install ]; then
   echo "▌ diagnostics"
-  namei -l /usr/local/bin/teahouse-relay 2>&1 | sed 's/^/    /'
+  namei -l /usr/lib/teahouse/teahouse-relay 2>&1 | sed 's/^/    /'
   (journalctl --no-pager -n 200 2>/dev/null | grep -iE 'sshd|teahouse' | grep -iE 'unsafe|refus|denied|invalid|error|fail' | tail -12) | sed 's/^/    /'
 fi
 echo "▌ $pass passed, $fail failed"

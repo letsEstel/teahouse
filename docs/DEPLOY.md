@@ -21,7 +21,7 @@
    ```
 3. 脚本最后会打印 Relay 的地址，例如 `teahouse@203.0.113.7`。
 
-脚本做的事：装好 OpenSSH 和 git；把 Relay 装到 `/usr/local/bin`；建一个没有特权的系统用户 `teahouse`；初始化 `/var/lib/teahouse`；配好 sshd（只影响 `teahouse` 这一个用户）；开启每日完整性检查。**重复运行是安全的**，升级时换上新的 `teahouse-relay` 再跑一遍即可。
+脚本做的事：装好 OpenSSH 和 git；把 Relay 装到 `/usr/lib/teahouse`（一路都只有 root 可写，sshd 要求如此），并在 `/usr/local/bin` 放一个链接；建一个没有特权的系统用户 `teahouse`；初始化 `/var/lib/teahouse`；配好 sshd（只影响 `teahouse` 这一个用户）；开启每日完整性检查。**重复运行是安全的**，升级时换上新的 `teahouse-relay` 再跑一遍即可。
 
 ## 方式二：Docker
 

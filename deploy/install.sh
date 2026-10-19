@@ -11,8 +11,9 @@
 #
 # What it does (idempotent — safe to run again, e.g. to upgrade the binary):
 #   1. installs openssh-server, git and ssh-keygen if missing
-#   2. installs the relay binary at /usr/local/bin/teahouse-relay (root-owned,
-#      which sshd requires for AuthorizedKeysCommand)
+#   2. installs the relay binary at /usr/lib/teahouse/teahouse-relay (root-owned
+#      all the way up, which sshd requires for AuthorizedKeysCommand; some
+#      images ship a group-writable /usr/local/bin) and links it into PATH
 #   3. creates the unprivileged system user `teahouse` and /var/lib/teahouse
 #   4. runs `teahouse-relay init` (hooks, config, the relay's signing key)
 #   5. installs the sshd drop-in (method A: keys looked up live, which is also
@@ -26,7 +27,8 @@
 set -eu
 
 ROOT=/var/lib/teahouse
-BIN=/usr/local/bin/teahouse-relay
+BIN=/usr/lib/teahouse/teahouse-relay   # root-only path: sshd checks every directory above it
+LINK=/usr/local/bin/teahouse-relay     # convenience symlink for operators
 USER_NAME=teahouse
 HERE=$(cd "$(dirname "$0")" && pwd)
 
@@ -115,11 +117,23 @@ if [ "$from_source" -eq 1 ]; then
   binary="$HERE/../target/release/teahouse-relay"
 fi
 [ -f "$binary" ] || die "找不到程序 $binary"
+install -d -o root -g root -m 0755 "$(dirname "$BIN")"
 if [ "$(readlink -f "$binary")" != "$BIN" ]; then
   install -o root -g root -m 0755 "$binary" "$BIN.new"
   "$BIN.new" version >/dev/null || die "$binary 无法运行（架构不对？）"
   mv -f "$BIN.new" "$BIN"
 fi
+ln -sfn "$BIN" "$LINK" 2>/dev/null || true
+# sshd's rule for AuthorizedKeysCommand: the file and every directory above it
+# are owned by root and not writable by group or others. Check it ourselves so
+# a bad server fails here, loudly, instead of every login failing silently.
+d="$BIN"
+while [ "$d" != "/" ]; do
+  set -- $(stat -c '%u %a' "$d")
+  [ "$1" = 0 ] || die "$d 不属于 root · not owned by root (sshd will refuse it)"
+  case "$2" in *[2367]?|*?[2367]) die "$d 可被他人写入（权限 $2）· writable by group/others (sshd will refuse it)" ;; esac
+  d=$(dirname "$d")
+done
 ok "$("$BIN" version) → $BIN"
 
 say "3/7 系统用户 · user $USER_NAME"

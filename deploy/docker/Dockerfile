@@ -21,10 +21,11 @@ RUN apt-get update \
  && useradd --system --home-dir /var/lib/teahouse --create-home --shell /bin/sh teahouse \
  && usermod -p '*' teahouse \
  && rm -f /etc/ssh/ssh_host_*
-COPY --from=build /src/target/release/teahouse-relay /usr/local/bin/teahouse-relay
+COPY --from=build /src/target/release/teahouse-relay /usr/lib/teahouse/teahouse-relay
 COPY deploy/sshd/teahouse.conf /etc/ssh/sshd_config.d/teahouse.conf
 COPY deploy/docker/entrypoint.sh /usr/local/bin/teahouse-entrypoint
-RUN chmod 0755 /usr/local/bin/teahouse-relay /usr/local/bin/teahouse-entrypoint \
+RUN chmod 0755 /usr/lib/teahouse /usr/lib/teahouse/teahouse-relay /usr/local/bin/teahouse-entrypoint \
+ && ln -s /usr/lib/teahouse/teahouse-relay /usr/local/bin/teahouse-relay \
  && printf 'HostKey /var/lib/teahouse/.sshd/ssh_host_ed25519_key\nPidFile /run/sshd.pid\n' > /etc/ssh/sshd_config.d/00-teahouse-hostkey.conf
 ENV TEAHOUSE_ROOT=/var/lib/teahouse
 VOLUME /var/lib/teahouse
