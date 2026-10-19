@@ -1,6 +1,28 @@
-# 茶馆 · 前端（M0 视觉原型）
+# 茶馆 · 客户端（界面 + Tauri 外壳）
 
-只有前端，数据全部是假数据（`src/data/`，六间茶馆：梧桐里三号院、康德读书会、爸妈的老房子、三人创业团队、旧鞋带乐队、液滴论文小组）。M1 会在这个目录里加上 `src-tauri/`。
+界面（Svelte）在 `src/`，Tauri 外壳在 `src-tauri/`，引擎是仓库根目录的 `client/`（`teahouse-client`）。
+在浏览器里打开时用假数据（`src/data/`，六间示例茶馆：梧桐里三号院、康德读书会、爸妈的老房子、三人创业团队、旧鞋带乐队、液滴论文小组）；打包成应用后接真引擎。
+
+## 安装包（Windows、安卓）
+
+不用在自己电脑上编译：每次推送到 GitHub，`.github/workflows/app.yml` 会自动打包。
+在仓库的 Actions → **app** → 最新一次运行 → Artifacts 里下载：
+
+- `teahouse-windows`：Windows 安装程序（`Teahouse_0.1.0_x64-setup.exe`），双击安装。
+- `teahouse-android`：安卓 APK（`teahouse-arm64.apk`，适用于 64 位 ARM 手机，几乎所有近几年的安卓手机都是）。
+  传到手机上点开安装；第一次需要在系统设置里允许"安装未知来源的应用"。
+  每次打包用的是一把新的签名钥匙，所以装新版本前要先卸载旧版本（以后在仓库里存一把固定的签名钥匙就不用了）。
+
+应用里还没有茶馆时，打开就是入座页；没拿到邀请的话，可以点"先看看示例茶馆"，用假数据看看（不会同步，也不会离开这台设备），侧栏里随时可以退出示例。
+
+自己编译（需要 Rust、Node 22，以及 Tauri 的系统依赖，见 https://tauri.app/start/prerequisites/）：
+
+```bash
+npm ci
+npx tauri dev                    # 桌面窗口，接真引擎
+npx tauri build --bundles nsis   # Windows 安装包
+npx tauri android init && npx tauri android build --apk --target aarch64   # 安卓（需要 Android SDK 和 NDK）
+```
 
 ```bash
 npm install
