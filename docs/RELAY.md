@@ -309,8 +309,11 @@ If no sshd is installed, it unpacks Ubuntu's `openssh-server` into
 ## 9. 已知局限 · Known limits (v0.1)
 
 * **Verified behind OpenSSH 9.6p1** (Ubuntu 24.04) with both wirings, by
-  `scripts/sshd-test.sh`. That script is not run by `cargo test` and is not
-  in CI yet. Run it by hand after changing `deploy/sshd/` or the shell. Other
+  `scripts/sshd-test.sh`. That script is not run by `cargo test`.
+  `.github/workflows/ci.yml` runs it (after fmt, clippy and `cargo test`) on
+  Ubuntu 24.04, but the workflow has not run yet because the repository is
+  not on GitHub yet. Until then, run the script by hand after changing
+  `deploy/sshd/` or the shell. Other
   OpenSSH versions are untested; 9.8+ splits sshd into `sshd-session`, which
   should not matter to the relay but has not been tried.
 * As a non-root user, `AuthorizedKeysCommand` can only be tested through a
