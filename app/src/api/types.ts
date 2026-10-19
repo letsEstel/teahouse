@@ -25,12 +25,8 @@ export interface HouseSummary {
 
 export interface Member { id: string; name: string; role: Role; joined: string }
 export interface Event { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
-/** when = 进入茶馆的时间，writtenAt = 文件名里的时间戳 */
-export interface Note {
-  by: string; text: string; when: string; writtenAt: string
-  /** 提议：留言文件的仓库路径。removeNote 需要它，合同的 Note 里还没有 */
-  id?: string
-}
+/** id = 留言文件的仓库路径；when = 进入茶馆的时间，writtenAt = 文件名里的时间戳 */
+export interface Note { id: string; by: string; text: string; when: string; writtenAt: string }
 export interface Notice { id: string; by: string; title: string; text: string; when: string; replies: Note[] }
 
 export interface Work {

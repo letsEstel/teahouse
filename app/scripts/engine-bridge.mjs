@@ -18,16 +18,20 @@ export function engineBridge() {
       const rootReal = realpathSync(resolve(root))
       server.middlewares.use('/v1/', (req, res) => {
         const cmd = (req.url ?? '').replace(/^\//, '').split('?')[0]
-        // 附件：blob 命令给的是本机路径；浏览器经这里读取，只允许读引擎根目录里面的文件
-        if (cmd === '__file') {
-          const asked = new URL(req.url ?? '', 'http://x').searchParams.get('path') ?? ''
-          let real = ''
-          try { real = realpathSync(resolve(asked)) } catch {}
-          if (!real.startsWith(rootReal + sep) || !statSync(real).isFile()) {
-            res.statusCode = 404
-            return res.end()
-          }
-          return createReadStream(real).pipe(res)
+        // 附件：GET /v1/blob?house=&id=（CLIENT-API 第 4 节）。先让引擎给出本机路径，
+        // 只返回引擎根目录里面的文件
+        if (req.method === 'GET' && cmd === 'blob') {
+          const q = new URL(req.url ?? '', 'http://x').searchParams
+          const args = JSON.stringify({ house: q.get('house'), id: q.get('id') })
+          return execFile(cli, ['--root', root, 'call', 'blob', args], (_e, stdout) => {
+            let real = ''
+            try { real = realpathSync(resolve(JSON.parse(stdout).data)) } catch {}
+            if (!real.startsWith(rootReal + sep) || !statSync(real).isFile()) {
+              res.statusCode = 404
+              return res.end()
+            }
+            createReadStream(real).pipe(res)
+          })
         }
         let body = ''
         req.on('data', (c) => (body += c))

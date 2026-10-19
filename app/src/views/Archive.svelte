@@ -5,7 +5,7 @@
   import FileGlyph from '../lib/FileGlyph.svelte'
   import Diff from '../lib/Diff.svelte'
   import { member, self, pad, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
-  import { api, fileUrl } from '../api/backend'
+  import { api, blobUrl } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
   // 档案：茶馆里所有文件原原本本放在这里。左边文件树（按目录 / 按问题），右边预览和"来历"。
@@ -220,7 +220,7 @@
           {#if image === 'fake:parking'}
             <ParkingMap />
           {:else if image}
-            <img class="img" src={fileUrl(image)} alt={label(node)} />
+            <img class="img" src={blobUrl(house.id, node.id, image)} alt={label(node)} />
           {:else}
             <div class="binary image"><svg viewBox="0 0 120 80" aria-hidden="true"><rect x="1" y="1" width="118" height="78" fill="none" stroke="var(--ink)" stroke-width="2" /><circle cx="88" cy="24" r="8" fill="var(--ink)" /><polygon points="10,72 44,26 78,72" fill="var(--ink)" /></svg><p>{t('archive.fileOnly')}</p></div>
           {/if}

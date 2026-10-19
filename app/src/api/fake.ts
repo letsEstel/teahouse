@@ -63,13 +63,13 @@ function toEvent(e: FEvent, problem?: string): A.Event {
 }
 
 // 留言：数组顺序就是进入茶馆的先后。进入时间不早于前一条（离线写的那条晚到了）
-function toNotes(ns: FNote[], dir = ''): A.Note[] {
+function toNotes(ns: FNote[], dir: string): A.Note[] {
   let last = ''
   return ns.map((n) => {
     const written = iso(n.when)
     const when = written < last ? new Date(new Date(last).getTime() + 60_000).toISOString() : written
     last = when
-    return { by: n.by, text: L(n.text), when, writtenAt: written, id: dir && `${dir}/${written.replace(/[-:]/g, '').slice(0, 15)}Z-${n.by}.md` }
+    return { id: `${dir}/${written.replace(/[-:]/g, '').slice(0, 15)}Z-${n.by}.md`, by: n.by, text: L(n.text), when, writtenAt: written }
   })
 }
 const toNotice = (n: FNotice): A.Notice => ({ id: n.id, by: n.by, title: L(n.title), text: L(n.text), when: iso(n.when), replies: toNotes(n.replies, `talk/board/${n.id}`) })
@@ -235,7 +235,18 @@ const handlers: Handlers = {
   sync: () => ok(synced),
   join: () => fail('offline', 'M0 has no relay'),
 
-  removeNote: () => written(),
+  removeNote: ({ house, id }) => {
+    const h = find(house)
+    if (!h) return fail('not_found', house)
+    const me = h.members.find((m) => m.id === h.me)
+    if (!me || me.role === 'guest') return fail('forbidden', 'only the host and the steward can remove notes')
+    const lists = [...h.problems.map((p) => [p.notes ?? [], `talk/${p.id}`] as const), ...h.board.map((n) => [n.replies, `talk/board/${n.id}`] as const)]
+    for (const [list, dir] of lists) {
+      const i = toNotes(list, dir).findIndex((n) => n.id === id)
+      if (i >= 0) { list.splice(i, 1); return written() }
+    }
+    return fail('not_found', id)
+  },
   note: ({ house, problem, notice, text: s }) => {
     const h = find(house)
     if (!h) return fail('not_found', house)

@@ -13,9 +13,7 @@
   let canPost = $derived(me.role !== 'guest')
   let posting = $state(false)
   let replying = $state<string | null>(null)
-  // 删除留言：CLIENT-API 还没有这个命令（已在 PR #1 提出），M0 只从页面上去掉
-  let hidden = $state<Note[]>([])
-  let notices = $derived(house.board.map((n) => ({ ...n, replies: n.replies.filter((r) => !hidden.some((h) => h.writtenAt === r.writtenAt && h.by === r.by)) })))
+  let notices = $derived(house.board)
 
   async function post(text: string, title: string) {
     if (!(await write('postNotice', { house: house.id, title, text }))) return false
@@ -24,8 +22,9 @@
   }
   // 茶客的留言直接写进茶馆；老板和伙计可以删除留言
   let writeHint = $derived(me.role === 'guest' ? t('write.hintGuest') : '')
-  function remove(_n: Notice, note: Note) {
-    hidden = [...hidden, note]
+  // 删除留言（老板、伙计）：removeNote，然后重新读取
+  async function remove(_n: Notice, note: Note) {
+    if (await write('removeNote', { house: house.id, id: note.id })) refresh()
   }
   async function reply(n: Notice, text: string) {
     if (!(await write('note', { house: house.id, notice: n.id, text }))) return false

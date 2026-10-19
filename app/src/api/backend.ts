@@ -41,11 +41,11 @@ export async function write<C extends Command>(cmd: C, args: Args<C>): Promise<R
 }
 
 /**
- * 附件：引擎的 blob 命令给的是本机文件路径，浏览器不能直接打开。
- * 开发期经过 scripts/engine-bridge.mjs 读取；Tauri 里改用 convertFileSrc（第 4 步）。
+ * 附件显示用的地址。blob 命令给的是本机路径，浏览器不能直接打开：
+ * 开发期用 serve 的只读地址 GET /v1/blob?house=&id=（CLIENT-API 第 4 节）；Tauri 里改用 convertFileSrc（第 4 步）。
  */
-export function fileUrl(path: string): string {
+export function blobUrl(house: string, id: string, path: string): string {
   if (/^(https?:|data:|blob:|fake:)/.test(path)) return path
-  if (backend.kind === 'http') return `${httpBase}/v1/__file?path=${encodeURIComponent(path)}`
+  if (backend.kind === 'http') return `${httpBase}/v1/blob?house=${encodeURIComponent(house)}&id=${encodeURIComponent(id)}`
   return path
 }
