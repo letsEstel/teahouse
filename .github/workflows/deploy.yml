@@ -1,0 +1,61 @@
+# The shipped ways to run a relay must actually work: install.sh on a fresh
+# Ubuntu, and the Docker image. Each is installed exactly as a user would and
+# then exercised by real ssh/git members (scripts/deploy-test.sh).
+name: deploy
+
+on:
+  push:
+    paths: [deploy/**, relay/**, core/**, scripts/deploy-test.sh, .github/workflows/deploy.yml]
+  pull_request:
+    paths: [deploy/**, relay/**, core/**, scripts/deploy-test.sh, .github/workflows/deploy.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  install-sh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build relay
+        run: |
+          rustup toolchain install stable --profile minimal && rustup default stable
+          cargo build --release --locked -p teahouse-relay
+      - name: install.sh + member checks
+        run: |
+          set +e
+          sudo ./scripts/deploy-test.sh install target/release/teahouse-relay 2>&1 | tee deploy-test.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            sudo journalctl -u ssh --no-pager -n 40 >> deploy-test.log 2>&1 || true
+            sed -n "/member checks/,\$p" deploy-test.log | tail -n 80 | gzip -9 | base64 -w 3000 | head -n 9 | while read -r chunk; do echo "::warning title=log-b64::$chunk"; done
+            echo "::error title=deploy-test (install)::failed"
+            exit 1
+          fi
+      - name: Package relay for download
+        run: |
+          mkdir -p dist/teahouse-relay
+          cp target/release/teahouse-relay dist/teahouse-relay/
+          cp -r deploy dist/teahouse-relay/
+          tar -C dist -czf teahouse-relay-linux-x86_64.tar.gz teahouse-relay
+      - uses: actions/upload-artifact@v4
+        with:
+          name: teahouse-relay-linux-x86_64
+          path: teahouse-relay-linux-x86_64.tar.gz
+
+  docker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Docker image + member checks
+        run: |
+          set +e
+          ./scripts/deploy-test.sh docker 2>&1 | tee deploy-test.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            docker logs th-smoke >> deploy-test.log 2>&1 || true
+            echo "::error title=deploy-test (docker)::$(sed -n "/member checks/,\$p" deploy-test.log | tail -n 45 | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}')"
+            exit 1
+          fi

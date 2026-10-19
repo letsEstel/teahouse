@@ -14,6 +14,12 @@
 | `scripts/demo.sh` | 一键演示：开茶馆、入座、提案、被拒、继承。 |
 | `scripts/sshd-test.sh` | 真实 sshd 集成测试（非 root，两种接法）。 |
 
+## 文档
+
+- [使用说明](docs/USER-GUIDE.md)：给所有人
+- [开一个 Relay](docs/DEPLOY.md)：给老板和运维
+- [Relay 与茶馆的法](docs/RELAY.md)、[接口约定](docs/CLIENT-API.md)、[邀请](docs/INVITE.md)：给开发者
+
 ## 快速开始
 
 ```sh

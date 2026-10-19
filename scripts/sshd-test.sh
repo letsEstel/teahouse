@@ -141,7 +141,7 @@ EOF
 shipped_conf() {
   global_conf
   sed -e "s|^Match User teahouse\$|Match User $user|" \
-      -e "s|^\(    AuthorizedKeysCommand \)/usr/local/bin/teahouse-relay --root /var/lib/teahouse |\1$2 --root $1 |" \
+      -e "s|^\(    AuthorizedKeysCommand \)/usr/lib/teahouse/teahouse-relay --root /var/lib/teahouse |\1$2 --root $1 |" \
       -e "s|^\(    AuthorizedKeysCommandUser \)teahouse\$|\1$user|" "$conf_src"
 }
 conf_A() { shipped_conf "$1" "$2"; }

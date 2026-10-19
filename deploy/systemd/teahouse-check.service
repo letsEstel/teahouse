@@ -6,7 +6,7 @@ Documentation=file:///usr/local/share/doc/teahouse/RELAY.md
 Type=oneshot
 User=teahouse
 Group=teahouse
-ExecStart=/usr/local/bin/teahouse-relay --root /var/lib/teahouse check
+ExecStart=/usr/lib/teahouse/teahouse-relay --root /var/lib/teahouse check
 # Sandboxing: the check only reads the relay directory.
 ProtectSystem=strict
 ReadOnlyPaths=/var/lib/teahouse

@@ -216,11 +216,11 @@ succession notices so members' clients follow the heir automatically.
 ```sh
 # 1. Build and install the binary (owned by root; sshd requires that for AuthorizedKeysCommand).
 cargo build --release
-sudo install -o root -g root -m 0755 target/release/teahouse-relay /usr/local/bin/
+sudo install -d -m 0755 /usr/lib/teahouse && sudo install -o root -g root -m 0755 target/release/teahouse-relay /usr/lib/teahouse/ && sudo ln -sf /usr/lib/teahouse/teahouse-relay /usr/local/bin/
 
 # 2. A dedicated, unprivileged system user and data directory.
 sudo useradd --system --home-dir /var/lib/teahouse --create-home --shell /bin/sh teahouse
-sudo -u teahouse teahouse-relay --root /var/lib/teahouse init --binary /usr/local/bin/teahouse-relay
+sudo -u teahouse teahouse-relay --root /var/lib/teahouse init --binary /usr/lib/teahouse/teahouse-relay
 
 # 3. OpenSSH: look member keys up live from the seating charts.
 sudo install -m 0644 deploy/sshd/teahouse.conf /etc/ssh/sshd_config.d/teahouse.conf
@@ -264,7 +264,7 @@ kept. Both ways are covered by `scripts/sshd-test.sh` (§8).
 sshd runs an `AuthorizedKeysCommand` only if the program and every directory
 above it are owned by root and writable by no one else; otherwise it logs
 `Unsafe AuthorizedKeysCommand "…": bad ownership or modes` and refuses every
-key. The `install -o root … /usr/local/bin/` in step 1 satisfies this; a
+key. Some server images ship a group-writable `/usr/local/bin`, so the binary lives in `/usr/lib/teahouse/` (root-only all the way up) and is only *linked* into `/usr/local/bin`; `deploy/install.sh` checks the whole chain before touching sshd; a
 binary under someone's home directory does not.
 
 ## 6. 运维 · Operations
