@@ -2,6 +2,7 @@
   import Room from '../lib/Room.svelte'
   import Shape from '../lib/Shape.svelte'
   import { fit } from '../lib/fit'
+  import Invite from '../lib/Invite.svelte'
   import { member, self, host, pad, eventText, nameLines, type House, type Role } from '../api/view'
   import { t, when, date, i18n } from '../i18n/index.svelte'
 
@@ -11,6 +12,7 @@
   let works = $derived(house.problems.reduce((n, p) => n + p.workCount, 0))
   let free = $derived(house.capacity - house.members.length)
   let notice = $derived(house.board[0])
+  let inviting = $state(false)
   const count = (r: Role) => house.members.filter((m) => m.role === r).length
 
   // 每个角色在首页的最主要动作
@@ -42,10 +44,11 @@
       {#if action.href}
         <a class="primary" href={action.href}><i>+</i><span>{action.label}</span></a>
       {:else}
-        <button class="primary"><i>+</i><span>{action.label}</span></button>
+        <button class="primary" aria-expanded={inviting} onclick={() => (inviting = !inviting)}><i>+</i><span>{action.label}</span></button>
       {/if}
       <p class="consequence">{action.hint}</p>
     </div>
+    {#if inviting && me.role === 'host'}<Invite {house} onclose={() => (inviting = false)} />{/if}
 
     <div class="stats">
       <a href="#/{house.id}/problems"><b class="num">{pad(house.problems.length)}</b><span>{t('stat.problems')}</span></a>
