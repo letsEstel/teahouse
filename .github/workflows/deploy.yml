@@ -29,7 +29,7 @@ jobs:
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             sudo journalctl -u ssh --no-pager -n 40 >> deploy-test.log 2>&1 || true
-            echo "::error title=deploy-test (install)::$(tail -n 60 deploy-test.log | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}')"
+            echo "::error title=deploy-test (install)::$(sed -n "/member checks/,\$p" deploy-test.log | tail -n 45 | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}')"
             exit 1
           fi
       - name: Package relay for download
@@ -55,6 +55,6 @@ jobs:
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             docker logs th-smoke >> deploy-test.log 2>&1 || true
-            echo "::error title=deploy-test (docker)::$(tail -n 60 deploy-test.log | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}')"
+            echo "::error title=deploy-test (docker)::$(sed -n "/member checks/,\$p" deploy-test.log | tail -n 45 | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}')"
             exit 1
           fi
