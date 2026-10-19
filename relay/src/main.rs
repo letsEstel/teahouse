@@ -11,9 +11,11 @@
 
 mod admin;
 mod audit;
+mod blobs;
 mod error;
 mod git;
 mod hook;
+mod invites;
 mod root;
 mod shell;
 
@@ -48,6 +50,7 @@ OPERATOR COMMANDS:
 
 INTERNAL (invoked by sshd / git):
     shell <key>          forced command for a member key
+    redeem-shell <key>   forced command for a key with no seat: redeem only
     hook pre-receive|post-receive
 
 DEVELOPMENT ONLY:
@@ -190,8 +193,13 @@ fn run() -> Result<()> {
                 },
                 None => None,
             };
-            for l in admin::authorized_keys_lines(&root, &cfg.binary, only.as_ref())? {
+            let lines = admin::authorized_keys_lines(&root, &cfg.binary, only.as_ref())?;
+            for l in &lines {
                 println!("{l}");
+            }
+            // A key with no seat anywhere may still redeem an invitation.
+            if let (Some(k), true) = (&only, lines.is_empty()) {
+                println!("{}", admin::redeem_line(&root, &cfg.binary, k)?);
             }
             Ok(())
         }
@@ -204,7 +212,12 @@ fn run() -> Result<()> {
         "shell" => {
             let key = args.positional("key")?;
             args.finish()?;
-            shell::run(&root, &key)
+            shell::run(&root, &key, false)
+        }
+        "redeem-shell" => {
+            let key = args.positional("key")?;
+            args.finish()?;
+            shell::run(&root, &key, true)
         }
         "hook" => {
             let which = args.positional("hook name")?;

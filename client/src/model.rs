@@ -350,3 +350,16 @@ pub struct FileView {
     pub text: Option<String>,
     pub history: Vec<HistoryEntry>,
 }
+
+/// What someone wrote that the relay refused (CLIENT-API.md §4 `drafts`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Draft {
+    pub id: String,
+    /// The command it was written for (`note`, `openProblem`, …).
+    pub kind: String,
+    pub title: String,
+    pub text: String,
+    pub when: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}

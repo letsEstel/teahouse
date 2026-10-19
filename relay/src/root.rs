@@ -6,6 +6,9 @@
 //!   houses/<id>.git     one bare repository per teahouse
 //!   hooks/              pre-receive / post-receive, shared by every house
 //!   log/audit.log       append-only JSON lines, one per decision
+//!   blobs/<id>/<sha256> attachments of each teahouse (CLIENT-API.md §1.6)
+//!   invites/<id>/       pending invitations, by code hash (INVITE.md)
+//!   relay_signing_key   the relay's own key, for commits it writes
 //!   tmp/                scratch space for index files
 //! ```
 
@@ -31,6 +34,8 @@ pub struct Config {
     pub binary: String,
     /// If set, `post-receive` rewrites this authorized_keys file when seats change.
     pub authorized_keys: Option<String>,
+    /// Total size of one teahouse's attachments, in bytes.
+    pub blob_quota: u64,
 }
 
 /// Characters allowed in paths we embed into shell scripts and the
@@ -73,6 +78,19 @@ impl Root {
         self.dir.join("tmp")
     }
 
+    /// Where a teahouse's attachments live, named by their SHA-256.
+    pub fn blobs_dir(&self, id: &str) -> PathBuf {
+        self.dir.join("blobs").join(id)
+    }
+
+    pub fn invites_dir(&self, id: &str) -> PathBuf {
+        self.dir.join("invites").join(id)
+    }
+
+    pub fn signing_key(&self) -> PathBuf {
+        self.dir.join("relay_signing_key")
+    }
+
     pub fn house_path(&self, id: &str) -> PathBuf {
         self.houses_dir().join(format!("{id}.git"))
     }
@@ -106,11 +124,23 @@ impl Root {
             };
             map.insert(k.trim().to_string(), v.trim().to_string());
         }
-        let mut cfg = Config::default();
+        let mut cfg = Config {
+            blob_quota: crate::blobs::DEFAULT_QUOTA,
+            ..Config::default()
+        };
         for (k, v) in map {
             match k.as_str() {
                 "binary" => cfg.binary = v,
                 "authorized_keys" => cfg.authorized_keys = Some(v),
+                "blob_quota_mib" => {
+                    let mib: u64 = v.parse().map_err(|_| {
+                        crate::error::Error(format!(
+                            "{}: blob_quota_mib must be a number",
+                            path.display()
+                        ))
+                    })?;
+                    cfg.blob_quota = mib * 1024 * 1024;
+                }
                 other => bail!("{}: unknown setting {other:?}", path.display()),
             }
         }

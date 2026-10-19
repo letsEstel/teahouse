@@ -734,15 +734,25 @@ fn serve_answers_local_pages_only() {
     let w = World::new("serve");
     let (_wang, li, _zhao) = w.wutong();
     parking(&li);
-    let mut child = Command::new(env!("CARGO_BIN_EXE_teahouse-client"))
-        .arg("--root")
-        .arg(li.client.root())
-        .args(["serve", "--port", "0", "--sync-every", "off"])
-        .stderr(std::process::Stdio::piped())
-        .spawn()
-        .unwrap();
+    // Killed however the test ends, so a failure cannot leave it running.
+    struct KillOnDrop(std::process::Child);
+    impl Drop for KillOnDrop {
+        fn drop(&mut self) {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+    let mut child = KillOnDrop(
+        Command::new(env!("CARGO_BIN_EXE_teahouse-client"))
+            .arg("--root")
+            .arg(li.client.root())
+            .args(["serve", "--port", "0", "--sync-every", "off"])
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .unwrap(),
+    );
     let mut line = String::new();
-    BufReader::new(child.stderr.as_mut().unwrap())
+    BufReader::new(child.0.stderr.as_mut().unwrap())
         .read_line(&mut line)
         .unwrap();
     let port: u16 = line
@@ -835,6 +845,237 @@ fn serve_answers_local_pages_only() {
         "",
     );
     assert_eq!(st, 204, "{out}");
-    child.kill().unwrap();
-    let _ = child.wait();
+    drop(child);
+}
+
+#[test]
+fn an_invitation_brings_a_new_device_in() {
+    let w = World::new("invite");
+    let (wang, li, zhao) = w.wutong();
+    parking(&li);
+    wang.ok("sync", json!({ "house": "wutong" }));
+    // Only the host invites.
+    assert_eq!(
+        li.err("invite", json!({ "house": "wutong" }))["code"],
+        "forbidden"
+    );
+    let inv = wang.ok(
+        "invite",
+        json!({ "house": "wutong", "name": "王阿姨的女儿", "days": 3 }),
+    );
+    let inv = inv.as_str().unwrap().to_string();
+    let (code, relay) = inv.split_once('@').unwrap();
+    assert!(code.starts_with("TH-") && code.len() == 22, "{inv}");
+    assert_eq!(relay, w.relay());
+
+    // A brand-new device: it pastes the whole invitation and a name.
+    let new = w.person("daughter");
+    let h = new.ok(
+        "redeem",
+        json!({ "code": format!("  {inv}  "), "name": "王阿姨的女儿" }),
+    );
+    assert_eq!(
+        (&h["id"], &h["me"], &h["myRole"]),
+        (&json!("wutong"), &json!("m1"), &json!("guest"))
+    );
+    let r = new.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "大家好。" }),
+    );
+    assert_eq!(r["commit"], "pushed");
+    for p in [&wang, &li, &zhao] {
+        p.ok("sync", json!({ "house": "wutong" }));
+    }
+    let members = wang.house()["members"].clone();
+    assert!(members
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|m| m["id"] == "m1" && m["name"] == "王阿姨的女儿"));
+    // The seat change shows as the host's act.
+    assert_eq!(wang.house()["recent"][1]["act"], "seat");
+
+    // The same invitation again, and a mistyped one, are refused.
+    let other = w.person("other");
+    let e = other.err("redeem", json!({ "code": inv, "name": "x" }));
+    assert_eq!(e["code"], "relay_refused");
+    assert!(
+        e["reasons"][0].as_str().unwrap().contains("not valid"),
+        "{e:#}"
+    );
+    let e = other.err(
+        "redeem",
+        json!({ "code": "TH-0000-0000-0000-0000", "name": "x" }),
+    );
+    assert_eq!(e["code"], "invalid", "no relay in a bare code: {e:#}");
+    // The relay can be given separately.
+    let e = other.err(
+        "redeem",
+        json!({ "relay": w.relay(), "code": "TH-0000-0000-0000-0000", "name": "x" }),
+    );
+    assert_eq!(e["code"], "relay_refused");
+}
+
+#[test]
+fn attachments_travel_through_the_relay_and_can_be_purged() {
+    let w = World::new("blobs-relay");
+    let (wang, li, zhao) = w.wutong();
+    parking(&li);
+    let photo = w.tmp.0.join("车位.png");
+    fs::write(&photo, b"\x89PNG bytes").unwrap();
+    let r = li.ok("addWork", json!({ "house": "wutong", "problem": "0001", "kind": "image", "title": "车位照片", "fromPath": photo }));
+    let id = r["id"].as_str().unwrap().to_string();
+    let hash = teahouse_core::sha256::hex(b"\x89PNG bytes");
+    assert!(
+        w.relay_root.join("blobs/wutong").join(&hash).is_file(),
+        "uploaded before the push"
+    );
+
+    // Another device downloads it on first use, checking the hash.
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    let p = zhao.ok("problem", json!({ "house": "wutong", "problem": "0001" }));
+    assert_eq!(p["works"][0]["blob"]["cached"], false);
+    let path = zhao.ok("blob", json!({ "house": "wutong", "id": id }));
+    assert_eq!(fs::read(path.as_str().unwrap()).unwrap(), b"\x89PNG bytes");
+
+    // The host removes it for good; everyone's reference shows it as purged.
+    wang.ok("sync", json!({ "house": "wutong" }));
+    assert_eq!(
+        li.err("purgeBlob", json!({ "house": "wutong", "id": id }))["code"],
+        "forbidden"
+    );
+    let r = wang.ok("purgeBlob", json!({ "house": "wutong", "id": id }));
+    assert_eq!(r["commit"], "pushed");
+    assert!(!w.relay_root.join("blobs/wutong").join(&hash).exists());
+    li.ok("sync", json!({ "house": "wutong" }));
+    let p = li.ok("problem", json!({ "house": "wutong", "problem": "0001" }));
+    assert_eq!(p["works"][0]["blob"]["purged"], true);
+    let e = li.err("blob", json!({ "house": "wutong", "id": id }));
+    assert_eq!(e["params"]["reason"], "purged");
+}
+
+#[test]
+fn a_purge_made_offline_happens_after_the_next_push() {
+    let w = World::new("purge-offline");
+    let (wang, li, _zhao) = w.wutong();
+    parking(&li);
+    let f = w.tmp.0.join("合同.pdf");
+    fs::write(&f, b"%PDF fake").unwrap();
+    let r = li.ok("addWork", json!({ "house": "wutong", "problem": "0001", "kind": "file", "title": "合同", "fromPath": f }));
+    let id = r["id"].as_str().unwrap().to_string();
+    let hash = teahouse_core::sha256::hex(b"%PDF fake");
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let url = wang.go_offline();
+    let r = wang.ok("purgeBlob", json!({ "house": "wutong", "id": id }));
+    assert_eq!(r["commit"], "local");
+    assert!(
+        w.relay_root.join("blobs/wutong").join(&hash).exists(),
+        "not before the commit is pushed"
+    );
+    wang.go_online(&url);
+    wang.ok("sync", json!({ "house": "wutong" }));
+    assert!(!w.relay_root.join("blobs/wutong").join(&hash).exists());
+}
+
+#[test]
+fn drafts_keep_what_the_relay_refused() {
+    let w = World::new("drafts");
+    let (wang, li, _zhao) = w.wutong();
+    parking(&li);
+    wang.ok("sync", json!({ "house": "wutong" }));
+    wang.ok(
+        "seat",
+        json!({ "house": "wutong", "role": { "id": "li", "role": "guest" } }),
+    );
+    let e = li.err("openProblem", json!({ "house": "wutong", "title": "楼道灯坏了", "body": [{ "heading": "", "text": "三楼。" }] }));
+    assert_eq!(e["code"], "relay_refused");
+    let d = li.ok("drafts", json!({ "house": "wutong" }));
+    let d = d.as_array().unwrap();
+    assert_eq!(d.len(), 1);
+    assert_eq!(
+        (&d[0]["kind"], &d[0]["title"], &d[0]["text"]),
+        (
+            &json!("openProblem"),
+            &json!("楼道灯坏了"),
+            &json!("三楼。")
+        )
+    );
+    assert!(
+        d[0]["reason"].as_str().unwrap().contains("problems/"),
+        "{d:#?}"
+    );
+    let id = d[0]["id"].as_str().unwrap();
+    li.ok("discardDraft", json!({ "house": "wutong", "id": id }));
+    assert!(li
+        .ok("drafts", json!({ "house": "wutong" }))
+        .as_array()
+        .unwrap()
+        .is_empty());
+    assert_eq!(
+        li.err("discardDraft", json!({ "house": "wutong", "id": "../x" }))["code"],
+        "not_found"
+    );
+}
+
+#[test]
+fn export_is_a_bundle_git_can_clone_plus_files_and_attachments() {
+    let w = World::new("export");
+    let (_wang, li, zhao) = w.wutong();
+    parking(&li);
+    let photo = w.tmp.0.join("p.png");
+    fs::write(&photo, b"png!").unwrap();
+    li.ok("addWork", json!({ "house": "wutong", "problem": "0001", "kind": "image", "title": "照片", "fromPath": photo }));
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    zhao.ok("propose", json!({ "house": "wutong", "problem": "0001", "title": "建议", "changes": [{ "kind": "doc", "title": "建议", "text": "x" }] }));
+    let out = w.tmp.0.join("exports");
+    let dir = li.ok("export", json!({ "house": "wutong", "to": out }));
+    let dir = PathBuf::from(dir.as_str().unwrap());
+    li.ok("sync", json!({ "house": "wutong" }));
+    let dir2 = li.ok("export", json!({ "house": "wutong", "to": out }));
+    assert_ne!(
+        dir2.as_str().unwrap(),
+        dir.to_str().unwrap(),
+        "a second export never overwrites"
+    );
+
+    let bundle = dir.join("wutong.bundle");
+    // `git bundle verify` wants a repository to check against: an empty one
+    // proves the bundle needs nothing else.
+    let empty = w.tmp.0.join("empty");
+    run(Command::new("git").args(["init", "-q"]).arg(&empty));
+    run(Command::new("git")
+        .arg("bundle")
+        .arg("verify")
+        .arg(&bundle)
+        .current_dir(&empty));
+    let clone = w.tmp.0.join("restored");
+    run(Command::new("git")
+        .arg("clone")
+        .arg("-q")
+        .arg(&bundle)
+        .arg(&clone));
+    assert!(clone.join("problems/0001-小区停车位不好找.md").is_file());
+    let heads = run(Command::new("git")
+        .arg("bundle")
+        .arg("list-heads")
+        .arg(&bundle)
+        .current_dir(&w.tmp.0));
+    assert!(heads.contains("refs/heads/main"), "{heads}");
+    assert!(dir.join("files/works/0001/照片.png.ref.md").is_file());
+    assert_eq!(
+        fs::read(dir.join("files/works/0001/照片.png")).unwrap(),
+        b"png!"
+    );
+    assert_eq!(
+        fs::read(dir.join("blobs").join(teahouse_core::sha256::hex(b"png!"))).unwrap(),
+        b"png!"
+    );
+    assert!(dir.join("README.txt").is_file());
+    // The proposals li had fetched are in the second export's bundle.
+    let heads2 = run(Command::new("git")
+        .arg("bundle")
+        .arg("list-heads")
+        .arg(PathBuf::from(dir2.as_str().unwrap()).join("wutong.bundle"))
+        .current_dir(&w.tmp.0));
+    assert!(heads2.contains("refs/proposals/zhao/"), "{heads2}");
 }

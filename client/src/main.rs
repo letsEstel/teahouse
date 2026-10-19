@@ -4,12 +4,14 @@
 //! teahouse-client [--root <dir>] call <command> [<json-args>]
 //! teahouse-client [--root <dir>] serve [--port 7377] [--sync-every <seconds>|off]
 //! teahouse-client [--root <dir>] key
+//! teahouse-client dev-seed <fixtures.json> --relay <relay-root> --people <dir>
 //! ```
 //!
 //! `call` prints the command's JSON envelope and exits 1 when it is
 //! `{ok: false}`. `serve` is the development HTTP interface on 127.0.0.1.
 //! `key` prints this device's public key (making it on first use), for
-//! seating a device by hand during development.
+//! seating a device by hand during development. `dev-seed` builds the
+//! example teahouses on a local relay (`scripts/dev-stack.sh` runs it).
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -23,7 +25,8 @@ fn usage() -> ExitCode {
 
 const USAGE: &str = "usage: teahouse-client [--root <dir>] call <command> [<json-args>]
        teahouse-client [--root <dir>] serve [--port 7377] [--sync-every <seconds>|off]
-       teahouse-client [--root <dir>] key";
+       teahouse-client [--root <dir>] key
+       teahouse-client dev-seed <fixtures.json> --relay <relay-root> --people <dir>";
 
 /// `<app data>/teahouse`, or `$TEAHOUSE_CLIENT_ROOT`.
 fn default_root() -> Option<PathBuf> {
@@ -80,6 +83,30 @@ fn main() -> ExitCode {
                 ExitCode::SUCCESS
             } else {
                 ExitCode::FAILURE
+            }
+        }
+        ["dev-seed", fixtures, "--relay", relay, "--people", people] => {
+            let bin =
+                std::env::var_os("TEAHOUSE_RELAY_BIN").unwrap_or_else(|| "teahouse-relay".into());
+            match teahouse_client::seed::seed(
+                std::path::Path::new(fixtures),
+                std::path::Path::new(relay),
+                std::path::Path::new(people),
+                std::path::Path::new(&bin),
+            ) {
+                Ok(lines) => {
+                    for l in lines {
+                        println!("{l}");
+                    }
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("teahouse-client: dev-seed: {}", e.message);
+                    for r in e.reasons {
+                        eprintln!("  {r}");
+                    }
+                    ExitCode::FAILURE
+                }
             }
         }
         ["key"] => match Client::new(root).identity() {

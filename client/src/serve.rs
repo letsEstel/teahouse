@@ -264,6 +264,7 @@ pub fn serve(client: Client, opts: Options) -> std::io::Result<()> {
         };
         let blob = |house: &str, id: &str| {
             let c = client.lock().unwrap_or_else(|p| p.into_inner());
+            c.blob(house, id)?; // downloads into the cache when missing
             c.snapshot(house)?.blob_file(id)
         };
         handle(req, port, &call, &blob);
