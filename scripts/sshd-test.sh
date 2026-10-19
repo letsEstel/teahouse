@@ -52,6 +52,7 @@ command -v ssh >/dev/null && command -v ssh-keygen >/dev/null || die "need the o
 
 cargo build --quiet --release --manifest-path "$here/Cargo.toml" || die "build failed"
 bin="$here/target/release/teahouse-relay"
+client="$here/target/release/teahouse-client"
 
 # ── scratch space ─────────────────────────────────────────────────────────
 # Under $HOME, not /tmp: with StrictModes, sshd refuses an authorized_keys
@@ -320,6 +321,24 @@ PY
     expect ok "T9 authorized_keys 同步为 2 把，手写行仍在" "# hand-written line" \
       bash -c "test \$(grep -c '^restrict,command=' '$ak') -eq 2 && cat '$ak'"
   fi
+
+  # E: the client engine over real ssh: libssh2 inside the engine, the
+  # device key from memory, no ssh or git program involved.
+  local eng="$work/engine-$method" ekey
+  ekey="$("$client" --root "$eng" key)" || { fail "setup: teahouse-client key"; return; }
+  must "$bin" --root "$root" open kehu --name "引擎测试" --host-id eng --host-name "引擎" --host-key "$ekey" || return
+  [[ $method == B ]] && { must "$bin" --root "$root" sync-keys --file "$ak" || return; }
+  expect ok "E1 引擎 join（libssh2，设备钥匙在内存里）" '"ok":true' \
+    "$client" --root "$eng" call join "{\"relay\":\"$user@127.0.0.1:$port\",\"house\":\"kehu\"}"
+  expect ok "E1 Relay 的主机钥匙首次记下" "127.0.0.1" cat "$eng/known_hosts"
+  expect ok "E2 引擎写入、签名、推送" '"commit":"pushed"' \
+    "$client" --root "$eng" call openProblem '{"house":"kehu","title":"经真实 sshd 推送"}'
+  expect ok "E2 Relay 上收到这次提交" "经真实 sshd 推送" git -C "$root/houses/kehu.git" log -1 --format=%s main
+  expect ok "E3 没有座位的茶馆进不去" '"code":"not_a_member"' \
+    bash -c "'$client' --root '$eng' call join '{\"relay\":\"$user@127.0.0.1:$port\",\"house\":\"wutong\"}'; true"
+  sed -i 's/ [0-9a-f]*$/ 00/' "$eng/known_hosts"
+  expect ok "E4 主机钥匙变了：拒绝连接" "different host key" \
+    "$client" --root "$eng" call sync '{"house":"kehu"}'
 
   local audit="$root/log/audit.log" ev events="shell.info shell.read shell.write shell.refused push.allowed push.denied push.applied seats.changed"
   [[ $method == B ]] && events+=" keys.synced"

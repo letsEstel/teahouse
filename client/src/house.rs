@@ -137,11 +137,26 @@ impl Snapshot {
 
     // -- small helpers ------------------------------------------------------
 
-    fn me_id(&self) -> String {
+    /// The commit `main` points at.
+    pub(crate) fn head(&self) -> &str {
+        &self.head
+    }
+
+    /// A file of `main`, by path.
+    pub(crate) fn entry(&self, path: &str) -> Option<&TreeFile> {
+        self.tree.get(path)
+    }
+
+    /// The text of a file of `main`.
+    pub(crate) fn text(&self, path: &str) -> Result<Option<String>> {
+        Ok(self.read_many(&[path])?.remove(path).map(|b| text_of(&b)))
+    }
+
+    pub(crate) fn me_id(&self) -> String {
         self.me.as_ref().map(|m| m.id.clone()).unwrap_or_default()
     }
 
-    fn my_role(&self) -> &'static str {
+    pub(crate) fn my_role(&self) -> &'static str {
         // A device without a seat reads as a guest would (CLIENT-API.md §2).
         self.me.as_ref().map_or("guest", |m| m.role.as_str())
     }
@@ -183,7 +198,7 @@ impl Snapshot {
         self.touched.get(path).map(|&i| &self.steps[i])
     }
 
-    fn read_many(&self, paths: &[&str]) -> Result<HashMap<String, Vec<u8>>> {
+    pub(crate) fn read_many(&self, paths: &[&str]) -> Result<HashMap<String, Vec<u8>>> {
         let specs: Vec<String> = paths
             .iter()
             .filter_map(|p| self.tree.get(*p))
@@ -205,7 +220,7 @@ impl Snapshot {
             .collect())
     }
 
-    fn files_under(&self, prefix: &str) -> impl Iterator<Item = &TreeFile> + '_ {
+    pub(crate) fn files_under(&self, prefix: &str) -> impl Iterator<Item = &TreeFile> + '_ {
         let prefix = prefix.to_string();
         self.tree
             .range(prefix.clone()..)
@@ -213,7 +228,7 @@ impl Snapshot {
             .map(|(_, f)| f)
     }
 
-    fn problem_files(&self) -> Vec<(&str, &str, &str)> {
+    pub(crate) fn problem_files(&self) -> Vec<(&str, &str, &str)> {
         self.files_under("problems/")
             .filter_map(|f| {
                 format::parse_problem_path(&f.path).map(|(id, slug)| (id, slug, f.path.as_str()))
@@ -221,7 +236,7 @@ impl Snapshot {
             .collect()
     }
 
-    fn problem_path(&self, pid: &str) -> Option<(&str, &str)> {
+    pub(crate) fn problem_path(&self, pid: &str) -> Option<(&str, &str)> {
         self.problem_files()
             .into_iter()
             .find(|(id, _, _)| *id == pid)
@@ -266,31 +281,31 @@ impl Snapshot {
             .collect()
     }
 
-    fn sync(&self) -> Result<SyncState> {
-        let Some(upstream) = self.git.resolve(UPSTREAM)? else {
-            // Never synced (or a house made locally): everything is local.
-            let unpushed = self.steps.len();
-            return Ok(SyncState {
-                state: SyncKind::Ahead,
-                unpushed,
-                last_sync: None,
-                message: None,
-            });
+    /// Where this clone stands against the relay: commits not yet pushed,
+    /// and how the last sync attempt went.
+    pub(crate) fn summary_sync(&self) -> Result<SyncState> {
+        let record = crate::sync::Record::load(self.git.dir());
+        let last_sync = record.last_ok.map(when);
+        let (unpushed, behind) = match self.git.resolve(UPSTREAM)? {
+            Some(upstream) => (
+                self.git.count(&upstream, &self.head)?,
+                self.git.count(&self.head, &upstream)?,
+            ),
+            // Never synced (or made locally): everything is local.
+            None => (self.steps.len(), 0),
         };
-        let unpushed = self.git.count(&upstream, &self.head)?;
-        let behind = self.git.count(&self.head, &upstream)?;
-        let state = if unpushed > 0 {
-            SyncKind::Ahead
-        } else if behind > 0 {
-            SyncKind::Behind
-        } else {
-            SyncKind::Synced
+        let state = match record.failed.as_deref() {
+            Some("offline") => SyncKind::Offline,
+            Some(_) => SyncKind::Error,
+            None if unpushed > 0 => SyncKind::Ahead,
+            None if behind > 0 => SyncKind::Behind,
+            None => SyncKind::Synced,
         };
         Ok(SyncState {
             state,
             unpushed,
-            last_sync: None,
-            message: None,
+            last_sync,
+            message: record.message,
         })
     }
 
@@ -428,7 +443,7 @@ impl Snapshot {
             my_role: self.my_role(),
             seats: self.members.members.len(),
             pending_proposals: self.proposals(false)?.len(),
-            sync: self.sync()?,
+            sync: self.summary_sync()?,
         })
     }
 
@@ -544,7 +559,7 @@ impl Snapshot {
             proposals,
             decided: self.decided()?,
             board,
-            sync: self.sync()?,
+            sync: self.summary_sync()?,
         })
     }
 

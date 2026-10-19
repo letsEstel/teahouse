@@ -2,16 +2,28 @@
 //!
 //! ```text
 //! teahouse-client [--root <dir>] call <command> [<json-args>]
+//! teahouse-client [--root <dir>] serve [--port 7377] [--sync-every <seconds>|off]
+//! teahouse-client [--root <dir>] key
 //! ```
 //!
-//! Prints the command's JSON envelope; exits 1 when it is `{ok: false}`.
-//! The HTTP interface (`serve`) comes with step 2 of CLIENT-API.md §7.
+//! `call` prints the command's JSON envelope and exits 1 when it is
+//! `{ok: false}`. `serve` is the development HTTP interface on 127.0.0.1.
+//! `key` prints this device's public key (making it on first use), for
+//! seating a device by hand during development.
 
 use std::path::PathBuf;
 use std::process::ExitCode;
-use teahouse_client::Client;
+use std::time::Duration;
+use teahouse_client::{serve, Client};
 
-const USAGE: &str = "usage: teahouse-client [--root <dir>] call <command> [<json-args>]";
+fn usage() -> ExitCode {
+    eprintln!("{USAGE}");
+    ExitCode::from(2)
+}
+
+const USAGE: &str = "usage: teahouse-client [--root <dir>] call <command> [<json-args>]
+       teahouse-client [--root <dir>] serve [--port 7377] [--sync-every <seconds>|off]
+       teahouse-client [--root <dir>] key";
 
 /// `<app data>/teahouse`, or `$TEAHOUSE_CLIENT_ROOT`.
 fn default_root() -> Option<PathBuf> {
@@ -70,9 +82,45 @@ fn main() -> ExitCode {
                 ExitCode::FAILURE
             }
         }
-        _ => {
-            eprintln!("{USAGE}");
-            ExitCode::from(2)
+        ["key"] => match Client::new(root).identity() {
+            Ok(id) => {
+                println!("{}", id.public_line());
+                ExitCode::SUCCESS
+            }
+            Err(e) => {
+                eprintln!("teahouse-client: {}", e.message);
+                ExitCode::FAILURE
+            }
+        },
+        ["serve", rest @ ..] => {
+            let mut opts = serve::Options {
+                port: 7377,
+                sync_every: Some(Duration::from_secs(60)),
+            };
+            let mut it = rest.iter();
+            while let Some(flag) = it.next() {
+                let value = it.next();
+                match (*flag, value) {
+                    ("--port", Some(v)) => match v.parse() {
+                        Ok(p) => opts.port = p,
+                        Err(_) => return usage(),
+                    },
+                    ("--sync-every", Some(&"off")) => opts.sync_every = None,
+                    ("--sync-every", Some(v)) => match v.parse::<u64>() {
+                        Ok(n) if n > 0 => opts.sync_every = Some(Duration::from_secs(n)),
+                        _ => return usage(),
+                    },
+                    _ => return usage(),
+                }
+            }
+            match serve::serve(Client::new(root), opts) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => {
+                    eprintln!("teahouse-client: {e}");
+                    ExitCode::FAILURE
+                }
+            }
         }
+        _ => usage(),
     }
 }

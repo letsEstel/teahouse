@@ -18,6 +18,15 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # The engine must not run an external git program: it has to compile into
 # the Android app as-is (CLIENT-API.md §2 and §7). libgit2 is git's own
-# library form; vendored so every target builds the same version. Network
-# features (ssh) come with sync in step 2.
-git2 = { version = "0.21", default-features = false, features = ["vendored-libgit2"] }
+# library form, with libssh2 for the relay's ssh; everything vendored
+# (OpenSSL too) so every target, Android included, builds the same thing
+# without system libraries.
+git2 = { version = "0.21", default-features = false, features = ["vendored-libgit2", "ssh", "vendored-openssl"] }
+# Device keys and commit signatures: ed25519 keys in OpenSSH format and
+# SSHSIG signatures, the format `git verify-commit` checks (CLIENT-API §7).
+ssh-key = { version = "0.6", default-features = false, features = ["std", "ed25519", "getrandom"] }
+# `serve`: the development HTTP interface on 127.0.0.1:7377. Small,
+# synchronous, no async runtime; not used inside the Tauri app.
+tiny_http = "0.12"
+# Attachment hashes (sha256:…, §1.6). Same RustCrypto family as ssh-key.
+sha2 = "0.10"
