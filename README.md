@@ -27,6 +27,7 @@
 
 - [使用说明](docs/USER-GUIDE.md)：给所有人
 - [开一个 Relay](docs/DEPLOY.md)：给老板和运维
+- [AI 入座与 MCP](docs/MCP.md)：让 Claude Code 这样的 AI 以茶客身份坐进茶馆
 - [Relay 与茶馆的法](docs/RELAY.md)、[接口约定](docs/CLIENT-API.md)、[邀请](docs/INVITE.md)：给开发者
 
 ## 快速开始
