@@ -184,23 +184,50 @@ jobs:
       - name: Build APK
         run: npx tauri android build --apk --target aarch64 --ci
       - name: Sign APK
-        # A fresh key per run: the APK installs directly, but a newer build
-        # has to replace the old app (uninstall first). A fixed key needs a
-        # repository secret; see app/README.md.
+        # Signed with the project's fixed key (repository secrets
+        # ANDROID_KEYSTORE_B64 = base64 of the keystore, ANDROID_KEYSTORE_PASSWORD),
+        # the same key app/scripts/build-android.sh uses locally: every build,
+        # local or nightly, installs over the one already on a phone, so nobody
+        # has to uninstall (and lose the device's own key). The certificate is
+        # checked against the known fingerprint, so a wrong secret fails here.
+        # Without the secrets (pull requests from forks) a throwaway key signs
+        # the artifact, and the release job below will not publish it.
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          # SHA-256 of the fixed key's certificate (apksigner verify --print-certs)
+          EXPECTED_CERT: 7b4848838eec36757c71729c215d40aac53f3cb8b6363ab74aae727f089e8294
         run: |
           BT="$ANDROID_HOME/build-tools/34.0.0"
           APK=$(find src-tauri/gen/android/app/build/outputs/apk -name '*-unsigned.apk' | head -n1)
           echo "unsigned: $APK"
-          keytool -genkeypair -keystore ci.jks -storepass teahouse -keypass teahouse -alias teahouse \
-            -keyalg RSA -keysize 2048 -validity 3650 -dname "CN=Teahouse CI" -noprompt
+          if [ -n "$KEYSTORE_B64" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > ci.jks
+            PASS="$KEYSTORE_PASSWORD"
+            echo "signing with the fixed key"
+          else
+            PASS=teahouse
+            keytool -genkeypair -keystore ci.jks -storepass "$PASS" -keypass "$PASS" -alias teahouse \
+              -keyalg RSA -keysize 2048 -validity 3650 -dname "CN=Teahouse CI" -noprompt
+            echo "::warning::no ANDROID_KEYSTORE_B64 secret: signed with a throwaway key; this APK cannot replace an installed app and will not be published"
+          fi
           "$BT/zipalign" -f -p 4 "$APK" aligned.apk
-          "$BT/apksigner" sign --ks ci.jks --ks-pass pass:teahouse --key-pass pass:teahouse \
+          "$BT/apksigner" sign --ks ci.jks --ks-pass "pass:$PASS" --key-pass "pass:$PASS" \
             --out teahouse-arm64.apk aligned.apk
+          rm -f ci.jks
           "$BT/apksigner" verify teahouse-arm64.apk
+          CERT=$("$BT/apksigner" verify --print-certs teahouse-arm64.apk | sed -n 's/.*certificate SHA-256 digest: //p' | head -n1)
+          echo "certificate SHA-256: $CERT"
+          if [ -n "$KEYSTORE_B64" ] && [ "$CERT" != "$EXPECTED_CERT" ]; then
+            echo "::error::the keystore secret is not the project's key (got $CERT)"; exit 1
+          fi
+          if [ "$CERT" = "$EXPECTED_CERT" ]; then echo fixed > signed-with; else echo throwaway > signed-with; fi
       - uses: actions/upload-artifact@v4
         with:
           name: teahouse-android
-          path: app/teahouse-arm64.apk
+          path: |
+            app/teahouse-arm64.apk
+            app/signed-with
           if-no-files-found: error
 
   # Every build of main replaces the files of the "nightly" release, so the
@@ -222,13 +249,21 @@ jobs:
       - name: Publish to the nightly release
         run: |
           set -eu
-          cp dist/teahouse-android/teahouse-arm64.apk teahouse-android-arm64.apk
+          # Only an APK signed with the project's fixed key may go out: one
+          # signed with anything else cannot replace the app on a phone.
+          apk=""
+          if [ "$(cat dist/teahouse-android/signed-with)" = fixed ]; then
+            cp dist/teahouse-android/teahouse-arm64.apk teahouse-android-arm64.apk
+            apk=teahouse-android-arm64.apk
+          else
+            echo "::warning::the APK was not signed with the fixed key; the nightly keeps its previous APK"
+          fi
           cp dist/teahouse-windows/*.exe teahouse-windows-x64-setup.exe
           cp dist/teahouse-client-windows/teahouse-client.exe teahouse-client-windows-x64.exe
           gh release view nightly >/dev/null 2>&1 || \
             gh release create nightly --prerelease --target "$GITHUB_SHA" \
               --title "最新测试版 · Nightly" --notes "每次 main 更新后自动构建。Built automatically from main." || true  # another run may have just created it
-          gh release upload nightly teahouse-android-arm64.apk teahouse-windows-x64-setup.exe \
+          gh release upload nightly $apk teahouse-windows-x64-setup.exe \
             teahouse-client-windows-x64.exe --clobber
           gh release edit nightly --title "最新测试版 · $(date -u +%Y-%m-%d) · ${GITHUB_SHA::7}" \
             --notes "每次 main 更新后自动构建。Built automatically from main at ${GITHUB_SHA::7}."

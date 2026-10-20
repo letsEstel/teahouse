@@ -11,7 +11,9 @@
 - `teahouse-windows`：Windows 安装程序（`Teahouse_0.1.0_x64-setup.exe`），双击安装。
 - `teahouse-android`：安卓 APK（`teahouse-arm64.apk`，适用于 64 位 ARM 手机，几乎所有近几年的安卓手机都是）。
   传到手机上点开安装；第一次需要在系统设置里允许"安装未知来源的应用"。
-  每次打包用的是一把新的签名钥匙，所以装新版本前要先卸载旧版本（以后在仓库里存一把固定的签名钥匙就不用了）。
+  所有 APK（CI 的、nightly 的、本机 `scripts/build-android.sh` 打的）都用同一把固定的签名钥匙签，新版本直接覆盖安装。
+  **不要卸载**：卸载会删掉这台设备的钥匙，也就丢了座位。钥匙放在仓库外（本机 `~/.config/teahouse/android.jks`，
+  CI 里是仓库 Secrets `ANDROID_KEYSTORE_B64` / `ANDROID_KEYSTORE_PASSWORD`）；CI 会核对证书指纹，不对就不发布。
 
 应用里还没有茶馆时，打开就是入座页；没拿到邀请的话，可以点"先看看示例茶馆"，用假数据看看（不会同步，也不会离开这台设备），侧栏里随时可以退出示例。
 
