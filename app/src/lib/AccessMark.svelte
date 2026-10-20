@@ -7,7 +7,8 @@
   let { a, label = false }: { a: Access; label?: boolean } = $props()
 </script>
 
-<span class="access {a}" title={t(`access.${a}Hint`)}>
+<!-- 不显示文字时，标记本身就是一个带名字的图形（读屏软件念"能直接改"等） -->
+<span class="access {a}" title={t(`access.${a}Hint`)} role={label ? undefined : 'img'} aria-label={label ? undefined : t(`access.${a}`)}>
   {#if a === 'read'}
     <svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.5 5.5V3.5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.4" /><rect x="0.5" y="5.5" width="9" height="6" fill="currentColor" /></svg>
   {:else if a === 'write'}
@@ -16,7 +17,7 @@
   {:else}
     <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
   {/if}
-  {#if label}<span class="txt">{t(`access.${a}`)}</span>{:else}<span class="sr">{t(`access.${a}`)}</span>{/if}
+  {#if label}<span class="txt">{t(`access.${a}`)}</span>{/if}
 </span>
 
 <style>
@@ -33,5 +34,4 @@
   .access svg { width: 12px; }
   .read { color: var(--ink-3); }
   .txt { font-size: 0.75rem; }
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>
