@@ -123,7 +123,7 @@
         <div class="action" data-write>
           <p class="consequence">{action.hint}</p>
           <button class="primary" aria-expanded={composing} onclick={() => { composing = !composing; added = null }}><i>+</i><span>{t('edit.newDoc')}</span></button>
-          <button class="secondary" onclick={() => picker?.click()}><i>+</i><span>{t('edit.attach')}</span></button>
+          <button class="secondary" onclick={() => picker?.click()}>+ {t('edit.attach')}</button>
           <input class="picker" type="file" bind:this={picker} onchange={attach} />
         </div>
       </div>

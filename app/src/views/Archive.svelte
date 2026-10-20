@@ -225,11 +225,11 @@
       <div class="tools">
         {#if isWork(node) && can !== 'read' && textual(node)}
           {#if !editing}
-            <button class="primary small" data-write onclick={startEdit}><i>{can === 'write' ? '✎' : '↗'}</i><span>{t(can === 'write' ? 'edit.start' : 'edit.startPropose')}</span></button>
+            <button class="primary small" data-write onclick={startEdit}><i><AccessMark a={can} /></i><span>{t(can === 'write' ? 'edit.start' : 'edit.startPropose')}</span></button>
             <span class="consequence" data-write>{t(can === 'write' ? 'access.writeHint' : 'access.proposeHint')}</span>
           {/if}
         {:else if isWork(node) && can !== 'read'}
-          <button class="primary small" data-write onclick={() => picker?.click()}><i>{can === 'write' ? '✎' : '↗'}</i><span>{t('edit.replaceFile')}</span></button>
+          <button class="primary small" data-write onclick={() => picker?.click()}><i><AccessMark a={can} /></i><span>{t('edit.replaceFile')}</span></button>
           <input class="picker" type="file" bind:this={picker} onchange={replace} />
           <span class="consequence" data-write>{t(can === 'write' ? 'access.writeHint' : 'access.proposeHint')}</span>
         {:else if node.kind !== 'note' && node.kind !== 'members'}
