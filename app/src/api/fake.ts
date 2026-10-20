@@ -24,6 +24,9 @@ const text = (s: string): Text => ({ zh: s, en: s, de: s })
 const ok = <T>(data: T): A.Result<T> => ({ ok: true, data })
 const fail = (code: A.ApiError['code'], message: string): A.Result<never> => ({ ok: false, error: { code, message } })
 const find = (id: string) => store.find((h) => h.id === id)
+/** 假数据里"上传"的文件：stageFile 的键、新附件的 id → 浏览器里的 object URL */
+export const fakeStaged = new Map<string, string>()
+let fakeAdded = 0
 
 // ---- 文件路径（成果、提案改动里的 id 就是路径）----
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x'
@@ -241,7 +244,7 @@ const handlers: Handlers = {
     return ok({ node: nodeOf(h, f), text: rawText(h, f), history: history(h, f) })
   },
   // 假数据里只有车位图是"图片"，界面认得这个特殊地址
-  blob: ({ id }) => (id.includes('/w1-') ? ok('fake:parking') : fail('not_found', 'no blob in M0')),
+  blob: ({ id }) => (fakeStaged.has(id) ? ok(fakeStaged.get(id)!) : id.includes('/w1-') ? ok('fake:parking') : fail('not_found', 'no blob in M0')),
   export: () => ok(null),
   sync: () => {
     // 演示：同步一次就送出了积压的修改（离线时仍然离线）
@@ -289,7 +292,14 @@ const handlers: Handlers = {
   decline: () => written(),
   openProblem: () => written(),
   setStatus: () => written(),
-  addWork: () => written(),
+  // 图片：假数据把选中的文件留在内存里（stageFile 放进 fakeStaged），blob 再取回来
+  addWork: ({ problem, kind, title, fromPath }) => {
+    if (kind !== 'image' || !fromPath) return written()
+    const id = `works/${problem}/new-${++fakeAdded}-${title}.png.ref.md`
+    const url = fakeStaged.get(fromPath)
+    if (url) fakeStaged.set(id, url)
+    return ok({ commit: 'local', sync: synced, id })
+  },
   updateWork: () => written(),
   seat: () => written(),
   // 邀请：给出的是一整串"邀请码@Relay 地址"，粘贴时界面能一并认出地址（已在 PR 里提出）
@@ -325,7 +335,7 @@ export const fakeBackend = {
   kind: 'fake' as const,
   async call<C extends A.Command>(cmd: C, args: A.Args<C>): Promise<A.Result<A.Returns<C>>> {
     if (demo === 'refuse' && writes.includes(cmd)) return refused as A.Result<A.Returns<C>>
-    if (demo === 'slow' && (writes.includes(cmd) || cmd === 'invite' || cmd === 'redeem' || cmd === 'pair' || cmd === 'unpair')) {
+    if (demo === 'slow' && (writes.includes(cmd) || ['invite', 'redeem', 'pair', 'unpair'].includes(cmd as string))) {
       const w = window as unknown as { __fakeWrites?: string[] }
       ;(w.__fakeWrites ??= []).push(cmd)
       await new Promise((r) => setTimeout(r, 3000))

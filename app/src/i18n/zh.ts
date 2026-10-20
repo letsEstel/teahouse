@@ -238,6 +238,8 @@ export default {
   'send.pushed': '已经写进茶馆。',
   'send.local': '先存在这台设备上了，联网后自动送出。',
   'send.done': '好了。',
+  'editor.insertImage': '插入图片',
+  'editor.addingImage': '正在加入图片…',
   'archive.title': '档案',
   'archive.lede': '茶馆里的所有文件，原原本本都在这里。',
   'archive.byDir': '按目录',

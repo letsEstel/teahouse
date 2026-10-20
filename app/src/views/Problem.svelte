@@ -8,6 +8,7 @@
   import Write from '../lib/Write.svelte'
   import AccessMark from '../lib/AccessMark.svelte'
   import Editor from '../lib/Editor.svelte'
+  import { attachImage, imageUrl } from '../lib/images'
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
   import { api, write as send, blobUrl, stageFile } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
@@ -139,7 +140,8 @@
         <div class="compose" data-write>
           <label class="label" for="new-title">{t('edit.title')}</label>
           <input id="new-title" class="title-in" bind:value={newTitle} placeholder={t('edit.titlePlaceholder')} />
-          <Editor value="" placeholder={t('edit.bodyPlaceholder')} onchange={(v) => (newText = v)} />
+          <Editor value="" placeholder={t('edit.bodyPlaceholder')} onchange={(v) => (newText = v)}
+            onimage={(f) => attachImage(house.id, id, f)} resolveImage={(src) => imageUrl(house.id, src)} />
           <div class="save">
             <button class="primary" disabled={!newTitle.trim()} onclick={addDoc}><span>{t(me.role === 'guest' ? 'edit.saveProposal' : 'edit.save')}</span></button>
             <button class="secondary" onclick={() => (composing = false)}>{t('edit.cancel')}</button>

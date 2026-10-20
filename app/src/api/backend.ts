@@ -7,7 +7,7 @@
 // 应用里还有一个"示例"开关（localStorage teahouse.demo）：打开时用假数据，方便没拿到邀请也能看看。
 // 界面任何地方都不要绕过这里去读数据。
 import type { ApiError, Args, Command, Result, Returns } from './types'
-import { fakeBackend } from './fake'
+import { fakeBackend, fakeStaged } from './fake'
 import { httpBackend } from './http'
 import { tauriBackend } from './tauri'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
@@ -101,7 +101,11 @@ export function blobUrl(house: string, id: string, path: string): string {
  * 浏览器里（假数据、开发期）：没有本机路径可给，返回一个占位名，假数据不会去读它。
  */
 export async function stageFile(file: File): Promise<string> {
-  if (backend.kind !== 'tauri') return `staged:${file.name}`
+  if (backend.kind !== 'tauri') {
+    const key = `staged:${Date.now()}-${file.name}`
+    if (backend.kind === 'fake') fakeStaged.set(key, URL.createObjectURL(file))
+    return key
+  }
   const r = await invoke<Result<{ path: string }>>('stageFile', new Uint8Array(await file.arrayBuffer()), {
     headers: { 'x-file-name': encodeURIComponent(file.name) },
   })

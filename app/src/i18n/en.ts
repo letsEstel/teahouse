@@ -238,6 +238,8 @@ export default {
   'send.pushed': 'Written into the teahouse.',
   'send.local': 'Saved on this device; it goes out once you are online.',
   'send.done': 'Done.',
+  'editor.insertImage': 'Insert picture',
+  'editor.addingImage': 'Adding picture…',
   'archive.title': 'Archive',
   'archive.lede': 'Every file in the teahouse, exactly as it is.',
   'archive.byDir': 'By folder',

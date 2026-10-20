@@ -7,6 +7,8 @@
   import Diff from '../lib/Diff.svelte'
   import AccessMark from '../lib/AccessMark.svelte'
   import Editor from '../lib/Editor.svelte'
+  import MdImage from '../lib/MdImage.svelte'
+  import { attachImage, imageUrl } from '../lib/images'
   import { member, self, pad, access, fileName, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
   import { api, blobUrl, write as send, stageFile } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
@@ -108,6 +110,17 @@
       front,
       blocks: blocks.map((b) => (b.startsWith('## ') ? { h: b.slice(3).split('\n')[0], p: b.split('\n').slice(1).join('\n') } : { h: '', p: b })),
     }
+  }
+  /** 一段文字按行切开：单独一行的 ![标题](地址) 是图片，相邻的其余行合成一段文字 */
+  function pieces(p: string) {
+    const out: { text?: string; img?: { alt: string; src: string } }[] = []
+    for (const line of p.split('\n')) {
+      const m = /^\s*!\[([^\]]*)\]\(([^)\s]+)\)\s*$/.exec(line)
+      if (m) out.push({ img: { alt: m[1], src: m[2] } })
+      else if (out.length && out[out.length - 1].text !== undefined) out[out.length - 1].text += '\n' + line
+      else out.push({ text: line })
+    }
+    return out.filter((x) => x.img || x.text?.trim())
   }
   /** CSV → 行（支持引号） */
   function csv(src = '') {
@@ -249,7 +262,9 @@
 
       {#if editing}
         <div class="editing">
-          <Editor value={draft} markdown={node.kind !== 'table'} onchange={(v) => (draft = v)} />
+          <Editor value={draft} markdown={node.kind !== 'table'} onchange={(v) => (draft = v)}
+            onimage={node.kind !== 'table' && node.problem ? (f) => attachImage(house.id, node.problem!, f) : undefined}
+            resolveImage={(src) => imageUrl(house.id, src)} />
           <div class="save">
             <button class="primary" data-write onclick={save}><span>{t(can === 'write' ? 'edit.save' : 'edit.saveProposal')}</span></button>
             <button class="secondary" onclick={() => (editing = false)}>{t('edit.cancel')}</button>
@@ -298,7 +313,13 @@
           {#if md.front.note}<p class="sum">{md.front.note}</p>{/if}
           {#each md.blocks as b, i}
             {#if b.h}<h4>{b.h}</h4>{/if}
-            {#if b.p}<p class:sum={node.kind === 'problem' && i === 0 && !b.h} class="pre-plain">{b.p}</p>{/if}
+            {#if b.p}
+              <!-- 只有一张图片的行显示成图片，其余照常是文字 -->
+              {#each pieces(b.p) as piece}
+                {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />
+                {:else}<p class:sum={node.kind === 'problem' && i === 0 && !b.h} class="pre-plain">{piece.text}</p>{/if}
+              {/each}
+            {/if}
           {/each}
         {/if}
       </article>
