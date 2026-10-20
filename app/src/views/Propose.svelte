@@ -4,7 +4,7 @@
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import { diffLines } from '../lib/diff'
   import { self, host, type House, type WorkKind, type Problem } from '../api/view'
-  import { api, write } from '../api/backend'
+  import { api, write, stageFile } from '../api/backend'
   import { t } from '../i18n/index.svelte'
 
   // 发起提案（茶客的核心动作）：面向哪个问题 → 改什么 → 为什么 → 交给老板。
@@ -21,6 +21,15 @@
   let newKind = $state<WorkKind>('doc')
   let reason = $state('')
   let sent = $state(false)
+  // 图片和附件：提议换成另一个文件（从手机的文件选择器选，外壳暂存后交给引擎 fromPath）
+  let replacement = $state<{ name: string; path: string } | null>(null)
+  let picker = $state<HTMLInputElement>()
+  async function pick(e: Event) {
+    const input = e.currentTarget as HTMLInputElement
+    const f = input.files?.[0]
+    input.value = ''
+    if (f) replacement = { name: f.name, path: await stageFile(f) }
+  }
 
   // arg：问题编号、"new"（提议新问题）或 "board"（提议一条公告）
   $effect.pre(() => {
@@ -49,6 +58,7 @@
   }
   function pickWork(id: string) {
     workId = id
+    replacement = null
     body = works.find((x) => x.id === id)?.text ?? ''
   }
   function setMode(m: 'modify' | 'add') {
@@ -61,7 +71,7 @@
   let changed = $derived(
     effMode === 'new' ? newTitle.trim() !== '' && body.trim() !== ''
     : effMode === 'add' ? newTitle.trim() !== '' && body.trim() !== ''
-    : !!work && (editable ? preview.some((l) => l.kind !== 'same') : false)
+    : !!work && (editable ? preview.some((l) => l.kind !== 'same') : !!replacement)
   )
   let missing = $derived([
     !target && t('propose.needProblem'),
@@ -79,7 +89,10 @@
     else if (target === 'new') done = await write('openProblem', { house: house.id, title: newTitle, body: [{ heading: '', text: body }] })
     else if (target) {
       const title = effMode === 'modify' && work ? t('propose.titleModify', { title: work.title }) : t('propose.titleAdd', { title: newTitle })
-      const change = effMode === 'modify' && work ? { id: work.id, kind: work.kind, title: work.title, text: body } : { kind: newKind, title: newTitle, text: body }
+      const change =
+        effMode === 'modify' && work && !editable && replacement ? { id: work.id, kind: work.kind, title: work.title, fromPath: replacement.path }
+        : effMode === 'modify' && work ? { id: work.id, kind: work.kind, title: work.title, text: body }
+        : { kind: newKind, title: newTitle, text: body }
       done = await write('propose', { house: house.id, problem: target, title, reason, changes: [change] })
     }
     if (done) sent = true
@@ -188,7 +201,9 @@
                 {:else}
                   <div class="upload">
                     <p>{t('propose.fileOnly')}</p>
-                    <button type="button" class="secondary">{t('propose.upload')}</button>
+                    <button type="button" class="secondary" onclick={() => picker?.click()}>{t('propose.upload')}</button>
+                    <input class="picker" type="file" bind:this={picker} onchange={pick} />
+                    {#if replacement}<p class="chosen">{t('propose.chosen', { name: replacement.name })}</p>{/if}
                   </div>
                 {/if}
               {/if}
@@ -243,6 +258,8 @@
 </div>
 
 <style>
+  .picker { display: none; }
+  .chosen { font-size: 14px; font-weight: 700; }
   .wrap { padding: var(--pad-top) var(--pad-x) 80px; max-width: 1240px; }
   header { padding-bottom: 28px; border-bottom: 2px solid var(--ink); }
   .back { display: inline-block; margin-bottom: 18px; }

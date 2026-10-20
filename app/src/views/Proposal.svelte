@@ -9,18 +9,27 @@
   import { t, when, i18n } from '../i18n/index.svelte'
 
   // id 为空时是"提案列表"：宽屏显示列表 + 第一份提案，窄屏只显示列表（两级页面）。
-  let { house, id }: { house: House; id?: string } = $props()
+  let { house, id, refresh }: { house: House; id?: string; refresh?: () => void } = $props()
   let p = $derived(house.proposals.find((x) => x.id === id) ?? house.proposals[0])
   let author = $derived(p && member(house, p.by))
   let problem = $derived(p && house.problems.find((x) => x.id === p.problem)!)
   let me = $derived(self(house))
   let owner = $derived(host(house))
-  let state = $state<'pending' | 'merged' | 'rejected'>('pending')
+  let outcome = $state<'pending' | 'merged' | 'rejected'>('pending')
+  // 撤回自己的提案：先点"撤回"，再点"确定撤回"
+  let withdrawing = $state(false)
+  async function withdraw() {
+    if (!p) return
+    if (!(await write('withdraw', { house: house.id, proposal: p.id }))) return
+    withdrawing = false
+    refresh?.()
+    location.hash = `#/${house.id}/proposals`
+  }
   // 采纳 / 不采纳走引擎。决定不能撤回（CLIENT-API 第 1.5 节）
   async function decide(adopt: boolean) {
     if (!p) return
     const done = adopt ? await write('adopt', { house: house.id, proposal: p.id }) : await write('decline', { house: house.id, proposal: p.id })
-    if (done) state = adopt ? 'merged' : 'rejected'
+    if (done) outcome = adopt ? 'merged' : 'rejected'
   }
 
   const tally = (f: Proposal['files'][number]) => ({
@@ -62,7 +71,7 @@
   </aside>
 
   {#if p}
-    <section class="review" class:merged={state === 'merged'} class:rejected={state === 'rejected'}>
+    <section class="review" class:merged={outcome === 'merged'} class:rejected={outcome === 'rejected'}>
       <a class="back label" href="#/{house.id}/proposals">← {t('prop.back')}</a>
       <div class="crumb label">
         {t('prop.forProblem')} <a href="#/{house.id}/problem/{problem.id}"><span class="num">{problem.id}</span> {problem.title}</a>
@@ -87,9 +96,9 @@
             <WorkGlyph kind={f.kind} size={24} />
             <span class="kind label">{t(`kind.${f.kind}`)}</span>
             <span class="ft">{f.title}</span>
-            <span class="tally">{state === 'merged' ? t('prop.mergedText') : t('prop.tally', tl)}</span>
+            <span class="tally">{outcome === 'merged' ? t('prop.mergedText') : t('prop.tally', tl)}</span>
           </div>
-          {#if state === 'merged'}
+          {#if outcome === 'merged'}
             <!-- 采纳后：直接显示合并后的正文，没有标记和行号 -->
             <div class="doc">
               {#each (f.lines ?? []).filter((l) => l.kind !== 'del') as l}
@@ -97,14 +106,14 @@
               {/each}
             </div>
           {:else}
-            <Diff lines={f.lines ?? []} muted={state === 'rejected'} />
+            <Diff lines={f.lines ?? []} muted={outcome === 'rejected'} />
           {/if}
         </div>
       {/each}
 
       <div class="actions" data-write>
         {#if me.role === 'host'}
-          {#if state === 'pending'}
+          {#if outcome === 'pending'}
             <p class="consequence">{t('prop.adoptHint')}</p>
             <div class="buttons">
               <div class="opt">
@@ -117,8 +126,8 @@
             <div class="verdict">
               <i></i>
               <div>
-                <b>{state === 'merged' ? t('prop.verdictMerged') : t('prop.verdictRejected')}</b>
-                <span>{state === 'merged'
+                <b>{outcome === 'merged' ? t('prop.verdictMerged') : t('prop.verdictRejected')}</b>
+                <span>{outcome === 'merged'
                   ? t('prop.verdictMergedSub', { when: t('time.justNow') })
                   : t('prop.verdictRejectedSub', { name: author.name, when: t('time.justNow') })}</span>
               </div>
@@ -133,7 +142,14 @@
               <div class="opt"><small>{t('prop.editDirectHint')}</small></div>
               <a class="primary" href="#/{house.id}/problem/{problem.id}"><i>→</i><span>{t('prop.editDirect')}</span></a>
             {:else}
-              {#if p.by === me.id}<button class="secondary">{t('prop.withdraw')}</button>{/if}
+              {#if p.by === me.id}
+                {#if withdrawing}
+                  <button class="secondary sure" data-write onclick={withdraw}>{t('prop.withdrawSure')}</button>
+                  <button class="secondary" onclick={() => (withdrawing = false)}>{t('prop.withdrawKeep')}</button>
+                {:else}
+                  <button class="secondary" data-write onclick={() => (withdrawing = true)}>{t('prop.withdraw')}</button>
+                {/if}
+              {/if}
               <a class="primary" href="#/{house.id}/propose"><i>+</i><span>{t('act.newProposal')}</span></a>
             {/if}
           </div>
@@ -144,6 +160,7 @@
 </div>
 
 <style>
+  .sure { background: var(--ink); color: var(--paper); }
   .wrap { display: grid; grid-template-columns: clamp(240px, 21vw, 300px) minmax(0, 1fr); min-height: 100vh; }
 
   .queue { border-right: 1px solid var(--ink); padding: var(--pad-top) 0 40px; min-width: 0; --in: clamp(20px, 2.2vw, 32px); }

@@ -19,7 +19,7 @@
   // 每个角色在首页的最主要动作
   let action = $derived(
     me.role === 'host' ? { label: t('act.invite'), hint: t('act.inviteHint', { n: free }), href: undefined }
-    : me.role === 'steward' ? { label: t('act.newProblem'), hint: t('act.newProblemHint'), href: `#/${house.id}/problems` }
+    : me.role === 'steward' ? { label: t('act.newProblem'), hint: t('act.newProblemHint'), href: `#/${house.id}/problems/new` }
     : { label: t('act.newProposal'), hint: t('act.newProposalHint'), href: `#/${house.id}/propose` }
   )
 </script>
@@ -37,7 +37,7 @@
       <div class="sign-by">
         <Shape role="host" size={10} />
         <span>{t('house.signBy', { name: owner.name })}</span>
-        {#if me.role === 'host'}<button class="edit" data-write>{t('house.signEdit')}</button>{/if}
+        <!-- "修改招牌"：引擎还没有改招牌的命令，按钮先不放（不留没有动作的按钮） -->
       </div>
     </div>
 
@@ -125,7 +125,6 @@
   .bar { display: block; width: 72px; height: 8px; background: var(--ink); margin-bottom: 18px; }
   .sign p { font-size: clamp(16px, 1.3vw, 19px); line-height: 1.6; letter-spacing: 0.02em; }
   .sign-by { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--ink-2); }
-  .edit { margin-left: 8px; font-size: 13px; font-weight: 500; color: var(--ink); border-bottom: 1px solid var(--ink); }
 
   .action { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-top: 36px; }
   .action .consequence { flex: 1 1 16em; }
