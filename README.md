@@ -77,3 +77,7 @@ cargo test               # 全部测试（需要 git）
 | 提案（`refs/proposals/<id>/…`） | ✓ | ✓ | ✓ |
 | 修改座位表 / `Problem: meta` | ✓ | ✗ | 只能提案 |
 | 继承茶馆 | — | ✓ | ✗ |
+
+## 许可 · License
+
+茶馆以 [GNU Affero General Public License v3.0](LICENSE)（AGPL-3.0-only）发布。任何人都可以使用、修改、再发布；但把修改过的版本拿去对外提供服务（包括架一台 Relay 给别人用），就必须把修改后的源代码同样公开给使用它的人。
