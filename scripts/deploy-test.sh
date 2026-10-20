@@ -29,9 +29,12 @@ case "$mode" in
     sh "$here/deploy/install.sh" --binary "$bin" --found smoke --name "冒烟测试" --address 127.0.0.1 | tee "$work/install.log"
     invite=$(grep -o 'TH-[0-9A-Z-]*@[^ ]*' "$work/install.log" | tail -n 1)
     echo "▌ second run (idempotent, upgrade path)"
-    sh "$here/deploy/install.sh" --binary "$bin" --found smoke --name "冒烟测试" --address 127.0.0.1 >"$work/install2.log"
-    # …and the other way: a teahouse opened for a public key.
-    sh "$here/deploy/install.sh" --binary "$bin" --open other --name "另一间" --host-name "Tester" --host-key "@$work/host.pub" >/dev/null
+    sh "$here/deploy/install.sh" --binary "$bin" --found smoke --name "冒烟测试" --address 127.0.0.1 >"$work/install2.log" 2>&1 \
+      || { echo "✗ second run failed:"; cat "$work/install2.log"; exit 1; }
+    # …and the other way: a teahouse opened for a public key, with the
+    # address worked out by the script (no --address).
+    sh "$here/deploy/install.sh" --binary "$bin" --open other --name "另一间" --host-name "Tester" --host-key "@$work/host.pub" >"$work/install3.log" 2>&1 \
+      || { echo "✗ --open run failed:"; cat "$work/install3.log"; exit 1; }
     port=22 ;;
   docker)
     docker build -q -f "$here/deploy/docker/Dockerfile" -t teahouse-relay:test "$here" >/dev/null

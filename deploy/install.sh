@@ -206,7 +206,9 @@ fi
 if [ -z "$address" ]; then
   ip=$(hostname -I 2>/dev/null | awk '{print $1}')
   port=$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}')
-  address="${ip:-<this-server>}$( [ "${port:-22}" != 22 ] && printf ':%s' "$port" )"
+  address="${ip:-<this-server>}"
+  # (Not `$( [ … ] && … )`: a false test there ends the script under set -e.)
+  if [ "${port:-22}" != 22 ]; then address="$address:$port"; fi
 fi
 
 say "7/7 茶馆 · teahouse"
