@@ -4,7 +4,7 @@
 
 > 闲聊产生情绪，茶馆产生成果。
 
-*English: Teahouse is a shared workspace for small groups (up to 15 people) who want to get things done together. Everyone keeps a full copy, so a teahouse can be shut down but never killed. Early test version; the interface is in Chinese, English and German.*
+**中文** · [English](README.en.md) · [Deutsch](README.de.md)
 
 ---
 
