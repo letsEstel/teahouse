@@ -166,7 +166,7 @@ jobs:
           cp dist/teahouse-windows/*.exe teahouse-windows-x64-setup.exe
           gh release view nightly >/dev/null 2>&1 || \
             gh release create nightly --prerelease --target "$GITHUB_SHA" \
-              --title "最新测试版 · Nightly" --notes "每次 main 更新后自动构建。Built automatically from main."
+              --title "最新测试版 · Nightly" --notes "每次 main 更新后自动构建。Built automatically from main." || true  # another run may have just created it
           gh release upload nightly teahouse-android-arm64.apk teahouse-windows-x64-setup.exe --clobber
           gh release edit nightly --title "最新测试版 · $(date -u +%Y-%m-%d) · ${GITHUB_SHA::7}" \
             --notes "每次 main 更新后自动构建。Built automatically from main at ${GITHUB_SHA::7}."

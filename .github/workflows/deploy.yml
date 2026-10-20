@@ -51,7 +51,7 @@ jobs:
         run: |
           gh release view nightly >/dev/null 2>&1 || \
             gh release create nightly --prerelease --target "$GITHUB_SHA" \
-              --title "最新测试版 · Nightly" --notes "每次 main 更新后自动构建。Built automatically from main."
+              --title "最新测试版 · Nightly" --notes "每次 main 更新后自动构建。Built automatically from main." || true  # another run may have just created it
           gh release upload nightly teahouse-relay-linux-x86_64.tar.gz --clobber
 
   docker:
