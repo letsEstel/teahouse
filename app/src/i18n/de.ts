@@ -15,6 +15,8 @@ export default {
   'role.guest': 'Gast',
   'role.stewardNote': 'Erbe',
   'role.empty': 'Freier Platz',
+  'ai.mark': 'KI-Mitglied, kein Mensch',
+  'ai.markAgent': 'KI-Mitglied, kein Mensch · {agent}',
   'self.you': 'Du · {role}',
 
   'status.open': 'Unvergeben',
