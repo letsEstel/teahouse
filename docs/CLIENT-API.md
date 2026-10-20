@@ -186,7 +186,7 @@ interface SyncState {
   message?: string              // 出错时给人看的一句话（来自 Relay 时原样转达）
 }
 
-interface Member { id: string; name: string; role: Role; joined: string; kind: 'human' | 'ai'; agent?: string }  // kind=ai 只能是 guest（法第 17 条）；界面在 AI 成员旁显示"AI"标记
+interface Member { id: string; name: string; role: Role; joined: string; kind: 'human' | 'ai'; agent?: string }  // kind 只是标记，不限制角色（法第 17 条）；界面在 AI 成员旁显示"AI"标记
 interface Event  { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
 interface Note   { id: string; by: string; text: string; when: string; writtenAt: string }  // id=留言文件的仓库路径  // when=进入茶馆的时间，writtenAt=文件名里的时间戳
 interface Notice { id: string; by: string; title: string; text: string; when: string; replies: Note[] }
