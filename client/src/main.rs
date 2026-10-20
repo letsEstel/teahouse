@@ -48,9 +48,15 @@ fn default_root() -> Option<PathBuf> {
     base.map(|b| b.join("teahouse"))
 }
 
-/// `~/x` → `$HOME/x`: MCP configurations are not read by a shell.
+/// `~/x` (or `~\\x`) → the home directory: MCP configurations are not
+/// read by a shell. Windows has `USERPROFILE` rather than `HOME`.
 fn expand_home(p: &str) -> PathBuf {
-    match (p.strip_prefix("~/"), std::env::var_os("HOME")) {
+    let rest = p.strip_prefix("~/").or_else(|| p.strip_prefix("~\\"));
+    let home = ["HOME", "USERPROFILE"]
+        .iter()
+        .filter_map(std::env::var_os)
+        .find(|h| !h.is_empty());
+    match (rest, home) {
         (Some(rest), Some(home)) => PathBuf::from(home).join(rest),
         _ => PathBuf::from(p),
     }

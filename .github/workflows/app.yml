@@ -3,6 +3,8 @@
 #   web      type-check and build the interface
 #   windows  NSIS installer (Teahouse_<version>_x64-setup.exe)
 #   android  APK for arm64 phones, signed so it installs directly
+#   client-windows  teahouse-client.exe on its own: the engine's command line,
+#            including the MCP server an AI member runs (docs/MCP.md)
 # Artifacts are attached to each run (Actions → this workflow → Artifacts).
 name: app
 
@@ -72,6 +74,49 @@ jobs:
         with:
           name: teahouse-windows
           path: app/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+
+  # The engine alone, for Windows: `teahouse-client mcp` is what Claude's
+  # desktop app runs to give an AI a seat (docs/MCP.md §3).
+  client-windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+      # vendored OpenSSL (libgit2's and libssh2's) builds with Perl and NASM
+      - uses: ilammy/setup-nasm@v1
+      - uses: Swatinem/rust-cache@v2
+      - name: Build teahouse-client.exe
+        run: cargo build --release --locked -p teahouse-client
+      - name: Smoke test (device key, MCP over stdio)
+        shell: bash
+        run: |
+          set -eu
+          exe=target/release/teahouse-client.exe
+          root="$RUNNER_TEMP/teahouse-ai"
+          # A device key is made on first use.
+          "$exe" --root "$root" key | grep -q '^ssh-ed25519 '
+          # An MCP client's first exchange, as Claude's desktop app does it.
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
+            '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+            '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"houses","arguments":{}}}' \
+            | "$exe" mcp --root "$root" > mcp.out
+          cat mcp.out
+          [ "$(wc -l < mcp.out)" -eq 3 ]
+          grep -q '"serverInfo":{"name":"teahouse"' mcp.out
+          grep -q '"name":"redeem"' mcp.out
+          ! grep -q '"name":"adopt"' mcp.out
+          grep -q '"isError":false' mcp.out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: teahouse-client-windows
+          path: target/release/teahouse-client.exe
           if-no-files-found: error
 
   android:
@@ -172,7 +217,7 @@ jobs:
   # Every build of main replaces the files of the "nightly" release, so the
   # download links in README.md never change.
   release:
-    needs: [web, windows, android]
+    needs: [web, windows, android, client-windows]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -190,9 +235,11 @@ jobs:
           set -eu
           cp dist/teahouse-android/teahouse-arm64.apk teahouse-android-arm64.apk
           cp dist/teahouse-windows/*.exe teahouse-windows-x64-setup.exe
+          cp dist/teahouse-client-windows/teahouse-client.exe teahouse-client-windows-x64.exe
           gh release view nightly >/dev/null 2>&1 || \
             gh release create nightly --prerelease --target "$GITHUB_SHA" \
               --title "最新测试版 · Nightly" --notes "每次 main 更新后自动构建。Built automatically from main." || true  # another run may have just created it
-          gh release upload nightly teahouse-android-arm64.apk teahouse-windows-x64-setup.exe --clobber
+          gh release upload nightly teahouse-android-arm64.apk teahouse-windows-x64-setup.exe \
+            teahouse-client-windows-x64.exe --clobber
           gh release edit nightly --title "最新测试版 · $(date -u +%Y-%m-%d) · ${GITHUB_SHA::7}" \
             --notes "每次 main 更新后自动构建。Built automatically from main at ${GITHUB_SHA::7}."
