@@ -2,9 +2,17 @@
 # the real-OpenSSH integration test (scripts/sshd-test.sh, no root needed).
 name: ci
 
+# CI minutes are paid for: pull requests run the tests once; branches other
+# than main are not built again on push (their PR already runs).
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

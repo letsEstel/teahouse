@@ -6,10 +6,16 @@
 #   client-windows  teahouse-client.exe on its own: the engine's command line,
 #            including the MCP server an AI member runs (docs/MCP.md)
 # Artifacts are attached to each run (Actions → this workflow → Artifacts).
+#
+# CI minutes are paid for: a pull request only type-checks and builds the
+# interface (web); the Windows and Android packages and the engine for
+# Windows are built when main changes (they feed the nightly release), or by
+# hand (Actions → app → Run workflow).
 name: app
 
 on:
   push:
+    branches: [main]
     paths: ['app/**', 'client/**', 'core/**', '.github/workflows/app.yml']
   pull_request:
     paths: ['app/**', 'client/**', 'core/**', '.github/workflows/app.yml']
@@ -46,6 +52,7 @@ jobs:
       - run: npm run export-fixtures
 
   windows:
+    if: github.event_name != 'pull_request'
     runs-on: windows-latest
     timeout-minutes: 60
     defaults:
@@ -79,6 +86,7 @@ jobs:
   # The engine alone, for Windows: `teahouse-client mcp` is what Claude's
   # desktop app runs to give an AI a seat (docs/MCP.md §3).
   client-windows:
+    if: github.event_name != 'pull_request'
     runs-on: windows-latest
     timeout-minutes: 40
     steps:
@@ -120,6 +128,7 @@ jobs:
           if-no-files-found: error
 
   android:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     defaults:
