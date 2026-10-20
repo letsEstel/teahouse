@@ -186,7 +186,8 @@ interface SyncState {
   message?: string              // 出错时给人看的一句话（来自 Relay 时原样转达）
 }
 
-interface Member { id: string; name: string; role: Role; joined: string; kind: 'human' | 'ai'; agent?: string }  // kind 只是标记，不限制角色（法第 17 条）；界面在 AI 成员旁显示"AI"标记
+interface Member { id: string; name: string; role: Role; joined: string; kind: 'human' | 'ai'; agent?: string; devices?: DeviceInfo[] }  // kind 只是标记，不限制角色（法第 17 条）；界面在 AI 成员旁显示"AI"标记；devices 只出现在自己的座位上
+interface DeviceInfo { name: string; fingerprint: string; added: string; thisDevice: boolean }  // name 为空 = 第一台设备；fingerprint 形如 SHA256:…（和 ssh-keygen -l 一致）
 interface Event  { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
 interface Note   { id: string; by: string; text: string; when: string; writtenAt: string }  // id=留言文件的仓库路径  // when=进入茶馆的时间，writtenAt=文件名里的时间戳
 interface Notice { id: string; by: string; title: string; text: string; when: string; replies: Note[] }
@@ -279,7 +280,10 @@ interface HistoryEntry { by: string; when: string; act: Act; problem: string; ti
 | `decline` | `{ house, proposal, reason? }` | 老板 | `decline`，同时删除提案分支 |
 | `seat` | `{ house, remove?: id, role?: {id, role} }` | 老板 | `seat`（加人只走邀请） |
 | `invite` | `{ house, role?, name?, days? }` | 老板 | 无提交；返回**完整邀请** `TH-XXXX-XXXX-XXXX-XXXX@<relay>[:端口]`（`@` 后是 Relay 地址，ssh 用户默认 `teahouse`），界面整段复制给对方 |
-| `redeem` | `{ relay, code, name }` | 尚未入座的人 | Relay 代写 `seat`；完成后自动克隆茶馆。界面从粘贴的整段文字里认出 `TH-…@地址` 或 `teahouse://地址/…`；只有邀请码时才多问地址 |
+| `redeem` | `{ relay, code, name }` | 尚未入座的人，或要加入的新设备 | Relay 代写 `seat`；完成后自动克隆茶馆。界面从粘贴的整段文字里认出 `TH-…@地址` 或 `teahouse://地址/…`；只有邀请码时才多问地址。**同一个入口也接受配对码**：配对码覆盖几间茶馆，就加入几间 |
+| `pair` | `{ house?, name? }` | 所有人（AI 也可以） | 无提交；返回配对码 `TH-…@<relay>`，10 分钟内有效、只能用一次，对这台设备在该 Relay 上入座的**所有茶馆**有效。`name` 是新设备的名字（如"手机"）。界面在"添加一台设备"里整段显示，供新设备粘贴（见 DEVICES.md） |
+| `devices` | `{ house }` | 所有人 | 无提交；返回 `DeviceInfo[]`（我的全部设备） |
+| `unpair` | `{ house?, device }` | 所有人（只能移除自己的另一台设备） | Relay 代写座位变更；`device` 是设备名或 `SHA256:` 指纹。不指定 `house` 时先同步，再在所有有这台设备的茶馆里移除。正在用的这台、最后一台都不能移除。返回移除了的茶馆 id |
 | `drafts` | `{ house }` | 所有人 | 无提交；返回 `{ id, kind, title, text, when, reason? }[]`（被拒绝或离线时保存的草稿） |
 | `discardDraft` | `{ house, id }` | 所有人 | 无提交；删除一份草稿 |
 | `purgeBlob` | `{ house, id }` | 老板 | 删除附件内容，引用标成 purged |

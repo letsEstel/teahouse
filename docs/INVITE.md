@@ -22,7 +22,7 @@ relay 校验 → 以老板的名义向 main 提交一次座位变更（Act: seat
 5. **座位变更由 Relay 代笔**：Relay 以"老板的名义"写一个提交（作者是老板，提交者是 `Teahouse Relay`），只改 `members.toml`，带上 `Problem: meta`、`Act: seat` 和 `Invite: <邀请码前四位>` 三个 trailer。这是唯一一种不经过推送、由 Relay 直接写入 main 的提交，并且同样要通过 pre-receive 的全部检查（走同一套校验函数）。
 6. **陌生密钥只能做一件事**：`AuthorizedKeysCommand` 对**不在任何茶馆里**的密钥，只返回一行 `restrict,command="teahouse-relay redeem-shell <key>"`。这个入口只接受 `redeem` 命令，不能读写任何茶馆，也不能列出茶馆。
 7. **防暴力尝试**：同一把密钥 1 小时内最多失败 5 次；全局每分钟最多 30 次兑现尝试；每次尝试都写审计日志（`invite.created`、`invite.redeemed`、`invite.failed`、`invite.revoked`）。128 位邀请码本身已经不可能被猜中，限速是为了不让日志被刷爆。
-8. **设备配对**（多设备）复用同一套机制：已入座的成员可以给**自己**创建一个"设备邀请"（`ssh relay pair <house>`），兑现后给同一个成员 id 追加一把公钥。这需要 `members.toml` 支持一个成员拥有多把密钥：`key` 字段改为 `keys = [...]`，或者允许重复的 `[[member.key]]` 表。**这一条改动了座位表格式，单独定稿后再做。**
+8. **设备配对**（多设备）复用同一套机制：已入座的成员给**自己**生成配对码（`pair`），新设备兑换后，成为同一个成员的又一台设备。格式和法已定稿并实现，见 [DEVICES.md](DEVICES.md)（`[[device]]` 表，法第 18、19 条）。
 
 ### 实现说明（2 号第 3 步，评审确认）
 - 只有 `AuthorizedKeysCommand`（方式 A）能兑换邀请；方式 B 的 authorized_keys 文件不认识陌生钥匙。安装脚本和 Docker 一律用方式 A。
