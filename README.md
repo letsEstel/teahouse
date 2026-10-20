@@ -1,82 +1,81 @@
 # 茶馆 · Teahouse
 
-不超过 15 人的小团体把事情办成的地方。闲聊产生情绪，茶馆产生成果。
-每一次提交都面向一个问题；每一间茶馆都可以被关停，但杀不死。
+**一个给小团体（最多 15 人）一起把事情办成的地方。**
 
-| 目录 | 内容 |
-|------|------|
-| `core/` | `teahouse-core`：成员、角色、密钥、规则。零依赖、无 I/O，供 relay 和以后的桌面客户端共用。 |
-| `relay/` | `teahouse-relay`：OpenSSH 后面的守门人。只有它决定谁能进门、谁能写什么。 |
-| `client/` | `teahouse-client`：客户端引擎（`docs/CLIENT-API.md`）。每间茶馆一份本地副本，git 用进程内的 libgit2（含 libssh2），不调用 git 或 ssh 程序，可以直接编译到 Android。读写命令、提交签名、同步：`teahouse-client --root <目录> call <命令> '<json>'`；开发用 HTTP 接口：`teahouse-client serve`（`127.0.0.1:7377`）。AI 成员用的 MCP 服务器：`teahouse-client mcp --root <目录>`（`docs/MCP.md`）。 |
-| `app/` | 界面（Tauri + Web 前端，开发中）。 |
-| `docs/RELAY.md` | Relay 的设计、茶馆的法、部署与运维。 |
-| `deploy/` | sshd 配置片段、systemd 定时检查。 |
-| `scripts/demo.sh` | 一键演示：开茶馆、入座、提案、被拒、继承。 |
-| `scripts/sshd-test.sh` | 真实 sshd 集成测试（非 root，两种接法）。 |
+> 闲聊产生情绪，茶馆产生成果。
 
-## 下载 · Download
+*English: Teahouse is a shared workspace for small groups (up to 15 people) who want to get things done together. Everyone keeps a full copy, so a teahouse can be shut down but never killed. Early test version; the interface is in Chinese, English and German.*
 
-最新测试版（每次 main 更新后自动构建；仓库是私有的，需要先登录 GitHub）：
+---
 
-- **安卓**：[teahouse-android-arm64.apk](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-android-arm64.apk)
-- **Windows**：[teahouse-windows-x64-setup.exe](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-windows-x64-setup.exe)
-- **Relay（Linux 服务器）**：[teahouse-relay-linux-x86_64.tar.gz](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-relay-linux-x86_64.tar.gz)，安装方法见 [开一个 Relay](docs/DEPLOY.md)
-- **AI 入座用的引擎（Windows）**：[teahouse-client-windows-x64.exe](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-client-windows-x64.exe)，见下面"让 AI 入座"
+## 它是什么
+
+想象一个微信群，但这里不靠聊天，靠办事：
+
+- 群里有人提出一个**问题**，比如"楼道灯坏了谁来修"或"这学期的读书会读哪本书"。
+- 大家围绕这个问题写**成果**：方案、文档、表格、照片。
+- 每个问题都有人负责，有状态（进行中、解决了），一眼看得清楚。
+- 所有人写过的东西都留着，谁写的、什么时候写的，都有记录，而且不能被偷偷改掉。
+
+你可以把它理解成**一个大家共用的文件夹，再加上一套规矩**。规矩决定谁能直接改、谁只能"提议修改"、谁能请人进来。
+
+## 为什么叫"杀不死"
+
+普通的群聊和网盘都放在别人的服务器上：服务器关了，或者账号被封了，东西就没了。
+
+茶馆不一样：**每个成员的手机或电脑上都有一份完整的副本**。存放茶馆的服务器（我们叫它 Relay）只是大家碰头、对账的地方。服务器没了，任何一个人手里的副本都能把茶馆完整地恢复出来；老板指定的"伙计"还可以直接接手这间茶馆。
+
+## 三种身份
+
+| 身份 | 能做什么 | 打个比方 |
+|---|---|---|
+| **老板**（红色方块） | 什么都能改，决定谁能坐进来、坐哪个位子 | 茶馆的主人 |
+| **伙计**（黄色三角） | 直接写问题、成果和公告，采纳别人的提议；老板不在时接手茶馆 | 主人信得过的帮手，也是继承人 |
+| **茶客**（蓝色圆点） | 看所有内容，发言；想改内容时先交"提案"，由老板或伙计采纳 | 常来喝茶的朋友 |
+
+AI 也可以坐进茶馆，名字旁边会标着"AI"。它能做什么，和人一样，取决于给它哪个座位。
+
+## 怎么开始
+
+**有人邀请了你**：
+1. 下载 App（见下面"下载"）。
+2. 打开后选"加入一间茶馆"，把对方发给你的那一整行邀请（形如 `TH-XXXX-XXXX-XXXX-XXXX@地址`）粘贴进去。
+3. 完成了。没有账号，也没有密码。
+
+**你想自己开一间**：需要一台 Linux 服务器（一个月几欧的那种就够了），照 [开一个 Relay](docs/DEPLOY.md) 装好，装的时候加上 `--found`，就会得到一行"开馆邀请"。在 App 里粘贴这行邀请，你就是老板了。
+
+**想先看看长什么样**：打开 App，选"先看看示例茶馆"，里面有六间虚构的茶馆，全是假数据，不会同步，也不会离开你的设备。
+
+## 下载
+
+最新测试版（每次代码更新后自动构建）：
+
+- **安卓手机**：[teahouse-android-arm64.apk](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-android-arm64.apk)
+- **Windows 电脑**：[teahouse-windows-x64-setup.exe](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-windows-x64-setup.exe)
+- **服务器（Linux）**：[teahouse-relay-linux-x86_64.tar.gz](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-relay-linux-x86_64.tar.gz)，安装方法见 [开一个 Relay](docs/DEPLOY.md)
 - 全部文件和更新时间：[Releases → nightly](https://github.com/letsEstel/teahouse/releases/tag/nightly)
 
-### 让 AI 入座（Claude 桌面版，Windows）
+这是**早期测试版**：功能还在补，可能有 bug。重要的东西请同时在别处留一份。
 
-AI 作为成员坐进茶馆（[docs/MCP.md](docs/MCP.md)）：它有自己的设备钥匙，在座位表上标为 AI（id 以 `ai-` 开头）；能做什么取决于给它的座位，和人一样。
+## 常见问题
 
-1. 下载 `teahouse-client-windows-x64.exe`，放到一个固定的地方，例如 `C:\Teahouse\teahouse-client.exe`。
-2. 打开 Claude 桌面版的 **设置 → 开发者 → 编辑配置**（也就是 `%APPDATA%\Claude\claude_desktop_config.json`），写入：
-   ```json
-   {
-     "mcpServers": {
-       "teahouse": {
-         "command": "C:\\Teahouse\\teahouse-client.exe",
-         "args": ["mcp", "--root", "~/teahouse-ai"]
-       }
-     }
-   }
-   ```
-   `--root` 是这个 AI 的数据目录（本地副本和它的钥匙），`~/` 指你的用户目录。每个 AI 用自己的目录。
-3. 重启 Claude 桌面版。
-4. 老板在客户端里邀请一位 **AI 成员**（邀请时选 AI 和它的角色；命令行是 `invite <茶馆> --kind ai [--role steward]`），把整行邀请 `TH-…@地址` 发给 Claude，对它说：用 teahouse 的 redeem 工具入座，名字叫"评审方"，agent 写 "Claude"。
-5. 之后它就能用 `house`、`problem` 读，用 `note`、`propose` 写；它是伙计或老板时，还会多出改状态、删留言、采纳、座位、邀请这些工具。权限由 Relay 的法来管，和人一样。
+**要注册账号吗？** 不用。你的手机或电脑会自己生成一把"钥匙"，用来证明你是你。钥匙只存在你的设备上，你永远不会看到它，也不用记任何密码。
+
+**手机和电脑能用同一个身份吗？** 能。在已经入座的设备上点"添加一台设备"，把得到的配对码粘贴到新设备上即可。每人最多 5 台设备。（配对的界面还在做。）
+
+**丢了手机怎么办？** 用你的另一台设备把丢的那台移除，它就再也进不来了。所有设备都丢了，就找老板重新邀请你。
+
+**服务器的主人能看到我们写的东西吗？** 能。茶馆目前不加密内容，所以服务器要放在你信得过的人手里，最好是老板自己的服务器。
+
+**最多为什么是 15 人？** 15 人左右是一个能真正一起办事的小团体的上限。人再多，就该分成几间茶馆了。
+
+**为什么用"茶馆"这个名字？** 致敬老舍的《茶馆》：一个各色人等坐下来、把事情谈出结果的地方。
 
 ## 文档
 
 - [使用说明](docs/USER-GUIDE.md)：给所有人
-- [开一个 Relay](docs/DEPLOY.md)：给老板和运维
-- [AI 入座与 MCP](docs/MCP.md)：让 Claude Code 这样的 AI 作为成员坐进茶馆
-- [Relay 与茶馆的法](docs/RELAY.md)、[接口约定](docs/CLIENT-API.md)、[邀请](docs/INVITE.md)：给开发者
-
-## 快速开始
-
-```sh
-cargo test               # 全部测试（需要 git）
-./scripts/demo.sh        # 演示完整流程
-./scripts/sshd-test.sh   # 在真实的 OpenSSH 后面验证（不需要 root，约 15 秒）
-```
-
-`sshd-test.sh` 在 `127.0.0.1:2222` 起一个非 root 的 sshd，用 `deploy/sshd/teahouse.conf`
-生成配置，把 AuthorizedKeysCommand 和 authorized_keys 文件两种接法各测一遍。
-测试内容包括：进门、读写权限、留言、直接登录、端口转发和审计日志；
-还有客户端引擎经真实 sshd 的入座、签名推送、无座位被拒和主机钥匙变更（E1–E4）。
-没装 sshd 的话，它会把 Ubuntu 的 openssh-server 解压到 `~/.cache/teahouse/sshd`。
-常用参数：`./scripts/sshd-test.sh A` 或 `B` 只测一种接法；`PORT=2299` 换端口；
-`KEEP=1` 保留临时目录，里面有生成的 sshd 配置和日志。全部通过时退出码为 0。
-
-## 角色
-
-| | 老板 host | 伙计 steward | 茶客 guest |
-|---|---|---|---|
-| 读取全部 | ✓ | ✓ | ✓ |
-| 直接写 main | 全部 | `problems/` `works/` `board/` `talk/` | 只能新增自己的留言（`talk/`） |
-| 提案（`refs/proposals/<id>/…`） | ✓ | ✓ | ✓ |
-| 修改座位表 / `Problem: meta` | ✓ | ✗ | 只能提案 |
-| 继承茶馆 | — | ✓ | ✗ |
+- [开一个 Relay](docs/DEPLOY.md)：给想自己开茶馆的人
+- [开发者入口](docs/DEVELOP.md)：代码结构、编译、测试、让 AI 入座，以及给开发者的全部文档
 
 ## 许可 · License
 
