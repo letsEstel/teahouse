@@ -8,6 +8,21 @@ export const self = (h: House) => member(h, h.me)
 export const host = (h: House) => h.members.find((m) => m.role === 'host')!
 export const pad = (n: number) => String(n).padStart(2, '0')
 
+/**
+ * 你对茶馆里一个文件能做什么（RELAY.md 的法，界面只用来标注，真正把关的是 Relay）：
+ * write = 直接改；propose = 改动会变成提案；read = 只能看。
+ * 留言写下不改，谁都是只读；.teahouse/ 和仓库根上的文件只有老板能改。
+ */
+export type Access = 'write' | 'propose' | 'read'
+export function access(h: House, path: string): Access {
+  const role = self(h).role
+  if (path.startsWith('talk/')) return 'read'
+  if (/^(problems|works|board)\//.test(path)) return role === 'guest' ? 'propose' : 'write'
+  return role === 'host' ? 'write' : 'read'
+}
+/** 文件在茶馆里的真实名字。附件只有一份引用文件（CLIENT-API 1.6），显示附件本身的名字 */
+export const fileName = (path: string) => (path.split('/').pop() ?? path).replace(/\.ref\.md$/, '')
+
 /** 动作的说法。inProblem：在问题页的"经过"里（"提出了这个问题"），否则带上标题 */
 // 提交说明的第一行就是界面上显示的动作描述（CLIENT-API 1.4），所以 title 有内容时原样显示；
 // 没有时（比如有人直接用 git 提交）才按动作给一句通用的说法。

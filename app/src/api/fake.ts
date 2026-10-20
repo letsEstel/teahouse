@@ -148,7 +148,7 @@ function tree(h: FHouse, view: 'dirs' | 'problems'): A.ArchiveNode {
   const pl = (id: string) => `${id} · ${L(h.problems.find((p) => p.id === id)!.title)}`
   const leaves = (pred: (f: AFile) => boolean, _inProblem = false) => files.filter(pred).map((f) => nodeOf(h, f))
   const dir = (id: string, label: string, children: A.ArchiveNode[], code?: A.ArchiveNode['dir']): A.ArchiveNode => (code ? { id, dir: code, kind: 'dir', children } : { id, label, kind: 'dir', children })
-  const meta = dir('meta', t('archive.meta'), leaves((f) => f.kind === 'members'), 'meta')
+  const meta = dir('.teahouse', t('archive.meta'), leaves((f) => f.kind === 'members'), 'meta')
   if (view === 'dirs') {
     return dir('root', h.id, [
       dir('problems', t('archive.problems'), leaves((f) => f.kind === 'problem'), 'problems'),

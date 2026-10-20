@@ -5,7 +5,8 @@
   import ParkingMap from '../lib/ParkingMap.svelte'
   import FileGlyph from '../lib/FileGlyph.svelte'
   import Diff from '../lib/Diff.svelte'
-  import { member, self, pad, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
+  import AccessMark from '../lib/AccessMark.svelte'
+  import { member, self, pad, access, fileName, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
   import { api, blobUrl } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
@@ -133,12 +134,13 @@
         {#if !n.children}
           <a class="row file" class:on={n.id === selected} href="#/{house.id}/archive/{encodeURIComponent(n.id)}" style:--d={depth} data-file={n.id}>
             <FileGlyph kind={n.kind} />
-            <span class="name">{leafLabel(n, depth)}</span>
+            <span class="name"><span class="real">{fileName(n.id)}</span><span class="human">{leafLabel(n, depth)}</span></span>
+            <AccessMark a={access(house, n.id)} />
           </a>
         {:else}
           <button class="row folder" style:--d={depth} aria-expanded={!closed[n.id]} onclick={() => (closed[n.id] = !closed[n.id])}>
             <FileGlyph kind="dir" open={!closed[n.id]} />
-            <span class="name">{label(n)}</span>
+            <span class="name">{#if mode === 'dirs'}<span class="real">{fileName(n.id)}/</span>{/if}<span class:human={mode === 'dirs'}>{label(n)}</span></span>
             <span class="count num">{n.children.length}</span>
           </button>
           {#if !closed[n.id] && n.children.length}{@render branch(n.children, depth + 1)}{/if}
@@ -169,6 +171,9 @@
       <div class="seg" role="group">
         <button class:on={mode === 'dirs'} aria-pressed={mode === 'dirs'} onclick={() => (mode = 'dirs')}>{t('archive.byDir')}</button>
         <button class:on={mode === 'problems'} aria-pressed={mode === 'problems'} onclick={() => (mode = 'problems')}>{t('archive.byProblem')}</button>
+      </div>
+      <div class="legend" aria-label={t('access.legend')}>
+        <AccessMark a="write" label /><AccessMark a="propose" label /><AccessMark a="read" label />
       </div>
       {#if root?.children}<nav aria-label={t('archive.title')}>{@render branch(root.children, 0)}</nav>{/if}
     </aside>
@@ -309,7 +314,13 @@
   .folder .count { margin-left: auto; font-size: 11px; color: var(--ink-3); font-weight: 400; }
   .file.on { background: var(--ink); color: var(--paper); }
   .file.on :global(svg *) { fill: var(--paper); stroke: var(--paper); }
-  .name { min-width: 0; overflow-wrap: anywhere; }
+  .name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; overflow-wrap: anywhere; }
+  /* 真实的文件名在上，人话的标题在下（灰） */
+  .real { font-weight: 500; }
+  .folder .real { font-weight: 700; }
+  .human { font-size: 12px; font-weight: 400; color: var(--ink-3); }
+  .file.on .human, .file.on :global(.access) { color: var(--paper); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 12px; }
 
   .view { min-width: 0; }
   .back { display: none; margin-bottom: 14px; }

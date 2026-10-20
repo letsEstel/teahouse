@@ -6,7 +6,8 @@
   import ParkingMap from '../lib/ParkingMap.svelte'
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
-  import { member, self, pad, eventText, type House, type Note, type Problem } from '../api/view'
+  import AccessMark from '../lib/AccessMark.svelte'
+  import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
   import { api, write as send, blobUrl } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
@@ -22,6 +23,8 @@
   $effect(() => { load() })
 
   let author = $derived(p && member(house, p.by))
+  // 成果默认按文件列出（茶馆里真实的文件）；卡片是同一批文件的另一种看法
+  let view = $state<'files' | 'cards'>('files')
   let me = $derived(self(house))
   let feature = $derived(p?.works[0])
   let rest = $derived(p?.works.slice(1) ?? [])
@@ -111,6 +114,28 @@
         </div>
       {/if}
 
+      {#if p.works.length}
+        <div class="seg" role="group">
+          <button class:on={view === 'files'} aria-pressed={view === 'files'} onclick={() => (view = 'files')}>{t('problem.viewFiles')}</button>
+          <button class:on={view === 'cards'} aria-pressed={view === 'cards'} onclick={() => (view = 'cards')}>{t('problem.viewCards')}</button>
+        </div>
+      {/if}
+
+      {#if view === 'files'}
+      <ul class="files">
+        {#each p.works as w}
+          {@const wm = member(house, w.by)}
+          <li>
+            <a href="#/{house.id}/archive/{encodeURIComponent(w.id)}">
+              <WorkGlyph kind={w.kind} size={20} />
+              <span class="fname"><span class="real">{fileName(w.id)}</span><span class="human">{w.title}</span></span>
+              <span class="fby"><Shape role={wm.role} size={9} />{wm.name}<AiMark m={wm} /> · {when(w.when)}</span>
+              <AccessMark a={access(house, w.id)} />
+            </a>
+          </li>
+        {/each}
+      </ul>
+      {:else}
       <div class="grid">
         {#if feature}
           {@const fm = member(house, feature.by)}
@@ -150,6 +175,7 @@
           </article>
         {/each}
       </div>
+      {/if}
 
       <section class="talk">
         <div class="talk-head">
@@ -220,6 +246,22 @@
 
   .empty { display: flex; align-items: center; gap: 20px; padding: 28px 0; border-top: 2px solid var(--ink); color: var(--ink-2); }
 
+  .seg { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+  .seg button { padding: 6px 14px; border: 1.5px solid var(--ink); margin-left: -1.5px; font-size: 13px; font-weight: 500; }
+  .seg button.on { background: var(--ink); color: var(--paper); }
+  .files { list-style: none; border-top: 2px solid var(--ink); }
+  .files a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 8px; border-bottom: 1px solid var(--rule);
+    color: inherit; text-decoration: none;
+  }
+  .files a:hover { background: var(--paper-deep); }
+  .files :global(svg) { flex: none; }
+  .fname { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+  .fname .real { font-weight: 600; font-size: 15px; }
+  .fname .human { font-size: 13px; color: var(--ink-3); }
+  .fby { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+  @media (max-width: 640px) { .fby { display: none; } }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
