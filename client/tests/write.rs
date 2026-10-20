@@ -1226,6 +1226,7 @@ fn an_ai_takes_a_seat_through_mcp_and_works_as_a_guest() {
         (&json!("guest"), &json!("wutong"))
     );
     let me = h["me"].as_str().unwrap().to_string();
+    assert_eq!(me, "ai-2");
     let (err, p) = m.tool("problem", json!({ "house": "wutong", "problem": "0001" }));
     assert!(!err);
     assert_eq!(p["title"], "小区停车位不好找");

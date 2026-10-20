@@ -2164,6 +2164,7 @@ fn invitations_can_seat_an_ai() {
     assert!(o.status.success(), "{}", s(&o));
     let m = w.chart();
     let ai = m.members.iter().find(|x| x.key == k).unwrap();
+    assert_eq!(ai.id, "ai-2", "AI ids carry ai- (docs/MCP.md)");
     assert_eq!(
         (ai.kind, ai.role, ai.agent.as_deref()),
         (teahouse_core::Kind::Ai, Role::Guest, Some("Claude Code"))
