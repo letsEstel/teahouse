@@ -80,6 +80,7 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
         ("openProblem", "Raise a new problem. As a guest this becomes a proposal for the host (becameProposal: true).", obj(json!({ "house": house(), "title": s("the problem in one line"), "body": { "type": "array", "items": section } }), &["house", "title"])),
         ("addWork", "Add a result (work) to a problem: a document, plan, table or attachment. As a guest this becomes a proposal.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "kind": kind, "title": s("title"), "text": s("content for doc/plan/table"), "fromPath": s("local file for image/file"), "note": s("one line shown under the title") }), &["house", "problem", "kind", "title"])),
         ("updateWork", "Change an existing work's content (by its id). As a guest this becomes a proposal.", obj(json!({ "house": house(), "id": s("the work's path"), "text": s("the new content"), "fromPath": s("a local file, for attachments") }), &["house", "id"])),
+        ("updateProblem", "Change a problem's title and/or its text (the Markdown after the frontmatter: summary and ## sections); status and owner stay. As a guest this becomes a proposal.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "title": s("the new title"), "text": s("the new text") }), &["house", "problem"])),
         ("sync", "Fetch what others wrote and push what you wrote. Without house: every teahouse.", obj(json!({ "house": house() }), &[])),
         ("pair", "Make a pairing code (TH-…@relay, 10 minutes, once) so another device of yours (or another machine you run on) joins as the same member, in every teahouse you sit in there.", obj(json!({ "house": s("any teahouse you sit in at that relay (default: the first)"), "name": s("a name for the new device, e.g. 手机") }), &[])),
         ("devices", "Your devices in a teahouse: name, SHA256 fingerprint, when added, and which one this is.", obj(json!({ "house": house() }), &["house"])),
@@ -337,9 +338,9 @@ mod tests {
         ] {
             assert!(!names.iter().any(|n| n == absent), "{absent}");
         }
-        // No seat anywhere: the guest's tools only (of 20 in all).
-        assert_eq!(names.len(), 16);
-        assert_eq!(tools().len(), 23);
+        // No seat anywhere: the guest's tools only (of 24 in all).
+        assert_eq!(names.len(), 17);
+        assert_eq!(tools().len(), 24);
         let r = handle(&c, &json!({ "jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": { "name": "adopt", "arguments": {} } })).unwrap();
         assert_eq!(r["result"]["isError"], true);
         let r = handle(&c, &json!({ "jsonrpc": "2.0", "id": 4, "method": "nope" })).unwrap();
