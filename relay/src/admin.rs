@@ -11,7 +11,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
-use teahouse_core::members::{valid_member_id, Member, Members, Role, MEMBERS_PATH};
+use teahouse_core::members::{valid_member_id, Kind, Member, Members, Role, MEMBERS_PATH};
 use teahouse_core::rules::MAIN_REF;
 use teahouse_core::PublicKey;
 
@@ -144,6 +144,9 @@ pub struct NewHouse<'a> {
     pub host_id: &'a str,
     pub host_name: &'a str,
     pub host_key: &'a str,
+    /// An AI host (法第 17 条: a label, not a rank), and which AI.
+    pub host_kind: Kind,
+    pub host_agent: Option<&'a str>,
 }
 
 pub fn read_key_arg(arg: &str) -> Result<PublicKey> {
@@ -187,7 +190,11 @@ pub fn create_house(
     let members = Members {
         name: h.name.to_string(),
         signboard: h.signboard.map(str::to_string),
-        members: vec![Member::human(h.host_id, h.host_name, Role::Host, key)],
+        members: vec![Member {
+            kind: h.host_kind,
+            agent: h.host_agent.map(str::to_string),
+            ..Member::human(h.host_id, h.host_name, Role::Host, key)
+        }],
     };
     let toml = members.to_toml()?;
 

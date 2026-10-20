@@ -213,10 +213,7 @@ pub fn create(
     if role == Role::Host {
         bail!("an invitation can seat a guest or the steward, not a host / 邀请只能是茶客或伙计");
     }
-    // 法第 17 条: an AI sits only as a guest; `agent` names an AI.
-    if seat.kind == Kind::Ai && role != Role::Guest {
-        bail!("an AI can only be invited as a guest / AI 只能以茶客身份入座");
-    }
+    // 法第 17 条: `kind = ai` marks an AI, in any role; `agent` names one.
     if seat.agent.is_some() && seat.kind != Kind::Ai {
         bail!("--agent is for AI invitations (--kind ai)");
     }
@@ -274,13 +271,22 @@ pub fn create(
 
 /// An operator's founding invitation: whoever redeems it opens teahouse
 /// `house` as its host. Returns the code, shown only once.
+#[allow(clippy::too_many_arguments)]
 pub fn create_founding(
     root: &Root,
     house: &str,
     name: &str,
     signboard: Option<&str>,
     days: Option<u64>,
+    kind: Kind,
+    agent: Option<&str>,
 ) -> Result<String> {
+    if agent.is_some() && kind != Kind::Ai {
+        bail!("--agent is for AI invitations (--kind ai)");
+    }
+    if let Some(a) = agent {
+        check_name(a)?;
+    }
     if !crate::root::valid_house_id(house) {
         bail!("teahouse id {house:?} must be lowercase letters, digits and '-' (max 63)");
     }
@@ -321,8 +327,8 @@ pub fn create_founding(
         by: "operator".into(),
         house_name: Some(name.to_string()),
         signboard: signboard.map(str::to_string),
-        kind: Kind::Human,
-        agent: None,
+        kind,
+        agent: agent.map(str::to_string),
     };
     crate::root::write_atomic(
         &dir.join(format!("{}.inv", code_hash(&code))),
@@ -573,12 +579,13 @@ fn found(
     inv: &Invite,
     key: &PublicKey,
     name: &str,
+    agent: Option<&str>,
 ) -> Result<Seated> {
     if root.house(house_id).is_ok() {
         fs::remove_file(file)?;
         bail!("teahouse {house_id} is already open; this invitation is spent / 茶馆已经开张，这个邀请已失效");
     }
-    let id = new_member_id(name, Kind::Human, &[]);
+    let id = new_member_id(name, inv.kind, &[]);
     let house_name = inv
         .house_name
         .clone()
@@ -592,6 +599,8 @@ fn found(
             host_id: &id,
             host_name: name.trim(),
             host_key: "",
+            host_kind: inv.kind,
+            host_agent: inv.agent.as_deref().or(agent),
         },
         key,
         Some(&inv.prefix),
@@ -639,7 +648,7 @@ fn redeem_locked(
         check_name(a)?;
     }
     if inv.role == Role::Host {
-        return found(root, &house_id, &file, &inv, key, name);
+        return found(root, &house_id, &file, &inv, key, name, agent);
     }
     let house = root.house(&house_id)?;
     for _attempt in 0..5 {

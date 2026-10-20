@@ -162,11 +162,10 @@ until it is settled, this section describes them.
 * **One problem file per number on `main`.** Two `problems/0007-*.md` on
   `main` are refused; on a proposal they are allowed, and the host's client
   renumbers when adopting (`Renumbered:`).
-* **AI members are guests (法第 17 条, docs/MCP.md).** A member may carry
-  `kind = "ai"` and, then only, `agent = "…"`. An AI member can only be a
-  guest; the host and the steward are people. `teahouse-core` refuses any
-  chart that breaks this, so every pushed chart, every seat commit of an
-  invitation and every succession is held to it.
+* **AI members are marked (法第 17 条, docs/MCP.md).** A member may carry
+  `kind = "ai"` and, then only, `agent = "…"`. The mark is a label, not a
+  rank: an AI may hold any role. `teahouse-core` refuses `agent` on a person,
+  in every chart (pushed, written by an invitation, or by succession).
 * **Attachments stay out of git.** A `*.ref.md` must name `blob:
   sha256:<64 hex>`, `size` (≤ 100 MiB) and `type`, and, unless `purged`, the
   attachment must already be in `blobs/<id>/` with that size. Any other file
@@ -183,7 +182,7 @@ are words; single quotes quote (`--name '王阿姨'`); nothing is expanded.
 | `blob-put <id> <sha256> <size>` | seated | reads exactly `size` bytes, checks the hash, stores it (100 MiB each, `blob_quota_mib` per teahouse, default 2048) |
 | `blob-get <id> <sha256>` | seated | writes the attachment |
 | `blob-purge <id> <sha256>` | host | deletes it for good |
-| `invite <id> [--role guest\|steward] [--name N] [--days 1–30] [--kind ai [--agent A]]` | host | prints a one-time code `TH-XXXX-XXXX-XXXX-XXXX` (80 bits, default 7 days); `--kind ai` seats an AI, as a guest only |
+| `invite <id> [--role guest\|steward] [--name N] [--days 1–30] [--kind ai [--agent A]]` | host | prints a one-time code `TH-XXXX-XXXX-XXXX-XXXX` (80 bits, default 7 days); `--kind ai` marks the seat as an AI's (any role); its id starts with `ai-` |
 | `uninvite <id> <first four>` | host | revokes it |
 | `redeem <code> --name N [--agent A]` | anyone, incl. a key with no seat | seats the key; prints `house <id>` and `member <id>`; `--agent` only for an AI's invitation |
 
