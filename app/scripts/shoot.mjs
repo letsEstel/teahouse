@@ -148,9 +148,9 @@ const typeDoc = async (p) => {
   await p.fill('#new-title', '周六喷编号的分工')
   await p.click('.cm-content')
   await p.keyboard.type('# 分工\n\n周六上午九点，**三个人**一组：\n\n- 王阿姨：买漆\n小周：拉线\n\n')
-  await p.keyboard.press('Backspace'); await p.keyboard.press('Backspace')
   await p.keyboard.type('> 下雨就改到周日。')
-  await p.keyboard.press('Control+Home')
+  // 光标移回标题框：编辑器里每一行都显示成预览
+  await p.click('#new-title')
 }
 const editPlan = async (p) => { await p.click('.tools button.primary'); await p.click('.cm-content'); await p.keyboard.press('Control+End') }
 screens.push(

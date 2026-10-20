@@ -35,9 +35,9 @@
 
   function preview(v: EditorView): DecorationSet {
     const doc = v.state.doc
-    // 光标（或选区）所在的行：这些行露出原文
+    // 光标（或选区）所在的行：这些行露出原文。编辑器没有焦点时，整篇都显示成预览
     const active = new Set<number>()
-    for (const r of v.state.selection.ranges) {
+    if (v.hasFocus) for (const r of v.state.selection.ranges) {
       for (let n = doc.lineAt(r.from).number; n <= doc.lineAt(r.to).number; n++) active.add(n)
     }
     const touches = (from: number, to: number) => {
@@ -100,7 +100,7 @@
       decorations: DecorationSet
       constructor(v: EditorView) { this.decorations = preview(v) }
       update(u: ViewUpdate) {
-        if (u.docChanged || u.selectionSet || u.viewportChanged || syntaxTree(u.startState) !== syntaxTree(u.state)) this.decorations = preview(u.view)
+        if (u.docChanged || u.selectionSet || u.viewportChanged || u.focusChanged || syntaxTree(u.startState) !== syntaxTree(u.state)) this.decorations = preview(u.view)
       }
     },
     { decorations: (p) => p.decorations },
