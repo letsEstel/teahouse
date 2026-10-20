@@ -1079,3 +1079,44 @@ fn export_is_a_bundle_git_can_clone_plus_files_and_attachments() {
         .current_dir(&w.tmp.0));
     assert!(heads2.contains("refs/proposals/zhao/"), "{heads2}");
 }
+
+#[test]
+fn a_founding_invitation_makes_a_new_device_the_host() {
+    let w = World::new("found");
+    let out = run(Command::new(relay_bin())
+        .arg("--root")
+        .arg(&w.relay_root)
+        .args(["found", "lanes", "--name", "胡同读书会", "--address"])
+        .arg(w.relay()));
+    let (code, relay) = out.split_once('@').unwrap();
+    assert!(code.starts_with("TH-"), "{out}");
+    assert_eq!(relay, w.relay());
+
+    // The first person: a fresh device, a name, the pasted invitation.
+    let su = w.person("su");
+    let h = su.ok("redeem", json!({ "code": out, "name": "苏琳" }));
+    assert_eq!(
+        (&h["id"], &h["name"], &h["myRole"], &h["seats"]),
+        (
+            &json!("lanes"),
+            &json!("胡同读书会"),
+            &json!("host"),
+            &json!(1)
+        )
+    );
+    let r = su.ok(
+        "openProblem",
+        json!({ "house": "lanes", "title": "第一本书读什么" }),
+    );
+    assert_eq!(r["commit"], "pushed");
+    // …and invites the next one, who joins as a guest.
+    let inv = su.ok("invite", json!({ "house": "lanes" }));
+    let zhang = w.person("zhang");
+    let h = zhang.ok("redeem", json!({ "code": inv, "name": "Zhang" }));
+    assert_eq!((&h["me"], &h["myRole"]), (&json!("zhang"), &json!("guest")));
+    // The founding code is spent.
+    let e = w
+        .person("late")
+        .err("redeem", json!({ "code": out, "name": "x" }));
+    assert_eq!(e["code"], "relay_refused", "{e:#}");
+}

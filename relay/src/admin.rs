@@ -157,13 +157,33 @@ pub fn read_key_arg(arg: &str) -> Result<PublicKey> {
 }
 
 pub fn new_house(root: &Root, h: &NewHouse<'_>) -> Result<()> {
+    let key = read_key_arg(h.host_key)?;
+    let commit = create_house(root, h, &key, None)?;
+    println!(
+        "opened teahouse {:?} ({}) — host {} — main at {}",
+        h.id,
+        h.name,
+        h.host_id,
+        &commit[..10]
+    );
+    Ok(())
+}
+
+/// Creates a teahouse with its host (`open`, or a founding invitation:
+/// `invite` names it in the opening commit). Returns the opening commit.
+pub fn create_house(
+    root: &Root,
+    h: &NewHouse<'_>,
+    key: &PublicKey,
+    invite: Option<&str>,
+) -> Result<String> {
     if !valid_member_id(h.host_id) {
         bail!(
             "host id {:?} must be lowercase letters, digits, '-' or '_' (max 32)",
             h.host_id
         );
     }
-    let key = read_key_arg(h.host_key)?;
+    let key = key.clone();
     let members = Members {
         name: h.name.to_string(),
         signboard: h.signboard.map(str::to_string),
@@ -187,10 +207,13 @@ pub fn new_house(root: &Root, h: &NewHouse<'_>) -> Result<()> {
 
     let (git, staged) = create_bare(root, h.id)?;
     let res = (|| {
-        let message = format!(
+        let mut message = format!(
             "开张：{}\n\nOpened by {} ({}).\n\nProblem: meta\n",
             h.name, h.host_name, h.host_id
         );
+        if let Some(prefix) = invite {
+            message.push_str(&format!("Act: seat\nInvite: {prefix}\n"));
+        }
         let commit = commit_files(
             &git,
             &root.tmp_dir(),
@@ -224,21 +247,15 @@ pub fn new_house(root: &Root, h: &NewHouse<'_>) -> Result<()> {
             return Err(e);
         }
     };
-    audit::log(
-        root,
-        Entry::new("house.opened")
-            .house(h.id)
-            .member(h.host_id)
-            .field("commit", commit.clone()),
-    );
-    println!(
-        "opened teahouse {:?} ({}) — host {} — main at {}",
-        h.id,
-        h.name,
-        h.host_id,
-        &commit[..10]
-    );
-    Ok(())
+    let mut e = Entry::new("house.opened")
+        .house(h.id)
+        .member(h.host_id)
+        .field("commit", commit.clone());
+    if let Some(prefix) = invite {
+        e = e.field("invite", prefix.to_string());
+    }
+    audit::log(root, e);
+    Ok(commit)
 }
 
 /// 继承: the steward re-opens a teahouse on this relay from their own copy.

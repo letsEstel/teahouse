@@ -5,9 +5,15 @@
 #
 #   sh install.sh --binary ./teahouse-relay                 # use a binary you copied over
 #   sh install.sh --from-source                             # build it here (installs Rust)
+#   sh install.sh --binary ./teahouse-relay --found wutong --name "梧桐里三号院"
+#                       # ...and print an invitation that opens the first teahouse:
+#                       # whoever pastes it into the client becomes its host
 #   sh install.sh --binary ./teahouse-relay \
 #       --open wutong --name "梧桐里三号院" --host-name "陈立" --host-key @host.pub
-#                                                           # ...and open the first teahouse
+#                       # ...or open it for a host whose public key you have
+#
+# Options for the first teahouse: --signboard TEXT; --address HOST[:PORT] for
+# the address printed in the invitation (default: this server's first IP).
 #
 # What it does (idempotent — safe to run again, e.g. to upgrade the binary):
 #   1. installs openssh-server, git and ssh-keygen if missing
@@ -19,7 +25,7 @@
 #   5. installs the sshd drop-in (method A: keys looked up live, which is also
 #      the only method that can redeem invitations) and reloads sshd
 #   6. installs and starts the daily integrity check (systemd timer)
-#   7. optionally opens the first teahouse
+#   7. optionally founds (invitation) or opens the first teahouse
 #
 # It never touches other users, never changes sshd settings outside
 # `Match User teahouse`, and never opens ports other than the one sshd
@@ -35,6 +41,8 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 binary=""
 from_source=0
 open_id=""
+found_id=""
+address=""
 open_name=""
 open_sign=""
 host_id=""
@@ -49,7 +57,7 @@ die()  { printf '\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 as_relay() { runuser -u "$USER_NAME" -- "$@"; }
 
 usage() {
-  sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -58,6 +66,8 @@ while [ $# -gt 0 ]; do
     --binary)      binary="$2"; shift 2 ;;
     --from-source) from_source=1; shift ;;
     --open)        open_id="$2"; shift 2 ;;
+    --found)       found_id="$2"; shift 2 ;;
+    --address)     address="$2"; shift 2 ;;
     --name)        open_name="$2"; shift 2 ;;
     --signboard)   open_sign="$2"; shift 2 ;;
     --host-id)     host_id="$2"; shift 2 ;;
@@ -84,6 +94,10 @@ fi
 if [ -n "$open_id" ]; then
   [ -n "$open_name" ] && [ -n "$host_name" ] && [ -n "$host_key" ] \
     || die "--open 需要同时给出 --name、--host-name、--host-key"
+fi
+if [ -n "$found_id" ]; then
+  [ -z "$open_id" ] || die "--found 和 --open 只能选一个 · choose --found or --open"
+  [ -n "$open_name" ] || die "--found 需要 --name（茶馆的名字）· --found needs --name"
 fi
 
 say "1/7 系统依赖 · packages"
@@ -187,8 +201,28 @@ else
   ok "skipped (no systemd)"
 fi
 
+# The address members use: this server's first IP and sshd's port, unless
+# given (a DNS name, or the address behind NAT).
+if [ -z "$address" ]; then
+  ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+  port=$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}')
+  address="${ip:-<this-server>}"
+  # (Not `$( [ … ] && … )`: a false test there ends the script under set -e.)
+  if [ "${port:-22}" != 22 ]; then address="$address:$port"; fi
+fi
+
 say "7/7 茶馆 · teahouse"
-if [ -n "$open_id" ]; then
+invite=""
+if [ -n "$found_id" ]; then
+  if as_relay "$BIN" --root "$ROOT" members "$found_id" >/dev/null 2>&1; then
+    ok "$found_id already open"
+  else
+    set -- --root "$ROOT" found "$found_id" --name "$open_name" --address "$address"
+    [ -n "$open_sign" ] && set -- "$@" --signboard "$open_sign"
+    invite=$(as_relay "$BIN" "$@") || die "无法创建开张邀请 · could not create the founding invitation"
+    ok "founding invitation for $found_id (one-time, 7 days)"
+  fi
+elif [ -n "$open_id" ]; then
   if as_relay "$BIN" --root "$ROOT" members "$open_id" >/dev/null 2>&1; then
     ok "$open_id already open"
   else
@@ -203,12 +237,16 @@ if [ -n "$open_id" ]; then
     as_relay "$BIN" "$@"
   fi
 else
-  ok "none opened (use --open …, or later: sudo -u teahouse $BIN --root $ROOT open …)"
+  ok "none yet (use --found …, or later: sudo -u teahouse $BIN --root $ROOT found <id> --name … --address $address)"
 fi
 
-addr=$(hostname -I 2>/dev/null | awk '{print $1}')
-port=$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}')
 printf '\n\033[1m茶馆 Relay 装好了 · The relay is ready.\033[0m\n'
-printf '  地址 · address:  teahouse@%s%s\n' "${addr:-<this-server>}" "$( [ "${port:-22}" != 22 ] && printf ':%s' "$port" )"
+printf '  地址 · address:  teahouse@%s\n' "$address"
 printf '  检查 · check:    sudo -u teahouse %s --root %s check\n' "$BIN" "$ROOT"
 printf '  日志 · audit:    %s/log/audit.log\n' "$ROOT"
+if [ -n "$invite" ]; then
+  printf '\n\033[1m开张邀请 · Founding invitation\033[0m（一次性，7 天内有效 · one-time, valid 7 days）\n'
+  printf '  把下面这一整行发给要当老板的人，让他在客户端里粘贴：\n'
+  printf '  Send this whole line to the person who will be the host; they paste it into the client:\n\n'
+  printf '    %s\n\n' "$invite"
+fi
