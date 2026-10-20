@@ -44,7 +44,33 @@ const sizes = [
   [1366, 768],
   [900, 1000],
   [390, 844],   // 手机：只检查，不存图（用户会在手机上看预览）
+  // 安卓 Pixel Fold：外壳把状态栏（32）和手势条（24）让出去之后，网页实际拿到的大小
+  [411, 741],   // 折叠（外屏 411×797）
+  [930, 719],   // 展开（内屏 930×775，< 1024，平板布局）
 ]
+// 安卓外框截图：假状态栏 + 手势条 + 中间的应用，就是 MainActivity.kt 加内边距后的样子
+const android = { bar: 32, nav: 24, devices: [['fold', 411, 797], ['unfold', 930, 775]] }
+const androidShots = [
+  { name: 'wutong-house', hash: '#/wutong/house' },
+  { name: 'wutong-problem', hash: '#/wutong/problem/0001' },
+  { name: 'wutong-problem-dark', hash: '#/wutong/problem/0001', theme: 'dark' },
+]
+function androidFrame(src, w, h, dark) {
+  const paper = dark ? '#161514' : '#F1ECE2'
+  const ink = dark ? '#F1ECE2' : '#141414'
+  return `<!doctype html><meta charset=utf-8><style>
+  html,body{margin:0;background:${paper};color:${ink};font:600 14px/1 Roboto,system-ui,sans-serif}
+  .bar{height:${android.bar}px;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+  .icons{display:flex;gap:6px;align-items:center}
+  .sig{width:0;height:0;border-left:12px solid transparent;border-bottom:12px solid ${ink}}
+  .bat{width:20px;height:10px;border:1.5px solid ${ink};box-sizing:border-box;padding:1px}
+  .bat i{display:block;height:100%;width:70%;background:${ink}}
+  iframe{display:block;border:0;width:${w}px;height:${h - android.bar - android.nav}px}
+  .nav{height:${android.nav}px;display:flex;align-items:center;justify-content:center}
+  .nav i{width:108px;height:4px;background:${ink};opacity:.6}
+</style><div class=bar><span>9:41</span><span class=icons><span class=sig></span><span class=bat><i></i></span></span></div>
+<iframe src="${src}"></iframe><div class=nav><i></i></div>`
+}
 const langs = ['zh', 'en', 'de']
 // 默认保存的一组：标了 save 的界面，存 1366 中文；saveDe 另存 1366 德文；saveAt 指定别的宽度（中文）
 const keep = (s, w, lang) =>
@@ -220,6 +246,22 @@ try {
         if (full && full > h) await page.setViewportSize({ width: w, height: h })
         count++
       }
+    }
+    await ctx.close()
+  }
+  for (const [dev, w, h] of android.devices) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: dpr, reducedMotion: 'reduce' })
+    const page = await ctx.newPage()
+    for (const s of androidShots) {
+      if (only && !only.includes(s.name)) continue
+      const dark = s.theme === 'dark'
+      await page.setContent(androidFrame(`${base}?lang=zh&tour=off&theme=${s.theme ?? 'light'}${s.hash}`, w, h, dark))
+      const frame = page.frames()[1]
+      await frame.waitForLoadState('load')
+      await frame.evaluate(() => document.fonts.ready)
+      await page.waitForTimeout(400)
+      await page.screenshot({ path: join(out, `android-${dev}-${s.name}_${w}_zh.png`) })
+      count++
     }
     await ctx.close()
   }
