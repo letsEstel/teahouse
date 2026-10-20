@@ -109,21 +109,27 @@ screens.push(
   { name: 'kant-unseated-problem', hash: '#/kant/problem/0001', query: '&fake=unseated' },
   { name: 'wutong-refused', hash: '#/wutong/problem/0001', query: '&fake=refuse', act: async (p) => { await p.fill('.talk-write textarea', '我同意，周六我也来帮忙喷编号。'); await p.click('.talk-write button.submit'); await p.waitForTimeout(300) } },
 )
-// 本轮保存的图
+// AI 成员的标记（docs/MCP.md）：三人创业团队里的 Claude
+const aiNote = (p) => p.click('a[data-file$="-claude.md"]')
+screens.push(
+  { name: 'startup-proposal-ai', hash: '#/startup/proposal/p2' },
+  { name: 'startup-archive-ai', hash: '#/startup/archive', act: aiNote, widths: [1920, 1366] },
+  { name: 'startup-house-dark', hash: '#/startup/house', theme: 'dark', only1366: true },
+)
+// 本轮保存的图（第 9 轮：AI 标记）
 const save = {
-  'join': {}, 'join-filled': { saveDe: true }, 'join-seated': {}, 'wutong-invite': {},
-  'wutong-unsynced': {}, 'wutong-offline': {}, 'kant-unseated': {}, 'kant-unseated-problem': {}, 'wutong-refused': { saveDe: true },
+  'startup-house': {}, 'startup-problem': {}, 'startup-proposal-ai': {}, 'startup-archive-ai': {}, 'startup-house-dark': {},
 }
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
 // 手机
 screens.push(
-  { name: 'join-phone', hash: '#/join', widths: [390], save: true, saveAt: 390, act: async (p) => { await p.fill('textarea[name=invite]', invite); await p.fill('input[name=name]', '小周') } },
-  { name: 'kant-unseated-phone', hash: '#/kant/problem/0001', query: '&fake=unseated', widths: [390], save: true, saveAt: 390 },
+  { name: 'join-phone', hash: '#/join', widths: [390], act: async (p) => { await p.fill('textarea[name=invite]', invite); await p.fill('input[name=name]', '小周') } },
+  { name: 'kant-unseated-phone', hash: '#/kant/problem/0001', query: '&fake=unseated', widths: [390] },
 )
 
 // 夜间模式：布局不变，只拍默认组
 screens.push(
-  { name: 'wutong-refused-dark', hash: '#/wutong/problem/0001', query: '&fake=refuse', theme: 'dark', only1366: true, save: true, act: async (p) => { await p.fill('.talk-write textarea', '我同意，周六我也来帮忙喷编号。'); await p.click('.talk-write button.submit'); await p.waitForTimeout(300) } },
+  { name: 'wutong-refused-dark', hash: '#/wutong/problem/0001', query: '&fake=refuse', theme: 'dark', only1366: true, act: async (p) => { await p.fill('.talk-write textarea', '我同意，周六我也来帮忙喷编号。'); await p.click('.talk-write button.submit'); await p.waitForTimeout(300) } },
 )
 
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
