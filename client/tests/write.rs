@@ -1435,3 +1435,201 @@ fn an_ai_gets_the_tools_of_its_seat() {
     assert!(!err, "{r:#}");
     assert_eq!(r["commit"], "pushed");
 }
+
+#[test]
+fn a_phone_pairs_with_the_laptop_and_is_removed_when_lost() {
+    let w = World::new("devices");
+    let (wang, li, _zhao) = w.wutong();
+    parking(&li);
+    // wang also hosts a second teahouse at the same relay.
+    run(Command::new(relay_bin())
+        .arg("--root")
+        .arg(&w.relay_root)
+        .args([
+            "open",
+            "lanes",
+            "--name",
+            "读书会",
+            "--host-id",
+            "wang",
+            "--host-name",
+            "王阿姨",
+            "--host-key",
+        ])
+        .arg(wang.key()));
+    wang.ok("join", json!({ "relay": w.relay(), "house": "lanes" }));
+
+    // On the laptop: "add a device". On the phone: paste it.
+    let code = wang.ok("pair", json!({ "name": "手机" }));
+    let code = code.as_str().unwrap();
+    assert!(code.starts_with("TH-") && code.contains('@'), "{code}");
+    let phone = w.person("wang-phone");
+    let h = phone.ok("redeem", json!({ "code": code, "name": "手机" }));
+    assert_eq!((&h["me"], &h["myRole"]), (&json!("wang"), &json!("host")));
+    let houses: Vec<String> = phone
+        .ok("houses", Value::Null)
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|h| h["id"].as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(houses, ["lanes", "wutong"], "one code, every teahouse");
+
+    // Both are wang; each knows which device it is.
+    let d = phone.ok("devices", json!({ "house": "wutong" }));
+    let d = d.as_array().unwrap();
+    assert_eq!(d.len(), 2);
+    assert!(
+        d.iter()
+            .any(|x| x["name"] == "手机" && x["thisDevice"] == true),
+        "{d:?}"
+    );
+    assert!(
+        d.iter()
+            .any(|x| x["name"] == "" && x["thisDevice"] == false),
+        "{d:?}"
+    );
+    let me = phone.house()["members"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|m| m["id"] == "wang")
+        .unwrap()
+        .clone();
+    assert_eq!(me["devices"].as_array().unwrap().len(), 2);
+    let r = phone.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "手机上写的。" }),
+    );
+    assert_eq!(r["commit"], "pushed");
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let notes =
+        wang.ok("problem", json!({ "house": "wutong", "problem": "0001" }))["notes"].clone();
+    assert!(notes
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|n| n["by"] == "wang" && n["text"] == "手机上写的。"));
+
+    // The phone writes offline, then is lost; the laptop removes it everywhere.
+    let url = phone.go_offline();
+    phone.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "丢之前写的。" }),
+    );
+    phone.go_online(&url);
+    let e = wang.err(
+        "unpair",
+        json!({ "device": d.iter().find(|x| x["thisDevice"] == false).unwrap()["fingerprint"] }),
+    );
+    assert!(
+        e["reasons"][0]
+            .as_str()
+            .unwrap()
+            .contains("device you are using"),
+        "the laptop is the one in use: {e:#}"
+    );
+    let removed = wang.ok("unpair", json!({ "device": "手机" }));
+    assert_eq!(removed, json!(["lanes", "wutong"]));
+    assert_eq!(
+        wang.ok("devices", json!({ "house": "lanes" }))
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    // What it wrote and did not push never lands; it cannot get in any more.
+    let s = phone.ok("sync", json!({ "house": "wutong" }));
+    assert_eq!(s["state"], "error", "{s:#}");
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let notes =
+        wang.ok("problem", json!({ "house": "wutong", "problem": "0001" }))["notes"].clone();
+    assert!(!notes
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|n| n["text"] == "丢之前写的。"));
+    // The laptop is wang's last device in lanes now: it stays.
+    let fp = wang.ok("devices", json!({ "house": "lanes" }))[0]["fingerprint"].clone();
+    let e = wang.err("unpair", json!({ "house": "lanes", "device": fp }));
+    assert_eq!(e["code"], "relay_refused");
+}
+
+#[test]
+fn two_devices_reworking_one_proposal_keep_both() {
+    let w = World::new("devices-proposal");
+    let (wang, li, zhao) = w.wutong();
+    parking(&li);
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    let p = zhao.ok("propose", json!({ "house": "wutong", "problem": "0001", "title": "画线", "changes": [{ "kind": "doc", "title": "画线", "text": "v1\n" }] }));
+    let pid = p["id"].as_str().unwrap().to_string();
+    let code = zhao.ok("pair", json!({}));
+    let tablet = w.person("zhao-tablet");
+    tablet.ok("redeem", json!({ "code": code, "name": "平板" }));
+
+    // Each device reworks the proposal while the other does not know.
+    let rework = |p: &Person, text: &str| {
+        let repo = git2::Repository::open(p.client.root().join("houses/wutong")).unwrap();
+        let name = format!("refs/proposals/{pid}");
+        let tip = repo
+            .find_commit(repo.refname_to_id(&name).unwrap())
+            .unwrap();
+        let tree = commit::tree_with(
+            &repo,
+            Some(&tip.tree().unwrap()),
+            &[Edit::Put(
+                "works/0001/画线.md".into(),
+                format!("---\ntitle: 画线\n---\n{text}").into_bytes(),
+            )],
+        )
+        .unwrap();
+        let sig = Author {
+            id: "zhao".into(),
+            name: "小赵".into(),
+        }
+        .signature(1_792_400_000)
+        .unwrap();
+        let msg = commit::message(
+            text,
+            None,
+            &[("Problem", "0001".into()), ("Act", "propose".into())],
+        );
+        let c = commit::signed_commit(
+            &repo,
+            &p.client.identity().unwrap(),
+            &sig,
+            tree,
+            &[&tip],
+            &msg,
+        )
+        .unwrap();
+        commit::move_ref(&repo, &name, Some(tip.id()), Some(c), "test").unwrap();
+    };
+    let url = zhao.go_offline();
+    rework(&tablet, "平板改的");
+    tablet.ok("sync", json!({ "house": "wutong" }));
+    rework(&zhao, "电脑改的");
+    zhao.go_online(&url);
+    let s = zhao.ok("sync", json!({ "house": "wutong" }));
+    assert_eq!(s["state"], "synced", "{s:#}");
+
+    // Nothing was overwritten: the tablet's version stays, the laptop's
+    // became a proposal of its own.
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let props = wang.house()["proposals"].clone();
+    let titles: Vec<&str> = props
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| {
+            p["files"][0]["lines"].as_array().unwrap().last().unwrap()["text"]
+                .as_str()
+                .unwrap()
+        })
+        .collect();
+    assert_eq!(props.as_array().unwrap().len(), 2, "{props:#}");
+    assert!(
+        titles.contains(&"平板改的") && titles.contains(&"电脑改的"),
+        "{titles:?}"
+    );
+}

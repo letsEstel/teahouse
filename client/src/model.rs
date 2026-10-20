@@ -111,6 +111,21 @@ pub struct Member {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent: Option<String>,
     pub joined: String,
+    /// Only on this device's own seat: its devices (docs/DEVICES.md §5).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub devices: Option<Vec<DeviceInfo>>,
+}
+
+/// One of my devices.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeviceInfo {
+    /// Empty for the first device, which has no name in the chart.
+    pub name: String,
+    /// `SHA256:…`, as `ssh-keygen -l` shows it.
+    pub fingerprint: String,
+    pub added: String,
+    pub this_device: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

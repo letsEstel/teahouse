@@ -81,6 +81,9 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
         ("addWork", "Add a result (work) to a problem: a document, plan, table or attachment. As a guest this becomes a proposal.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "kind": kind, "title": s("title"), "text": s("content for doc/plan/table"), "fromPath": s("local file for image/file"), "note": s("one line shown under the title") }), &["house", "problem", "kind", "title"])),
         ("updateWork", "Change an existing work's content (by its id). As a guest this becomes a proposal.", obj(json!({ "house": house(), "id": s("the work's path"), "text": s("the new content"), "fromPath": s("a local file, for attachments") }), &["house", "id"])),
         ("sync", "Fetch what others wrote and push what you wrote. Without house: every teahouse.", obj(json!({ "house": house() }), &[])),
+        ("pair", "Make a pairing code (TH-…@relay, 10 minutes, once) so another device of yours (or another machine you run on) joins as the same member, in every teahouse you sit in there.", obj(json!({ "house": s("any teahouse you sit in at that relay (default: the first)"), "name": s("a name for the new device, e.g. 手机") }), &[])),
+        ("devices", "Your devices in a teahouse: name, SHA256 fingerprint, when added, and which one this is.", obj(json!({ "house": house() }), &["house"])),
+        ("unpair", "Remove another of your own devices (e.g. a lost one), by name or SHA256 fingerprint; without house, everywhere you have it. Not the device in use, never the last one.", obj(json!({ "house": house(), "device": s("device name or SHA256:… fingerprint") }), &["device"])),
         // A steward's and a host's, offered when this device holds such a seat.
         ("setStatus", "Change a problem's status (open, active, solved) and its owner. Steward and host.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "status": { "type": "string", "enum": ["open", "active", "solved"] }, "owner": s("member id who takes it on; empty to clear") }), &["house", "problem", "status"])),
         ("removeNote", "Remove a post (moderation): it leaves main, but stays in history. Steward and host.", obj(json!({ "house": house(), "id": s("the post's path (Note.id)") }), &["house", "id"])),
@@ -335,8 +338,8 @@ mod tests {
             assert!(!names.iter().any(|n| n == absent), "{absent}");
         }
         // No seat anywhere: the guest's tools only (of 20 in all).
-        assert_eq!(names.len(), 13);
-        assert_eq!(tools().len(), 20);
+        assert_eq!(names.len(), 16);
+        assert_eq!(tools().len(), 23);
         let r = handle(&c, &json!({ "jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": { "name": "adopt", "arguments": {} } })).unwrap();
         assert_eq!(r["result"]["isError"], true);
         let r = handle(&c, &json!({ "jsonrpc": "2.0", "id": 4, "method": "nope" })).unwrap();

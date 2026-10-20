@@ -15,7 +15,7 @@ use crate::audit::{self, Entry};
 use crate::bail;
 use crate::error::Result;
 use crate::root::{valid_house_id, Root};
-use crate::{blobs, invites};
+use crate::{blobs, devices, invites};
 use std::os::unix::process::CommandExt;
 use std::process::Command;
 use teahouse_core::members::{Kind, Member, Role};
@@ -212,6 +212,32 @@ fn command(root: &Root, key: &PublicKey, words: Vec<String>, restricted: bool) -
             let s = invites::redeem(root, key, &code, &name, agent.as_deref())?;
             println!("house {}", s.house);
             println!("member {}", s.member);
+            // A pairing code adds the device in every teahouse at once.
+            for (house, member) in &s.more {
+                println!("house {house}");
+                println!("member {member}");
+            }
+            Ok(())
+        }
+        "pair" => {
+            let name = o.flag("--name")?;
+            let minutes = o.flag("--minutes")?;
+            o.done()?;
+            let minutes = match minutes {
+                None => None,
+                Some(m) => Some(m.parse().map_err(|_| {
+                    crate::error::Error(format!("--minutes {m:?} is not a number"))
+                })?),
+            };
+            println!("{}", devices::create(root, key, name.as_deref(), minutes)?);
+            Ok(())
+        }
+        "unpair" => {
+            let house = o.positional("teahouse")?;
+            let which = o.positional("device name or SHA256: fingerprint")?;
+            o.done()?;
+            seated(root, &house, key)?;
+            println!("{}", devices::unpair(root, key, &house, &which)?);
             Ok(())
         }
         "invite" => {

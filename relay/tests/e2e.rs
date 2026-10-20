@@ -1445,7 +1445,7 @@ fn every_commit_is_signed_by_the_member_it_names() {
     w.git_ok(&host, &["config", "user.signingkey", key.to_str().unwrap()]);
     w.write(&host, "works/0001/c.md", "c\n");
     w.commit(&host, "stranger's key\n\nProblem: 0001");
-    w.push_denied(&host, &["main"], "never had a seat here");
+    w.push_denied(&host, &["main"], "no seat here now");
     w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
 
     // Proposals too.
@@ -2210,4 +2210,265 @@ fn a_founding_invitation_can_seat_an_ai_host() {
         "{}",
         s(&o)
     );
+}
+
+impl World {
+    /// A clone that signs as member `member` with the key of `person`
+    /// (another of that member's devices).
+    fn clone_as_device(&self, person: &str, member: &str, house: &str) -> PathBuf {
+        let dir = self.clone(person, house);
+        self.git_ok(&dir, &["config", "user.name", member]);
+        self.git_ok(
+            &dir,
+            &["config", "user.email", &format!("{member}@teahouse")],
+        );
+        dir
+    }
+}
+
+#[test]
+fn a_pairing_code_adds_a_device_in_every_teahouse() {
+    let w = World::new();
+    let _ = w.wutong(); // wang (key 3) is a guest here
+                        // …and the host of a second teahouse.
+    w.relay_ok(&[
+        "open",
+        "lanes",
+        "--name",
+        "读书会",
+        "--host-id",
+        "wang",
+        "--host-name",
+        "王",
+        "--host-key",
+        &w.key_file("wang"),
+    ]);
+    let laptop = key_for(3);
+    let phone = key_for(60);
+
+    // A key with no seat cannot ask for one; a seated key can.
+    w.command_err(&phone, "redeem-shell", "pair", "can only redeem");
+    let code = w.command_ok(&laptop, "pair --name 手机");
+    assert!(code.starts_with("TH-"), "{code}");
+    let o = w.command(
+        &phone,
+        "redeem-shell",
+        &format!("redeem {code} --name 手机"),
+        b"",
+    );
+    assert!(o.status.success(), "{}", s(&o));
+    let out = String::from_utf8_lossy(&o.stdout).to_string();
+    assert!(
+        out.contains("house wutong\nmember wang") && out.contains("house lanes\nmember wang"),
+        "{out}"
+    );
+    // Used up.
+    let o = w.command(
+        &key_for(61),
+        "redeem-shell",
+        &format!("redeem {code} --name x"),
+        b"",
+    );
+    assert!(s(&o).contains("not valid"), "{}", s(&o));
+
+    // The chart: one member, two devices, the second named.
+    let m = w.chart();
+    let wang = m.by_id("wang").unwrap();
+    assert_eq!(wang.keys().count(), 2);
+    assert_eq!(wang.device_name(&phone), Some("手机"));
+    assert!(fs::read_to_string(w.root.join("houses/wutong.git").join("HEAD")).is_ok());
+    let log = Command::new("git")
+        .arg("--git-dir")
+        .arg(w.root.join("houses/wutong.git"))
+        .args(["log", "-1", "--format=%an <%ae> / %cn%n%B"])
+        .output()
+        .unwrap();
+    let log = String::from_utf8_lossy(&log.stdout);
+    assert!(
+        log.contains("<wang@teahouse> / Teahouse Relay") && log.contains("Device: add 手机"),
+        "{log}"
+    );
+
+    // The phone works as wang: reads, and pushes commits signed with its own key.
+    w.person("wang-phone", 60);
+    let c = w.clone_as_device("wang-phone", "wang", "wutong");
+    w.write(&c, "talk/0001/20261018T120000Z-wang.md", "手机上写的。\n");
+    w.commit(&c, "留言\n\nProblem: 0001");
+    w.push_ok(&c, &["main"]);
+    assert!(w.audit().contains("\"event\":\"pair.redeemed\""));
+}
+
+#[test]
+fn removing_a_device_takes_effect_at_once() {
+    let w = World::new();
+    let host = w.wutong();
+    let (laptop, phone) = (key_for(3), key_for(60));
+    let code = w.command_ok(&laptop, "pair");
+    let o = w.command(
+        &phone,
+        "redeem-shell",
+        &format!("redeem {code} --name 手机"),
+        b"",
+    );
+    assert!(o.status.success(), "{}", s(&o));
+    w.person("wang-phone", 60);
+    let pc = w.clone_as_device("wang-phone", "wang", "wutong");
+    // The phone writes something it has not pushed yet…
+    w.write(&pc, "talk/0001/20261018T130000Z-wang.md", "还没推送。\n");
+    w.commit(&pc, "留言\n\nProblem: 0001");
+
+    // …and is lost. From the laptop: not the device in use, not a stranger's.
+    w.command_err(
+        &laptop,
+        "shell",
+        &format!("unpair wutong {}", laptop.fingerprint()),
+        "device you are using",
+    );
+    w.command_err(
+        &laptop,
+        "shell",
+        "unpair wutong 平板",
+        "not one of your devices",
+    );
+    w.command_err(
+        &key_for(1),
+        "shell",
+        "unpair wutong 手机",
+        "not one of your devices",
+    );
+    assert_eq!(w.command_ok(&laptop, "unpair wutong 手机"), "手机");
+    assert_eq!(w.chart().by_id("wang").unwrap().keys().count(), 1);
+
+    // The phone cannot get in any more…
+    let o = w.push(&pc, &["main"]);
+    assert!(
+        !o.status.success() && s(&o).contains("no seat"),
+        "{}",
+        s(&o)
+    );
+    // …and what it signed does not count, even pushed from the laptop (法第 13 条).
+    let lc = w.clone("wang", "wutong");
+    w.git_ok(&lc, &["fetch", "--quiet", pc.to_str().unwrap(), "main"]);
+    w.git_ok(
+        &lc,
+        &[
+            "merge",
+            "--quiet",
+            "--no-ff",
+            "FETCH_HEAD",
+            "-m",
+            "合并手机上的留言\n\nProblem: 0001",
+        ],
+    );
+    w.push_denied(&lc, &["main"], "no seat here now");
+
+    // The last device stays: the laptop is all wang has, and it is in use.
+    w.command_err(
+        &laptop,
+        "shell",
+        &format!("unpair wutong {}", laptop.fingerprint()),
+        "device you are using",
+    );
+    assert!(w.audit().contains("\"event\":\"device.removed\""));
+    let _ = host;
+}
+
+#[test]
+fn at_most_five_devices_and_pairing_codes_expire() {
+    let w = World::new();
+    let _ = w.wutong();
+    let laptop = key_for(3);
+    for i in 0..4u8 {
+        let code = w.command_ok(&laptop, &format!("pair --name d{i}"));
+        let o = w.command(
+            &key_for(70 + i),
+            "redeem-shell",
+            &format!("redeem {code} --name d{i}"),
+            b"",
+        );
+        assert!(o.status.success(), "{i}: {}", s(&o));
+    }
+    assert_eq!(w.chart().by_id("wang").unwrap().keys().count(), 5);
+    let code = w.command_ok(&laptop, "pair");
+    let o = w.command(
+        &key_for(80),
+        "redeem-shell",
+        &format!("redeem {code} --name 第六台"),
+        b"",
+    );
+    assert!(s(&o).contains("already has 5 devices"), "{}", s(&o));
+    // Any device of the member may pair, unpair, and name a new one.
+    let o = w.command(&key_for(70), "shell", "unpair wutong d1", b"");
+    assert!(o.status.success(), "{}", s(&o));
+
+    // Expired.
+    let code = w.command_ok(&laptop, "pair");
+    for e in fs::read_dir(w.root.join("pairs")).unwrap() {
+        let p = e.unwrap().path();
+        let t: String = fs::read_to_string(&p)
+            .unwrap()
+            .lines()
+            .map(|l| {
+                if l.starts_with("expires") {
+                    "expires = 1".to_string()
+                } else {
+                    l.to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        fs::write(&p, t + "\n").unwrap();
+    }
+    let o = w.command(
+        &key_for(81),
+        "redeem-shell",
+        &format!("redeem {code} --name x"),
+        b"",
+    );
+    assert!(s(&o).contains("expired"), "{}", s(&o));
+    w.command_err(&laptop, "shell", "pair --minutes 61", "1 to 60 minutes");
+}
+
+#[test]
+fn history_is_not_judged_again_by_todays_chart() {
+    let w = World::new();
+    let host = w.wutong();
+    // wang proposes, then leaves; the host still adopts the proposal: its
+    // commits were checked when they arrived (法第 13 条, tightened).
+    let wang = w.clone("wang", "wutong");
+    w.write(&wang, "works/0001/方案.md", "方案\n");
+    w.commit(&wang, "方案\n\nProblem: 0001");
+    w.push_ok(&wang, &["HEAD:refs/proposals/wang/plan"]);
+    let chart = fs::read_to_string(host.join(".teahouse/members.toml")).unwrap();
+    let without: String = chart
+        .split("\n[[member]]")
+        .enumerate()
+        .filter(|(_, b)| !b.contains("id = \"wang\""))
+        .map(|(i, b)| {
+            if i == 0 {
+                b.to_string()
+            } else {
+                format!("\n[[member]]{b}")
+            }
+        })
+        .collect();
+    w.write(&host, ".teahouse/members.toml", &without);
+    w.commit(&host, "王阿姨离座\n\nProblem: meta");
+    w.push_ok(&host, &["main"]);
+    w.git_ok(
+        &host,
+        &["fetch", "--quiet", "origin", "refs/proposals/wang/plan"],
+    );
+    w.git_ok(
+        &host,
+        &[
+            "merge",
+            "--quiet",
+            "--no-ff",
+            "FETCH_HEAD",
+            "-m",
+            "采纳\n\nProblem: 0001",
+        ],
+    );
+    w.push_ok(&host, &["main", ":refs/proposals/wang/plan"]);
 }

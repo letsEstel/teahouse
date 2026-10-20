@@ -42,7 +42,7 @@ const MAX_PENDING: usize = 50;
 const MAX_FAILS_PER_KEY_HOUR: usize = 5;
 const MAX_ATTEMPTS_PER_MINUTE: usize = 30;
 
-fn now() -> i64 {
+pub(crate) fn now() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| d.as_secs() as i64)
@@ -78,7 +78,7 @@ pub fn normalize(input: &str) -> Option<String> {
     (out.len() == CODE_LEN).then_some(out)
 }
 
-fn random_code() -> Result<String> {
+pub(crate) fn random_code() -> Result<String> {
     let mut bytes = [0u8; 10];
     fs::File::open("/dev/urandom")?.read_exact(&mut bytes)?;
     let mut bits: u128 = 0;
@@ -91,7 +91,7 @@ fn random_code() -> Result<String> {
         .collect())
 }
 
-fn code_hash(code: &str) -> String {
+pub(crate) fn code_hash(code: &str) -> String {
     teahouse_core::sha256::hex(format!("teahouse-invite:{code}").as_bytes())
 }
 
@@ -164,10 +164,10 @@ impl Invite {
 
 /// A short-lived lock over invitation state and relay-written commits, so
 /// two redemptions never race for the last seat. `mkdir` is atomic.
-struct Lock(PathBuf);
+pub(crate) struct Lock(PathBuf);
 
 impl Lock {
-    fn take(root: &Root) -> Result<Lock> {
+    pub(crate) fn take(root: &Root) -> Result<Lock> {
         let dir = root.dir.join("invites");
         fs::create_dir_all(&dir)?;
         let path = dir.join(".lock");
@@ -386,7 +386,7 @@ pub fn revoke(root: &Root, house: &str, host: &Member, prefix: &str) -> Result<(
     Ok(())
 }
 
-fn check_name(name: &str) -> Result<()> {
+pub(crate) fn check_name(name: &str) -> Result<()> {
     let n = name.trim();
     if n.is_empty() || n.chars().count() > 32 || n.chars().any(char::is_control) {
         bail!("a name is 1 to 32 characters / 名字是 1 到 32 个字");
@@ -501,6 +501,8 @@ fn record_attempt(root: &Root, key: &str, ok: bool) -> Result<()> {
 pub struct Seated {
     pub house: String,
     pub member: String,
+    /// A pairing code seats one device in several teahouses: the others.
+    pub more: Vec<(String, String)>,
 }
 
 /// Redeems `code` for `key` with the name `name`. Every failure is
@@ -549,7 +551,7 @@ pub fn redeem(
     result
 }
 
-const NOT_VALID: &str = "this invitation is not valid (mistyped, revoked or already used) / 邀请码无效（输错了、已撤销或已用过）";
+pub(crate) const NOT_VALID: &str = "this invitation is not valid (mistyped, revoked or already used) / 邀请码无效（输错了、已撤销或已用过）";
 
 /// Finds the stored invitation for a code: `(house, file)`.
 fn find(root: &Root, code: &str) -> Result<Option<(String, PathBuf)>> {
@@ -616,6 +618,7 @@ fn found(
     Ok(Seated {
         house: house_id.to_string(),
         member: id,
+        more: Vec::new(),
     })
 }
 
@@ -629,6 +632,10 @@ fn redeem_locked(
     let code = normalize(code).ok_or_else(|| Error(NOT_VALID.into()))?;
     check_name(name)?;
     let Some((house_id, file)) = find(root, &code)? else {
+        // Not an invitation: perhaps a pairing code (docs/DEVICES.md).
+        if let Some(seated) = crate::devices::redeem_pair(root, key, &code, name)? {
+            return Ok(seated);
+        }
         bail!("{NOT_VALID}");
     };
     let inv = fs::read_to_string(&file)
@@ -650,51 +657,97 @@ fn redeem_locked(
     if inv.role == Role::Host {
         return found(root, &house_id, &file, &inv, key, name, agent);
     }
-    let house = root.house(&house_id)?;
+    let id = edit_chart(
+        root,
+        &house_id,
+        "teahouse: invitation redeemed",
+        |members| {
+            if members.by_key(key).is_some() {
+                bail!(
+                    "this device already has a seat in this teahouse / 这台设备已经在这间茶馆里了"
+                );
+            }
+            if members.members.len() >= MAX_MEMBERS {
+                bail!("the teahouse is full ({MAX_MEMBERS} seats) / 茶馆满座了");
+            }
+            if inv.role == Role::Steward && members.steward().is_some() {
+                bail!("the teahouse already has a steward / 茶馆已经有伙计了");
+            }
+            let taken: Vec<&str> = members.members.iter().map(|m| m.id.as_str()).collect();
+            let id = new_member_id(name, inv.kind, &taken);
+            let mut next: Members = members.clone();
+            next.members.push(Member {
+                kind: inv.kind,
+                agent: inv
+                    .agent
+                    .clone()
+                    .or_else(|| agent.map(|a| a.trim().to_string())),
+                ..Member::human(id.clone(), name.trim(), inv.role, key.clone())
+            });
+            Ok(ChartEdit {
+                next,
+                // Rule 5: the seat is written in the host's name.
+                author: members.host().id.clone(),
+                message: format!(
+                    "{} 入座（邀请）\n\nProblem: meta\nAct: seat\nInvite: {}\n",
+                    name.trim(),
+                    inv.prefix
+                ),
+                value: id,
+            })
+        },
+    )?;
+    fs::remove_file(&file)?;
+    Ok(Seated {
+        house: house_id,
+        member: id,
+        more: Vec::new(),
+    })
+}
+
+/// A change to a seating chart that the relay writes itself (redeemed
+/// invitations, devices added or removed): the new chart, whose name the
+/// commit carries, its message, and what the caller gets back.
+pub(crate) struct ChartEdit<T> {
+    pub next: Members,
+    /// The member id the commit is authored by.
+    pub author: String,
+    pub message: String,
+    pub value: T,
+}
+
+/// Writes a chart change onto `main`: built from the current chart by
+/// `change`, committed by Teahouse Relay and signed with the relay's key,
+/// checked by the same laws as a push (with the host as the pusher), and
+/// landed by compare-and-swap; a push racing it makes it start again.
+pub(crate) fn edit_chart<T>(
+    root: &Root,
+    house_id: &str,
+    reflog: &str,
+    mut change: impl FnMut(&Members) -> Result<ChartEdit<T>>,
+) -> Result<T> {
+    let house = root.house(house_id)?;
     for _attempt in 0..5 {
         let Some(main) = house.git.resolve(MAIN_REF)? else {
             bail!("teahouse {house_id} has no main");
         };
         let members = members_at(&house.git, &main)?;
-        if members.by_key(key).is_some() {
-            bail!("this device already has a seat in this teahouse / 这台设备已经在这间茶馆里了");
-        }
-        if members.members.len() >= MAX_MEMBERS {
-            bail!("the teahouse is full ({MAX_MEMBERS} seats) / 茶馆满座了");
-        }
-        if inv.role == Role::Steward && members.steward().is_some() {
-            bail!("the teahouse already has a steward / 茶馆已经有伙计了");
-        }
-        let taken: Vec<&str> = members.members.iter().map(|m| m.id.as_str()).collect();
-        let id = new_member_id(name, inv.kind, &taken);
-        let mut next: Members = members.clone();
-        next.members.push(Member {
-            id: id.clone(),
-            name: name.trim().to_string(),
-            role: inv.role,
-            key: key.clone(),
-            kind: inv.kind,
-            agent: inv
-                .agent
-                .clone()
-                .or_else(|| agent.map(|a| a.trim().to_string())),
-        });
-        let toml = next.to_toml().map_err(|e| Error(e.to_string()))?;
-        let host = members.host();
-        let message = format!(
-            "{} 入座（邀请）\n\nProblem: meta\nAct: seat\nInvite: {}\n",
-            name.trim(),
-            inv.prefix
-        );
+        let edit = change(&members)?;
+        let toml = edit.next.to_toml().map_err(|e| Error(e.to_string()))?;
+        let author = edit
+            .next
+            .by_id(&edit.author)
+            .or_else(|| members.by_id(&edit.author))
+            .ok_or_else(|| Error(format!("no member {:?}", edit.author)))?;
         let new = commit_files_as(
             &house.git,
             &root.tmp_dir(),
             Some(&main),
             &[(MEMBERS_PATH, toml.as_bytes())],
-            &message,
+            &edit.message,
             &Signature {
-                name: &host.name,
-                email: &format!("{}@teahouse", host.id),
+                name: &author.name,
+                email: &format!("{}@teahouse", author.id),
             },
             &Signature {
                 name: "Teahouse Relay",
@@ -702,11 +755,10 @@ fn redeem_locked(
             },
             Some(&root.signing_key()),
         )?;
-        // The same laws as any push, with the host as the one pushing.
-        let blobs = root.blobs_dir(&house_id);
+        let blobs = root.blobs_dir(house_id);
         let cx = Context {
             git: &house.git,
-            pusher: host,
+            pusher: members.host(),
             now: now(),
             blobs: &blobs,
             signers: None,
@@ -722,29 +774,14 @@ fn redeem_locked(
         if !problems.is_empty() {
             bail!("the seat change breaks a law: {}", problems.join("; "));
         }
-        // Compare-and-swap: a push that landed meanwhile makes this fail,
-        // and we start again from the new main.
         let swapped = house
             .git
-            .run(&[
-                "update-ref",
-                "-m",
-                "teahouse: invitation redeemed",
-                MAIN_REF,
-                &new,
-                &main,
-            ])
+            .run(&["update-ref", "-m", reflog, MAIN_REF, &new, &main])
             .is_ok();
         if !swapped {
             continue;
         }
-        fs::remove_file(&file)?;
-        audit::log(
-            root,
-            Entry::new("seats.changed")
-                .house(&house_id)
-                .field("invite", inv.prefix.clone()),
-        );
+        audit::log(root, Entry::new("seats.changed").house(house_id));
         if let Ok(cfg) = root.load_config() {
             if let Some(path) = cfg.authorized_keys {
                 if let Err(e) = crate::admin::sync_keys(root, &cfg.binary, &path) {
@@ -752,10 +789,7 @@ fn redeem_locked(
                 }
             }
         }
-        return Ok(Seated {
-            house: house_id,
-            member: id,
-        });
+        return Ok(edit.value);
     }
     bail!("the teahouse kept changing; try again / 茶馆正在变动，请再试一次")
 }

@@ -12,6 +12,7 @@
 mod admin;
 mod audit;
 mod blobs;
+mod devices;
 mod error;
 mod git;
 mod hook;

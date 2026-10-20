@@ -284,16 +284,111 @@ impl Client {
             }
             cmd
         })?;
-        let house = out
+        // An invitation names one teahouse; a pairing code every teahouse
+        // where the other device sits (docs/DEVICES.md §4).
+        let houses: Vec<String> = out
             .lines()
-            .find_map(|l| l.strip_prefix("house "))
+            .filter_map(|l| l.strip_prefix("house "))
             .map(|h| h.trim().to_string())
-            .ok_or_else(|| Error::internal(format!("unexpected answer from the relay: {out}")))?;
+            .collect();
+        if houses.is_empty() {
+            return Err(Error::internal(format!(
+                "unexpected answer from the relay: {out}"
+            )));
+        }
         let address = match &endpoint {
             remote::Endpoint::Local { root } => format!("teahouse-local:{}", root.display()),
             remote::Endpoint::Ssh { user, host, port } => format!("{user}@{host}:{port}"),
         };
-        self.join(&address, &house)
+        let mut first = None;
+        for house in &houses {
+            let summary = if self.house_ids()?.contains(house) {
+                self.sync_house(house)?;
+                self.snapshot(house)?.summary()?
+            } else {
+                self.join(&address, house)?
+            };
+            first.get_or_insert(summary);
+        }
+        Ok(first.expect("at least one teahouse"))
+    }
+
+    /// A pairing code for a new device (`TH-…@relay`, 10 minutes, once),
+    /// good for every teahouse this device sits in at that relay.
+    pub fn pair(&self, house: Option<&str>, name: Option<&str>) -> Result<String> {
+        let house = match house {
+            Some(h) => h.to_string(),
+            None => self
+                .house_ids()?
+                .into_iter()
+                .find(|h| self.snapshot(h).is_ok_and(|s| s.me.is_some()))
+                .ok_or_else(|| {
+                    Error::new(
+                        Code::NotAMember,
+                        "this device has no seat yet / 这台设备还没有座位",
+                    )
+                })?,
+        };
+        let snap = self.snapshot(&house)?;
+        if snap.me.is_none() {
+            return Err(Error::new(
+                Code::NotAMember,
+                "this device has no seat here / 这台设备在这里没有座位",
+            )
+            .with("house", house));
+        }
+        let (endpoint, _) = self.endpoint(&snap)?;
+        let mut cmd = "pair".to_string();
+        if let Some(n) = name.map(str::trim).filter(|n| !n.is_empty()) {
+            cmd.push_str(&format!(" --name {}", remote::quote(n)));
+        }
+        let code = remote::exec_text(&endpoint, &self.identity()?, &self.known_hosts(), &cmd)?;
+        Ok(format!("{}@{}", code.trim(), endpoint.address()))
+    }
+
+    /// Removes another of my devices, by name or `SHA256:` fingerprint: in
+    /// one teahouse, or (without `house`) in every teahouse where I have it.
+    /// Returns the teahouses it was removed from.
+    pub fn unpair(&self, house: Option<&str>, device: &str) -> Result<Vec<String>> {
+        let houses: Vec<String> = match house {
+            Some(h) => vec![h.to_string()],
+            // Look at each teahouse as the relay has it now: the device may
+            // have been paired since this device last synced.
+            None => self
+                .house_ids()?
+                .into_iter()
+                .inspect(|h| {
+                    let _ = self.sync_house(h);
+                })
+                .filter(|h| {
+                    self.snapshot(h).is_ok_and(|s| {
+                        s.my_devices().is_ok_and(|d| {
+                            d.iter()
+                                .any(|x| x.name == device || x.fingerprint == device)
+                        })
+                    })
+                })
+                .collect(),
+        };
+        if houses.is_empty() {
+            return Err(
+                Error::not_found(format!("no device {device:?} of yours / 没有这台设备"))
+                    .with("device", device),
+            );
+        }
+        let identity = self.identity()?;
+        for h in &houses {
+            let snap = self.snapshot(h)?;
+            let (endpoint, remote_house) = self.endpoint(&snap)?;
+            remote::exec_text(
+                &endpoint,
+                &identity,
+                &self.known_hosts(),
+                &format!("unpair {remote_house} {}", remote::quote(device)),
+            )?;
+            self.sync_house(h)?;
+        }
+        Ok(houses)
     }
 
     /// The local file of an attachment, downloaded from the relay (and its
@@ -629,6 +724,28 @@ impl Client {
                 }
                 let a: RedeemArg = parse(command, a)?;
                 to_value(self.redeem(a.relay.as_deref(), &a.code, &a.name, a.agent.as_deref())?)
+            }
+            "pair" => {
+                #[derive(Deserialize)]
+                struct PairArg {
+                    house: Option<String>,
+                    name: Option<String>,
+                }
+                let a: PairArg = parse(command, a)?;
+                to_value(self.pair(a.house.as_deref(), a.name.as_deref())?)
+            }
+            "devices" => {
+                let a: HouseArg = parse(command, a)?;
+                to_value(self.snapshot(&a.house)?.my_devices()?)
+            }
+            "unpair" => {
+                #[derive(Deserialize)]
+                struct UnpairArg {
+                    house: Option<String>,
+                    device: String,
+                }
+                let a: UnpairArg = parse(command, a)?;
+                to_value(self.unpair(a.house.as_deref(), &a.device)?)
             }
             "purgeBlob" => {
                 let p: IdArg = parse(command, a)?;
