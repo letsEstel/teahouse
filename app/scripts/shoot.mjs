@@ -51,7 +51,7 @@ const sizes = [
 // 安卓外框截图：假状态栏 + 手势条 + 中间的应用，就是 MainActivity.kt 加内边距后的样子
 const android = { bar: 32, nav: 24, devices: [['fold', 411, 797], ['unfold', 930, 775]] }
 const androidShots = [
-  { name: 'wutong-house', hash: '#/wutong/house' },
+  { name: 'wutong-archive', hash: '#/wutong/archive' },
   { name: 'wutong-problem', hash: '#/wutong/problem/0001' },
   { name: 'wutong-problem-dark', hash: '#/wutong/problem/0001', theme: 'dark' },
 ]
@@ -135,8 +135,33 @@ screens.push(
   { name: 'kant-unseated-problem', hash: '#/kant/problem/0001', query: '&fake=unseated' },
   { name: 'wutong-refused', hash: '#/wutong/problem/0001', query: '&fake=refuse', act: async (p) => { await p.fill('.talk-write textarea', '我同意，周六我也来帮忙喷编号。'); await p.click('.talk-write button.submit'); await p.waitForTimeout(300) } },
 )
-// 本轮保存的图（第 8 轮只存安卓外框图，见下面 androidShots）
-const save = {}
+// AI 成员的标记（docs/MCP.md）：三人创业团队里的 Claude
+const aiNote = (p) => p.click('a[data-file$="-claude.md"]')
+screens.push(
+  { name: 'startup-proposal-ai', hash: '#/startup/proposal/p2' },
+  { name: 'startup-archive-ai', hash: '#/startup/archive', act: aiNote, widths: [1920, 1366] },
+  { name: 'startup-house-dark', hash: '#/startup/house', theme: 'dark', only1366: true },
+)
+// 第 10 轮：真实文件树 + 权限标记；编辑器（CodeMirror，实时预览）
+const typeDoc = async (p) => {
+  await p.click('.action button.primary')
+  await p.fill('#new-title', '周六喷编号的分工')
+  await p.click('.cm-content')
+  await p.keyboard.type('# 分工\n\n周六上午九点，**三个人**一组：\n\n- 王阿姨：买漆\n小周：拉线\n\n')
+  await p.keyboard.type('> 下雨就改到周日。')
+  // 光标移回标题框：编辑器里每一行都显示成预览
+  await p.click('#new-title')
+}
+const editPlan = async (p) => { await p.click('.tools button.primary'); await p.click('.cm-content'); await p.keyboard.press('Control+End') }
+screens.push(
+  { name: 'wutong-problem-compose', hash: '#/wutong/problem/0001', act: typeDoc, widths: [1366, 390] },
+  { name: 'wutong-archive-edit', hash: '#/wutong/archive/' + encodeURIComponent('works/0001/w2-time-sharing-plan-v2.md'), act: editPlan, widths: [1366, 390] },
+  { name: 'kant-archive-guest', hash: '#/kant/archive/' + encodeURIComponent('works/0001/k2-glossary-of-terms.md') },
+)
+const save = {
+  'wutong-archive': {}, 'wutong-problem': {}, 'kant-problem': {}, 'kant-archive-guest': {},
+  'wutong-problem-compose': {}, 'wutong-archive-edit': {},
+}
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
 // 手机
 screens.push(

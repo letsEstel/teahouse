@@ -1,12 +1,15 @@
 <script lang="ts">
   import Shape from '../lib/Shape.svelte'
+  import AiMark from '../lib/AiMark.svelte'
   import StatusMark from '../lib/StatusMark.svelte'
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import ParkingMap from '../lib/ParkingMap.svelte'
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
-  import { member, self, pad, eventText, type House, type Note, type Problem } from '../api/view'
-  import { api, write as send, blobUrl } from '../api/backend'
+  import AccessMark from '../lib/AccessMark.svelte'
+  import Editor from '../lib/Editor.svelte'
+  import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
+  import { api, write as send, blobUrl, stageFile } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
   let { house, id }: { house: House; id: string } = $props()
@@ -21,17 +24,41 @@
   $effect(() => { load() })
 
   let author = $derived(p && member(house, p.by))
+  // 成果默认按文件列出（茶馆里真实的文件）；卡片是同一批文件的另一种看法
+  let view = $state<'files' | 'cards'>('files')
   let me = $derived(self(house))
   let feature = $derived(p?.works[0])
   let rest = $derived(p?.works.slice(1) ?? [])
   // 经过：引擎按时间顺序给出，这里最新的在上
   let events = $derived(p ? [...p.events].reverse() : [])
 
-  let action = $derived(
-    me.role === 'guest'
-      ? { label: t('act.proposeWork'), hint: t('act.proposeWorkHint'), href: `#/${house.id}/propose/${id}` }
-      : { label: t('act.addWork'), hint: t('act.addWorkHint'), href: undefined }
-  )
+  let action = $derived(me.role === 'guest' ? { hint: t('act.proposeWorkHint') } : { hint: t('act.addWorkHint') })
+
+  // 添加成果：写一份文档（编辑器），或从手机的文件选择器加入图片、附件。茶客的会自动变成提案。
+  let composing = $state(false)
+  let newTitle = $state('')
+  let newText = $state('')
+  let added = $state<'written' | 'proposed' | null>(null)
+  async function addDoc() {
+    if (!newTitle.trim()) return
+    const r = await send('addWork', { house: house.id, problem: id, kind: 'doc', title: newTitle.trim(), text: newText })
+    if (!r) return
+    added = r.becameProposal ? 'proposed' : 'written'
+    composing = false; newTitle = ''; newText = ''
+    await load()
+  }
+  let picker = $state<HTMLInputElement>()
+  async function attach(e: Event) {
+    const input = e.currentTarget as HTMLInputElement
+    const f = input.files?.[0]
+    input.value = ''
+    if (!f) return
+    const kind = f.type.startsWith('image/') ? 'image' : 'file'
+    const r = await send('addWork', { house: house.id, problem: id, kind, title: f.name.replace(/\.[^.]+$/, ''), fromPath: await stageFile(f) })
+    if (!r) return
+    added = r.becameProposal ? 'proposed' : 'written'
+    await load()
+  }
 
   // 问题下的讨论：留言直接写进茶馆（茶客也一样）
   async function write(text: string) {
@@ -55,7 +82,7 @@
       <StatusMark status={p.status} />
       <h1>{p.title}</h1>
       <div class="meta">
-        <span><Shape role={author.role} size={10} />{t('problem.raisedBy', { name: author.name })} · {t(`role.${author.role}`)}</span>
+        <span><Shape role={author.role} size={10} />{t('problem.raisedBy', { name: author.name })}<AiMark m={author} /> · {t(`role.${author.role}`)}</span>
         <span>{t('problem.since', { date: date(p.opened, 'short') })}</span>
         <span>{t('problem.works', { n: p.workCount })}</span>
       </div>
@@ -81,7 +108,7 @@
             <li>
               <span class="node"><Shape role={m.role} size={12} /></span>
               <div>
-                <div class="ev"><b>{m.name}</b> {eventText(e, true)}</div>
+                <div class="ev"><b>{m.name}</b><AiMark {m} /> {eventText(e, true)}</div>
                 <div class="when">{when(e.when)}</div>
               </div>
             </li>
@@ -95,13 +122,25 @@
         <h2>{t('problem.worksHead')}</h2>
         <div class="action" data-write>
           <p class="consequence">{action.hint}</p>
-          {#if action.href}
-            <a class="primary" href={action.href}><i>+</i><span>{action.label}</span></a>
-          {:else}
-            <button class="primary"><i>+</i><span>{action.label}</span></button>
-          {/if}
+          <button class="primary" aria-expanded={composing} onclick={() => { composing = !composing; added = null }}><i>+</i><span>{t('edit.newDoc')}</span></button>
+          <button class="secondary" onclick={() => picker?.click()}>+ {t('edit.attach')}</button>
+          <input class="picker" type="file" bind:this={picker} onchange={attach} />
         </div>
       </div>
+
+      {#if added}<p class="saved" role="status">{t(added === 'written' ? 'edit.written' : 'edit.proposed')}</p>{/if}
+
+      {#if composing}
+        <div class="compose" data-write>
+          <label class="label" for="new-title">{t('edit.title')}</label>
+          <input id="new-title" class="title-in" bind:value={newTitle} placeholder={t('edit.titlePlaceholder')} />
+          <Editor value="" placeholder={t('edit.bodyPlaceholder')} onchange={(v) => (newText = v)} />
+          <div class="save">
+            <button class="primary" disabled={!newTitle.trim()} onclick={addDoc}><span>{t(me.role === 'guest' ? 'edit.saveProposal' : 'edit.save')}</span></button>
+            <button class="secondary" onclick={() => (composing = false)}>{t('edit.cancel')}</button>
+          </div>
+        </div>
+      {/if}
 
       {#if p.workCount === 0}
         <div class="empty">
@@ -110,6 +149,28 @@
         </div>
       {/if}
 
+      {#if p.works.length}
+        <div class="seg" role="group">
+          <button class:on={view === 'files'} aria-pressed={view === 'files'} onclick={() => (view = 'files')}>{t('problem.viewFiles')}</button>
+          <button class:on={view === 'cards'} aria-pressed={view === 'cards'} onclick={() => (view = 'cards')}>{t('problem.viewCards')}</button>
+        </div>
+      {/if}
+
+      {#if view === 'files'}
+      <ul class="files">
+        {#each p.works as w}
+          {@const wm = member(house, w.by)}
+          <li>
+            <a href="#/{house.id}/archive/{encodeURIComponent(w.id)}">
+              <WorkGlyph kind={w.kind} size={20} />
+              <span class="fname"><span class="real">{fileName(w.id)}</span><span class="human">{w.title}</span></span>
+              <span class="fby"><Shape role={wm.role} size={9} />{wm.name}<AiMark m={wm} /> · {when(w.when)}</span>
+              <AccessMark a={access(house, w.id)} />
+            </a>
+          </li>
+        {/each}
+      </ul>
+      {:else}
       <div class="grid">
         {#if feature}
           {@const fm = member(house, feature.by)}
@@ -131,7 +192,7 @@
                 <div class="t">{feature.title}</div>
                 {#if feature.note}<div class="note">{feature.note}</div>{/if}
               </div>
-              <div class="by"><Shape role={fm.role} size={10} />{fm.name}<span>{when(feature.when)}</span></div>
+              <div class="by"><Shape role={fm.role} size={10} />{fm.name}<AiMark m={fm} /><span>{when(feature.when)}</span></div>
             </div>
           </article>
         {/if}
@@ -145,10 +206,11 @@
             </div>
             <div class="t hyphenate">{w.title}</div>
             {#if w.note}<div class="note hyphenate">{w.note}</div>{/if}
-            <div class="by"><Shape role={wm.role} size={10} /><b>{wm.name}</b><span>{when(w.when)}</span></div>
+            <div class="by"><Shape role={wm.role} size={10} /><b>{wm.name}</b><AiMark m={wm} /><span>{when(w.when)}</span></div>
           </article>
         {/each}
       </div>
+      {/if}
 
       <section class="talk">
         <div class="talk-head">
@@ -219,6 +281,27 @@
 
   .empty { display: flex; align-items: center; gap: 20px; padding: 28px 0; border-top: 2px solid var(--ink); color: var(--ink-2); }
 
+  .picker { display: none; }
+  .compose { display: grid; gap: 10px; margin-bottom: 28px; }
+  .title-in { border: 1.5px solid var(--ink); background: var(--paper); padding: 10px 14px; font: inherit; font-size: 18px; font-weight: 700; color: var(--ink); }
+  .save { display: flex; flex-wrap: wrap; gap: 10px; }
+  .saved { margin-bottom: 16px; padding: 10px 14px; background: var(--ink); color: var(--paper); font-size: 14px; }
+  .seg { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+  .seg button { padding: 6px 14px; border: 1.5px solid var(--ink); margin-left: -1.5px; font-size: 13px; font-weight: 500; }
+  .seg button.on { background: var(--ink); color: var(--paper); }
+  .files { list-style: none; border-top: 2px solid var(--ink); }
+  .files a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 8px; border-bottom: 1px solid var(--rule);
+    color: inherit; text-decoration: none;
+  }
+  .files a:hover { background: var(--paper-deep); }
+  .files :global(svg) { flex: none; }
+  .fname { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+  .fname .real { font-weight: 600; font-size: 15px; }
+  .fname .human { font-size: 13px; color: var(--ink-3); }
+  .fby { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+  @media (max-width: 640px) { .fby { display: none; } }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));

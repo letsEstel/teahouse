@@ -98,7 +98,7 @@ function toHouse(h: FHouse): A.House {
   return {
     id: h.id, name: L(h.name), signboard: L(h.sign), founded: iso(h.founded), capacity: 15,
     me: meOf(h),
-    members: h.members.map((m) => ({ id: m.id, name: L(m.name), role: m.role, joined: iso(m.joined) })),
+    members: h.members.map((m) => ({ id: m.id, name: L(m.name), role: m.role, joined: iso(m.joined), kind: m.kind, agent: m.agent })),
     problems: h.problems.map((p) => summary(h, p)),
     recent: h.recent.map((e) => toEvent(e, e.problem)),
     proposals: h.proposals.map((x) => ({
@@ -148,7 +148,7 @@ function tree(h: FHouse, view: 'dirs' | 'problems'): A.ArchiveNode {
   const pl = (id: string) => `${id} · ${L(h.problems.find((p) => p.id === id)!.title)}`
   const leaves = (pred: (f: AFile) => boolean, _inProblem = false) => files.filter(pred).map((f) => nodeOf(h, f))
   const dir = (id: string, label: string, children: A.ArchiveNode[], code?: A.ArchiveNode['dir']): A.ArchiveNode => (code ? { id, dir: code, kind: 'dir', children } : { id, label, kind: 'dir', children })
-  const meta = dir('meta', t('archive.meta'), leaves((f) => f.kind === 'members'), 'meta')
+  const meta = dir('.teahouse', t('archive.meta'), leaves((f) => f.kind === 'members'), 'meta')
   if (view === 'dirs') {
     return dir('root', h.id, [
       dir('problems', t('archive.problems'), leaves((f) => f.kind === 'problem'), 'problems'),

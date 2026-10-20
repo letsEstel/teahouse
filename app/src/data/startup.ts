@@ -1,7 +1,8 @@
-// 三人创业团队：三个人给小餐馆做记账工具。当前用户是伙计。
+// 三人创业团队：三个人给小餐馆做记账工具，外加一位 AI 茶客帮忙整理和起草。当前用户是伙计。
 import type { House } from './types'
 
 const pricing = { zh: '定价表', en: 'Price list', de: 'Preisliste' }
+const offlinePlan = { zh: '离线方案：第一版只做离线记账', en: 'Offline plan: version one records offline only' }
 const cutPrice = { zh: '基础版降到每月 49 元', en: 'Cut the basic plan to ¥49 a month', de: 'Basistarif auf 49 ¥ im Monat senken' }
 
 export const startup: House = {
@@ -20,6 +21,7 @@ export const startup: House = {
     { id: 'linz', name: { zh: '林舟', en: 'Lin Zhou', de: 'Lin Zhou' }, role: 'host', joined: '2026-08-01' },
     { id: 'song', name: { zh: '宋雨桐', en: 'Song Yutong', de: 'Song Yutong' }, role: 'steward', joined: '2026-08-01' },
     { id: 'ma', name: { zh: '马克', en: 'Ma Ke', de: 'Ma Ke' }, role: 'guest', joined: '2026-08-03' },
+    { id: 'claude', name: { zh: 'Claude', en: 'Claude' }, role: 'guest', kind: 'ai', agent: 'Claude Code', joined: '2026-10-12' },
   ],
   problems: [
     {
@@ -94,6 +96,7 @@ export const startup: House = {
       notes: [
         { by: 'ma', when: '2026-10-18T15:30', text: { zh: '第 9 家和第 12 家都说，只要能拍小票就愿意试。下周先去这两家。', en: 'Nos. 9 and 12 both said they’d try it as long as they can just photograph receipts. Let’s start with those two next week.', de: 'Nr. 9 und Nr. 12 wollen es probieren, solange sie nur Belege fotografieren müssen. Nächste Woche zuerst zu diesen beiden.' } },
         { by: 'linz', when: '2026-10-18T17:05', text: { zh: '同意。去之前把演示视频剪到 60 秒以内。', en: 'Agreed. Cut the demo video to under 60 seconds before we go.', de: 'Einverstanden. Vorher das Demovideo auf unter 60 Sekunden kürzen.' } },
+        { by: 'claude', when: '2026-10-18T20:40', text: { zh: '我把 14 份访谈按"愿意试用的理由"归了类：拍小票 6 家、月底对账 4 家、其他 4 家。第 9 家和第 12 家都在"拍小票"里，先去这两家是对的。', en: 'I grouped the 14 interviews by why they would try it: receipt photos 6, month-end reconciliation 4, other 4. Nos. 9 and 12 are both in the receipt-photo group, so starting with them makes sense.' } },
       ],
     },
     {
@@ -131,6 +134,7 @@ export const startup: House = {
     },
   ],
   recent: [
+    { by: 'claude', problem: '0004', act: 'propose', ref: offlinePlan, when: '2026-10-18T21:05' },
     { by: 'ma', problem: '0001', act: 'addWork', ref: { zh: '访谈记录（14 家餐馆）', en: 'Interview notes (14 restaurants)', de: 'Interviewnotizen (14 Restaurants)' }, when: '2026-10-18T15:20' },
     { by: 'ma', problem: '0002', act: 'propose', ref: cutPrice, when: '2026-10-17T23:10' },
     { by: 'song', problem: '0001', act: 'update', ref: pricing, when: '2026-10-14T11:00' },
@@ -158,6 +162,28 @@ export const startup: House = {
             { kind: 'add', text: { zh: '基础版　　¥49　　 ¥490', en: 'Basic       ¥49       ¥490', de: 'Basis       49 ¥        490 ¥' } },
             { kind: 'same', text: { zh: '连锁版　　¥199　　¥1,990', en: 'Chain       ¥199      ¥1,990', de: 'Kette       199 ¥       1.990 ¥' } },
             { kind: 'add', text: { zh: '前三个月半价，仅限前十家。', en: 'Half price for three months, first ten customers only.', de: 'Drei Monate zum halben Preis, nur für die ersten zehn Kunden.' } },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'p2',
+      title: offlinePlan,
+      by: 'claude',
+      problem: '0004',
+      when: '2026-10-18T21:05',
+      reason: {
+        zh: '14 家里有 11 家后厨信号差，但都说月底才对账。所以第一版只要能离线记、联网后补传，不必做离线查询，大约省两周。',
+        en: 'Eleven of the fourteen kitchens have poor signal, but all reconcile only at month end. So version one just needs to record offline and upload later; no offline queries. Saves about two weeks.',
+      },
+      files: [
+        {
+          title: { zh: '离线方案', en: 'Offline plan' },
+          kind: 'plan',
+          lines: [
+            { kind: 'add', text: { zh: '第一版：断网时照常记账，存在手机里。', en: 'Version one: keep recording when offline, stored on the phone.' } },
+            { kind: 'add', text: { zh: '联网后自动补传，按记账时间排好。', en: 'Upload automatically once online, ordered by when each entry was made.' } },
+            { kind: 'add', text: { zh: '离线时不能查月报，界面上说清楚。', en: 'Monthly reports need a connection; the screen says so.' } },
           ],
         },
       ],

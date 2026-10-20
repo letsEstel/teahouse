@@ -1,6 +1,7 @@
 <script lang="ts">
   import Room from '../lib/Room.svelte'
   import Shape from '../lib/Shape.svelte'
+  import AiMark from '../lib/AiMark.svelte'
   import { fit } from '../lib/fit'
   import Invite from '../lib/Invite.svelte'
   import { member, self, host, pad, eventText, nameLines, type House, type Role } from '../api/view'
@@ -78,7 +79,7 @@
           {@const m = member(house, e.by)}
           <li>
             <Shape role={m.role} size={10} />
-            <span class="who">{m.name}</span>
+            <span class="who">{m.name}<AiMark {m} /></span>
             <span class="what">{eventText(e)}</span>
             <span class="when">{when(e.when)}</span>
           </li>
