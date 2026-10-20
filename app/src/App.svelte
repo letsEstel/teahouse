@@ -82,7 +82,7 @@
   {#key hash + i18n.lang + house.id}
     <div class="page">
       {#if route.page === 'problems'}
-        <Problems {house} view={route.arg === 'kanban' ? 'kanban' : 'list'} />
+        <Problems {house} {refresh} view={route.arg === 'kanban' ? 'kanban' : 'list'} compose={route.arg === 'new'} />
       {:else if route.page === 'board'}
         <Board {house} {refresh} />
       {:else if route.page === 'archive'}
@@ -92,7 +92,7 @@
       {:else if route.page === 'problem'}
         <ProblemView {house} id={route.arg ?? '0001'} />
       {:else if route.page === 'proposals' || route.page === 'proposal'}
-        <Proposal {house} id={route.page === 'proposal' ? route.arg : undefined} />
+        <Proposal {house} {refresh} id={route.page === 'proposal' ? route.arg : undefined} />
       {:else}
         <House {house} />
       {/if}

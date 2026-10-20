@@ -3,3 +3,4 @@ dist
 screenshots/*.tmp
 dist-preview
 *.apk
+dist-e2e-*

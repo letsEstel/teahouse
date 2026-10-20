@@ -91,11 +91,16 @@
 
   <div class="cols">
     <section class="brief">
+      <!-- 没有小标题的一段（第一个 "## " 之前）是摘要，不编号；有小标题的各节依次编号 -->
       {#each p.body as b, i}
-        <div class="para">
-          <div class="label">{pad(i + 1)} · {b.heading}</div>
-          <p>{b.text}</p>
-        </div>
+        {#if b.heading}
+          <div class="para">
+            <div class="label">{pad(p.body.slice(0, i + 1).filter((x) => x.heading).length)} · {b.heading}</div>
+            <p>{b.text}</p>
+          </div>
+        {:else if b.text}
+          <p class="lead">{b.text}</p>
+        {/if}
       {:else}
         <p class="quiet">{p.summary}</p>
       {/each}
@@ -231,6 +236,7 @@
 {/if}
 
 <style>
+  .lead { font-size: 17px; line-height: 1.8; margin-bottom: 22px; }
   .wrap { padding: calc(var(--pad-top) * 0.75) var(--pad-x) 80px; }
   .back { display: inline-block; padding: 6px 0; }
   .back:hover { color: var(--ink); }

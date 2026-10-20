@@ -2,11 +2,13 @@
   import Shape from '../lib/Shape.svelte'
   import AiMark from '../lib/AiMark.svelte'
   import StatusMark from '../lib/StatusMark.svelte'
+  import Editor from '../lib/Editor.svelte'
+  import { write } from '../api/backend'
   import { member, self, pad, type House, type Status } from '../api/view'
   import { t, when } from '../i18n/index.svelte'
 
   // 列表和看板是同一份数据的两种视图
-  let { house, view = 'list' }: { house: House; view?: 'list' | 'kanban' } = $props()
+  let { house, view = 'list', refresh, compose = false }: { house: House; view?: 'list' | 'kanban'; refresh?: () => void; compose?: boolean } = $props()
   const columns: Status[] = ['open', 'active', 'solved']
   let me = $derived(self(house))
 
@@ -22,6 +24,36 @@
       ? { label: t('act.suggestProblem'), hint: t('act.suggestProblemHint'), href: `#/${house.id}/propose/new` }
       : { label: t('act.newProblem'), hint: t('act.newProblemHint'), href: undefined }
   )
+
+  // 提出问题（老板、伙计）：标题 + 正文。正文里第一个 "## " 之前是摘要，之后每个 "## 小标题" 是一节。
+  // 走引擎的 openProblem { house, title, body }，成功后跳到新问题的页面。
+  // #/<茶馆>/problems/new：直接打开（座位页上伙计的"提出问题"按钮）
+  // 页面随地址重建，只取一次初始值就够了
+  // svelte-ignore state_referenced_locally
+  let composing = $state(compose)
+  let title = $state('')
+  let text = $state('')
+  let busy = $state(false)
+  function sections(src: string) {
+    const body: { heading: string; text: string }[] = [{ heading: '', text: '' }]
+    for (const line of src.split('\n')) {
+      const h = /^##\s+(.*)$/.exec(line)
+      if (h) body.push({ heading: h[1].trim(), text: '' })
+      else body[body.length - 1].text += (body[body.length - 1].text ? '\n' : '') + line
+    }
+    return body.map((b) => ({ heading: b.heading, text: b.text.trim() })).filter((b) => b.heading || b.text)
+  }
+  async function submit() {
+    if (!title.trim() || busy) return
+    busy = true
+    const r = await write('openProblem', { house: house.id, title: title.trim(), body: sections(text) })
+    busy = false
+    if (!r) return
+    composing = false
+    refresh?.()
+    // 引擎在 id 里给出新问题的编号；变成提案时（角色刚变动）去提案页
+    location.hash = r.becameProposal ? `#/${house.id}/proposals` : `#/${house.id}/problem/${r.id}`
+  }
 </script>
 
 <div class="wrap">
@@ -35,11 +67,25 @@
       {#if action.href}
         <a class="primary" href={action.href}><i>+</i><span>{action.label}</span></a>
       {:else}
-        <button class="primary"><i>+</i><span>{action.label}</span></button>
+        <button class="primary" aria-expanded={composing} onclick={() => (composing = !composing)}><i>+</i><span>{action.label}</span></button>
       {/if}
       <p class="consequence">{action.hint}</p>
     </div>
   </header>
+
+  {#if composing}
+    <form class="compose" data-write onsubmit={(e) => { e.preventDefault(); submit() }}>
+      <label class="label" for="problem-title">{t('newProblem.title')}</label>
+      <input id="problem-title" class="title-in" bind:value={title} placeholder={t('newProblem.titlePh')} />
+      <span class="label">{t('newProblem.body')}</span>
+      <Editor value="" placeholder={t('newProblem.bodyPh')} onchange={(v) => (text = v)} />
+      <p class="consequence">{t('newProblem.hint')}</p>
+      <div class="save">
+        <button type="submit" class="primary" disabled={!title.trim() || busy}><span>{t('newProblem.submit')}</span></button>
+        <button type="button" class="secondary" onclick={() => (composing = false)}>{t('newProblem.cancel')}</button>
+      </div>
+    </form>
+  {/if}
 
   <div class="bar">
     <div class="tabs" role="tablist">
@@ -114,6 +160,10 @@
 </div>
 
 <style>
+  .compose { display: grid; gap: 10px; max-width: 52rem; margin: 0 0 clamp(28px, 4vw, 44px); padding: clamp(16px, 2.5vw, 24px); border: 2px solid var(--ink); }
+  .title-in { border: 1.5px solid var(--ink); background: var(--paper); padding: 10px 14px; font: inherit; font-size: 20px; font-weight: 700; color: var(--ink); }
+  .compose .save { display: flex; flex-wrap: wrap; gap: 10px; }
+  .compose .primary:disabled { background: transparent; color: var(--ink-3); border-color: var(--ink-3); cursor: default; }
   .wrap { padding: var(--pad-top) var(--pad-x) 80px; }
 
   header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 28px 48px; }
