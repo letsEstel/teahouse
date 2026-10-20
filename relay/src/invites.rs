@@ -25,7 +25,9 @@ use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
 use std::time::Duration;
-use teahouse_core::members::{valid_member_id, Member, Members, Role, MAX_MEMBERS, MEMBERS_PATH};
+use teahouse_core::members::{
+    valid_member_id, Kind, Member, Members, Role, MAX_MEMBERS, MEMBERS_PATH,
+};
 use teahouse_core::rules::MAIN_REF;
 use teahouse_core::PublicKey;
 
@@ -105,6 +107,17 @@ pub struct Invite {
     /// Founding invitations: the teahouse's name and signboard.
     pub house_name: Option<String>,
     pub signboard: Option<String>,
+    /// An AI's seat (法第 17 条: always a guest), and which AI.
+    pub kind: Kind,
+    pub agent: Option<String>,
+}
+
+/// Who an invitation seats.
+pub struct Seat<'a> {
+    pub role: Role,
+    pub kind: Kind,
+    pub name: Option<&'a str>,
+    pub agent: Option<&'a str>,
 }
 
 impl Invite {
@@ -113,10 +126,14 @@ impl Invite {
             "prefix = {}\nrole = {}\ncreated = {}\nexpires = {}\nby = {}\n",
             self.prefix, self.role, self.created, self.expires, self.by
         );
+        if self.kind == Kind::Ai {
+            s.push_str("kind = ai\n");
+        }
         for (k, v) in [
             ("name", &self.name),
             ("house_name", &self.house_name),
             ("signboard", &self.signboard),
+            ("agent", &self.agent),
         ] {
             if let Some(v) = v {
                 s.push_str(&format!("{k} = {}\n", v.replace('\n', " ")));
@@ -136,6 +153,11 @@ impl Invite {
             by: m.get("by")?.to_string(),
             house_name: m.get("house_name").map(|s| s.to_string()),
             signboard: m.get("signboard").map(|s| s.to_string()),
+            kind: m
+                .get("kind")
+                .and_then(|k| Kind::parse(k))
+                .unwrap_or_default(),
+            agent: m.get("agent").map(|s| s.to_string()),
         })
     }
 }
@@ -184,12 +206,22 @@ pub fn create(
     root: &Root,
     house: &str,
     host: &Member,
-    role: Role,
-    name: Option<&str>,
+    seat: &Seat<'_>,
     days: Option<u64>,
 ) -> Result<String> {
+    let (role, name) = (seat.role, seat.name);
     if role == Role::Host {
         bail!("an invitation can seat a guest or the steward, not a host / 邀请只能是茶客或伙计");
+    }
+    // 法第 17 条: an AI sits only as a guest; `agent` names an AI.
+    if seat.kind == Kind::Ai && role != Role::Guest {
+        bail!("an AI can only be invited as a guest / AI 只能以茶客身份入座");
+    }
+    if seat.agent.is_some() && seat.kind != Kind::Ai {
+        bail!("--agent is for AI invitations (--kind ai)");
+    }
+    if let Some(a) = seat.agent {
+        check_name(a)?;
     }
     let days = days.unwrap_or(DEFAULT_DAYS);
     if !(1..=MAX_DAYS).contains(&days) {
@@ -219,6 +251,8 @@ pub fn create(
         by: host.id.clone(),
         house_name: None,
         signboard: None,
+        kind: seat.kind,
+        agent: seat.agent.map(str::to_string),
     };
     crate::root::write_atomic(
         &dir.join(format!("{}.inv", code_hash(&code))),
@@ -232,6 +266,7 @@ pub fn create(
             .member(&host.id)
             .field("invite", inv.prefix.clone())
             .field("role", role.as_str())
+            .field("kind", seat.kind.as_str())
             .field("days", days.to_string()),
     );
     Ok(display(&code))
@@ -286,6 +321,8 @@ pub fn create_founding(
         by: "operator".into(),
         house_name: Some(name.to_string()),
         signboard: signboard.map(str::to_string),
+        kind: Kind::Human,
+        agent: None,
     };
     crate::root::write_atomic(
         &dir.join(format!("{}.inv", code_hash(&code))),
@@ -353,7 +390,7 @@ fn check_name(name: &str) -> Result<()> {
 
 /// A member id for a new seat: the name's ASCII letters and digits if it
 /// has any, else `m`; numbered when taken (`wang`, `wang2`; `m1`, `m2`).
-pub fn new_member_id(name: &str, taken: &[&str]) -> String {
+pub fn new_member_id(name: &str, kind: Kind, taken: &[&str]) -> String {
     let mut base = String::new();
     for c in name.chars() {
         if c.is_ascii_alphanumeric() {
@@ -363,11 +400,35 @@ pub fn new_member_id(name: &str, taken: &[&str]) -> String {
         }
     }
     let base: String = base.trim_matches('-').chars().take(24).collect();
-    let base = base.trim_end_matches('-').to_string();
-    let candidates: Box<dyn Iterator<Item = String>> = if base.is_empty() {
-        Box::new((1..).map(|n| format!("m{n}")))
+    let mut base = base.trim_end_matches('-').to_string();
+    // AI members always carry `ai-` (docs/MCP.md), and nobody else does, so
+    // an id alone tells people from AIs: in the chart and in post names.
+    let (fallback, prefix) = match kind {
+        Kind::Ai => ("ai-", "ai-"),
+        Kind::Human => ("m", ""),
+    };
+    if kind == Kind::Human && (base == "ai" || base.starts_with("ai-")) {
+        base = format!("h-{base}");
+    }
+    let base = if base.is_empty() {
+        base
     } else {
-        Box::new(std::iter::once(base.clone()).chain((2..).map(move |n| format!("{base}{n}"))))
+        format!("{prefix}{base}")
+    };
+    let candidates: Box<dyn Iterator<Item = String>> = if base.is_empty() {
+        Box::new((1..).map(move |n| format!("{fallback}{n}")))
+    } else {
+        {
+            // `wang2`, but `ai-2-2` rather than the misleading `ai-22`.
+            let sep = if base.ends_with(|c: char| c.is_ascii_digit()) {
+                "-"
+            } else {
+                ""
+            };
+            Box::new(
+                std::iter::once(base.clone()).chain((2..).map(move |n| format!("{base}{sep}{n}"))),
+            )
+        }
     };
     let mut candidates = candidates;
     candidates
@@ -438,7 +499,13 @@ pub struct Seated {
 
 /// Redeems `code` for `key` with the name `name`. Every failure is
 /// recorded and counted against the key.
-pub fn redeem(root: &Root, key: &PublicKey, code: &str, name: &str) -> Result<Seated> {
+pub fn redeem(
+    root: &Root,
+    key: &PublicKey,
+    code: &str,
+    name: &str,
+    agent: Option<&str>,
+) -> Result<Seated> {
     let _lock = Lock::take(root)?;
     let short = key.short();
     if let Some(why) = rate_limited(root, &short)? {
@@ -450,7 +517,7 @@ pub fn redeem(root: &Root, key: &PublicKey, code: &str, name: &str) -> Result<Se
         );
         bail!("{why}");
     }
-    let result = redeem_locked(root, key, code, name);
+    let result = redeem_locked(root, key, code, name, agent);
     record_attempt(root, &short, result.is_ok())?;
     match &result {
         Ok(s) => audit::log(
@@ -511,7 +578,7 @@ fn found(
         fs::remove_file(file)?;
         bail!("teahouse {house_id} is already open; this invitation is spent / 茶馆已经开张，这个邀请已失效");
     }
-    let id = new_member_id(name, &[]);
+    let id = new_member_id(name, Kind::Human, &[]);
     let house_name = inv
         .house_name
         .clone()
@@ -543,7 +610,13 @@ fn found(
     })
 }
 
-fn redeem_locked(root: &Root, key: &PublicKey, code: &str, name: &str) -> Result<Seated> {
+fn redeem_locked(
+    root: &Root,
+    key: &PublicKey,
+    code: &str,
+    name: &str,
+    agent: Option<&str>,
+) -> Result<Seated> {
     let code = normalize(code).ok_or_else(|| Error(NOT_VALID.into()))?;
     check_name(name)?;
     let Some((house_id, file)) = find(root, &code)? else {
@@ -556,6 +629,14 @@ fn redeem_locked(root: &Root, key: &PublicKey, code: &str, name: &str) -> Result
     if now() > inv.expires {
         fs::remove_file(&file)?;
         bail!("this invitation has expired; ask the host for a new one / 邀请已过期，请向老板要一个新的");
+    }
+    // The invitation decides whether this seat is an AI's; the AI may name
+    // its agent when the host did not.
+    if agent.is_some() && inv.kind != Kind::Ai {
+        bail!("this invitation is for a person, not an AI / 这个邀请是给人的，不是给 AI 的");
+    }
+    if let Some(a) = agent {
+        check_name(a)?;
     }
     if inv.role == Role::Host {
         return found(root, &house_id, &file, &inv, key, name);
@@ -576,13 +657,18 @@ fn redeem_locked(root: &Root, key: &PublicKey, code: &str, name: &str) -> Result
             bail!("the teahouse already has a steward / 茶馆已经有伙计了");
         }
         let taken: Vec<&str> = members.members.iter().map(|m| m.id.as_str()).collect();
-        let id = new_member_id(name, &taken);
+        let id = new_member_id(name, inv.kind, &taken);
         let mut next: Members = members.clone();
         next.members.push(Member {
             id: id.clone(),
             name: name.trim().to_string(),
             role: inv.role,
             key: key.clone(),
+            kind: inv.kind,
+            agent: inv
+                .agent
+                .clone()
+                .or_else(|| agent.map(|a| a.trim().to_string())),
         });
         let toml = next.to_toml().map_err(|e| Error(e.to_string()))?;
         let host = members.host();
@@ -728,13 +814,24 @@ mod tests {
 
     #[test]
     fn member_ids() {
-        assert_eq!(new_member_id("王阿姨", &[]), "m1");
-        assert_eq!(new_member_id("王阿姨", &["m1", "m2"]), "m3");
-        assert_eq!(new_member_id("Wang Li", &[]), "wang-li");
-        assert_eq!(new_member_id("wang", &["wang"]), "wang2");
-        assert_eq!(new_member_id("小王 Wang", &["wang", "wang2"]), "wang3");
-        assert_eq!(new_member_id("---", &[]), "m1");
-        assert!(valid_member_id(&new_member_id(&"x".repeat(80), &[])));
+        let h = Kind::Human;
+        assert_eq!(new_member_id("王阿姨", h, &[]), "m1");
+        assert_eq!(new_member_id("王阿姨", h, &["m1", "m2"]), "m3");
+        assert_eq!(new_member_id("Wang Li", h, &[]), "wang-li");
+        assert_eq!(new_member_id("wang", h, &["wang"]), "wang2");
+        assert_eq!(new_member_id("小王 Wang", h, &["wang", "wang2"]), "wang3");
+        assert_eq!(new_member_id("---", h, &[]), "m1");
+        assert!(valid_member_id(&new_member_id(&"x".repeat(80), h, &[])));
+        // AI members: always `ai-`; people: never.
+        let a = Kind::Ai;
+        assert_eq!(new_member_id("2 号", a, &[]), "ai-2");
+        assert_eq!(new_member_id("2 号", a, &["ai-2"]), "ai-2-2");
+        assert_eq!(new_member_id("评审方", a, &[]), "ai-1");
+        assert_eq!(new_member_id("评审方", a, &["ai-1"]), "ai-2");
+        assert_eq!(new_member_id("Claude", a, &[]), "ai-claude");
+        assert_eq!(new_member_id("AI Wang", h, &[]), "h-ai-wang");
+        assert_eq!(new_member_id("ai", h, &[]), "h-ai");
+        assert!(valid_member_id(&new_member_id(&"x".repeat(80), a, &[])));
     }
 
     #[test]
@@ -748,6 +845,8 @@ mod tests {
             by: "chenli".into(),
             house_name: Some("梧桐里 = 三号院".into()),
             signboard: None,
+            kind: Kind::Ai,
+            agent: Some("Claude Code".into()),
         };
         assert_eq!(Invite::parse(&inv.render()), Some(inv));
     }

@@ -22,6 +22,7 @@ pub mod format;
 pub mod git;
 pub mod house;
 pub mod identity;
+pub mod mcp;
 pub mod model;
 pub mod remote;
 #[cfg(not(target_os = "android"))]
@@ -39,6 +40,17 @@ use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use teahouse_core::PublicKey;
 use write::{ChangeArg, SectionArg, WorkKindArg, Writer};
+
+/// `invite`'s options (CLIENT-API.md §4; `kind`/`agent`: docs/MCP.md §2).
+#[derive(Debug, Default, Deserialize)]
+pub struct InviteOptions {
+    pub role: Option<String>,
+    pub name: Option<String>,
+    pub days: Option<u64>,
+    /// `"ai"` for an AI's seat (always a guest).
+    pub kind: Option<String>,
+    pub agent: Option<String>,
+}
 
 pub struct Client {
     root: PathBuf,
@@ -191,13 +203,20 @@ impl Client {
 
     /// The host creates an invitation; returns the whole invitation to pass
     /// on, `TH-XXXX-XXXX-XXXX-XXXX@<relay>`.
-    pub fn invite(
-        &self,
-        house: &str,
-        role: Option<&str>,
-        name: Option<&str>,
-        days: Option<u64>,
-    ) -> Result<String> {
+    pub fn invite(&self, house: &str, opts: &InviteOptions) -> Result<String> {
+        let InviteOptions {
+            role,
+            name,
+            days,
+            kind,
+            agent,
+        } = opts;
+        let (role, name, kind, agent) = (
+            role.as_deref(),
+            name.as_deref(),
+            kind.as_deref(),
+            agent.as_deref(),
+        );
         let snap = self.snapshot(house)?;
         if snap.me.as_ref().map(|m| m.role) != Some(teahouse_core::Role::Host) {
             return Err(
@@ -216,6 +235,13 @@ impl Client {
         if let Some(d) = days {
             cmd.push_str(&format!(" --days {d}"));
         }
+        // 法第 17 条: an AI's seat (a guest), and which AI.
+        if let Some(k) = kind {
+            cmd.push_str(&format!(" --kind {}", remote::quote(k)));
+        }
+        if let Some(a) = agent.filter(|a| !a.trim().is_empty()) {
+            cmd.push_str(&format!(" --agent {}", remote::quote(a.trim())));
+        }
         let code = remote::exec_text(&endpoint, &self.identity()?, &self.known_hosts(), &cmd)?;
         Ok(format!("{}@{}", code.trim(), endpoint.address()))
     }
@@ -228,6 +254,7 @@ impl Client {
         relay: Option<&str>,
         code: &str,
         name: &str,
+        agent: Option<&str>,
     ) -> Result<model::HouseSummary> {
         if name.trim().is_empty() {
             return Err(Error::invalid("your name, please / 请写上你的名字").with("field", "name"));
@@ -246,16 +273,17 @@ impl Client {
             })?;
         let endpoint = remote::Endpoint::parse(relay)?;
         let identity = self.identity()?;
-        let out = remote::exec_text(
-            &endpoint,
-            &identity,
-            &self.known_hosts(),
-            &format!(
+        let out = remote::exec_text(&endpoint, &identity, &self.known_hosts(), &{
+            let mut cmd = format!(
                 "redeem {} --name {}",
                 remote::quote(code_part),
                 remote::quote(name.trim())
-            ),
-        )?;
+            );
+            if let Some(a) = agent.filter(|a| !a.trim().is_empty()) {
+                cmd.push_str(&format!(" --agent {}", remote::quote(a.trim())));
+            }
+            cmd
+        })?;
         let house = out
             .lines()
             .find_map(|l| l.strip_prefix("house "))
@@ -585,12 +613,11 @@ impl Client {
                 #[derive(Deserialize)]
                 struct InviteArg {
                     house: String,
-                    role: Option<String>,
-                    name: Option<String>,
-                    days: Option<u64>,
+                    #[serde(flatten)]
+                    opts: InviteOptions,
                 }
                 let a: InviteArg = parse(command, a)?;
-                to_value(self.invite(&a.house, a.role.as_deref(), a.name.as_deref(), a.days)?)
+                to_value(self.invite(&a.house, &a.opts)?)
             }
             "redeem" => {
                 #[derive(Deserialize)]
@@ -598,9 +625,10 @@ impl Client {
                     relay: Option<String>,
                     code: String,
                     name: String,
+                    agent: Option<String>,
                 }
                 let a: RedeemArg = parse(command, a)?;
-                to_value(self.redeem(a.relay.as_deref(), &a.code, &a.name)?)
+                to_value(self.redeem(a.relay.as_deref(), &a.code, &a.name, a.agent.as_deref())?)
             }
             "purgeBlob" => {
                 let p: IdArg = parse(command, a)?;

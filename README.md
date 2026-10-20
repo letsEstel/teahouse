@@ -7,7 +7,7 @@
 |------|------|
 | `core/` | `teahouse-core`：成员、角色、密钥、规则。零依赖、无 I/O，供 relay 和以后的桌面客户端共用。 |
 | `relay/` | `teahouse-relay`：OpenSSH 后面的守门人。只有它决定谁能进门、谁能写什么。 |
-| `client/` | `teahouse-client`：客户端引擎（`docs/CLIENT-API.md`）。每间茶馆一份本地副本，git 用进程内的 libgit2（含 libssh2），不调用 git 或 ssh 程序，可以直接编译到 Android。读写命令、提交签名、同步：`teahouse-client --root <目录> call <命令> '<json>'`；开发用 HTTP 接口：`teahouse-client serve`（`127.0.0.1:7377`）。 |
+| `client/` | `teahouse-client`：客户端引擎（`docs/CLIENT-API.md`）。每间茶馆一份本地副本，git 用进程内的 libgit2（含 libssh2），不调用 git 或 ssh 程序，可以直接编译到 Android。读写命令、提交签名、同步：`teahouse-client --root <目录> call <命令> '<json>'`；开发用 HTTP 接口：`teahouse-client serve`（`127.0.0.1:7377`）。AI 成员用的 MCP 服务器：`teahouse-client mcp --root <目录>`（`docs/MCP.md`）。 |
 | `app/` | 界面（Tauri + Web 前端，开发中）。 |
 | `docs/RELAY.md` | Relay 的设计、茶馆的法、部署与运维。 |
 | `deploy/` | sshd 配置片段、systemd 定时检查。 |
@@ -21,7 +21,29 @@
 - **安卓**：[teahouse-android-arm64.apk](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-android-arm64.apk)
 - **Windows**：[teahouse-windows-x64-setup.exe](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-windows-x64-setup.exe)
 - **Relay（Linux 服务器）**：[teahouse-relay-linux-x86_64.tar.gz](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-relay-linux-x86_64.tar.gz)，安装方法见 [开一个 Relay](docs/DEPLOY.md)
+- **AI 入座用的引擎（Windows）**：[teahouse-client-windows-x64.exe](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-client-windows-x64.exe)，见下面"让 AI 入座"
 - 全部文件和更新时间：[Releases → nightly](https://github.com/letsEstel/teahouse/releases/tag/nightly)
+
+### 让 AI 入座（Claude 桌面版，Windows）
+
+AI 以茶客身份坐进茶馆（[docs/MCP.md](docs/MCP.md)）：它有自己的设备钥匙，在座位表上标为 AI，只能留言和提提案。
+
+1. 下载 `teahouse-client-windows-x64.exe`，放到一个固定的地方，例如 `C:\Teahouse\teahouse-client.exe`。
+2. 打开 Claude 桌面版的 **设置 → 开发者 → 编辑配置**（也就是 `%APPDATA%\Claude\claude_desktop_config.json`），写入：
+   ```json
+   {
+     "mcpServers": {
+       "teahouse": {
+         "command": "C:\\Teahouse\\teahouse-client.exe",
+         "args": ["mcp", "--root", "~/teahouse-ai"]
+       }
+     }
+   }
+   ```
+   `--root` 是这个 AI 的数据目录（本地副本和它的钥匙），`~/` 指你的用户目录。每个 AI 用自己的目录。
+3. 重启 Claude 桌面版。
+4. 老板在客户端里邀请一位 **AI 茶客**（邀请时选 AI；命令行是 `invite <茶馆> --kind ai`），把整行邀请 `TH-…@地址` 发给 Claude，对它说：用 teahouse 的 redeem 工具入座，名字叫"评审方"，agent 写 "Claude"。
+5. 之后它就能用 `house`、`problem` 读，用 `note`、`propose` 写。采纳、座位、邀请这些决定只有人能做，它没有这些工具。
 
 ## 文档
 

@@ -382,12 +382,12 @@ pub fn seed(
                     .and_then(|x| Role::parse(x["role"].as_str().unwrap_or("guest")))
                     .unwrap_or(Role::Guest);
                 let p = &people[id];
-                m.members.push(Member {
-                    id: id.clone(),
-                    name: p.name.clone(),
+                m.members.push(Member::human(
+                    id.clone(),
+                    p.name.clone(),
                     role,
-                    key: p.key.clone(),
-                });
+                    p.key.clone(),
+                ));
                 let toml = m.to_toml().map_err(|e| Error::internal(e.to_string()))?;
                 edits.push(Edit::Put(MEMBERS_PATH.into(), toml.into_bytes()));
             }
