@@ -184,19 +184,37 @@ jobs:
       - name: Build APK
         run: npx tauri android build --apk --target aarch64 --ci
       - name: Sign APK
-        # A fresh key per run: the APK installs directly, but a newer build
-        # has to replace the old app (uninstall first). A fixed key needs a
-        # repository secret; see app/README.md.
+        # Always the project's fixed key (repository secrets
+        # ANDROID_KEYSTORE_B64 = base64 of the keystore, ANDROID_KEYSTORE_PASSWORD),
+        # the same key app/scripts/build-android.sh uses locally: every build,
+        # local or nightly, installs over the one already on a phone, so nobody
+        # has to uninstall (and lose the device's own key). No key is ever
+        # generated here: without the secrets the job fails, and the certificate
+        # is checked against the known fingerprint, so a wrong secret fails too.
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          # SHA-256 of the fixed key's certificate (apksigner verify --print-certs)
+          EXPECTED_CERT: 7b4848838eec36757c71729c215d40aac53f3cb8b6363ab74aae727f089e8294
         run: |
           BT="$ANDROID_HOME/build-tools/34.0.0"
           APK=$(find src-tauri/gen/android/app/build/outputs/apk -name '*-unsigned.apk' | head -n1)
           echo "unsigned: $APK"
-          keytool -genkeypair -keystore ci.jks -storepass teahouse -keypass teahouse -alias teahouse \
-            -keyalg RSA -keysize 2048 -validity 3650 -dname "CN=Teahouse CI" -noprompt
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::secrets ANDROID_KEYSTORE_B64 / ANDROID_KEYSTORE_PASSWORD are missing; an APK signed with any other key cannot replace the installed app"
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_B64" | base64 -d > ci.jks
           "$BT/zipalign" -f -p 4 "$APK" aligned.apk
-          "$BT/apksigner" sign --ks ci.jks --ks-pass pass:teahouse --key-pass pass:teahouse \
+          "$BT/apksigner" sign --ks ci.jks --ks-pass "pass:$KEYSTORE_PASSWORD" --key-pass "pass:$KEYSTORE_PASSWORD" \
             --out teahouse-arm64.apk aligned.apk
+          rm -f ci.jks
           "$BT/apksigner" verify teahouse-arm64.apk
+          CERT=$("$BT/apksigner" verify --print-certs teahouse-arm64.apk | sed -n 's/.*certificate SHA-256 digest: //p' | head -n1)
+          echo "certificate SHA-256: $CERT"
+          if [ "$CERT" != "$EXPECTED_CERT" ]; then
+            echo "::error::signed with the wrong key (got $CERT, expected $EXPECTED_CERT)"; exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: teahouse-android
