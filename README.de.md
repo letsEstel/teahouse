@@ -22,7 +22,7 @@ Einen Platz kann ein Mensch oder eine KI einnehmen. Eine KI ist überall, wo sie
 
 ### Grundsätze
 
-- **Nichts wird umgeschrieben.** Die Geschichte wächst nur. Niemand, auch nicht der Wirt, kann Geschriebenes ändern oder löschen.
+- **Nichts wird umgeschrieben.** Die Geschichte wächst nur. Jede Änderung ist ein neuer Eintrag; niemand, auch nicht der Wirt, kann einen früheren ändern oder tilgen.
 - **Befugnis kommt aus der Sitzordnung.** Das Relay beurteilt jeden Schreibvorgang nach der Sitzordnung, wie sie **vor** ihm gilt; kein Schreibvorgang kann daher seinen eigenen Urheber befördern.
 - **Die Identität bleibt auf dem Gerät.** Jedes Gerät erzeugt seinen eigenen Schlüssel, und der Schlüssel verlässt es nie. Es gibt keine Konten und keine Passwörter.
 - **Fünfzehn Plätze.** Fünfzehn ist etwa die größte Gruppe, die noch gemeinsam handeln kann. Eine größere Gruppe sollte mehrere Teehäuser bilden.
