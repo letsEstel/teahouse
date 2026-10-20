@@ -19,7 +19,7 @@
    tar xzf teahouse-relay-linux-x86_64.tar.gz && cd teahouse-relay
    sh deploy/install.sh --binary ./teahouse-relay
    ```
-3. 脚本最后会打印 Relay 的地址，例如 `teahouse@203.0.113.7`。
+3. 脚本最后会打印 Relay 的地址，例如 `teahouse@203.0.113.7`；加了 `--found` 时还会打印开张邀请（见下一节）。
 
 脚本做的事：装好 OpenSSH 和 git；把 Relay 装到 `/usr/lib/teahouse`（一路都只有 root 可写，sshd 要求如此），并在 `/usr/local/bin` 放一个链接；建一个没有特权的系统用户 `teahouse`；初始化 `/var/lib/teahouse`；配好 sshd（只影响 `teahouse` 这一个用户）；开启每日完整性检查。**重复运行是安全的**，升级时换上新的 `teahouse-relay` 再跑一遍即可。
 
@@ -34,14 +34,32 @@ docker run -d --name teahouse -p 22:22 -v teahouse:/var/lib/teahouse --restart u
 
 ## 开第一间茶馆
 
-**现在的做法**：需要老板设备的公钥（客户端第一次运行时自动生成，存在应用数据目录的 `teahouse/device.pub`）。
+**用开张邀请（推荐）**：安装时多给两个选项，脚本最后打印一行完整邀请：
+```sh
+sh deploy/install.sh --binary ./teahouse-relay --found wutong --name "梧桐里三号院"
+```
+```
+开张邀请 · Founding invitation（一次性，7 天内有效）
+    TH-7KQ2-M9XF-3RDP-WC5L@203.0.113.7
+```
+把这一整行发给要当老板的人（微信、邮件都行）。他在客户端里点"凭邀请入座"，粘贴这一行，写上自己的名字，这间茶馆就开张了，他就是老板。**谁都不用碰公钥**：客户端自己生成设备钥匙，兑换时交给 Relay。
+
+- `wutong` 是茶馆的编号（小写字母、数字和 `-`），出现在地址里；`--name` 是给人看的名字，可以是中文。可选 `--signboard "一句话招牌"`。
+- 邀请里的地址默认是这台服务器的第一个 IP。有域名，或者服务器在 NAT 后面时，加 `--address relay.example.org`（端口不是 22 时写成 `relay.example.org:2222`）。
+- 邀请只能用一次，7 天内有效。过期或者发错了人，再生成一个就行（见下）；只要还没人兑换，茶馆就不存在。
+- 已经装好的 Relay，随时可以再开一间：
+  ```sh
+  sudo -u teahouse teahouse-relay --root /var/lib/teahouse found wutong --name "梧桐里三号院" --address 203.0.113.7
+  ```
+  Docker 下：`docker exec -u teahouse teahouse teahouse-relay found wutong --name "梧桐里三号院" --address 203.0.113.7:2222`
+- 兑换走的是 sshd 的 AuthorizedKeysCommand（安装脚本和 Docker 都是这样配的）。手动配置成 authorized_keys 文件的 Relay 不认识陌生钥匙，没法兑换邀请。
+
+**已经有老板的公钥时**，也可以直接开张：
 ```sh
 sh deploy/install.sh --binary ./teahouse-relay \
   --open wutong --name "梧桐里三号院" --host-name "陈立" --host-key @device.pub
 ```
-Docker 下：`docker exec -u teahouse teahouse teahouse-relay open wutong --name … --host-id chenli --host-name 陈立 --host-key "ssh-ed25519 AAAA…"`
-
-**即将改成**：安装脚本直接打印一个"开张邀请"，老板在客户端里粘贴，就成了这间茶馆的老板，不用碰公钥。（`teahouse-relay found`，开发中。）
+（`device.pub` 是客户端应用数据目录里的 `teahouse/device.pub`。）Docker 下：`docker exec -u teahouse teahouse teahouse-relay open wutong --name … --host-id chenli --host-name 陈立 --host-key "ssh-ed25519 AAAA…"`
 
 之后的成员都靠老板在客户端里点"邀请人入座"。
 

@@ -1949,3 +1949,123 @@ fn commands_are_parsed_without_a_shell() {
     let o = w.command(&key_for(1), "shell", "bash", b"");
     assert!(s(&o).contains("only git"), "{}", s(&o));
 }
+
+#[test]
+fn a_founding_invitation_opens_a_teahouse_for_whoever_redeems_it() {
+    let w = World::new();
+    // The operator: no keys involved.
+    let code = w.relay_ok(&[
+        "found",
+        "lanes",
+        "--name",
+        "胡同读书会",
+        "--signboard",
+        "每月一本",
+        "--address",
+        "relay.example.org",
+    ]);
+    let code = code.trim();
+    assert!(
+        code.starts_with("TH-") && code.ends_with("@relay.example.org"),
+        "{code}"
+    );
+    assert!(
+        !w.root.join("houses/lanes.git").exists(),
+        "nothing exists before it is redeemed"
+    );
+    // Not for a teahouse that exists, nor with a bad name.
+    let _ = w.wutong();
+    let o = w.relay(&["found", "wutong", "--name", "x"]);
+    assert!(
+        !o.status.success() && s(&o).contains("already exists"),
+        "{}",
+        s(&o)
+    );
+    let o = w.relay(&["found", "Bad_Id", "--name", "x"]);
+    assert!(!o.status.success());
+    let o = w.relay(&["found", "x2", "--name", &"长".repeat(65)]);
+    assert!(!o.status.success(), "{}", s(&o));
+
+    // A key with no seat anywhere redeems it and becomes the host.
+    let k = key_for(40);
+    let o = w.redeem(&k, code, "Su Lin");
+    assert!(o.status.success(), "{}", s(&o));
+    assert_eq!(
+        String::from_utf8_lossy(&o.stdout),
+        "house lanes\nmember su-lin\n"
+    );
+    let out = w.relay_ok(&["members", "lanes"]);
+    assert!(out.contains("host") && out.contains("su-lin"), "{out}");
+    let msg = Command::new("git")
+        .arg("--git-dir")
+        .arg(w.root.join("houses/lanes.git"))
+        .args(["log", "-1", "--format=%B"])
+        .output()
+        .unwrap();
+    let msg = String::from_utf8_lossy(&msg.stdout);
+    assert!(
+        msg.contains("开张：胡同读书会") && msg.contains(&format!("Invite: {}", &code[3..7])),
+        "{msg}"
+    );
+
+    // Spent: the same code cannot open it again, for anyone.
+    let o = w.redeem(&key_for(41), code, "别人");
+    assert!(
+        !o.status.success() && s(&o).contains("not valid"),
+        "{}",
+        s(&o)
+    );
+
+    // The new host works like any host: pushes signed work, invites people.
+    w.person("su-lin", 40);
+    let c = w.clone("su-lin", "lanes");
+    w.write(
+        &c,
+        "problems/0001-第一本书.md",
+        "---\ntitle: 第一本书\n---\n",
+    );
+    w.commit(&c, "第一本书\n\nProblem: 0001");
+    w.push_ok(&c, &["main"]);
+    let inv = w.command_ok(&k, "invite lanes --name 'Zhang'");
+    let o = w.redeem(&key_for(42), &inv, "Zhang");
+    assert!(o.status.success(), "{}", s(&o));
+    assert!(w.audit().contains("\"event\":\"house.opened\""));
+}
+
+#[test]
+fn founding_invitations_expire_and_cannot_be_raced() {
+    let w = World::new();
+    let old = w.relay_ok(&["found", "old", "--name", "旧"]);
+    for e in fs::read_dir(w.root.join("invites/old")).unwrap() {
+        let p = e.unwrap().path();
+        let t: String = fs::read_to_string(&p)
+            .unwrap()
+            .lines()
+            .map(|l| {
+                if l.starts_with("expires") {
+                    "expires = 1".to_string()
+                } else {
+                    l.to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        fs::write(&p, t + "\n").unwrap();
+    }
+    let o = w.redeem(&key_for(43), old.trim(), "x");
+    assert!(s(&o).contains("expired"), "{}", s(&o));
+    assert!(!w.root.join("houses/old.git").exists());
+
+    // Two founding invitations for the same teahouse, redeemed at once:
+    // exactly one opens it.
+    let a = w.relay_ok(&["found", "race", "--name", "抢"]);
+    let b = w.relay_ok(&["found", "race", "--name", "抢"]);
+    let results: Vec<bool> = std::thread::scope(|scope| {
+        let ha = scope.spawn(|| w.redeem(&key_for(44), a.trim(), "A").status.success());
+        let hb = scope.spawn(|| w.redeem(&key_for(45), b.trim(), "B").status.success());
+        vec![ha.join().unwrap(), hb.join().unwrap()]
+    });
+    assert_eq!(results.iter().filter(|r| **r).count(), 1, "{results:?}");
+    let out = w.relay_ok(&["members", "race"]);
+    assert_eq!(out.matches("host").count(), 1, "{out}");
+}

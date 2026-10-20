@@ -181,6 +181,15 @@ are words; single quotes quote (`--name '王阿姨'`); nothing is expanded.
 | `uninvite <id> <first four>` | host | revokes it |
 | `redeem <code> --name N` | anyone, incl. a key with no seat | seats the key; prints `house <id>` and `member <id>` |
 
+**Founding invitations** open a teahouse instead of seating someone in one.
+The operator runs `teahouse-relay found <id> --name N [--signboard S]
+[--days D] [--address HOST[:PORT]]` (as the relay's user; `install.sh
+--found` does it) and passes on the printed `TH-…@address`. Redeeming it
+creates teahouse `<id>` exactly as `open` would, with the redeemer's key and
+name as the host (the opening commit carries `Invite:`); until then nothing
+exists. It fails if the teahouse exists by then, and of two founding
+invitations for one id only the first redeemed counts.
+
 **A key with no seat anywhere** gets, from `AuthorizedKeysCommand`, a line
 forcing `teahouse-relay redeem-shell <key>`: the same entry, which accepts
 `redeem` and nothing else (INVITE.md rule 6). With the authorized_keys-file

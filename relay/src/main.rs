@@ -37,6 +37,9 @@ OPERATOR COMMANDS:
                          create or repair the relay directory and hooks
     open <id> --name NAME --host-id ID --host-name NAME --host-key KEY|@FILE [--signboard TEXT]
                          open a new teahouse with its host (老板)
+    found <id> --name NAME [--signboard TEXT] [--days 1-30] [--address HOST[:PORT]]
+                         a one-time invitation that opens teahouse <id> with
+                         whoever redeems it as host (prints TH-…[@address])
     adopt <id> --from DIR --key KEY|@FILE [--rev REV]
                          继承: re-open a teahouse from the steward's copy
     list                 list teahouses
@@ -149,6 +152,27 @@ fn run() -> Result<()> {
                     host_key: &host_key,
                 },
             )
+        }
+        "found" => {
+            let id = args.positional("teahouse id")?;
+            let name = args.need_flag("--name")?;
+            let signboard = args.take_flag("--signboard")?;
+            let days = args.take_flag("--days")?;
+            let address = args.take_flag("--address")?;
+            args.finish()?;
+            let days = match days {
+                None => None,
+                Some(d) => Some(
+                    d.parse()
+                        .map_err(|_| Error(format!("--days {d:?} is not a number")))?,
+                ),
+            };
+            let code = invites::create_founding(&root, &id, &name, signboard.as_deref(), days)?;
+            match address {
+                Some(a) => println!("{code}@{a}"),
+                None => println!("{code}"),
+            }
+            Ok(())
         }
         "adopt" => {
             let id = args.positional("new teahouse id")?;

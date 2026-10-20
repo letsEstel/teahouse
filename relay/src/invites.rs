@@ -1,6 +1,9 @@
 //! Invitations (docs/INVITE.md): the host creates a one-time code; whoever
 //! redeems it gets a seat, written by the relay on the host's behalf.
 //!
+//! * A **founding** invitation (`teahouse-relay found`, role host) names a
+//!   teahouse that does not exist yet; redeeming it opens that teahouse
+//!   with the redeemer as its host, so nobody has to handle a public key.
 //! * Codes are 80 random bits in Crockford Base32, shown as
 //!   `TH-XXXX-XXXX-XXXX-XXXX`. Only their SHA-256 is stored, in
 //!   `<root>/invites/<house>/<hash>.inv`; the code itself is printed once.
@@ -99,6 +102,9 @@ pub struct Invite {
     pub created: i64,
     pub expires: i64,
     pub by: String,
+    /// Founding invitations: the teahouse's name and signboard.
+    pub house_name: Option<String>,
+    pub signboard: Option<String>,
 }
 
 impl Invite {
@@ -107,8 +113,14 @@ impl Invite {
             "prefix = {}\nrole = {}\ncreated = {}\nexpires = {}\nby = {}\n",
             self.prefix, self.role, self.created, self.expires, self.by
         );
-        if let Some(n) = &self.name {
-            s.push_str(&format!("name = {}\n", n.replace('\n', " ")));
+        for (k, v) in [
+            ("name", &self.name),
+            ("house_name", &self.house_name),
+            ("signboard", &self.signboard),
+        ] {
+            if let Some(v) = v {
+                s.push_str(&format!("{k} = {}\n", v.replace('\n', " ")));
+            }
         }
         s
     }
@@ -122,6 +134,8 @@ impl Invite {
             created: m.get("created")?.parse().ok()?,
             expires: m.get("expires")?.parse().ok()?,
             by: m.get("by")?.to_string(),
+            house_name: m.get("house_name").map(|s| s.to_string()),
+            signboard: m.get("signboard").map(|s| s.to_string()),
         })
     }
 }
@@ -203,6 +217,8 @@ pub fn create(
         created: t,
         expires: t + days as i64 * 86_400,
         by: host.id.clone(),
+        house_name: None,
+        signboard: None,
     };
     crate::root::write_atomic(
         &dir.join(format!("{}.inv", code_hash(&code))),
@@ -216,6 +232,72 @@ pub fn create(
             .member(&host.id)
             .field("invite", inv.prefix.clone())
             .field("role", role.as_str())
+            .field("days", days.to_string()),
+    );
+    Ok(display(&code))
+}
+
+/// An operator's founding invitation: whoever redeems it opens teahouse
+/// `house` as its host. Returns the code, shown only once.
+pub fn create_founding(
+    root: &Root,
+    house: &str,
+    name: &str,
+    signboard: Option<&str>,
+    days: Option<u64>,
+) -> Result<String> {
+    if !crate::root::valid_house_id(house) {
+        bail!("teahouse id {house:?} must be lowercase letters, digits and '-' (max 63)");
+    }
+    if root.house(house).is_ok() {
+        bail!("teahouse {house:?} already exists / 茶馆 {house} 已经开张了");
+    }
+    let days = days.unwrap_or(DEFAULT_DAYS);
+    if !(1..=MAX_DAYS).contains(&days) {
+        bail!("an invitation lasts 1 to {MAX_DAYS} days / 有效期是 1 到 {MAX_DAYS} 天");
+    }
+    // The chart it will open with must be valid; check the name and
+    // signboard now rather than at redemption.
+    Members {
+        name: name.to_string(),
+        signboard: signboard.map(str::to_string),
+        members: Vec::new(),
+    }
+    .validate()
+    .or_else(|e| {
+        if e.0.contains("at least one member") {
+            Ok(())
+        } else {
+            Err(Error(e.to_string()))
+        }
+    })?;
+    root.load_config()?;
+    let _lock = Lock::take(root)?;
+    let dir = root.invites_dir(house);
+    fs::create_dir_all(&dir)?;
+    let code = random_code()?;
+    let t = now();
+    let inv = Invite {
+        prefix: code[..4].to_string(),
+        role: Role::Host,
+        name: None,
+        created: t,
+        expires: t + days as i64 * 86_400,
+        by: "operator".into(),
+        house_name: Some(name.to_string()),
+        signboard: signboard.map(str::to_string),
+    };
+    crate::root::write_atomic(
+        &dir.join(format!("{}.inv", code_hash(&code))),
+        inv.render().as_bytes(),
+        0o600,
+    )?;
+    audit::log(
+        root,
+        Entry::new("invite.created")
+            .house(house)
+            .field("invite", inv.prefix.clone())
+            .field("role", "host")
             .field("days", days.to_string()),
     );
     Ok(display(&code))
@@ -399,13 +481,66 @@ const NOT_VALID: &str = "this invitation is not valid (mistyped, revoked or alre
 /// Finds the stored invitation for a code: `(house, file)`.
 fn find(root: &Root, code: &str) -> Result<Option<(String, PathBuf)>> {
     let hash = code_hash(code);
-    for house in root.house_ids()? {
-        let p = root.invites_dir(&house).join(format!("{hash}.inv"));
+    // Not only existing teahouses: a founding invitation names one to come.
+    let Ok(rd) = fs::read_dir(root.dir.join("invites")) else {
+        return Ok(None);
+    };
+    for e in rd.filter_map(|e| e.ok()) {
+        let house = e.file_name().to_string_lossy().into_owned();
+        if !crate::root::valid_house_id(&house) {
+            continue;
+        }
+        let p = e.path().join(format!("{hash}.inv"));
         if p.is_file() {
             return Ok(Some((house, p)));
         }
     }
     Ok(None)
+}
+
+/// Opens the teahouse a founding invitation names, with `key` as its host.
+fn found(
+    root: &Root,
+    house_id: &str,
+    file: &std::path::Path,
+    inv: &Invite,
+    key: &PublicKey,
+    name: &str,
+) -> Result<Seated> {
+    if root.house(house_id).is_ok() {
+        fs::remove_file(file)?;
+        bail!("teahouse {house_id} is already open; this invitation is spent / 茶馆已经开张，这个邀请已失效");
+    }
+    let id = new_member_id(name, &[]);
+    let house_name = inv
+        .house_name
+        .clone()
+        .unwrap_or_else(|| house_id.to_string());
+    crate::admin::create_house(
+        root,
+        &crate::admin::NewHouse {
+            id: house_id,
+            name: &house_name,
+            signboard: inv.signboard.as_deref(),
+            host_id: &id,
+            host_name: name.trim(),
+            host_key: "",
+        },
+        key,
+        Some(&inv.prefix),
+    )?;
+    fs::remove_file(file)?;
+    if let Ok(cfg) = root.load_config() {
+        if let Some(path) = cfg.authorized_keys {
+            if let Err(e) = crate::admin::sync_keys(root, &cfg.binary, &path) {
+                eprintln!("teahouse-relay: warning: could not refresh {path}: {e}");
+            }
+        }
+    }
+    Ok(Seated {
+        house: house_id.to_string(),
+        member: id,
+    })
 }
 
 fn redeem_locked(root: &Root, key: &PublicKey, code: &str, name: &str) -> Result<Seated> {
@@ -421,6 +556,9 @@ fn redeem_locked(root: &Root, key: &PublicKey, code: &str, name: &str) -> Result
     if now() > inv.expires {
         fs::remove_file(&file)?;
         bail!("this invitation has expired; ask the host for a new one / 邀请已过期，请向老板要一个新的");
+    }
+    if inv.role == Role::Host {
+        return found(root, &house_id, &file, &inv, key, name);
     }
     let house = root.house(&house_id)?;
     for _attempt in 0..5 {
@@ -608,6 +746,8 @@ mod tests {
             created: 1,
             expires: 2,
             by: "chenli".into(),
+            house_name: Some("梧桐里 = 三号院".into()),
+            signboard: None,
         };
         assert_eq!(Invite::parse(&inv.render()), Some(inv));
     }

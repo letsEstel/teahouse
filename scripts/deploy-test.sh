@@ -25,9 +25,13 @@ case "$mode" in
   install)
     bin="${2:?path to teahouse-relay}"
     [ "$(id -u)" -eq 0 ] || { echo "run as root"; exit 2; }
-    sh "$here/deploy/install.sh" --binary "$bin" --open smoke --name "冒烟测试" --host-name "Tester" --host-key "@$work/host.pub"
+    # The first teahouse by founding invitation, printed by the installer.
+    sh "$here/deploy/install.sh" --binary "$bin" --found smoke --name "冒烟测试" --address 127.0.0.1 | tee "$work/install.log"
+    invite=$(grep -o 'TH-[0-9A-Z-]*@[^ ]*' "$work/install.log" | tail -n 1)
     echo "▌ second run (idempotent, upgrade path)"
-    sh "$here/deploy/install.sh" --binary "$bin" --open smoke --name "冒烟测试" --host-name "Tester" --host-key "@$work/host.pub" >/dev/null
+    sh "$here/deploy/install.sh" --binary "$bin" --found smoke --name "冒烟测试" --address 127.0.0.1 >"$work/install2.log"
+    # …and the other way: a teahouse opened for a public key.
+    sh "$here/deploy/install.sh" --binary "$bin" --open other --name "另一间" --host-name "Tester" --host-key "@$work/host.pub" >/dev/null
     port=22 ;;
   docker)
     docker build -q -f "$here/deploy/docker/Dockerfile" -t teahouse-relay:test "$here" >/dev/null
@@ -35,7 +39,7 @@ case "$mode" in
     docker run -d --name th-smoke -p 127.0.0.1:2222:22 -v th-smoke:/var/lib/teahouse teahouse-relay:test >/dev/null
     trap 'docker rm -f th-smoke >/dev/null 2>&1; docker volume rm th-smoke >/dev/null 2>&1; rm -rf "$work"' EXIT
     for _ in $(seq 30); do docker logs th-smoke 2>&1 | grep -q "relay ready" && break; sleep 1; done
-    docker exec -u teahouse th-smoke teahouse-relay open smoke --name "冒烟测试" --host-id tester --host-name Tester --host-key "$(cat "$work/host.pub")"
+    invite=$(docker exec -u teahouse th-smoke teahouse-relay found smoke --name "冒烟测试" --address 127.0.0.1:2222)
     port=2222 ;;
   *) echo "unknown mode $mode"; exit 2 ;;
 esac
@@ -43,6 +47,15 @@ esac
 export GIT_SSH_COMMAND="ssh -p $port -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=$work/known_hosts -o IdentitiesOnly=yes -i $work/host"
 stranger="ssh -p $port -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=$work/known_hosts -o IdentitiesOnly=yes -i $work/stranger"
 echo "▌ member checks on 127.0.0.1:$port"
+check "the installer printed a founding invitation" bash -c "[[ '$invite' == TH-*@127.0.0.1* ]]"
+if [ "$mode" = install ]; then
+  check "a second install run leaves the teahouse alone" grep -q "smoke already open" "$work/install2.log"
+fi
+# The future host's key has no seat anywhere: it reaches redeem-shell, and
+# the founding invitation opens the teahouse with it as host.
+code="${invite%%@*}"
+check "the host redeems the founding invitation" bash -c "$GIT_SSH_COMMAND -T teahouse@127.0.0.1 redeem '$code' --name Tester | grep -q 'house smoke'"
+refused "the founding invitation works once" bash -c "$stranger -T teahouse@127.0.0.1 redeem '$code' --name X"
 check "host sees their teahouse (ssh -T)" bash -c "$GIT_SSH_COMMAND -T teahouse@127.0.0.1 | grep -q smoke"
 check "host clones" git clone -q teahouse@127.0.0.1:smoke "$work/clone"
 cd "$work/clone" || { echo "▌ $pass passed, $((fail+1)) failed (no clone)"; exit 1; }
