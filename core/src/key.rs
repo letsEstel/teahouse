@@ -84,6 +84,18 @@ impl PublicKey {
     }
 
     /// A short, human-friendly tag for logs (not a security fingerprint).
+    /// `SHA256:…`, the fingerprint `ssh-keygen -l` shows, so people can
+    /// match a device to a key.
+    pub fn fingerprint(&self) -> String {
+        let blob = base64_decode(&self.blob_b64).expect("checked when parsed");
+        let mut h = crate::sha256::Sha256::new();
+        h.update(&blob);
+        format!(
+            "SHA256:{}",
+            base64_encode(&h.finish()).trim_end_matches('=')
+        )
+    }
+
     pub fn short(&self) -> String {
         let b = &self.blob_b64;
         let tail = &b[b.len().saturating_sub(12)..];
@@ -218,6 +230,19 @@ mod tests {
         ] {
             assert!(PublicKey::parse(bad).is_err(), "should reject {bad:?}");
         }
+    }
+
+    #[test]
+    fn fingerprints_match_ssh_keygen() {
+        // `ssh-keygen -lf` on this key prints this fingerprint.
+        let k = PublicKey::parse(
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfuK3HWkepYG1OEi7+/ypogbHij+Gv254LO8Dn+RUhI x",
+        )
+        .unwrap();
+        assert_eq!(
+            k.fingerprint(),
+            "SHA256:lx++ohV9/CHGh8+UuFCkhf2AfD+Idhh+D2W/lmuw2N8"
+        );
     }
 
     #[test]

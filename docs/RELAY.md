@@ -83,11 +83,13 @@ A new teahouse is prepared under `tmp/` and moved into `houses/` with one
 | 10 | Paths that would turn into `.teahouse/` on Windows or macOS checkouts (`.TeaHouse/`, `.teahouse./`, `TEAHOU~1`) are refused. | all |
 | 11 | At most 64 ref updates and 5 000 new commits per push; pack size ≤ 200 MiB; objects are fsck-checked on receive. | all |
 | 12 | Posts and notices (`talk/`, `board/`) are regular UTF-8 text files of at most 32 KiB, without control characters except tab and line breaks. A post's stamp is a real UTC time no more than 10 minutes ahead of the relay's clock; posts are shown in the order they entered `main`, never by stamp. | all |
-| 13 | Every pushed commit is signed (git ssh signature) by the device key of its author `<member-id>@teahouse`, and that key appears in a version of this teahouse's `members.toml` on `main`. Who may push is still decided by the current chart. Commits the relay writes itself (opening, succession, redeemed invitations) do not arrive by push; they are signed with the relay's own key and carry committer `Teahouse Relay`. | all |
+| 13 | Every commit a push brings to the relay is signed (git ssh signature) by a device key of its author `<member-id>@teahouse` that is on the seating chart **at the time of the push** (any of the member's devices, law 18). Commits the relay already holds (e.g. a proposal being adopted) and history are not checked again. Who may push is still decided by the current chart. Commits the relay writes itself (opening, succession, redeemed invitations) do not arrive by push; they are signed with the relay's own key and carry committer `Teahouse Relay`. | all |
 | 14 | On `main`, each problem number has at most one `problems/<id>-*.md`. (Proposals may collide; the host's engine renumbers on adoption.) | all |
 | 15 | Attachments live outside git: every `*.ref.md` is well-formed (`blob: sha256:…`, `size` ≤ 100 MiB, `type`), and unless marked `purged`, its blob is already in the attachment store with that size. Binary files over 1 MiB are refused in git. | all |
 | 16 | Invitations (`docs/INVITE.md` §2): only the host creates them; one-time, 1–30 days, stored hashed; redeeming needs a free seat (≤ 15), a free steward seat if the invitation is for a steward, and a key not yet in the house; rate-limited and audited. The relay writes the seat commit (author: the host). | host / anyone with a code |
 | 17 | `kind = "ai"` marks a member as an AI; it is a label, not a rank. Any role may be held by an AI — the founder decides whom to seat. `agent` may appear only on AI members. | all |
+| 18 | A member may have several devices: `key` plus the `[[device]]` tables naming them (`member`, optional `name`, `key`; `version = 2`), **at most 5** in all. Each `[[device]]` names an existing member; every key in the chart is unique; ed25519 only. A commit signed by any of them is that member's (law 13). (docs/DEVICES.md) | all |
+| 19 | Devices change by the host's own chart edits (law 8), or by the member: a pairing code made on one of their devices adds a device to their seat in every teahouse of the relay where that device sits; from any of their devices they may remove another of their devices. The relay writes these commits (author: the member; committer `Teahouse Relay`, signed with the relay's key; `Act: seat`, `Device: add\|remove …`) and checks them like a push. Never the device in use, never the last one. | member / anyone with a code |
 
 Laws 6–9 and 12 apply to every commit a push would add to `main` — including commits
 that came from someone else's proposal. A steward therefore cannot land a
@@ -152,10 +154,13 @@ until it is settled, this section describes them.
 
 * **Every pushed commit is signed by the member it names.** The author must
   be `<member-id>@teahouse`, and the commit must carry git's ssh signature
-  (`gpg.format=ssh`) made with a key that has sat on this teahouse's chart.
-  git checks it (`%G?`/`%GS` with an allowed-signers file built from every
-  version of `members.toml` on `main`, verified by ssh-keygen). Who may
-  *push* is still decided by the current chart. Commits the relay writes
+  (`gpg.format=ssh`) made with a key on this teahouse's chart at the time of
+  the push (any of the member's devices). git checks it (`%G?`/`%GS` with an
+  allowed-signers file built from the chart on `main` as the push finds it,
+  verified by ssh-keygen), for the commits the push brings that the relay
+  does not hold yet: a removed device stops counting at once, while history
+  and proposals already on the relay are not judged again. Who may *push* is
+  still decided by the current chart. Commits the relay writes
   itself (opening, succession, redeemed invitations) are not pushed; the
   seat commits of invitations are signed with `relay_signing_key` and
   committed by `Teahouse Relay <relay@teahouse>`.
@@ -184,7 +189,9 @@ are words; single quotes quote (`--name '王阿姨'`); nothing is expanded.
 | `blob-purge <id> <sha256>` | host | deletes it for good |
 | `invite <id> [--role guest\|steward] [--name N] [--days 1–30] [--kind ai [--agent A]]` | host | prints a one-time code `TH-XXXX-XXXX-XXXX-XXXX` (80 bits, default 7 days); `--kind ai` marks the seat as an AI's (any role); its id starts with `ai-` |
 | `uninvite <id> <first four>` | host | revokes it |
-| `redeem <code> --name N [--agent A]` | anyone, incl. a key with no seat | seats the key; prints `house <id>` and `member <id>`; `--agent` only for an AI's invitation |
+| `redeem <code> --name N [--agent A]` | anyone, incl. a key with no seat | seats the key; prints `house <id>` and `member <id>`; `--agent` only for an AI's invitation. With a pairing code: adds the key as a device named N, one `house`/`member` pair per teahouse |
+| `pair [--name N] [--minutes 1–60]` | any seated key | prints a one-time pairing code (default 10 minutes) for another device of the same member, in every teahouse where this key sits (law 19) |
+| `unpair <id> <device name \| SHA256:fingerprint>` | the member | removes another of the member's own devices in that teahouse; never the device in use or the last one |
 
 **Founding invitations** open a teahouse instead of seating someone in one.
 The operator runs `teahouse-relay found <id> --name N [--signboard S]
@@ -317,6 +324,9 @@ binary under someone's home directory does not.
 | `invite.redeemed` | An invitation seated a key | `house`, `member` (new), `key`, `invite` |
 | `invite.failed` | A redemption failed (bad code, expired, full, rate limited…) | `key`, `reason` |
 | `invite.revoked` | The host revoked an invitation | `house`, `member`, `invite` |
+| `pair.created` | A seated key made a pairing code | `key`, `pair` (first four), `minutes` |
+| `pair.redeemed` | A pairing code added a device (one line per teahouse) | `house`, `member`, `key` (the new device), `pair` |
+| `device.removed` | A member removed one of their devices | `house`, `member`, `key` (the removed one), `device` |
 | `blob.put` | An attachment was uploaded | `house`, `member`, `blob`, `size` |
 | `blob.purged` | The host removed an attachment | `house`, `member`, `blob`, `existed` |
 

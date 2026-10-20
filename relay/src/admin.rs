@@ -479,7 +479,7 @@ pub fn authorized_keys_lines(
     for id in root.house_ids()? {
         let Ok(h) = root.house(&id) else { continue };
         match h.members() {
-            Ok(m) => keys.extend(m.members.into_iter().map(|x| x.key)),
+            Ok(m) => keys.extend(m.members.iter().flat_map(|x| x.keys().cloned())),
             Err(e) => eprintln!("teahouse-relay: warning: skipping {id}: {e}"),
         }
     }

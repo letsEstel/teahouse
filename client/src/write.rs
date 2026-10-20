@@ -136,7 +136,7 @@ pub fn ascii_slug(title: &str, max: usize) -> String {
 }
 
 /// Four random characters for names that must not collide.
-fn suffix() -> String {
+pub(crate) fn suffix() -> String {
     use ssh_key::rand_core::RngCore;
     const ALPHABET: &[u8] = b"abcdefghjkmnpqrstvwxyz23456789";
     let mut b = [0u8; 4];

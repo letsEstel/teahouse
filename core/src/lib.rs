@@ -13,5 +13,5 @@ pub mod sha256;
 pub mod toml;
 
 pub use key::PublicKey;
-pub use members::{Kind, Member, Members, Role, MAX_MEMBERS, MEMBERS_PATH};
+pub use members::{Device, Kind, Member, Members, Role, MAX_DEVICES, MAX_MEMBERS, MEMBERS_PATH};
 pub use rules::{ProblemRef, RefKind};

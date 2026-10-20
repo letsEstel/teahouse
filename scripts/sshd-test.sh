@@ -372,6 +372,18 @@ PY
       "$client" --root "$eng2" call blob '{"house":"kehu","id":"works/0001/照片.png.ref.md"}'
   fi
 
+  # E7: a second device of the same member, paired through the real sshd
+  # (method A only: the new device's key is a stranger until it redeems).
+  if [[ $method == A ]]; then
+    local pc eng3="$work/engine3-$method"
+    pc="$("$client" --root "$eng" call pair '{"house":"kehu","name":"手机"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"])')"
+    expect ok "E7 第二台设备凭配对码加入，同一个成员" '"me":"eng"' \
+      "$client" --root "$eng3" call redeem "{\"code\":\"$pc\",\"name\":\"手机\"}"
+    "$client" --root "$eng" call sync '{"house":"kehu"}' >/dev/null
+    expect ok "E7 原设备同步后看到两台设备" '"name":"手机"' \
+      "$client" --root "$eng" call devices '{"house":"kehu"}'
+  fi
+
   sed -i 's/ [0-9a-f]*$/ 00/' "$eng/known_hosts"
   expect ok "E4 主机钥匙变了：拒绝连接" "different host key" \
     "$client" --root "$eng" call sync '{"house":"kehu"}'

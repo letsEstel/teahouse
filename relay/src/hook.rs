@@ -72,25 +72,19 @@ pub struct Context<'a> {
 /// to the attachment store; only a reference goes into history).
 pub const MAX_BINARY_IN_GIT: u64 = 1024 * 1024;
 
-/// An allowed-signers file (`ssh-keygen -Y`) naming every member key that
-/// was ever on this teahouse's seating chart, as `<id>@teahouse`. A commit
-/// is authored by whoever was seated when it was written; the people who
-/// may *push* it are decided separately, by the current chart.
+/// An allowed-signers file (`ssh-keygen -Y`) naming every key, of every
+/// device, on the seating chart at `rev` (the chart as the push finds it),
+/// as `<id>@teahouse`. 法第 13 条 as tightened (docs/DEVICES.md §7): a
+/// newly pushed commit counts only if signed by a key seated **now**, so a
+/// removed device stops counting at once.
 pub fn write_allowed_signers(git: &Git, rev: &str, path: &Path) -> Result<()> {
-    let revs = git.run_str(&["log", "--format=%H", rev, "--", MEMBERS_PATH])?;
     let mut lines = std::collections::BTreeSet::new();
-    for c in revs.lines() {
-        let Some(bytes) = git.read_file(c, MEMBERS_PATH)? else {
-            continue;
-        };
-        let Ok(m) = Members::parse(&String::from_utf8_lossy(&bytes)) else {
-            continue;
-        };
-        for x in m.members {
+    for x in members_at(git, rev)?.members {
+        for k in x.keys() {
             lines.insert(format!(
                 "{}@teahouse namespaces=\"git\" {}",
                 x.id,
-                x.key.openssh()
+                k.openssh()
             ));
         }
     }
@@ -145,7 +139,7 @@ fn check_signatures(cx: &Context<'_>, commits: &[String], out: &mut Vec<String>)
                 "commit {sc} is not signed; every commit must be signed with its author's device key (git: gpg.format=ssh, commit.gpgsign=true, user.email={me}) / 每个提交都必须用作者的设备钥匙签名"
             )),
             "U" | "E" => out.push(format!(
-                "commit {sc} is signed with a key that has never had a seat here / 签名的钥匙不在座位表上"
+                "commit {sc} is signed with a key that has no seat here now (a removed device, or a member who left) / 签名的钥匙现在不在座位表上"
             )),
             other => out.push(format!(
                 "commit {sc}: its signature does not verify ({other}) / 签名无效"
@@ -280,7 +274,17 @@ pub fn check_update(cx: &Context<'_>, u: &Update) -> Result<Vec<String>> {
     }
 
     let on_main = matches!(kind, RefKind::Main);
-    check_signatures(cx, &commits, &mut problems)?;
+    // Signatures are checked on commits new to the relay. Commits it already
+    // holds (a proposal being adopted, say) were checked when they arrived,
+    // and history is not judged again by today's chart.
+    let fresh = match kind {
+        RefKind::Main => {
+            cx.git
+                .rev_list(&["--topo-order", "--reverse", &u.new, "--not", "--all"])?
+        }
+        _ => commits.clone(),
+    };
+    check_signatures(cx, &fresh, &mut problems)?;
     for c in &commits {
         check_commit(cx, c, on_main, &mut problems)?;
         if problems.len() >= 20 {

@@ -264,6 +264,17 @@ impl Link<'_> {
             if loc == old || loc == new {
                 // Not changed here since the last sync (or already equal).
                 set_ref(repo, &local_ref, new)?;
+            } else if let (Some(l), Some(_)) = (loc, new.filter(|n| Some(*n) != old)) {
+                // Changed here and, meanwhile, at the relay too: another of
+                // my devices reworked the same proposal (docs/DEVICES.md §5).
+                // Never force over it: this device's version becomes a
+                // proposal of its own, and the relay's is kept as it is.
+                let alt = format!("{name}-{}", crate::write::suffix());
+                let alt_ref = format!("{PROPOSALS}{alt}");
+                set_ref(repo, &alt_ref, Some(l))?;
+                set_ref(repo, &local_ref, new)?;
+                specs.push(format!("{alt_ref}:{alt_ref}"));
+                after.push((format!("{TRACKING_PROPOSALS}{alt}"), Some(l)));
             } else {
                 specs.push(match loc {
                     Some(_) => format!("+{local_ref}:{local_ref}"),

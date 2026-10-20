@@ -26,6 +26,8 @@ pub struct Snapshot {
     pub members: Members,
     /// The seat whose key is this device's, if any.
     pub me: Option<teahouse_core::Member>,
+    /// This device's key.
+    device: Option<PublicKey>,
     /// The commit `main` points at.
     head: String,
     steps: Vec<Step>,
@@ -38,6 +40,8 @@ pub struct Snapshot {
     post_order: HashMap<String, usize>,
     /// Member id → the step that first seated them.
     joined: HashMap<String, usize>,
+    /// Key (base64) → the step that first put it on the chart.
+    key_added: HashMap<String, usize>,
 }
 
 fn when(t: i64) -> String {
@@ -110,10 +114,14 @@ impl Snapshot {
         }
 
         let mut joined = HashMap::new();
+        let mut key_added = HashMap::new();
         for &i in &chart_steps {
             let chart = git.read_path(&steps[i].hash, MEMBERS_PATH)?;
             if let Some(m) = chart.and_then(|b| Members::parse(&text_of(&b)).ok()) {
                 for m in m.members {
+                    for k in m.keys() {
+                        key_added.entry(k.blob_b64().to_string()).or_insert(i);
+                    }
                     joined.entry(m.id).or_insert(i);
                 }
             }
@@ -132,10 +140,44 @@ impl Snapshot {
             touched,
             post_order,
             joined,
+            key_added,
+            device: device.cloned(),
         })
     }
 
     // -- small helpers ------------------------------------------------------
+
+    /// The devices of a member, for that member's own view (docs/DEVICES.md
+    /// §5); others' devices are not shown.
+    fn devices_of(&self, m: &teahouse_core::Member) -> Option<Vec<DeviceInfo>> {
+        self.me.as_ref().filter(|me| me.id == m.id)?;
+        let this = self.device.as_ref();
+        Some(
+            m.keys()
+                .map(|k| DeviceInfo {
+                    name: m.device_name(k).unwrap_or("").to_string(),
+                    fingerprint: k.fingerprint(),
+                    added: self
+                        .key_added
+                        .get(k.blob_b64())
+                        .map(|&i| when(self.steps[i].time))
+                        .unwrap_or_default(),
+                    this_device: Some(k) == this,
+                })
+                .collect(),
+        )
+    }
+
+    /// This device's own devices list (`devices`).
+    pub fn my_devices(&self) -> Result<Vec<DeviceInfo>> {
+        let me = self.me.clone().ok_or_else(|| {
+            Error::new(
+                Code::NotAMember,
+                "this device has no seat here / 这台设备在这里没有座位",
+            )
+        })?;
+        Ok(self.devices_of(&me).unwrap_or_default())
+    }
 
     /// The commit `main` points at.
     pub(crate) fn head(&self) -> &str {
@@ -540,6 +582,7 @@ impl Snapshot {
                     .get(&m.id)
                     .map(|&i| when(self.steps[i].time))
                     .unwrap_or_default(),
+                devices: self.devices_of(m),
             })
             .collect();
 

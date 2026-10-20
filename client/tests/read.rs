@@ -381,7 +381,9 @@ fn house_has_members_problems_board_proposals_and_decisions() {
         json!([
             { "id": "wang", "name": "王阿姨", "role": "host", "kind": "human", "joined": when(T0) },
             { "id": "li", "name": "李师傅", "role": "steward", "kind": "human", "joined": when(T0) },
-            { "id": "zhao", "name": "小赵", "role": "guest", "kind": "human", "joined": when(T0 + 3 * HOUR) },
+            { "id": "zhao", "name": "小赵", "role": "guest", "kind": "human", "joined": when(T0 + 3 * HOUR),
+              // Only this device's own seat lists its devices.
+              "devices": [{ "name": "", "fingerprint": key_for(3).fingerprint(), "added": when(T0 + 3 * HOUR), "thisDevice": true }] },
         ])
     );
 
