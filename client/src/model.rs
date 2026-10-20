@@ -106,6 +106,10 @@ pub struct Member {
     pub id: String,
     pub name: String,
     pub role: &'static str,
+    /// `human` or `ai` (docs/MCP.md §2): the interface marks AI members.
+    pub kind: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent: Option<String>,
     pub joined: String,
 }
 

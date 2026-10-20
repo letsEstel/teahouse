@@ -18,7 +18,7 @@ use crate::root::{valid_house_id, Root};
 use crate::{blobs, invites};
 use std::os::unix::process::CommandExt;
 use std::process::Command;
-use teahouse_core::members::{Member, Role};
+use teahouse_core::members::{Kind, Member, Role};
 use teahouse_core::PublicKey;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -207,8 +207,9 @@ fn command(root: &Root, key: &PublicKey, words: Vec<String>, restricted: bool) -
             let name = o
                 .flag("--name")?
                 .ok_or_else(|| crate::error::Error("missing --name".into()))?;
+            let agent = o.flag("--agent")?;
             o.done()?;
-            let s = invites::redeem(root, key, &code, &name)?;
+            let s = invites::redeem(root, key, &code, &name, agent.as_deref())?;
             println!("house {}", s.house);
             println!("member {}", s.member);
             Ok(())
@@ -218,9 +219,17 @@ fn command(root: &Root, key: &PublicKey, words: Vec<String>, restricted: bool) -
             let role = o.flag("--role")?;
             let name = o.flag("--name")?;
             let days = o.flag("--days")?;
+            let kind = o.flag("--kind")?;
+            let agent = o.flag("--agent")?;
             o.done()?;
             let (_, me) = seated(root, &house, key)?;
             host_only(&me, "invite")?;
+            let kind = match kind.as_deref() {
+                None => Kind::Human,
+                Some(k) => Kind::parse(k).ok_or_else(|| {
+                    crate::error::Error(format!("unknown kind {k:?} (human or ai)"))
+                })?,
+            };
             let role = match role.as_deref() {
                 None => Role::Guest,
                 Some(r) => Role::parse(r)
@@ -235,7 +244,18 @@ fn command(root: &Root, key: &PublicKey, words: Vec<String>, restricted: bool) -
                 };
             println!(
                 "{}",
-                invites::create(root, &house, &me, role, name.as_deref(), days)?
+                invites::create(
+                    root,
+                    &house,
+                    &me,
+                    &invites::Seat {
+                        role,
+                        kind,
+                        name: name.as_deref(),
+                        agent: agent.as_deref(),
+                    },
+                    days
+                )?
             );
             Ok(())
         }

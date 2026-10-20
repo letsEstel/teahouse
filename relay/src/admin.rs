@@ -187,12 +187,7 @@ pub fn create_house(
     let members = Members {
         name: h.name.to_string(),
         signboard: h.signboard.map(str::to_string),
-        members: vec![Member {
-            id: h.host_id.into(),
-            name: h.host_name.into(),
-            role: Role::Host,
-            key,
-        }],
+        members: vec![Member::human(h.host_id, h.host_name, Role::Host, key)],
     };
     let toml = members.to_toml()?;
 
