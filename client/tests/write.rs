@@ -702,6 +702,153 @@ fn notices_and_replies() {
 }
 
 #[test]
+fn problems_and_notices_are_edited_directly_or_as_proposals() {
+    let w = World::new("edit");
+    let (wang, li, zhao) = w.wutong();
+    parking(&li);
+    li.ok(
+        "setStatus",
+        json!({ "house": "wutong", "problem": "0001", "status": "active", "owner": "li" }),
+    );
+
+    // The steward changes title and text; status, owner and file name stay.
+    li.ok(
+        "updateProblem",
+        json!({
+            "house": "wutong", "problem": "0001", "title": "停车难",
+            "text": "晚上六点以后就没位置了。\n\n## 现状\n院内共 40 个车位。\n",
+        }),
+    );
+    let p = li.ok("problem", json!({ "house": "wutong", "problem": "0001" }));
+    assert_eq!(p["title"], "停车难");
+    assert_eq!(p["summary"], "晚上六点以后就没位置了。");
+    assert_eq!(p["body"][1]["heading"], "现状");
+    assert_eq!(p["body"][1]["text"], "院内共 40 个车位。");
+    assert_eq!(
+        (&p["status"], &p["owner"]),
+        (&json!("active"), &json!("li"))
+    );
+    assert_eq!(
+        p["events"].as_array().unwrap().last().unwrap()["act"],
+        "update-problem"
+    );
+    let ls = w.relay_git(&[
+        "-c",
+        "core.quotePath=false",
+        "ls-tree",
+        "--name-only",
+        "main",
+        "problems/",
+    ]);
+    assert_eq!(ls.trim().lines().count(), 1, "{ls}");
+    assert_eq!(
+        w.relay_git(&["log", "-1", "--format=%s", "main"]).trim(),
+        "停车难"
+    );
+
+    // By path, title only.
+    let first = ls.trim().to_string();
+    li.ok(
+        "updateProblem",
+        json!({ "house": "wutong", "problem": first, "title": "停车太难" }),
+    );
+    let e = li.err(
+        "updateProblem",
+        json!({ "house": "wutong", "problem": "0001", "title": "停车太难" }),
+    );
+    assert_eq!(e["code"], "invalid", "{e:#}");
+    let e = li.err(
+        "updateProblem",
+        json!({ "house": "wutong", "problem": "0001" }),
+    );
+    assert_eq!(e["code"], "invalid", "{e:#}");
+    let e = li.err(
+        "updateProblem",
+        json!({ "house": "wutong", "problem": "0009", "text": "x" }),
+    );
+    assert_eq!(e["code"], "not_found", "{e:#}");
+
+    // A guest's edit becomes a proposal; main is unchanged until adopted.
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    let r = zhao.ok(
+        "updateProblem",
+        json!({ "house": "wutong", "problem": "0001", "text": "其实还好。\n" }),
+    );
+    assert_eq!(r["becameProposal"], true);
+    let p = zhao.ok("problem", json!({ "house": "wutong", "problem": "0001" }));
+    assert_eq!(p["summary"], "晚上六点以后就没位置了。");
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let h = wang.house();
+    assert_eq!(h["proposals"][0]["problem"], "0001");
+    wang.ok(
+        "adopt",
+        json!({ "house": "wutong", "proposal": h["proposals"][0]["id"] }),
+    );
+    let p = wang.ok("problem", json!({ "house": "wutong", "problem": "0001" }));
+    assert_eq!(
+        (&p["title"], &p["summary"]),
+        (&json!("停车太难"), &json!("其实还好。"))
+    );
+    assert_eq!(p["status"], "active");
+
+    // Notices, by name or path.
+    li.ok("sync", json!({ "house": "wutong" }));
+    li.ok(
+        "postNotice",
+        json!({ "house": "wutong", "title": "Water off Saturday", "text": "周六上午停水。" }),
+    );
+    let r = li.ok(
+        "updateNotice",
+        json!({ "house": "wutong", "notice": "water-off-saturday", "text": "周六全天停水。" }),
+    );
+    assert_eq!(r["id"], "water-off-saturday");
+    li.ok(
+        "updateNotice",
+        json!({ "house": "wutong", "notice": "board/water-off-saturday.md", "title": "Water off all Saturday" }),
+    );
+    let n = li.house()["board"][0].clone();
+    assert_eq!(
+        (&n["title"], &n["text"]),
+        (&json!("Water off all Saturday"), &json!("周六全天停水。"))
+    );
+    assert_eq!(
+        w.relay_git(&[
+            "log",
+            "-1",
+            "--format=%(trailers:key=Act,valueonly)",
+            "main"
+        ])
+        .trim(),
+        "update-notice"
+    );
+    let e = li.err(
+        "updateNotice",
+        json!({ "house": "wutong", "notice": "water-off-saturday", "text": "长".repeat(12_000) }),
+    );
+    assert_eq!(e["code"], "too_large", "{e:#}");
+    let e = li.err(
+        "updateNotice",
+        json!({ "house": "wutong", "notice": "nope", "text": "x" }),
+    );
+    assert_eq!(e["code"], "not_found", "{e:#}");
+
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    let r = zhao.ok(
+        "updateNotice",
+        json!({ "house": "wutong", "notice": "water-off-saturday", "text": "改到周日。" }),
+    );
+    assert_eq!(r["becameProposal"], true);
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let h = wang.house();
+    assert_eq!(h["proposals"][0]["problem"], "board");
+    wang.ok(
+        "adopt",
+        json!({ "house": "wutong", "proposal": h["proposals"][0]["id"] }),
+    );
+    assert_eq!(wang.house()["board"][0]["text"], "改到周日。");
+}
+
+#[test]
 fn attachments_go_to_the_cache_and_into_git_as_references() {
     let w = World::new("blobs");
     let (_wang, li, _zhao) = w.wutong();

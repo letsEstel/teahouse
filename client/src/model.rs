@@ -35,12 +35,14 @@ pub enum WorkKind {
 #[serde(rename_all = "kebab-case")]
 pub enum Act {
     OpenProblem,
+    UpdateProblem,
     SetStatus,
     AddWork,
     UpdateWork,
     Note,
     RemoveNote,
     Notice,
+    UpdateNotice,
     Propose,
     Adopt,
     Decline,
@@ -52,12 +54,14 @@ impl Act {
     pub fn parse(s: &str) -> Option<Act> {
         Some(match s {
             "open-problem" => Act::OpenProblem,
+            "update-problem" => Act::UpdateProblem,
             "set-status" => Act::SetStatus,
             "add-work" => Act::AddWork,
             "update-work" => Act::UpdateWork,
             "note" => Act::Note,
             "remove-note" => Act::RemoveNote,
             "notice" => Act::Notice,
+            "update-notice" => Act::UpdateNotice,
             "propose" => Act::Propose,
             "adopt" => Act::Adopt,
             "decline" => Act::Decline,

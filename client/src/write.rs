@@ -4,8 +4,8 @@
 //! * Preflight: the engine checks roles and texts with `teahouse-core`
 //!   before writing, so most refusals never reach the relay (`forbidden`,
 //!   `invalid`, `too_large`; nothing is written).
-//! * A guest's content command (`openProblem`, `addWork`, `updateWork`,
-//!   `postNotice`) becomes a proposal (`becameProposal: true`); management
+//! * A guest's content command (`openProblem`, `updateProblem`, `addWork`,
+//!   `updateWork`, `postNotice`, `updateNotice`) becomes a proposal (`becameProposal: true`); management
 //!   commands never do.
 //! * Offline: the commit stays local (`commit: "local"`) and goes out with
 //!   the next sync.
@@ -185,6 +185,30 @@ fn render_problem(title: &str, status: &str, body: &[SectionArg]) -> String {
         }
     }
     s.trim_end_matches('\n').to_string() + "\n"
+}
+
+/// A problem or notice with a new title and/or new text after its
+/// frontmatter; the other fields stay.
+fn rewrite_doc(old: &str, title: Option<&str>, text: Option<&str>) -> Result<String> {
+    if title.is_none() && text.is_none() {
+        return Err(invalid("give title or text / 需要 title 或 text"));
+    }
+    let mut new = old.to_string();
+    if let Some(t) = title {
+        let t = t.trim();
+        if t.is_empty() {
+            return Err(invalid("the title cannot be empty / 标题不能为空").with("field", "title"));
+        }
+        new = format::set_fields(&new, &[("title", Some(t))]);
+    }
+    if let Some(text) = text {
+        let (_, body) = format::split_frontmatter(&new);
+        new = format!("{}{text}", &new[..new.len() - body.len()]);
+    }
+    if new == old {
+        return Err(invalid("nothing to change / 没有变化"));
+    }
+    Ok(new)
 }
 
 /// The first line of a text, at most `n` characters, for a commit subject.
@@ -750,6 +774,81 @@ impl<'c> Writer<'c> {
             false,
             Some(id.to_string()),
         )
+    }
+
+    /// Changes a problem's title and/or its text (everything after the
+    /// frontmatter: summary and `##` sections). Status, owner and the file
+    /// name stay. `problem` is the id (`0001`) or the file's path.
+    pub fn update_problem(
+        self,
+        problem: &str,
+        title: Option<&str>,
+        text: Option<&str>,
+        args: &Value,
+    ) -> Result<WriteResult> {
+        let pid = format::parse_problem_path(problem)
+            .map(|(id, _)| id)
+            .unwrap_or(problem)
+            .to_string();
+        self.require_problem(&pid)?;
+        let (_, path) = self.snap.problem_path(&pid).expect("checked");
+        let path = path.to_string();
+        let old = self.snap.text(&path)?.unwrap_or_default();
+        let new = rewrite_doc(&old, title, text)?;
+        let doc_title = format::parse_problem(&new, &pid, "").title;
+        let edits = vec![Edit::Put(path, new.into_bytes())];
+        if self.role() == Role::Guest {
+            return self.into_proposal(&pid, &doc_title, None, &edits, "updateProblem", args);
+        }
+        let c = self.commit_main(
+            &edits,
+            &doc_title,
+            None,
+            &[("Problem", pid.clone()), ("Act", "update-problem".into())],
+        )?;
+        self.publish(vec![Undo::Main(c)], "updateProblem", args, false, Some(pid))
+    }
+
+    /// Changes a notice's title and/or text. `notice` is its name or path.
+    pub fn update_notice(
+        self,
+        notice: &str,
+        title: Option<&str>,
+        text: Option<&str>,
+        args: &Value,
+    ) -> Result<WriteResult> {
+        let name = format::parse_notice_path(notice).unwrap_or(notice);
+        let path = format!("board/{name}.md");
+        let old = match self.snap.entry(&path) {
+            Some(_) => self.snap.text(&path)?.unwrap_or_default(),
+            None => {
+                return Err(Error::not_found(format!("no notice {name} / 没有这条公告"))
+                    .with("notice", name))
+            }
+        };
+        let new = rewrite_doc(&old, title, text)?;
+        check_text(new.as_bytes()).map_err(|m| {
+            let code = if new.len() > rules::MAX_TEXT_BYTES {
+                Code::TooLarge
+            } else {
+                Code::Invalid
+            };
+            Error::new(code, m).with("limit", rules::MAX_TEXT_BYTES.to_string())
+        })?;
+        let (fm, _) = format::split_frontmatter(&new);
+        let doc_title = fm.get("title").unwrap_or(name).to_string();
+        let name = name.to_string();
+        let edits = vec![Edit::Put(path, new.into_bytes())];
+        if self.role() == Role::Guest {
+            return self.into_proposal("board", &doc_title, None, &edits, "updateNotice", args);
+        }
+        let c = self.commit_main(
+            &edits,
+            &doc_title,
+            None,
+            &[("Problem", "board".into()), ("Act", "update-notice".into())],
+        )?;
+        self.publish(vec![Undo::Main(c)], "updateNotice", args, false, Some(name))
     }
 
     pub fn note(

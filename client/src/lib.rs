@@ -618,6 +618,20 @@ impl Client {
             from_path: Option<String>,
         }
         #[derive(Deserialize)]
+        struct UpdateProblemArg {
+            house: String,
+            problem: String,
+            title: Option<String>,
+            text: Option<String>,
+        }
+        #[derive(Deserialize)]
+        struct UpdateNoticeArg {
+            house: String,
+            notice: String,
+            title: Option<String>,
+            text: Option<String>,
+        }
+        #[derive(Deserialize)]
         struct NoteArg {
             house: String,
             problem: Option<String>,
@@ -802,6 +816,15 @@ impl Client {
                     a,
                 )?)
             }
+            "updateProblem" => {
+                let p: UpdateProblemArg = parse(command, a)?;
+                to_value(Writer::open(self, &p.house)?.update_problem(
+                    &p.problem,
+                    p.title.as_deref(),
+                    p.text.as_deref(),
+                    a,
+                )?)
+            }
             "note" => {
                 let p: NoteArg = parse(command, a)?;
                 to_value(Writer::open(self, &p.house)?.note(
@@ -818,6 +841,15 @@ impl Client {
             "postNotice" => {
                 let p: NoticeArg = parse(command, a)?;
                 to_value(Writer::open(self, &p.house)?.post_notice(&p.title, &p.text, a)?)
+            }
+            "updateNotice" => {
+                let p: UpdateNoticeArg = parse(command, a)?;
+                to_value(Writer::open(self, &p.house)?.update_notice(
+                    &p.notice,
+                    p.title.as_deref(),
+                    p.text.as_deref(),
+                    a,
+                )?)
             }
             "propose" => {
                 let p: ProposeArg = parse(command, a)?;

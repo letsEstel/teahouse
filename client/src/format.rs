@@ -208,6 +208,10 @@ pub fn infer_act(trailer: Option<&str>, changes: &[(char, String)]) -> Act {
         Act::UpdateWork
     } else if any(&|c, p| c == 'A' && parse_notice_path(p).is_some()) {
         Act::Notice
+    } else if any(&|c, p| c == 'M' && parse_notice_path(p).is_some()) {
+        Act::UpdateNotice
+    } else if any(&|c, p| c == 'M' && parse_problem_path(p).is_some()) {
+        Act::UpdateProblem
     } else if any(&|c, p| c == 'A' && p.starts_with("talk/")) {
         Act::Note
     } else if any(&|c, p| c == 'D' && p.starts_with("talk/")) {
@@ -367,7 +371,11 @@ mod tests {
         );
         assert_eq!(
             infer_act(None, &ch(&[('M', "problems/0001-x.md")])),
-            Act::Update
+            Act::UpdateProblem
+        );
+        assert_eq!(
+            infer_act(None, &ch(&[('M', "board/n.md")])),
+            Act::UpdateNotice
         );
     }
 
