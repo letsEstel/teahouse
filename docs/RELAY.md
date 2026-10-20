@@ -87,7 +87,7 @@ A new teahouse is prepared under `tmp/` and moved into `houses/` with one
 | 14 | On `main`, each problem number has at most one `problems/<id>-*.md`. (Proposals may collide; the host's engine renumbers on adoption.) | all |
 | 15 | Attachments live outside git: every `*.ref.md` is well-formed (`blob: sha256:…`, `size` ≤ 100 MiB, `type`), and unless marked `purged`, its blob is already in the attachment store with that size. Binary files over 1 MiB are refused in git. | all |
 | 16 | Invitations (`docs/INVITE.md` §2): only the host creates them; one-time, 1–30 days, stored hashed; redeeming needs a free seat (≤ 15), a free steward seat if the invitation is for a steward, and a key not yet in the house; rate-limited and audited. The relay writes the seat commit (author: the host). | host / anyone with a code |
-| 17 | A member with `kind = "ai"` can only be a `guest`; the host and the steward are always people (`kind` absent or `human`). `agent` may appear only on AI members. A seating chart that breaks this, in any version, is refused — whether pushed, written by a redeemed invitation, or by succession. (docs/MCP.md) | all |
+| 17 | `kind = "ai"` marks a member as an AI; it is a label, not a rank. Any role may be held by an AI — the founder decides whom to seat. `agent` may appear only on AI members. | all |
 
 Laws 6–9 and 12 apply to every commit a push would add to `main` — including commits
 that came from someone else's proposal. A steward therefore cannot land a
