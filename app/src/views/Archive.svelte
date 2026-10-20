@@ -6,8 +6,9 @@
   import FileGlyph from '../lib/FileGlyph.svelte'
   import Diff from '../lib/Diff.svelte'
   import AccessMark from '../lib/AccessMark.svelte'
+  import Editor from '../lib/Editor.svelte'
   import { member, self, pad, access, fileName, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
-  import { api, blobUrl } from '../api/backend'
+  import { api, blobUrl, write as send, stageFile } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
   // 档案：茶馆里所有文件原原本本放在这里。左边文件树（按目录 / 按问题），右边预览和"来历"。
@@ -29,8 +30,11 @@
   type FileData = { node: ArchiveNode; text?: string; history: HistoryEntry[] }
   let file = $state<FileData | null>(null)
   let image = $state<string | null>(null)
+  let reloads = $state(0)
   $effect(() => {
     const target = selected
+    void reloads
+    editing = false
     if (!target) return
     api('file', { house: house.id, id: target }).then(async (f) => {
       image = f.node.kind === 'image' || f.node.kind === 'file' ? await api('blob', { house: house.id, id: target }).catch(() => null) : null
@@ -39,6 +43,34 @@
   })
 
   let closed = $state<Record<string, boolean>>({})
+
+  // ---- 编辑：成果文件（文档、方案、表格）在这里直接改；茶客的改动变成提案 ----
+  let editing = $state(false)
+  let draft = $state('')
+  let saved = $state<'written' | 'proposed' | null>(null)
+  let can = $derived(file ? access(house, file.node.id) : 'read')
+  const isWork = (n: ArchiveNode) => n.id.startsWith('works/')
+  const textual = (n: ArchiveNode) => n.kind === 'doc' || n.kind === 'plan' || n.kind === 'table'
+  function startEdit() {
+    draft = file?.text ?? ''
+    saved = null
+    editing = true
+  }
+  async function save() {
+    if (!file) return
+    const r = await send('updateWork', { house: house.id, id: file.node.id, text: draft })
+    if (!r) return
+    saved = r.becameProposal ? 'proposed' : 'written'
+    reloads++
+  }
+  // 图片和附件：从手机的文件选择器换一个文件
+  let picker = $state<HTMLInputElement>()
+  async function replace(e: Event) {
+    const f = (e.currentTarget as HTMLInputElement).files?.[0]
+    if (!f || !file) return
+    const r = await send('updateWork', { house: house.id, id: file.node.id, fromPath: await stageFile(f) })
+    if (r) { saved = r.becameProposal ? 'proposed' : 'written'; reloads++ }
+  }
   let openDiff = $state<number | null>(null)
   let exporting = $state(false)
 
@@ -191,7 +223,16 @@
       </div>
 
       <div class="tools">
-        {#if node.kind !== 'note' && node.kind !== 'members'}
+        {#if isWork(node) && can !== 'read' && textual(node)}
+          {#if !editing}
+            <button class="primary small" data-write onclick={startEdit}><i>{can === 'write' ? '✎' : '↗'}</i><span>{t(can === 'write' ? 'edit.start' : 'edit.startPropose')}</span></button>
+            <span class="consequence" data-write>{t(can === 'write' ? 'access.writeHint' : 'access.proposeHint')}</span>
+          {/if}
+        {:else if isWork(node) && can !== 'read'}
+          <button class="primary small" data-write onclick={() => picker?.click()}><i>{can === 'write' ? '✎' : '↗'}</i><span>{t('edit.replaceFile')}</span></button>
+          <input class="picker" type="file" bind:this={picker} onchange={replace} />
+          <span class="consequence" data-write>{t(can === 'write' ? 'access.writeHint' : 'access.proposeHint')}</span>
+        {:else if node.kind !== 'note' && node.kind !== 'members'}
           {#if me.role === 'guest'}
             <a class="primary small" data-write href="#/{house.id}/propose/{node.problem === 'meta' ? '' : node.problem}"><i>+</i><span>{t('archive.proposeEdit')}</span></a>
             <span class="consequence" data-write>{t('archive.proposeHint')}</span>
@@ -202,6 +243,19 @@
         <button class="secondary small" onclick={download} disabled={!file.text} title={file.text ? '' : t('archive.noFile')}>↓ {t('archive.download')}</button>
       </div>
 
+      {#if saved}
+        <p class="saved" role="status">{t(saved === 'written' ? 'edit.written' : 'edit.proposed')}</p>
+      {/if}
+
+      {#if editing}
+        <div class="editing">
+          <Editor value={draft} markdown={node.kind !== 'table'} onchange={(v) => (draft = v)} />
+          <div class="save">
+            <button class="primary" data-write onclick={save}><span>{t(can === 'write' ? 'edit.save' : 'edit.saveProposal')}</span></button>
+            <button class="secondary" onclick={() => (editing = false)}>{t('edit.cancel')}</button>
+          </div>
+        </div>
+      {:else}
       <article class="content">
         {#if node.kind === 'members'}
           <table>
@@ -248,6 +302,7 @@
           {/each}
         {/if}
       </article>
+      {/if}
 
       <section class="history">
         <div class="hhead">
@@ -337,6 +392,10 @@
   .tools .consequence { font-size: 12px; }
 
   .content { padding: 20px 0 8px; max-width: 46em; }
+  .editing { padding: 16px 0 8px; max-width: 46em; }
+  .save { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .saved { margin-top: 4px; padding: 10px 14px; background: var(--ink); color: var(--paper); font-size: 14px; }
+  .picker { display: none; }
   .content h3 { font-family: var(--display); font-weight: 700; font-size: 22px; line-height: 1.3; margin: 10px 0 12px; letter-spacing: var(--track); }
   .content h4 { margin: 18px 0 4px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; }
   .content p { font-size: 15px; line-height: 1.85; }

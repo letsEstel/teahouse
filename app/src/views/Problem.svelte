@@ -7,8 +7,9 @@
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
   import AccessMark from '../lib/AccessMark.svelte'
+  import Editor from '../lib/Editor.svelte'
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
-  import { api, write as send, blobUrl } from '../api/backend'
+  import { api, write as send, blobUrl, stageFile } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
   let { house, id }: { house: House; id: string } = $props()
@@ -31,11 +32,33 @@
   // 经过：引擎按时间顺序给出，这里最新的在上
   let events = $derived(p ? [...p.events].reverse() : [])
 
-  let action = $derived(
-    me.role === 'guest'
-      ? { label: t('act.proposeWork'), hint: t('act.proposeWorkHint'), href: `#/${house.id}/propose/${id}` }
-      : { label: t('act.addWork'), hint: t('act.addWorkHint'), href: undefined }
-  )
+  let action = $derived(me.role === 'guest' ? { hint: t('act.proposeWorkHint') } : { hint: t('act.addWorkHint') })
+
+  // 添加成果：写一份文档（编辑器），或从手机的文件选择器加入图片、附件。茶客的会自动变成提案。
+  let composing = $state(false)
+  let newTitle = $state('')
+  let newText = $state('')
+  let added = $state<'written' | 'proposed' | null>(null)
+  async function addDoc() {
+    if (!newTitle.trim()) return
+    const r = await send('addWork', { house: house.id, problem: id, kind: 'doc', title: newTitle.trim(), text: newText })
+    if (!r) return
+    added = r.becameProposal ? 'proposed' : 'written'
+    composing = false; newTitle = ''; newText = ''
+    await load()
+  }
+  let picker = $state<HTMLInputElement>()
+  async function attach(e: Event) {
+    const input = e.currentTarget as HTMLInputElement
+    const f = input.files?.[0]
+    input.value = ''
+    if (!f) return
+    const kind = f.type.startsWith('image/') ? 'image' : 'file'
+    const r = await send('addWork', { house: house.id, problem: id, kind, title: f.name.replace(/\.[^.]+$/, ''), fromPath: await stageFile(f) })
+    if (!r) return
+    added = r.becameProposal ? 'proposed' : 'written'
+    await load()
+  }
 
   // 问题下的讨论：留言直接写进茶馆（茶客也一样）
   async function write(text: string) {
@@ -99,13 +122,25 @@
         <h2>{t('problem.worksHead')}</h2>
         <div class="action" data-write>
           <p class="consequence">{action.hint}</p>
-          {#if action.href}
-            <a class="primary" href={action.href}><i>+</i><span>{action.label}</span></a>
-          {:else}
-            <button class="primary"><i>+</i><span>{action.label}</span></button>
-          {/if}
+          <button class="primary" aria-expanded={composing} onclick={() => { composing = !composing; added = null }}><i>+</i><span>{t('edit.newDoc')}</span></button>
+          <button class="secondary" onclick={() => picker?.click()}><i>+</i><span>{t('edit.attach')}</span></button>
+          <input class="picker" type="file" bind:this={picker} onchange={attach} />
         </div>
       </div>
+
+      {#if added}<p class="saved" role="status">{t(added === 'written' ? 'edit.written' : 'edit.proposed')}</p>{/if}
+
+      {#if composing}
+        <div class="compose" data-write>
+          <label class="label" for="new-title">{t('edit.title')}</label>
+          <input id="new-title" class="title-in" bind:value={newTitle} placeholder={t('edit.titlePlaceholder')} />
+          <Editor value="" placeholder={t('edit.bodyPlaceholder')} onchange={(v) => (newText = v)} />
+          <div class="save">
+            <button class="primary" disabled={!newTitle.trim()} onclick={addDoc}><span>{t(me.role === 'guest' ? 'edit.saveProposal' : 'edit.save')}</span></button>
+            <button class="secondary" onclick={() => (composing = false)}>{t('edit.cancel')}</button>
+          </div>
+        </div>
+      {/if}
 
       {#if p.workCount === 0}
         <div class="empty">
@@ -246,6 +281,11 @@
 
   .empty { display: flex; align-items: center; gap: 20px; padding: 28px 0; border-top: 2px solid var(--ink); color: var(--ink-2); }
 
+  .picker { display: none; }
+  .compose { display: grid; gap: 10px; margin-bottom: 28px; }
+  .title-in { border: 1.5px solid var(--ink); background: var(--paper); padding: 10px 14px; font: inherit; font-size: 18px; font-weight: 700; color: var(--ink); }
+  .save { display: flex; flex-wrap: wrap; gap: 10px; }
+  .saved { margin-bottom: 16px; padding: 10px 14px; background: var(--ink); color: var(--paper); font-size: 14px; }
   .seg { display: flex; justify-content: flex-end; margin-bottom: 12px; }
   .seg button { padding: 6px 14px; border: 1.5px solid var(--ink); margin-left: -1.5px; font-size: 13px; font-weight: 500; }
   .seg button.on { background: var(--ink); color: var(--paper); }

@@ -10,7 +10,7 @@ import type { ApiError, Args, Command, Result, Returns } from './types'
 import { fakeBackend } from './fake'
 import { httpBackend } from './http'
 import { tauriBackend } from './tauri'
-import { convertFileSrc } from '@tauri-apps/api/core'
+import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { report } from './errors.svelte'
 
 export interface Backend {
@@ -71,4 +71,18 @@ export function blobUrl(house: string, id: string, path: string): string {
   if (backend.kind === 'http') return `${httpBase}/v1/blob?house=${encodeURIComponent(house)}&id=${encodeURIComponent(id)}`
   if (backend.kind === 'tauri') return convertFileSrc(path)
   return path
+}
+
+/**
+ * 附件从手机的文件选择器进来时只有内容，没有路径；引擎的 addWork / updateWork 要的是本机路径（fromPath）。
+ * 应用里：把内容交给外壳的 stageFile（src-tauri），外壳存进应用缓存目录，返回路径。
+ * 浏览器里（假数据、开发期）：没有本机路径可给，返回一个占位名，假数据不会去读它。
+ */
+export async function stageFile(file: File): Promise<string> {
+  if (backend.kind !== 'tauri') return `staged:${file.name}`
+  const r = await invoke<Result<{ path: string }>>('stageFile', new Uint8Array(await file.arrayBuffer()), {
+    headers: { 'x-file-name': encodeURIComponent(file.name) },
+  })
+  if (!r.ok) throw new BackendError(r.error)
+  return r.data.path
 }
