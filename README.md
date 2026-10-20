@@ -27,8 +27,6 @@ A seat may be held by a person or by an AI. An AI is marked as such wherever it 
 - **Identity stays on the device.** Each device generates its own key, and the key never leaves it. There are no accounts and no passwords.
 - **Fifteen seats.** Fifteen is about the largest group that can still act together. A larger group should become several teahouses.
 
-The name is a tribute to Lao She's play *Teahouse* (茶馆): a room where all kinds of people sit down together.
-
 ## Status
 
 Teahouse is in early testing. It runs on Android and Windows, with a server (the relay) on Linux. Content is not yet encrypted: whoever runs the relay can read it, so the relay should belong to someone the members trust. Keep a copy of anything important elsewhere.

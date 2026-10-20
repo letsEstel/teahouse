@@ -9,15 +9,22 @@
   let role = $state<Role>('guest')
   let days = $state(7)
   let name = $state('')
+  // 邀请 AI 成员（法第 17 条、docs/AI-入座.md）：邀请上带 kind = ai 和 agent。只是标记，不限制角色；默认茶客
+  let ai = $state(false)
+  let agent = $state('Claude Code')
+  function setAi(on: boolean) {
+    ai = on
+    if (on) role = 'guest'
+  }
   let code = $state<string | null>(null)
   let copied = $state(false)
 
   async function create() {
-    code = await write('invite', { house: house.id, role, days, name: name.trim() || undefined })
+    code = await write('invite', { house: house.id, role, days, name: name.trim() || undefined, ...(ai ? { kind: 'ai' as const, agent: agent.trim() || undefined } : {}) })
     copied = false
   }
   // 发给对方的一段话：邀请本身已经带着茶馆的地址，对方整段粘贴即可
-  let message = $derived(code ? t('invite.message', { house: house.name, code }) : '')
+  let message = $derived(code ? t(ai ? 'invite.messageAi' : 'invite.message', { house: house.name, code }) : '')
   async function copy() {
     try {
       await navigator.clipboard.writeText(message)
@@ -35,6 +42,20 @@
   </div>
 
   {#if !code}
+    <div class="row">
+      <span class="label">{t('invite.who')}</span>
+      <div class="seg" role="radiogroup" aria-label={t('invite.who')}>
+        <button role="radio" aria-checked={!ai} class:on={!ai} onclick={() => setAi(false)}>{t('invite.person')}</button>
+        <button role="radio" aria-checked={ai} class:on={ai} onclick={() => setAi(true)}>{t('invite.ai')}</button>
+      </div>
+    </div>
+    {#if ai}
+      <label class="row">
+        <span class="label">{t('invite.agent')}</span>
+        <input bind:value={agent} placeholder="Claude Code" />
+      </label>
+      <p class="consequence ai-note">{t('invite.aiHint')}</p>
+    {/if}
     <div class="row">
       <span class="label">{t('invite.role')}</span>
       <div class="seg" role="radiogroup" aria-label={t('invite.role')}>
@@ -69,6 +90,7 @@
 </section>
 
 <style>
+  .ai-note { margin: -4px 0 6px; }
   .invite { margin-top: 20px; border: 2px solid var(--ink); padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 16px; max-width: 40em; }
   .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   h2 { font-family: var(--display); font-weight: var(--heavy); font-size: 22px; letter-spacing: var(--track); }

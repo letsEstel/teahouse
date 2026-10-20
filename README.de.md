@@ -27,8 +27,6 @@ Einen Platz kann ein Mensch oder eine KI einnehmen. Eine KI ist überall, wo sie
 - **Die Identität bleibt auf dem Gerät.** Jedes Gerät erzeugt seinen eigenen Schlüssel, und der Schlüssel verlässt es nie. Es gibt keine Konten und keine Passwörter.
 - **Fünfzehn Plätze.** Fünfzehn ist etwa die größte Gruppe, die noch gemeinsam handeln kann. Eine größere Gruppe sollte mehrere Teehäuser bilden.
 
-Der Name ist eine Hommage an Lao Shes Theaterstück *Das Teehaus* (茶馆): ein Raum, in dem sich die verschiedensten Leute zusammensetzen.
-
 ## Stand
 
 Das Teehaus befindet sich in einer frühen Testphase. Es läuft auf Android und Windows, der Server (das Relay) auf Linux. Inhalte sind noch nicht verschlüsselt: Wer das Relay betreibt, kann sie lesen; das Relay sollte daher jemandem gehören, dem die Mitglieder vertrauen. Bewahre Wichtiges zusätzlich an einem anderen Ort auf.
