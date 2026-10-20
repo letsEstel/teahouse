@@ -1120,3 +1120,186 @@ fn a_founding_invitation_makes_a_new_device_the_host() {
         .err("redeem", json!({ "code": out, "name": "x" }));
     assert_eq!(e["code"], "relay_refused", "{e:#}");
 }
+
+/// A minimal MCP client: JSON-RPC over the server's stdin/stdout.
+struct Mcp {
+    child: std::process::Child,
+    out: std::io::BufReader<std::process::ChildStdout>,
+    next: u64,
+}
+
+impl Mcp {
+    fn start(root: &Path) -> Mcp {
+        relay_bin();
+        let mut child = Command::new(env!("CARGO_BIN_EXE_teahouse-client"))
+            .args(["mcp", "--root"])
+            .arg(root)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .spawn()
+            .unwrap();
+        let out = std::io::BufReader::new(child.stdout.take().unwrap());
+        Mcp {
+            child,
+            out,
+            next: 1,
+        }
+    }
+
+    fn send(&mut self, msg: &Value) {
+        use std::io::Write;
+        let stdin = self.child.stdin.as_mut().unwrap();
+        writeln!(stdin, "{msg}").unwrap();
+        stdin.flush().unwrap();
+    }
+
+    fn request(&mut self, method: &str, params: Value) -> Value {
+        use std::io::BufRead;
+        let id = self.next;
+        self.next += 1;
+        self.send(&json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params }));
+        let mut line = String::new();
+        self.out.read_line(&mut line).unwrap();
+        let v: Value = serde_json::from_str(&line).unwrap_or_else(|e| panic!("{e}: {line}"));
+        assert_eq!(v["id"], id, "{v}");
+        v
+    }
+
+    /// Calls a tool; returns (isError, structured or text payload).
+    fn tool(&mut self, name: &str, args: Value) -> (bool, Value) {
+        let r = self.request("tools/call", json!({ "name": name, "arguments": args }));
+        let result = &r["result"];
+        let text = result["content"][0]["text"].as_str().unwrap_or("");
+        let payload = serde_json::from_str(text).unwrap_or(json!(text));
+        (result["isError"] == true, payload)
+    }
+}
+
+impl Drop for Mcp {
+    fn drop(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+    }
+}
+
+#[test]
+fn an_ai_takes_a_seat_through_mcp_and_works_as_a_guest() {
+    let w = World::new("mcp");
+    let (wang, li, _zhao) = w.wutong();
+    parking(&li);
+    wang.ok("sync", json!({ "house": "wutong" }));
+    // The host invites an AI (法第 17 条: always a guest).
+    let e = wang.err(
+        "invite",
+        json!({ "house": "wutong", "kind": "ai", "role": "steward" }),
+    );
+    assert_eq!(e["code"], "relay_refused");
+    let inv = wang.ok(
+        "invite",
+        json!({ "house": "wutong", "kind": "ai", "name": "2 号" }),
+    );
+
+    let ai_root = w.tmp.0.join("claude-2");
+    let mut m = Mcp::start(&ai_root);
+    let init = m.request("initialize", json!({ "protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": { "name": "test", "version": "0" } }));
+    assert_eq!(init["result"]["serverInfo"]["name"], "teahouse");
+    m.send(&json!({ "jsonrpc": "2.0", "method": "notifications/initialized" }));
+    let tools: Vec<String> = m.request("tools/list", json!({}))["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t["name"].as_str().unwrap().to_string())
+        .collect();
+    assert!(
+        tools.contains(&"note".to_string()) && !tools.contains(&"adopt".to_string()),
+        "{tools:?}"
+    );
+
+    // Seat, read, post, propose.
+    let (err, h) = m.tool(
+        "redeem",
+        json!({ "code": inv, "name": "2 号", "agent": "Claude Code" }),
+    );
+    assert!(!err, "{h:#}");
+    assert_eq!(
+        (&h["myRole"], &h["id"]),
+        (&json!("guest"), &json!("wutong"))
+    );
+    let me = h["me"].as_str().unwrap().to_string();
+    let (err, p) = m.tool("problem", json!({ "house": "wutong", "problem": "0001" }));
+    assert!(!err);
+    assert_eq!(p["title"], "小区停车位不好找");
+    let (err, r) = m.tool("note", json!({ "house": "wutong", "problem": "0001", "text": "我是 2 号（AI）。建议先统计夜间空位。" }));
+    assert!(!err, "{r:#}");
+    assert_eq!(r["commit"], "pushed");
+    let (err, r) = m.tool("addWork", json!({ "house": "wutong", "problem": "0001", "kind": "doc", "title": "夜间空位统计方法", "text": "每晚十点数一次。\n" }));
+    assert!(!err, "{r:#}");
+    assert_eq!(r["becameProposal"], true);
+    let proposal = r["id"].as_str().unwrap().to_string();
+    // People's decisions are not there, by name or otherwise.
+    let (err, r) = m.tool("adopt", json!({ "house": "wutong", "proposal": proposal }));
+    assert!(err, "{r:#}");
+    // Resources read the same data.
+    let res = m.request(
+        "resources/read",
+        json!({ "uri": "teahouse://wutong/problem/0001" }),
+    );
+    assert!(res["result"]["contents"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("小区停车位不好找"));
+    drop(m);
+
+    // The host sees an AI member, its post, its proposal; adopting is theirs.
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let h = wang.house();
+    let ai = h["members"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|x| x["id"] == me.as_str())
+        .unwrap()
+        .clone();
+    assert_eq!(
+        (&ai["kind"], &ai["agent"], &ai["role"]),
+        (&json!("ai"), &json!("Claude Code"), &json!("guest"))
+    );
+    assert_eq!(h["proposals"][0]["by"], me.as_str());
+    wang.ok("adopt", json!({ "house": "wutong", "proposal": proposal }));
+    let p = wang.ok("problem", json!({ "house": "wutong", "problem": "0001" }));
+    assert!(p["notes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|n| n["by"] == me.as_str()));
+    assert!(p["works"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|x| x["title"] == "夜间空位统计方法"));
+
+    // Its commits carry its own signature, which git verifies.
+    let key = fs::read_to_string(ai_root.join("device.pub")).unwrap();
+    let signers = w.tmp.0.join("ai-signer");
+    fs::write(&signers, format!("{me}@teahouse {key}")).unwrap();
+    let c = w.relay_git(&[
+        "log",
+        "--format=%H",
+        "-1",
+        "--author",
+        &format!("{me}@teahouse"),
+        "main",
+    ]);
+    let o = Command::new("git")
+        .arg("-C")
+        .arg(w.relay_root.join("houses/wutong.git"))
+        .args(["-c", "gpg.format=ssh", "-c"])
+        .arg(format!("gpg.ssh.allowedSignersFile={}", signers.display()))
+        .args(["log", "-1", "--format=%G? %GS", &c])
+        .output()
+        .unwrap();
+    assert_eq!(
+        String::from_utf8_lossy(&o.stdout).trim(),
+        format!("G {me}@teahouse")
+    );
+}

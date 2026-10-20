@@ -4,6 +4,7 @@
 //! teahouse-client [--root <dir>] call <command> [<json-args>]
 //! teahouse-client [--root <dir>] serve [--port 7377] [--sync-every <seconds>|off]
 //! teahouse-client [--root <dir>] key
+//! teahouse-client mcp [--root <dir>]
 //! teahouse-client dev-seed <fixtures.json> --relay <relay-root> --people <dir>
 //! ```
 //!
@@ -12,6 +13,7 @@
 //! `key` prints this device's public key (making it on first use), for
 //! seating a device by hand during development. `dev-seed` builds the
 //! example teahouses on a local relay (`scripts/dev-stack.sh` runs it).
+//! `mcp` is an MCP server on stdio for an AI member (docs/MCP.md).
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -26,6 +28,7 @@ fn usage() -> ExitCode {
 const USAGE: &str = "usage: teahouse-client [--root <dir>] call <command> [<json-args>]
        teahouse-client [--root <dir>] serve [--port 7377] [--sync-every <seconds>|off]
        teahouse-client [--root <dir>] key
+       teahouse-client mcp [--root <dir>]
        teahouse-client dev-seed <fixtures.json> --relay <relay-root> --people <dir>";
 
 /// `<app data>/teahouse`, or `$TEAHOUSE_CLIENT_ROOT`.
@@ -45,15 +48,28 @@ fn default_root() -> Option<PathBuf> {
     base.map(|b| b.join("teahouse"))
 }
 
+/// `~/x` → `$HOME/x`: MCP configurations are not read by a shell.
+fn expand_home(p: &str) -> PathBuf {
+    match (p.strip_prefix("~/"), std::env::var_os("HOME")) {
+        (Some(rest), Some(home)) => PathBuf::from(home).join(rest),
+        _ => PathBuf::from(p),
+    }
+}
+
 fn main() -> ExitCode {
     let mut args: Vec<String> = std::env::args().skip(1).collect();
+    // `mcp --root <dir>`, as MCP client configurations write it.
+    if args.len() == 3 && args[0] == "mcp" && args[1] == "--root" {
+        let root = args.pop().expect("three args");
+        args = vec!["--root".into(), root, "mcp".into()];
+    }
     let mut root = None;
     if args.first().map(String::as_str) == Some("--root") {
         if args.len() < 2 {
             eprintln!("{USAGE}");
             return ExitCode::from(2);
         }
-        root = Some(PathBuf::from(args.remove(1)));
+        root = Some(expand_home(&args.remove(1)));
         args.remove(0);
     }
     let Some(root) = root.or_else(default_root) else {
@@ -105,6 +121,17 @@ fn main() -> ExitCode {
                     for r in e.reasons {
                         eprintln!("  {r}");
                     }
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        ["mcp"] => {
+            let client = Client::new(root);
+            let stdin = std::io::stdin();
+            match teahouse_client::mcp::serve(&client, stdin.lock(), std::io::stdout().lock()) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => {
+                    eprintln!("teahouse-client: mcp: {e}");
                     ExitCode::FAILURE
                 }
             }
