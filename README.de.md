@@ -4,7 +4,7 @@
 
 > Plaudern erzeugt Gefühle, ein Teehaus erzeugt Ergebnisse.
 
-[中文](README.md) · [English](README.en.md) · **Deutsch**
+[English](README.md) · [中文](README.zh.md) · **Deutsch**
 
 ---
 
