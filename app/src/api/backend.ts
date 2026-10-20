@@ -7,11 +7,12 @@
 // 应用里还有一个"示例"开关（localStorage teahouse.demo）：打开时用假数据，方便没拿到邀请也能看看。
 // 界面任何地方都不要绕过这里去读数据。
 import type { ApiError, Args, Command, Result, Returns } from './types'
-import { fakeBackend } from './fake'
+import { fakeBackend, fakeStaged } from './fake'
 import { httpBackend } from './http'
 import { tauriBackend } from './tauri'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { report } from './errors.svelte'
+import { begin } from './sending.svelte'
 
 export interface Backend {
   kind: 'fake' | 'http' | 'tauri'
@@ -54,12 +55,33 @@ export async function api<C extends Command>(cmd: C, args: Args<C>): Promise<Ret
   return r.data
 }
 
-/** 写入用：出错时在页面顶部报告（本地化的说明），返回 null；成功时返回结果 */
-export async function write<C extends Command>(cmd: C, args: Args<C>): Promise<Returns<C> | null> {
-  const r = await backend.call(cmd, args)
-  if (r.ok) return r.data
-  report(r.error)
-  return null
+/**
+ * 写入用：出错时在页面顶部报告（本地化的说明），返回 null；成功时返回结果。
+ * 送出期间按钮显示"正在送出…"、写入类按钮全部锁住（./sending.svelte.ts）；
+ * 同一个命令、同样的参数还在送出时，再调用一次只会等同一个结果，不会写第二遍。
+ */
+const inflight = new Map<string, Promise<unknown>>()
+export function write<C extends Command>(cmd: C, args: Args<C>): Promise<Returns<C> | null> {
+  const key = `${cmd} ${JSON.stringify(args ?? {})}`
+  const same = inflight.get(key)
+  if (same) return same as Promise<Returns<C> | null>
+  const finish = begin()
+  const p = (async () => {
+    try {
+      const r = await backend.call(cmd, args)
+      if (r.ok) { finish(r.data); return r.data }
+      report(r.error)
+      finish(null)
+      return null
+    } catch (e) {
+      finish(null)
+      throw e
+    } finally {
+      inflight.delete(key)
+    }
+  })()
+  inflight.set(key, p)
+  return p
 }
 
 /**
@@ -79,7 +101,11 @@ export function blobUrl(house: string, id: string, path: string): string {
  * 浏览器里（假数据、开发期）：没有本机路径可给，返回一个占位名，假数据不会去读它。
  */
 export async function stageFile(file: File): Promise<string> {
-  if (backend.kind !== 'tauri') return `staged:${file.name}`
+  if (backend.kind !== 'tauri') {
+    const key = `staged:${Date.now()}-${file.name}`
+    if (backend.kind === 'fake') fakeStaged.set(key, URL.createObjectURL(file))
+    return key
+  }
   const r = await invoke<Result<{ path: string }>>('stageFile', new Uint8Array(await file.arrayBuffer()), {
     headers: { 'x-file-name': encodeURIComponent(file.name) },
   })
