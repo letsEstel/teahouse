@@ -28,9 +28,6 @@ case "$mode" in
     # The first teahouse by founding invitation, printed by the installer.
     sh "$here/deploy/install.sh" --binary "$bin" --found smoke --name "冒烟测试" --address 127.0.0.1 | tee "$work/install.log"
     invite=$(grep -o 'TH-[0-9A-Z-]*@[^ ]*' "$work/install.log" | tail -n 1)
-    echo "▌ second run (idempotent, upgrade path)"
-    sh "$here/deploy/install.sh" --binary "$bin" --found smoke --name "冒烟测试" --address 127.0.0.1 >"$work/install2.log" 2>&1 \
-      || { echo "✗ second run failed:"; cat "$work/install2.log"; exit 1; }
     # …and the other way: a teahouse opened for a public key, with the
     # address worked out by the script (no --address).
     sh "$here/deploy/install.sh" --binary "$bin" --open other --name "另一间" --host-name "Tester" --host-key "@$work/host.pub" >"$work/install3.log" 2>&1 \
@@ -51,14 +48,20 @@ export GIT_SSH_COMMAND="ssh -p $port -o BatchMode=yes -o ConnectTimeout=10 -o St
 stranger="ssh -p $port -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=$work/known_hosts -o IdentitiesOnly=yes -i $work/stranger"
 echo "▌ member checks on 127.0.0.1:$port"
 check "the installer printed a founding invitation" bash -c "[[ '$invite' == TH-*@127.0.0.1* ]]"
-if [ "$mode" = install ]; then
-  check "a second install run leaves the teahouse alone" grep -q "smoke already open" "$work/install2.log"
-fi
 # The future host's key has no seat anywhere: it reaches redeem-shell, and
 # the founding invitation opens the teahouse with it as host.
 code="${invite%%@*}"
 check "the host redeems the founding invitation" bash -c "$GIT_SSH_COMMAND -T teahouse@127.0.0.1 redeem '$code' --name Tester | grep -q 'house smoke'"
 refused "the founding invitation works once" bash -c "$stranger -T teahouse@127.0.0.1 redeem '$code' --name X"
+if [ "$mode" = install ]; then
+  # The upgrade path: running the installer again, same options, once the
+  # teahouse is open, changes nothing and prints no new invitation.
+  echo "▌ second run (idempotent, upgrade path)"
+  sh "$here/deploy/install.sh" --binary "$bin" --found smoke --name "冒烟测试" --address 127.0.0.1 >"$work/install2.log" 2>&1 \
+    || { echo "✗ second run failed:"; cat "$work/install2.log"; exit 1; }
+  check "a second install run leaves the open teahouse alone" grep -q "smoke already open" "$work/install2.log"
+  refused "…and prints no new invitation" grep -q "TH-" "$work/install2.log"
+fi
 check "host sees their teahouse (ssh -T)" bash -c "$GIT_SSH_COMMAND -T teahouse@127.0.0.1 | grep -q smoke"
 check "host clones" git clone -q teahouse@127.0.0.1:smoke "$work/clone"
 cd "$work/clone" || { echo "▌ $pass passed, $((fail+1)) failed (no clone)"; exit 1; }
