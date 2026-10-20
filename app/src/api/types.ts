@@ -117,7 +117,7 @@ export interface Commands {
   adopt: [HouseArg & { proposal: string }, WriteResult]
   decline: [HouseArg & { proposal: string; reason?: string }, WriteResult]
   seat: [HouseArg & { remove?: string; role?: { id: string; role: Role } }, WriteResult]
-  invite: [HouseArg & { role?: Role; name?: string; days?: number }, string]
+  invite: [HouseArg & { role?: Role; name?: string; days?: number; kind?: 'human' | 'ai'; agent?: string }, string]
   redeem: [{ relay: string; code: string; name: string }, HouseSummary]
   purgeBlob: [HouseArg & { id: string }, WriteResult]
 }
