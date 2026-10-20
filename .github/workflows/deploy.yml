@@ -3,8 +3,11 @@
 # then exercised by real ssh/git members (scripts/deploy-test.sh).
 name: deploy
 
+# Pull requests that touch deployment run it once; main runs it again to
+# publish the relay (branches are not built twice on push).
 on:
   push:
+    branches: [main]
     paths: [deploy/**, relay/**, core/**, scripts/deploy-test.sh, .github/workflows/deploy.yml]
   pull_request:
     paths: [deploy/**, relay/**, core/**, scripts/deploy-test.sh, .github/workflows/deploy.yml]
