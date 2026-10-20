@@ -1,5 +1,6 @@
 <script lang="ts">
   import Shape from '../lib/Shape.svelte'
+  import AiMark from '../lib/AiMark.svelte'
   import StatusMark from '../lib/StatusMark.svelte'
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import ParkingMap from '../lib/ParkingMap.svelte'
@@ -55,7 +56,7 @@
       <StatusMark status={p.status} />
       <h1>{p.title}</h1>
       <div class="meta">
-        <span><Shape role={author.role} size={10} />{t('problem.raisedBy', { name: author.name })} · {t(`role.${author.role}`)}</span>
+        <span><Shape role={author.role} size={10} />{t('problem.raisedBy', { name: author.name })}<AiMark m={author} /> · {t(`role.${author.role}`)}</span>
         <span>{t('problem.since', { date: date(p.opened, 'short') })}</span>
         <span>{t('problem.works', { n: p.workCount })}</span>
       </div>
@@ -81,7 +82,7 @@
             <li>
               <span class="node"><Shape role={m.role} size={12} /></span>
               <div>
-                <div class="ev"><b>{m.name}</b> {eventText(e, true)}</div>
+                <div class="ev"><b>{m.name}</b><AiMark {m} /> {eventText(e, true)}</div>
                 <div class="when">{when(e.when)}</div>
               </div>
             </li>
@@ -131,7 +132,7 @@
                 <div class="t">{feature.title}</div>
                 {#if feature.note}<div class="note">{feature.note}</div>{/if}
               </div>
-              <div class="by"><Shape role={fm.role} size={10} />{fm.name}<span>{when(feature.when)}</span></div>
+              <div class="by"><Shape role={fm.role} size={10} />{fm.name}<AiMark m={fm} /><span>{when(feature.when)}</span></div>
             </div>
           </article>
         {/if}
@@ -145,7 +146,7 @@
             </div>
             <div class="t hyphenate">{w.title}</div>
             {#if w.note}<div class="note hyphenate">{w.note}</div>{/if}
-            <div class="by"><Shape role={wm.role} size={10} /><b>{wm.name}</b><span>{when(w.when)}</span></div>
+            <div class="by"><Shape role={wm.role} size={10} /><b>{wm.name}</b><AiMark m={wm} /><span>{when(w.when)}</span></div>
           </article>
         {/each}
       </div>

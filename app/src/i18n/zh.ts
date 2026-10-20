@@ -15,6 +15,8 @@ export default {
   'role.guest': '茶客',
   'role.stewardNote': '继承人',
   'role.empty': '空座',
+  'ai.mark': 'AI 成员，不是人',
+  'ai.markAgent': 'AI 成员，不是人 · {agent}',
   'self.you': '你 · {role}',
 
   'status.open': '待认领',

@@ -23,7 +23,8 @@ export interface HouseSummary {
   sync: SyncState
 }
 
-export interface Member { id: string; name: string; role: Role; joined: string }
+/** kind = 'ai'：AI 成员（docs/MCP.md，法第 17 条），只能是茶客；agent 是 AI 的种类，只用于显示 */
+export interface Member { id: string; name: string; role: Role; joined: string; kind?: 'human' | 'ai'; agent?: string }
 export interface Event { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
 /** id = 留言文件的仓库路径；when = 进入茶馆的时间，writtenAt = 文件名里的时间戳 */
 export interface Note { id: string; by: string; text: string; when: string; writtenAt: string }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import Shape from './Shape.svelte'
+  import AiMark from './AiMark.svelte'
   import { t } from '../i18n/index.svelte'
   import type { House, Member } from '../api/view'
 
@@ -45,7 +46,7 @@
         style:animation-delay="{120 + s.i * 45}ms"
       >
         <span class="glyph"><Shape role={s.m?.role ?? null} size={20} /></span>
-        <span class="name">{s.m ? s.m.name : t('role.empty')}</span>
+        <span class="name">{s.m ? s.m.name : t('role.empty')}{#if s.m}<AiMark m={s.m} />{/if}</span>
         {#if s.m?.id === house.me}<span class="you label">{t('room.you')}</span>{/if}
       </div>
     {/each}

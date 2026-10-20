@@ -5,7 +5,7 @@ export type Status = 'open' | 'active' | 'solved'
 export type WorkKind = 'doc' | 'table' | 'plan' | 'image'  // table：预算、报价、数据表都用它
 export type Act = 'addWork' | 'propose' | 'merge' | 'update' | 'markActive' | 'markSolved' | 'open' | 'openProblem'
 
-export interface Member { id: string; name: Text; role: Role; joined: string }
+export interface Member { id: string; name: Text; role: Role; joined: string; kind?: 'human' | 'ai'; agent?: string }
 
 export interface Work {
   id: string

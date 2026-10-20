@@ -98,7 +98,7 @@ function toHouse(h: FHouse): A.House {
   return {
     id: h.id, name: L(h.name), signboard: L(h.sign), founded: iso(h.founded), capacity: 15,
     me: meOf(h),
-    members: h.members.map((m) => ({ id: m.id, name: L(m.name), role: m.role, joined: iso(m.joined) })),
+    members: h.members.map((m) => ({ id: m.id, name: L(m.name), role: m.role, joined: iso(m.joined), kind: m.kind, agent: m.agent })),
     problems: h.problems.map((p) => summary(h, p)),
     recent: h.recent.map((e) => toEvent(e, e.problem)),
     proposals: h.proposals.map((x) => ({

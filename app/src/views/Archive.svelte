@@ -1,5 +1,6 @@
 <script lang="ts">
   import Shape from '../lib/Shape.svelte'
+  import AiMark from '../lib/AiMark.svelte'
   import StatusMark from '../lib/StatusMark.svelte'
   import ParkingMap from '../lib/ParkingMap.svelte'
   import FileGlyph from '../lib/FileGlyph.svelte'
@@ -202,7 +203,7 @@
             <thead><tr><th>{t('archive.colName')}</th><th>{t('archive.colRole')}</th><th>{t('archive.colJoined')}</th></tr></thead>
             <tbody>
               {#each house.members as m}
-                <tr><td><span class="cell-who"><Shape role={m.role} size={10} />{m.name}</span></td><td>{t(`role.${m.role}`)}</td><td>{date(m.joined, 'short')}</td></tr>
+                <tr><td><span class="cell-who"><Shape role={m.role} size={10} />{m.name}<AiMark {m} /></span></td><td>{t(`role.${m.role}`)}</td><td>{date(m.joined, 'short')}</td></tr>
               {/each}
             </tbody>
           </table>
@@ -228,7 +229,7 @@
           {@const first = file.history[0]}
           {#if first}
             {@const m = member(house, first.by)}
-            <div class="who"><Shape role={m.role} size={10} /><b>{m.name}</b><span>{when(first.when)}</span></div>
+            <div class="who"><Shape role={m.role} size={10} /><b>{m.name}</b><AiMark {m} /><span>{when(first.when)}</span></div>
           {/if}
           <p class="pre-plain">{file.text}</p>
         {:else}
@@ -255,7 +256,7 @@
               <button class="entry" class:open={openDiff === i} aria-expanded={openDiff === i} onclick={() => (openDiff = openDiff === i ? null : i)}>
                 <span class="num idx">{pad(history.length - i)}</span>
                 <span class="what">
-                  <span class="by"><Shape role={m.role} size={10} /><b>{m.name}</b> {actText(e)}</span>
+                  <span class="by"><Shape role={m.role} size={10} /><b>{m.name}</b><AiMark {m} /> {actText(e)}</span>
                   <span class="for">{forWhat(e)}</span>
                 </span>
                 <span class="when">{when(e.when)}</span>

@@ -15,6 +15,8 @@ export default {
   'role.guest': 'Guest',
   'role.stewardNote': 'heir',
   'role.empty': 'Free seat',
+  'ai.mark': 'AI member, not a person',
+  'ai.markAgent': 'AI member, not a person · {agent}',
   'self.you': 'You · {role}',
 
   'status.open': 'Unclaimed',
