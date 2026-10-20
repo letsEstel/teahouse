@@ -89,21 +89,26 @@
     {#if demoMode}
       <div class="demo"><span>{t('demo.on')}</span><button onclick={() => setDemo(false)}>{t('demo.exit')}</button></div>
     {/if}
-    <div class="self">
-      {#if seated}
+    {#if seated}
+      <!-- 点自己：我的设备（添加一台设备、移除丢了的设备） -->
+      <a class="self" href="#/{house.id}/devices" title={t('self.devices')}>
         <Shape role={me.role} size={16} />
         <div>
           <div class="self-name">{me.name}</div>
           <div class="label">{t('self.you', { role: t(`role.${me.role}`) })}</div>
+          <div class="dev label">{t('self.devices')} →</div>
         </div>
-      {:else}
+        <svg class="dev-glyph" width="12" height="16" viewBox="0 0 12 16" aria-label={t('self.devices')}><rect x="1" y="1" width="10" height="14" fill="none" stroke="currentColor" stroke-width="1.6" /><rect x="4.5" y="11.5" width="3" height="1.6" fill="currentColor" /></svg>
+      </a>
+    {:else}
+    <div class="self">
         <Shape role={null} size={16} />
         <div>
           <div class="self-name">{t('seat.readonly')}</div>
           <div class="label">{t('seat.leftShort')}</div>
         </div>
-      {/if}
     </div>
+    {/if}
     <div class="switches">
       <div class="langs" role="group" aria-label={t('rail.lang')}>
         {#each langs as l}
@@ -192,6 +197,10 @@
   .self { display: flex; align-items: center; gap: 14px; }
   .self-name { font-family: var(--display); font-weight: 700; font-size: 15px; line-height: 1.2; }
   .self .label { font-size: 10px; }
+  a.self { color: inherit; text-decoration: none; }
+  a.self .dev { margin-top: 6px; text-decoration: underline; text-underline-offset: 3px; }
+  a.self:hover .self-name { text-decoration: underline; text-underline-offset: 3px; }
+  .dev-glyph { display: none; flex: none; }
   .langs { display: flex; }
   .langs button {
     font-family: var(--latin); font-size: 12px; font-weight: 500; letter-spacing: 0.08em;
@@ -261,6 +270,7 @@
 
     .foot { grid-area: foot; margin: 0; padding: 0 var(--in); flex-direction: row; align-items: center; gap: 16px; }
     .self .label { display: none; }
+    .dev-glyph { display: block; }
     .self { gap: 8px; }
     .self-name { font-size: 14px; }
     .switches { flex-wrap: nowrap; }
