@@ -9,7 +9,7 @@ import { L, t, NOW, i18n, type Text } from '../i18n/index.svelte'
 const store: FHouse[] = structuredClone(seed)
 // 演示用的状态（截图和预览）：?fake=unsynced | offline | unseated | refuse
 //   unsynced：有 2 处修改还没送出；offline：连不上 Relay；unseated：本机钥匙不在座位表上（已离座）；
-//   refuse：之后的写入都被 Relay 拒绝
+//   refuse：之后的写入都被 Relay 拒绝；slow：写入要 3 秒才回来（服务器慢），并记下送出了几次（window.__fakeWrites）
 const demo = typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('fake') ?? ''
 const lastSync = new Date(NOW.getTime() - 25 * 60_000).toISOString()
 let synced: A.SyncState =
@@ -325,6 +325,11 @@ export const fakeBackend = {
   kind: 'fake' as const,
   async call<C extends A.Command>(cmd: C, args: A.Args<C>): Promise<A.Result<A.Returns<C>>> {
     if (demo === 'refuse' && writes.includes(cmd)) return refused as A.Result<A.Returns<C>>
+    if (demo === 'slow' && (writes.includes(cmd) || cmd === 'invite' || cmd === 'redeem' || cmd === 'pair' || cmd === 'unpair')) {
+      const w = window as unknown as { __fakeWrites?: string[] }
+      ;(w.__fakeWrites ??= []).push(cmd)
+      await new Promise((r) => setTimeout(r, 3000))
+    }
     if (unseated && writes.includes(cmd)) return fail('not_a_member', 'this device has no seat in the teahouse')
     return (handlers[cmd] as (a: A.Args<C>) => A.Result<A.Returns<C>>)(args)
   },

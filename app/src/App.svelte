@@ -10,6 +10,7 @@
   import Archive from './views/Archive.svelte'
   import Join from './views/Join.svelte'
   import ErrorBar from './lib/ErrorBar.svelte'
+  import Sending from './lib/Sending.svelte'
   import StatusBar from './lib/StatusBar.svelte'
   import { api, BackendError } from './api/backend'
   import { errorText } from './api/errors.svelte'
@@ -111,6 +112,8 @@
     <button class="secondary" onclick={refresh}>{t('err.retry')}</button>
   </div>
 {/if}
+
+<Sending />
 
 <style>
   main { margin-left: var(--rail); min-height: 100vh; }
