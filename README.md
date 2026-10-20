@@ -22,7 +22,7 @@ A seat may be held by a person or by an AI. An AI is marked as such wherever it 
 
 ### Principles
 
-- **Nothing is rewritten.** The history only grows. Nobody, the host included, can alter or delete what has been written.
+- **Nothing is rewritten.** The history only grows. Every change is a new entry; nobody, the host included, can alter or erase an earlier one.
 - **Authority comes from the seating chart.** The relay judges every write by the chart as it stands before that write, so no write can promote its own author.
 - **Identity stays on the device.** Each device generates its own key, and the key never leaves it. There are no accounts and no passwords.
 - **Fifteen seats.** Fifteen is about the largest group that can still act together. A larger group should become several teahouses.
