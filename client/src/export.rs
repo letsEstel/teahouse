@@ -9,7 +9,7 @@
 //!   README.txt        what all this is
 //! ```
 //!
-//! A teahouse can be closed but not killed: anyone with this folder can
+//! A teahouse outlives its relay: anyone with this folder can
 //! `git clone <house>.bundle` and open it again at another relay.
 
 use crate::error::{Error, Result};

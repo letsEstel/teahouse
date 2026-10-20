@@ -219,8 +219,8 @@ failures per key per hour and 30 attempts per minute in all.
 
 ## 4. 继承 · Succession
 
-Every member holds the full history, so a relay can be shut down but a
-teahouse cannot be killed. The steward is the designated heir:
+Every member holds the full history, so a teahouse outlives its relay.
+The steward is the designated heir:
 
 ```sh
 teahouse-relay --root /var/lib/teahouse adopt wutong --from ~/clones/wutong --key @~/.ssh/id_ed25519.pub
