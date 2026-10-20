@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Teahouse desktop and Android client: the Tauri shell around app/ (the interface) and client/ (the engine)."
 edition = "2021"
 rust-version = "1.77"
-license = "UNLICENSED"
+license = "AGPL-3.0-only"
 
 # A workspace of its own: the root workspace's CI (fmt, clippy, tests of core/relay/client)
 # must not need the system libraries a Tauri build pulls in (webkit2gtk on Linux).
