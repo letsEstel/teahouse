@@ -6,7 +6,7 @@
 //! 3. at most one steward (伙计)
 //! 4. everyone else is a guest (茶客)
 //! 5. member ids and keys are unique
-//! 6. an AI member (`kind = "ai"`) is a guest; host and steward are people;
+//! 6. `kind = "ai"` marks an AI; it is a label, not a rank (any role), and
 //!    `agent` appears only on AI members (法第 17 条, docs/MCP.md)
 
 use crate::key::PublicKey;
@@ -267,17 +267,6 @@ impl Members {
                 "{n} members; a teahouse has at most {MAX_MEMBERS} seats"
             ));
         }
-        // 法第 17 条 first: the host and the steward are people.
-        if let Some(m) = self
-            .members
-            .iter()
-            .find(|m| m.kind == Kind::Ai && m.role != Role::Guest)
-        {
-            return e(format!(
-                "member {:?} is an AI and can only be a guest, not the {} / AI 只能是茶客",
-                m.id, m.role
-            ));
-        }
         let hosts = self.members.iter().filter(|m| m.role == Role::Host).count();
         if hosts != 1 {
             return e(format!("exactly one host is required, found {hosts}"));
@@ -494,20 +483,21 @@ mod tests {
     }
 
     #[test]
-    fn ai_members_are_guests() {
+    fn ai_members_are_marked_in_any_role() {
         let k = |n: u8| key(n).openssh();
-        let chart = |extra: &str| {
+        let chart = |host_extra: &str, extra: &str| {
             format!(
-                "version = 1\n[teahouse]\nname = \"开发组\"\n\n[[member]]\nid = \"u\"\nname = \"用户\"\nrole = \"host\"\nkey = \"{}\"\n\n[[member]]\nid = \"claude-2\"\nname = \"2 号\"\n{extra}key = \"{}\"\n",
+                "version = 1\n[teahouse]\nname = \"开发组\"\n\n[[member]]\nid = \"u\"\nname = \"用户\"\nrole = \"host\"\n{host_extra}key = \"{}\"\n\n[[member]]\nid = \"ai-2\"\nname = \"2 号\"\n{extra}key = \"{}\"\n",
                 k(1),
                 k(2)
             )
         };
         let m = Members::parse(&chart(
+            "",
             "role = \"guest\"\nkind = \"ai\"\nagent = \"Claude Code\"\n",
         ))
         .unwrap();
-        let ai = m.by_id("claude-2").unwrap();
+        let ai = m.by_id("ai-2").unwrap();
         assert_eq!(
             (ai.kind, ai.agent.as_deref()),
             (Kind::Ai, Some("Claude Code"))
@@ -518,8 +508,15 @@ mod tests {
         assert_eq!(Members::parse(&t).unwrap(), m);
         assert_eq!(t.matches("kind = ").count(), 1);
 
+        // 法第 17 条: a label, not a rank. An AI may be the steward, or the host.
+        assert!(Members::parse(&chart("", "role = \"steward\"\nkind = \"ai\"\n")).is_ok());
+        let ai_host = Members::parse(&chart("kind = \"ai\"\n", "role = \"guest\"\n")).unwrap();
+        assert_eq!(ai_host.host().kind, Kind::Ai);
+        // …and an AI steward inherits like anyone.
+        let m2 = Members::parse(&chart("", "role = \"steward\"\nkind = \"ai\"\n")).unwrap();
+        assert_eq!(m2.succeed().unwrap().host().id, "ai-2");
+
         for (bad, why) in [
-            ("role = \"steward\"\nkind = \"ai\"\n", "can only be a guest"),
             (
                 "role = \"guest\"\nagent = \"Claude Code\"\n",
                 "only for AI members",
@@ -527,15 +524,8 @@ mod tests {
             ("role = \"guest\"\nkind = \"robot\"\n", "human or ai"),
             ("role = \"guest\"\nkind = 1\n", "must be a string"),
         ] {
-            let err = Members::parse(&chart(bad)).unwrap_err();
+            let err = Members::parse(&chart("", bad)).unwrap_err();
             assert!(err.0.contains(why), "{bad}: {err}");
         }
-        // Nor can an AI inherit the teahouse, or be the host at all.
-        let mut m2 = m.clone();
-        m2.members[0].kind = Kind::Ai;
-        assert!(m2.validate().is_err());
-        let mut m3 = m.clone();
-        m3.members[1].role = Role::Steward;
-        assert!(m3.validate().is_err());
     }
 }

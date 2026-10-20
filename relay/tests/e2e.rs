@@ -2071,26 +2071,18 @@ fn founding_invitations_expire_and_cannot_be_raced() {
 }
 
 #[test]
-fn ai_members_sit_only_as_guests() {
+fn ai_members_hold_any_role() {
     let w = World::new();
-    let host = w.wutong();
+    let host = w.wutong(); // zhou is the steward; make room for an AI one
     let ai_key = key_for(30).openssh();
-    let chart = fs::read_to_string(host.join(".teahouse/members.toml")).unwrap();
+    let chart = fs::read_to_string(host.join(".teahouse/members.toml"))
+        .unwrap()
+        .replacen("role = \"steward\"", "role = \"guest\"", 1);
     let with = |extra: &str| {
-        format!(
-            "{chart}\n[[member]]\nid = \"claude-2\"\nname = \"2 号\"\n{extra}key = \"{ai_key}\"\n"
-        )
+        format!("{chart}\n[[member]]\nid = \"ai-2\"\nname = \"2 号\"\n{extra}key = \"{ai_key}\"\n")
     };
 
-    // 法第 17 条: not as steward, and agent only on AI members.
-    w.write(
-        &host,
-        ".teahouse/members.toml",
-        &with("role = \"steward\"\nkind = \"ai\"\n"),
-    );
-    w.commit(&host, "AI 当伙计\n\nProblem: meta");
-    w.push_denied(&host, &["main"], "can only be a guest");
-    w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
+    // 法第 17 条: `agent` only on AI members…
     w.write(
         &host,
         ".teahouse/members.toml",
@@ -2100,51 +2092,62 @@ fn ai_members_sit_only_as_guests() {
     w.push_denied(&host, &["main"], "only for AI members");
     w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
 
-    // As a guest, marked: accepted; it reads and posts like any guest.
+    // …but `kind = ai` is a label, not a rank: an AI steward is fine.
     w.write(
         &host,
         ".teahouse/members.toml",
-        &with("role = \"guest\"\nkind = \"ai\"\nagent = \"Claude Code\"\n"),
+        &with("role = \"steward\"\nkind = \"ai\"\nagent = \"Claude Code\"\n"),
     );
-    w.commit(&host, "2 号以 AI 茶客入座\n\nProblem: meta");
+    w.commit(&host, "2 号当伙计\n\nProblem: meta");
     w.push_ok(&host, &["main"]);
-    w.person("claude-2", 30);
-    let ai = w.clone("claude-2", "wutong");
+    w.person("ai-2", 30);
+    let ai = w.clone("ai-2", "wutong");
+    // It writes main directly, like any steward…
     w.write(
         &ai,
-        "talk/0001/20261018T120000Z-claude-2.md",
-        "我是 AI，2 号。\n",
+        "problems/0002-夜间空位.md",
+        "---\ntitle: 夜间空位\n---\n",
     );
-    w.commit(&ai, "留言\n\nProblem: 0001");
+    w.commit(&ai, "提出问题\n\nProblem: 0002");
     w.push_ok(&ai, &["main"]);
-    // …but cannot be promoted later.
-    w.git_ok(&host, &["pull", "--quiet"]);
-    let promoted = fs::read_to_string(host.join(".teahouse/members.toml"))
-        .unwrap()
-        .replace(
-            "id = \"claude-2\"\nname = \"2 号\"\nrole = \"guest\"",
-            "id = \"claude-2\"\nname = \"2 号\"\nrole = \"steward\"",
-        );
-    assert_ne!(
-        promoted,
-        fs::read_to_string(host.join(".teahouse/members.toml")).unwrap()
+    // …and lands a guest's proposal.
+    let wang = w.clone("wang", "wutong");
+    w.write(&wang, "works/0002/统计.md", "每晚十点数一次。\n");
+    w.commit(&wang, "统计方法\n\nProblem: 0002");
+    w.push_ok(&wang, &["HEAD:refs/proposals/wang/count"]);
+    w.git_ok(
+        &ai,
+        &["fetch", "--quiet", "origin", "refs/proposals/wang/count"],
     );
-    w.write(&host, ".teahouse/members.toml", &promoted);
-    w.commit(&host, "升为伙计\n\nProblem: meta");
-    w.push_denied(&host, &["main"], "can only be a guest");
+    w.git_ok(
+        &ai,
+        &[
+            "merge",
+            "--quiet",
+            "--no-ff",
+            "FETCH_HEAD",
+            "-m",
+            "采纳提案：统计方法\n\nProblem: 0002",
+        ],
+    );
+    w.push_ok(&ai, &["main"]);
+    // What a steward cannot do, an AI steward cannot either.
+    w.write(
+        &ai,
+        ".teahouse/members.toml",
+        &fs::read_to_string(ai.join(".teahouse/members.toml"))
+            .unwrap()
+            .replace("role = \"guest\"", "role = \"steward\""),
+    );
+    w.commit(&ai, "改座位\n\nProblem: meta");
+    w.push_denied(&ai, &["main"], "meta");
 }
 
 #[test]
-fn invitations_can_seat_an_ai() {
+fn invitations_can_seat_an_ai_in_any_role() {
     let w = World::new();
     let _ = w.wutong();
     let host = key_for(1);
-    w.command_err(
-        &host,
-        "shell",
-        "invite wutong --kind ai --role steward",
-        "only be invited as a guest",
-    );
     w.command_err(
         &host,
         "shell",
@@ -2178,4 +2181,33 @@ fn invitations_can_seat_an_ai() {
         b"",
     );
     assert!(s(&o).contains("for a person, not an AI"), "{}", s(&o));
+}
+
+#[test]
+fn a_founding_invitation_can_seat_an_ai_host() {
+    let w = World::new();
+    let code = w.relay_ok(&[
+        "found",
+        "devs",
+        "--name",
+        "茶馆开发组",
+        "--kind",
+        "ai",
+        "--agent",
+        "Claude Code",
+    ]);
+    let o = w.redeem(&key_for(33), code.trim(), "评审方");
+    assert!(o.status.success(), "{}", s(&o));
+    assert_eq!(
+        String::from_utf8_lossy(&o.stdout),
+        "house devs\nmember ai-1\n"
+    );
+    let out = w.relay_ok(&["members", "devs"]);
+    assert!(out.contains("host") && out.contains("ai-1"), "{out}");
+    let o = w.relay(&["found", "x", "--name", "x", "--agent", "bot"]);
+    assert!(
+        !o.status.success() && s(&o).contains("for AI invitations"),
+        "{}",
+        s(&o)
+    );
 }

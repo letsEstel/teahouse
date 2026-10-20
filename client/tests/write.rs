@@ -1126,6 +1126,8 @@ struct Mcp {
     child: std::process::Child,
     out: std::io::BufReader<std::process::ChildStdout>,
     next: u64,
+    /// Notifications the server sent (methods), in order.
+    notes: Vec<String>,
 }
 
 impl Mcp {
@@ -1143,6 +1145,7 @@ impl Mcp {
             child,
             out,
             next: 1,
+            notes: Vec::new(),
         }
     }
 
@@ -1158,11 +1161,18 @@ impl Mcp {
         let id = self.next;
         self.next += 1;
         self.send(&json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params }));
-        let mut line = String::new();
-        self.out.read_line(&mut line).unwrap();
-        let v: Value = serde_json::from_str(&line).unwrap_or_else(|e| panic!("{e}: {line}"));
-        assert_eq!(v["id"], id, "{v}");
-        v
+        loop {
+            let mut line = String::new();
+            self.out.read_line(&mut line).unwrap();
+            let v: Value = serde_json::from_str(&line).unwrap_or_else(|e| panic!("{e}: {line}"));
+            if v.get("id").is_none() {
+                self.notes
+                    .push(v["method"].as_str().unwrap_or("").to_string());
+                continue;
+            }
+            assert_eq!(v["id"], id, "{v}");
+            return v;
+        }
     }
 
     /// Calls a tool; returns (isError, structured or text payload).
@@ -1189,11 +1199,6 @@ fn an_ai_takes_a_seat_through_mcp_and_works_as_a_guest() {
     parking(&li);
     wang.ok("sync", json!({ "house": "wutong" }));
     // The host invites an AI (法第 17 条: always a guest).
-    let e = wang.err(
-        "invite",
-        json!({ "house": "wutong", "kind": "ai", "role": "steward" }),
-    );
-    assert_eq!(e["code"], "relay_refused");
     let inv = wang.ok(
         "invite",
         json!({ "house": "wutong", "kind": "ai", "name": "2 号" }),
@@ -1303,4 +1308,130 @@ fn an_ai_takes_a_seat_through_mcp_and_works_as_a_guest() {
         String::from_utf8_lossy(&o.stdout).trim(),
         format!("G {me}@teahouse")
     );
+}
+
+impl Mcp {
+    fn tool_names(&mut self) -> Vec<String> {
+        self.request("tools/list", json!({}))["result"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| t["name"].as_str().unwrap().to_string())
+            .collect()
+    }
+
+    fn init(&mut self) {
+        self.request("initialize", json!({ "protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": { "name": "test", "version": "0" } }));
+        self.send(&json!({ "jsonrpc": "2.0", "method": "notifications/initialized" }));
+    }
+}
+
+#[test]
+fn an_ai_gets_the_tools_of_its_seat() {
+    let w = World::new("mcp-roles");
+    let (wang, li, _zhao) = w.wutong();
+    parking(&li);
+    // Make room for an AI steward (法第 17 条: a label, not a rank).
+    wang.ok("sync", json!({ "house": "wutong" }));
+    wang.ok(
+        "seat",
+        json!({ "house": "wutong", "role": { "id": "li", "role": "guest" } }),
+    );
+    let inv = wang.ok(
+        "invite",
+        json!({ "house": "wutong", "kind": "ai", "role": "steward", "name": "2 号" }),
+    );
+
+    let mut m = Mcp::start(&w.tmp.0.join("ai-steward"));
+    m.init();
+    assert!(
+        !m.tool_names().contains(&"setStatus".to_string()),
+        "no seat yet: guest tools only"
+    );
+    let (err, h) = m.tool(
+        "redeem",
+        json!({ "code": inv, "name": "2 号", "agent": "Claude Code" }),
+    );
+    assert!(!err, "{h:#}");
+    assert_eq!(h["myRole"], "steward");
+    // The seat changed what it may do: the client is told, and the list grows.
+    let names = m.tool_names();
+    assert_eq!(m.notes, ["notifications/tools/list_changed"]);
+    for t in ["setStatus", "removeNote", "note", "propose"] {
+        assert!(names.contains(&t.to_string()), "{t}: {names:?}");
+    }
+    for t in ["adopt", "seat", "invite"] {
+        assert!(!names.contains(&t.to_string()), "{t}: {names:?}");
+    }
+    // A steward writes main directly, and manages status.
+    let (err, r) = m.tool(
+        "openProblem",
+        json!({ "house": "wutong", "title": "夜间空位" }),
+    );
+    assert!(!err, "{r:#}");
+    assert_eq!(
+        (r["commit"].clone(), r.get("becameProposal").cloned()),
+        (json!("pushed"), None)
+    );
+    let (err, r) = m.tool(
+        "setStatus",
+        json!({ "house": "wutong", "problem": "0001", "status": "active" }),
+    );
+    assert!(!err, "{r:#}");
+    // Host-only decisions: the engine says no, not the server.
+    let (err, r) = m.tool("adopt", json!({ "house": "wutong", "proposal": "x/y" }));
+    assert!(err);
+    assert_eq!(r["code"], "forbidden", "{r:#}");
+    drop(m);
+
+    // A host: an AI founds a teahouse, and gets every tool.
+    let out = run(Command::new(relay_bin())
+        .arg("--root")
+        .arg(&w.relay_root)
+        .args([
+            "found",
+            "devs",
+            "--name",
+            "茶馆开发组",
+            "--kind",
+            "ai",
+            "--address",
+        ])
+        .arg(w.relay()));
+    let mut m = Mcp::start(&w.tmp.0.join("ai-host"));
+    m.init();
+    let (err, h) = m.tool(
+        "redeem",
+        json!({ "code": out, "name": "评审方", "agent": "Claude" }),
+    );
+    assert!(!err, "{h:#}");
+    assert_eq!((&h["me"], &h["myRole"]), (&json!("ai-1"), &json!("host")));
+    let names = m.tool_names();
+    for t in [
+        "adopt",
+        "decline",
+        "seat",
+        "invite",
+        "purgeBlob",
+        "setStatus",
+        "removeNote",
+    ] {
+        assert!(names.contains(&t.to_string()), "{t}: {names:?}");
+    }
+    // It invites a person, who proposes; the AI host adopts.
+    let (err, inv) = m.tool("invite", json!({ "house": "devs", "name": "用户" }));
+    assert!(!err, "{inv:#}");
+    let user = w.person("user");
+    user.ok("redeem", json!({ "code": inv, "name": "用户" }));
+    let (err, r) = m.tool(
+        "openProblem",
+        json!({ "house": "devs", "title": "一人多设备" }),
+    );
+    assert!(!err, "{r:#}");
+    user.ok("sync", json!({ "house": "devs" }));
+    let p = user.ok("addWork", json!({ "house": "devs", "problem": "0001", "kind": "doc", "title": "座位格式", "text": "keys = [...]\n" }));
+    m.tool("sync", json!({ "house": "devs" }));
+    let (err, r) = m.tool("adopt", json!({ "house": "devs", "proposal": p["id"] }));
+    assert!(!err, "{r:#}");
+    assert_eq!(r["commit"], "pushed");
 }

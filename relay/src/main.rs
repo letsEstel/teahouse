@@ -38,6 +38,7 @@ OPERATOR COMMANDS:
     open <id> --name NAME --host-id ID --host-name NAME --host-key KEY|@FILE [--signboard TEXT]
                          open a new teahouse with its host (老板)
     found <id> --name NAME [--signboard TEXT] [--days 1-30] [--address HOST[:PORT]]
+          [--kind ai [--agent A]]
                          a one-time invitation that opens teahouse <id> with
                          whoever redeems it as host (prints TH-…[@address])
     adopt <id> --from DIR --key KEY|@FILE [--rev REV]
@@ -150,6 +151,8 @@ fn run() -> Result<()> {
                     host_id: &host_id,
                     host_name: &host_name,
                     host_key: &host_key,
+                    host_kind: teahouse_core::Kind::Human,
+                    host_agent: None,
                 },
             )
         }
@@ -159,7 +162,14 @@ fn run() -> Result<()> {
             let signboard = args.take_flag("--signboard")?;
             let days = args.take_flag("--days")?;
             let address = args.take_flag("--address")?;
+            let kind = args.take_flag("--kind")?;
+            let agent = args.take_flag("--agent")?;
             args.finish()?;
+            let kind = match kind.as_deref() {
+                None => teahouse_core::Kind::Human,
+                Some(k) => teahouse_core::Kind::parse(k)
+                    .ok_or_else(|| Error(format!("unknown kind {k:?} (human or ai)")))?,
+            };
             let days = match days {
                 None => None,
                 Some(d) => Some(
@@ -167,7 +177,15 @@ fn run() -> Result<()> {
                         .map_err(|_| Error(format!("--days {d:?} is not a number")))?,
                 ),
             };
-            let code = invites::create_founding(&root, &id, &name, signboard.as_deref(), days)?;
+            let code = invites::create_founding(
+                &root,
+                &id,
+                &name,
+                signboard.as_deref(),
+                days,
+                kind,
+                agent.as_deref(),
+            )?;
             match address {
                 Some(a) => println!("{code}@{a}"),
                 None => println!("{code}"),

@@ -2,11 +2,12 @@
 //! such as Claude Code can sit in a teahouse as a member.
 //!
 //! It is one more interface to the same engine: the same local clones, the
-//! same device key, the same commands and JSON as CLIENT-API.md §4. The
-//! tools are the commands a guest uses; decisions that belong to people
-//! (`adopt`, `decline`, `seat`, `invite`, `purgeBlob`, `setStatus`,
-//! `removeNote`) are not offered at all. The relay enforces the rest: an AI
-//! is a guest (法第 17 条), and every commit it makes is signed.
+//! same device key, the same commands and JSON as CLIENT-API.md §4.
+//! `kind = "ai"` is a label, not a rank (法第 17 条): the tools offered follow
+//! the seats this AI holds. Every member gets the guest's tools; a steward
+//! also `setStatus` and `removeNote`; a host also `adopt`, `decline`,
+//! `seat`, `invite` and `purgeBlob`. The server adds no limits of its own:
+//! the engine and the relay's laws decide, per teahouse, as for anyone.
 //!
 //! Transport: JSON-RPC 2.0, one message per line on stdin/stdout; nothing
 //! else is ever written to stdout.
@@ -19,21 +20,21 @@ use std::io::{BufRead, Write};
 const VERSIONS: &[&str] = &["2025-06-18", "2025-03-26", "2024-11-05"];
 
 const INSTRUCTIONS: &str = "\
-你坐在一间茶馆里（Teahouse）：不超过 15 人的小团体在这里把事情办成。你是 AI 茶客，座位表上标着 kind = ai。
-You sit in a teahouse: a small group (at most 15) getting things done. You are an AI guest, marked kind = ai on the seating chart.
+你坐在一间茶馆里（Teahouse）：不超过 15 人的小团体在这里把事情办成。你是 AI 成员，座位表上标着 kind = ai。
+You sit in a teahouse: a small group (at most 15) getting things done. You are an AI member, marked kind = ai on the seating chart.
 
 规矩 · The rules:
 1. 每个提交都面向一个问题。先用 house 看有哪些问题，用 problem 读全文，再动手。
    Everything you write faces a problem. Read `house`, then `problem`, before writing.
 2. 留言写下后不能修改，也不能删除；想改口就再写一条。Posts are never edited; write a new one.
-3. 你写的成果、新问题、公告都会变成提案，由老板决定是否采纳（返回 becameProposal: true）。不要催促，也不要绕过。
-   Works, new problems and notices you write become proposals for the host to adopt or decline.
+3. 你能做什么，看你的座位（houses 里的 myRole），和人一样：茶客写的成果、新问题、公告会变成提案，由老板决定是否采纳（返回 becameProposal: true）；伙计直接写，也管状态和删留言；老板还管采纳、座位和邀请。
+   What you may do follows your seat (myRole in `houses`), as for people: a guest's works, problems and notices become proposals; a steward writes directly and moderates; a host also adopts, seats and invites.
 4. 不要假装是人。你的名字旁边会显示 AI，你的每个提交都用你自己的钥匙签名。
    Never pretend to be a person: you are shown as AI and sign everything with your own key.
 5. 先 sync 再读，写完的结果里会告诉你是否已经推送（commit: pushed / local）。
    `sync` before reading; write results say whether they were pushed.
-6. 采纳、拒绝、座位、邀请、删附件、改状态、删留言是人的决定，这里没有这些工具。
-   Adopting, declining, seats, invitations, purging, status and moderation are people's decisions; they are not here.";
+6. 有权限的事，也要像人一样谨慎：采纳、拒绝、改座位、删留言都会留在历史里。拿不准就先留言问。
+   Use the powers your seat gives you as a careful person would; they stay in history. When unsure, ask in a post first.";
 
 fn obj(props: Value, required: &[&str]) -> Value {
     json!({ "type": "object", "properties": props, "required": required, "additionalProperties": false })
@@ -80,18 +81,67 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
         ("addWork", "Add a result (work) to a problem: a document, plan, table or attachment. As a guest this becomes a proposal.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "kind": kind, "title": s("title"), "text": s("content for doc/plan/table"), "fromPath": s("local file for image/file"), "note": s("one line shown under the title") }), &["house", "problem", "kind", "title"])),
         ("updateWork", "Change an existing work's content (by its id). As a guest this becomes a proposal.", obj(json!({ "house": house(), "id": s("the work's path"), "text": s("the new content"), "fromPath": s("a local file, for attachments") }), &["house", "id"])),
         ("sync", "Fetch what others wrote and push what you wrote. Without house: every teahouse.", obj(json!({ "house": house() }), &[])),
+        // A steward's and a host's, offered when this device holds such a seat.
+        ("setStatus", "Change a problem's status (open, active, solved) and its owner. Steward and host.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "status": { "type": "string", "enum": ["open", "active", "solved"] }, "owner": s("member id who takes it on; empty to clear") }), &["house", "problem", "status"])),
+        ("removeNote", "Remove a post (moderation): it leaves main, but stays in history. Steward and host.", obj(json!({ "house": house(), "id": s("the post's path (Note.id)") }), &["house", "id"])),
+        ("adopt", "Adopt a proposal: merge it into main and close it. Host.", obj(json!({ "house": house(), "proposal": s("proposal id, <author>/<name>") }), &["house", "proposal"])),
+        ("decline", "Decline a proposal with a reason; it is closed and the decision stays in history. Host.", obj(json!({ "house": house(), "proposal": s("proposal id"), "reason": s("why, for its author") }), &["house", "proposal"])),
+        ("seat", "Change the seating chart: remove a member, or change a member's role. New members come only by invitation. Host.", obj(json!({ "house": house(), "remove": s("member id to remove"), "role": { "type": "object", "properties": { "id": s("member id"), "role": { "type": "string", "enum": ["guest", "steward", "host"] } }, "required": ["id", "role"] } }), &["house"])),
+        ("invite", "Create a one-time invitation (TH-…@relay) for a person or an AI. Host.", obj(json!({ "house": house(), "role": { "type": "string", "enum": ["guest", "steward"] }, "name": s("whom it is for"), "days": { "type": "integer", "minimum": 1, "maximum": 30 }, "kind": { "type": "string", "enum": ["human", "ai"] }, "agent": s("for an AI: which one") }), &["house"])),
+        ("purgeBlob", "Remove an attachment's content for good (the reference stays, marked purged). Host.", obj(json!({ "house": house(), "id": s("the attachment reference's path") }), &["house", "id"])),
         ("redeem", "Take a seat with an invitation (TH-XXXX-XXXX-XXXX-XXXX@relay) from the host, then clone the teahouse. Give your name as people should see it; agent names what you are (e.g. Claude Code).", obj(json!({ "code": s("the whole invitation as pasted"), "name": s("your name in this teahouse"), "agent": s("what kind of AI you are"), "relay": s("relay address, only if the invitation has none") }), &["code", "name"])),
     ]
 }
 
+/// The seat a tool needs somewhere for it to be offered.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Need {
+    Anyone,
+    Steward,
+    Host,
+}
+
+fn need(tool: &str) -> Need {
+    match tool {
+        "setStatus" | "removeNote" => Need::Steward,
+        "adopt" | "decline" | "seat" | "invite" | "purgeBlob" => Need::Host,
+        _ => Need::Anyone,
+    }
+}
+
+/// The highest seat this device holds in any teahouse.
+fn held(client: &Client) -> Need {
+    let mut best = Need::Anyone;
+    for h in client.houses().unwrap_or_default() {
+        if h.me.is_empty() {
+            continue;
+        }
+        let n = match h.my_role {
+            "host" => Need::Host,
+            "steward" => Need::Steward,
+            _ => Need::Anyone,
+        };
+        best = best.max(n);
+    }
+    best
+}
+
+/// The tools this device's seats call for.
+fn offered(client: &Client) -> Vec<(&'static str, &'static str, Value)> {
+    let held = held(client);
+    tools()
+        .into_iter()
+        .filter(|(name, _, _)| need(name) <= held)
+        .collect()
+}
+
 /// What a tool call answers: the engine's envelope as text, and as
-/// structured content when it is an object.
+/// structured content when it is an object. No limits of its own: the
+/// engine and the relay decide, for this teahouse and this seat.
 fn call_tool(client: &Client, name: &str, args: Value) -> Value {
     if !tools().iter().any(|(n, _, _)| *n == name) {
         return json!({
-            "content": [{ "type": "text", "text": format!(
-                "{name} is not available here: adopting, declining, seats, invitations, purging, status and moderation are people's decisions / 这是人的决定，AI 不能调用"
-            ) }],
+            "content": [{ "type": "text", "text": format!("unknown tool {name}") }],
             "isError": true
         });
     }
@@ -171,14 +221,14 @@ pub fn handle(client: &Client, msg: &Value) -> Option<Value> {
                 .unwrap_or(VERSIONS[0]);
             Ok(json!({
                 "protocolVersion": version,
-                "capabilities": { "tools": { "listChanged": false }, "resources": { "listChanged": false } },
+                "capabilities": { "tools": { "listChanged": true }, "resources": { "listChanged": false } },
                 "serverInfo": { "name": "teahouse", "title": "茶馆 · Teahouse", "version": env!("CARGO_PKG_VERSION") },
                 "instructions": INSTRUCTIONS
             }))
         }
         "ping" => Ok(json!({})),
         "tools/list" => Ok(json!({
-            "tools": tools().into_iter().map(|(name, description, schema)| json!({
+            "tools": offered(client).into_iter().map(|(name, description, schema)| json!({
                 "name": name, "description": description, "inputSchema": schema
             })).collect::<Vec<_>>()
         })),
@@ -205,8 +255,11 @@ pub fn handle(client: &Client, msg: &Value) -> Option<Value> {
     })
 }
 
-/// Serves MCP until the input ends.
+/// Serves MCP until the input ends. When a call changes the seats this
+/// device holds (`redeem`, a `sync` that brings a new role), the client is
+/// told to list the tools again.
 pub fn serve(client: &Client, input: impl BufRead, mut output: impl Write) -> std::io::Result<()> {
+    let mut seats = held(client);
     for line in input.lines() {
         let line = line?;
         if line.trim().is_empty() {
@@ -225,6 +278,16 @@ pub fn serve(client: &Client, input: impl BufRead, mut output: impl Write) -> st
         if let Some(r) = reply {
             writeln!(output, "{r}")?;
             output.flush()?;
+        }
+        if line.contains("\"tools/call\"") {
+            let now = held(client);
+            if now != seats {
+                seats = now;
+                let note =
+                    json!({ "jsonrpc": "2.0", "method": "notifications/tools/list_changed" });
+                writeln!(output, "{note}")?;
+                output.flush()?;
+            }
         }
     }
     Ok(())
@@ -271,7 +334,9 @@ mod tests {
         ] {
             assert!(!names.iter().any(|n| n == absent), "{absent}");
         }
+        // No seat anywhere: the guest's tools only (of 20 in all).
         assert_eq!(names.len(), 13);
+        assert_eq!(tools().len(), 20);
         let r = handle(&c, &json!({ "jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": { "name": "adopt", "arguments": {} } })).unwrap();
         assert_eq!(r["result"]["isError"], true);
         let r = handle(&c, &json!({ "jsonrpc": "2.0", "id": 4, "method": "nope" })).unwrap();

@@ -26,7 +26,7 @@
 
 ### 让 AI 入座（Claude 桌面版，Windows）
 
-AI 以茶客身份坐进茶馆（[docs/MCP.md](docs/MCP.md)）：它有自己的设备钥匙，在座位表上标为 AI，只能留言和提提案。
+AI 作为成员坐进茶馆（[docs/MCP.md](docs/MCP.md)）：它有自己的设备钥匙，在座位表上标为 AI（id 以 `ai-` 开头）；能做什么取决于给它的座位，和人一样。
 
 1. 下载 `teahouse-client-windows-x64.exe`，放到一个固定的地方，例如 `C:\Teahouse\teahouse-client.exe`。
 2. 打开 Claude 桌面版的 **设置 → 开发者 → 编辑配置**（也就是 `%APPDATA%\Claude\claude_desktop_config.json`），写入：
@@ -42,14 +42,14 @@ AI 以茶客身份坐进茶馆（[docs/MCP.md](docs/MCP.md)）：它有自己的
    ```
    `--root` 是这个 AI 的数据目录（本地副本和它的钥匙），`~/` 指你的用户目录。每个 AI 用自己的目录。
 3. 重启 Claude 桌面版。
-4. 老板在客户端里邀请一位 **AI 茶客**（邀请时选 AI；命令行是 `invite <茶馆> --kind ai`），把整行邀请 `TH-…@地址` 发给 Claude，对它说：用 teahouse 的 redeem 工具入座，名字叫"评审方"，agent 写 "Claude"。
-5. 之后它就能用 `house`、`problem` 读，用 `note`、`propose` 写。采纳、座位、邀请这些决定只有人能做，它没有这些工具。
+4. 老板在客户端里邀请一位 **AI 成员**（邀请时选 AI 和它的角色；命令行是 `invite <茶馆> --kind ai [--role steward]`），把整行邀请 `TH-…@地址` 发给 Claude，对它说：用 teahouse 的 redeem 工具入座，名字叫"评审方"，agent 写 "Claude"。
+5. 之后它就能用 `house`、`problem` 读，用 `note`、`propose` 写；它是伙计或老板时，还会多出改状态、删留言、采纳、座位、邀请这些工具。权限由 Relay 的法来管，和人一样。
 
 ## 文档
 
 - [使用说明](docs/USER-GUIDE.md)：给所有人
 - [开一个 Relay](docs/DEPLOY.md)：给老板和运维
-- [AI 入座与 MCP](docs/MCP.md)：让 Claude Code 这样的 AI 以茶客身份坐进茶馆
+- [AI 入座与 MCP](docs/MCP.md)：让 Claude Code 这样的 AI 作为成员坐进茶馆
 - [Relay 与茶馆的法](docs/RELAY.md)、[接口约定](docs/CLIENT-API.md)、[邀请](docs/INVITE.md)：给开发者
 
 ## 快速开始
