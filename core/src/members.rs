@@ -6,6 +6,8 @@
 //! 3. at most one steward (伙计)
 //! 4. everyone else is a guest (茶客)
 //! 5. member ids and keys are unique
+//! 6. an AI member (`kind = "ai"`) is a guest; host and steward are people;
+//!    `agent` appears only on AI members (法第 17 条, docs/MCP.md)
 
 use crate::key::PublicKey;
 use crate::toml::{self, Value};
@@ -52,6 +54,31 @@ impl Role {
     }
 }
 
+/// Whether a seat is held by a person or an AI (docs/MCP.md §2).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+pub enum Kind {
+    #[default]
+    Human,
+    Ai,
+}
+
+impl Kind {
+    pub fn parse(s: &str) -> Option<Kind> {
+        match s {
+            "human" => Some(Kind::Human),
+            "ai" => Some(Kind::Ai),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Kind::Human => "human",
+            Kind::Ai => "ai",
+        }
+    }
+}
+
 impl fmt::Display for Role {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
@@ -64,6 +91,29 @@ pub struct Member {
     pub name: String,
     pub role: Role,
     pub key: PublicKey,
+    /// `human` unless the chart says `kind = "ai"`.
+    pub kind: Kind,
+    /// What kind of AI (`agent = "Claude Code"`), for display only.
+    pub agent: Option<String>,
+}
+
+impl Member {
+    /// A person's seat (`kind` human, no `agent`).
+    pub fn human(
+        id: impl Into<String>,
+        name: impl Into<String>,
+        role: Role,
+        key: PublicKey,
+    ) -> Member {
+        Member {
+            id: id.into(),
+            name: name.into(),
+            role,
+            key,
+            kind: Kind::Human,
+            agent: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -161,7 +211,7 @@ impl Members {
         let mut members = Vec::new();
         for (i, t) in doc.arrays.get("member").into_iter().flatten().enumerate() {
             let ctx = format!("member[{i}]");
-            check_keys(t, &["id", "name", "role", "key"], &ctx)?;
+            check_keys(t, &["id", "name", "role", "key", "kind", "agent"], &ctx)?;
             let id = take_str(t, "id", &ctx)?;
             let mname = take_str(t, "name", &ctx)?;
             let role_s = take_str(t, "role", &ctx)?;
@@ -172,11 +222,24 @@ impl Members {
             })?;
             let key = PublicKey::parse(&take_str(t, "key", &ctx)?)
                 .map_err(|err| MembersError(format!("{ctx}.key: {err}")))?;
+            let kind = match t.get("kind") {
+                None => Kind::Human,
+                Some(Value::Str(k)) => Kind::parse(k)
+                    .ok_or_else(|| MembersError(format!("{ctx}.kind {k:?} must be human or ai")))?,
+                Some(_) => return e(format!("{ctx}.kind must be a string")),
+            };
+            let agent = match t.get("agent") {
+                None => None,
+                Some(Value::Str(a)) => Some(a.clone()),
+                Some(_) => return e(format!("{ctx}.agent must be a string")),
+            };
             members.push(Member {
                 id,
                 name: mname,
                 role,
                 key,
+                kind,
+                agent,
             });
         }
 
@@ -204,6 +267,17 @@ impl Members {
                 "{n} members; a teahouse has at most {MAX_MEMBERS} seats"
             ));
         }
+        // 法第 17 条 first: the host and the steward are people.
+        if let Some(m) = self
+            .members
+            .iter()
+            .find(|m| m.kind == Kind::Ai && m.role != Role::Guest)
+        {
+            return e(format!(
+                "member {:?} is an AI and can only be a guest, not the {} / AI 只能是茶客",
+                m.id, m.role
+            ));
+        }
         let hosts = self.members.iter().filter(|m| m.role == Role::Host).count();
         if hosts != 1 {
             return e(format!("exactly one host is required, found {hosts}"));
@@ -224,6 +298,16 @@ impl Members {
                 ));
             }
             check_text(&m.name, &format!("member {:?} name", m.id), 64)?;
+            match (&m.agent, m.kind) {
+                (Some(_), Kind::Human) => {
+                    return e(format!(
+                        "member {:?}: `agent` is only for AI members (kind = \"ai\")",
+                        m.id
+                    ))
+                }
+                (Some(a), Kind::Ai) => check_text(a, &format!("member {:?} agent", m.id), 64)?,
+                (None, _) => {}
+            }
             for other in &self.members[..i] {
                 if other.id == m.id {
                     return e(format!("duplicate member id {:?}", m.id));
@@ -275,6 +359,12 @@ impl Members {
             s.push_str(&format!("id = {}\n", q(&m.id)));
             s.push_str(&format!("name = {}\n", q(&m.name)));
             s.push_str(&format!("role = {}\n", q(m.role.as_str())));
+            if m.kind == Kind::Ai {
+                s.push_str("kind = \"ai\"\n");
+            }
+            if let Some(a) = &m.agent {
+                s.push_str(&format!("agent = {}\n", q(a)));
+            }
             s.push_str(&format!("key = {}\n", q(&m.key.openssh())));
         }
         Ok(s)
@@ -308,12 +398,7 @@ mod tests {
     }
 
     fn member(id: &str, role: Role, n: u8) -> Member {
-        Member {
-            id: id.into(),
-            name: id.to_uppercase(),
-            role,
-            key: key(n),
-        }
+        Member::human(id, id.to_uppercase(), role, key(n))
     }
 
     fn sample() -> Members {
@@ -406,5 +491,51 @@ mod tests {
         let mut no_heir = sample();
         no_heir.members.retain(|m| m.role != Role::Steward);
         assert!(no_heir.succeed().is_err());
+    }
+
+    #[test]
+    fn ai_members_are_guests() {
+        let k = |n: u8| key(n).openssh();
+        let chart = |extra: &str| {
+            format!(
+                "version = 1\n[teahouse]\nname = \"开发组\"\n\n[[member]]\nid = \"u\"\nname = \"用户\"\nrole = \"host\"\nkey = \"{}\"\n\n[[member]]\nid = \"claude-2\"\nname = \"2 号\"\n{extra}key = \"{}\"\n",
+                k(1),
+                k(2)
+            )
+        };
+        let m = Members::parse(&chart(
+            "role = \"guest\"\nkind = \"ai\"\nagent = \"Claude Code\"\n",
+        ))
+        .unwrap();
+        let ai = m.by_id("claude-2").unwrap();
+        assert_eq!(
+            (ai.kind, ai.agent.as_deref()),
+            (Kind::Ai, Some("Claude Code"))
+        );
+        assert_eq!(m.host().kind, Kind::Human);
+        // Round trip, and humans carry no kind line.
+        let t = m.to_toml().unwrap();
+        assert_eq!(Members::parse(&t).unwrap(), m);
+        assert_eq!(t.matches("kind = ").count(), 1);
+
+        for (bad, why) in [
+            ("role = \"steward\"\nkind = \"ai\"\n", "can only be a guest"),
+            (
+                "role = \"guest\"\nagent = \"Claude Code\"\n",
+                "only for AI members",
+            ),
+            ("role = \"guest\"\nkind = \"robot\"\n", "human or ai"),
+            ("role = \"guest\"\nkind = 1\n", "must be a string"),
+        ] {
+            let err = Members::parse(&chart(bad)).unwrap_err();
+            assert!(err.0.contains(why), "{bad}: {err}");
+        }
+        // Nor can an AI inherit the teahouse, or be the host at all.
+        let mut m2 = m.clone();
+        m2.members[0].kind = Kind::Ai;
+        assert!(m2.validate().is_err());
+        let mut m3 = m.clone();
+        m3.members[1].role = Role::Steward;
+        assert!(m3.validate().is_err());
     }
 }
