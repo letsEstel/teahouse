@@ -8,9 +8,10 @@ on:
     paths: [deploy/**, relay/**, core/**, scripts/deploy-test.sh, .github/workflows/deploy.yml]
   pull_request:
     paths: [deploy/**, relay/**, core/**, scripts/deploy-test.sh, .github/workflows/deploy.yml]
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # only the main-branch step uploads to the nightly release
 
 jobs:
   install-sh:
@@ -43,6 +44,15 @@ jobs:
         with:
           name: teahouse-relay-linux-x86_64
           path: teahouse-relay-linux-x86_64.tar.gz
+      - name: Publish to the nightly release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view nightly >/dev/null 2>&1 || \
+            gh release create nightly --prerelease --target "$GITHUB_SHA" \
+              --title "最新测试版 · Nightly" --notes "每次 main 更新后自动构建。Built automatically from main."
+          gh release upload nightly teahouse-relay-linux-x86_64.tar.gz --clobber
 
   docker:
     runs-on: ubuntu-24.04

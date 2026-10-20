@@ -14,6 +14,15 @@
 | `scripts/demo.sh` | 一键演示：开茶馆、入座、提案、被拒、继承。 |
 | `scripts/sshd-test.sh` | 真实 sshd 集成测试（非 root，两种接法）。 |
 
+## 下载 · Download
+
+最新测试版（每次 main 更新后自动构建；仓库是私有的，需要先登录 GitHub）：
+
+- **安卓**：[teahouse-android-arm64.apk](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-android-arm64.apk)
+- **Windows**：[teahouse-windows-x64-setup.exe](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-windows-x64-setup.exe)
+- **Relay（Linux 服务器）**：[teahouse-relay-linux-x86_64.tar.gz](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-relay-linux-x86_64.tar.gz)，安装方法见 [开一个 Relay](docs/DEPLOY.md)
+- 全部文件和更新时间：[Releases → nightly](https://github.com/letsEstel/teahouse/releases/tag/nightly)
+
 ## 文档
 
 - [使用说明](docs/USER-GUIDE.md)：给所有人

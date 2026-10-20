@@ -11,7 +11,7 @@
 
 ## 方式一：安装脚本（推荐）
 
-1. 在 GitHub 仓库的 **Actions → deploy** 里，打开最近一次成功的运行，下载 `teahouse-relay-linux-x86_64`，解压得到 `teahouse-relay-linux-x86_64.tar.gz`。
+1. 下载 [teahouse-relay-linux-x86_64.tar.gz](https://github.com/letsEstel/teahouse/releases/download/nightly/teahouse-relay-linux-x86_64.tar.gz)（仓库私有时需要先登录 GitHub；也可以在 Releases → nightly 里找到）。
 2. 把它传到服务器上，解开，运行安装脚本：
    ```sh
    scp teahouse-relay-linux-x86_64.tar.gz root@<服务器地址>:
