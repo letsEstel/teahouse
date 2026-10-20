@@ -13,7 +13,7 @@
   传到手机上点开安装；第一次需要在系统设置里允许"安装未知来源的应用"。
   所有 APK（CI 的、nightly 的、本机 `scripts/build-android.sh` 打的）都用同一把固定的签名钥匙签，新版本直接覆盖安装。
   **不要卸载**：卸载会删掉这台设备的钥匙，也就丢了座位。钥匙放在仓库外（本机 `~/.config/teahouse/android.jks`，
-  CI 里是仓库 Secrets `ANDROID_KEYSTORE_B64` / `ANDROID_KEYSTORE_PASSWORD`）；CI 会核对证书指纹，不对就不发布。
+  CI 里是仓库 Secrets `ANDROID_KEYSTORE_B64` / `ANDROID_KEYSTORE_PASSWORD`）；CI 没有这两个 Secrets 就直接失败，从不临时生成钥匙，并且会核对证书指纹。
 
 应用里还没有茶馆时，打开就是入座页；没拿到邀请的话，可以点"先看看示例茶馆"，用假数据看看（不会同步，也不会离开这台设备），侧栏里随时可以退出示例。
 
