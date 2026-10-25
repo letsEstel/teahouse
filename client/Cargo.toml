@@ -28,6 +28,10 @@ ssh-key = { version = "0.6", default-features = false, features = ["std", "ed255
 # Teahouse commands that are not git (invitations, attachments) run over
 # the same ssh as git: ssh2 binds the very libssh2 git2 already links.
 ssh2 = "0.9"
+# The same libssh2 again (no new crate: git2 and ssh2 link it already), for
+# the one call ssh2 does not wrap: looking up a host in known_hosts by key
+# type, to ask the relay for the key type libgit2 asks for (remote.rs).
+libssh2-sys = "0.3"
 # `serve`: the development HTTP interface on 127.0.0.1:7377. Small,
 # synchronous, no async runtime; not used inside the Tauri app.
 tiny_http = "0.12"
