@@ -1,5 +1,7 @@
 # Teahouse
 
+*Architecture No. 1 in Rust, Op. 1*
+
 **English** · [中文](README.zh.md) · [Deutsch](README.de.md)
 
 ## Preface
