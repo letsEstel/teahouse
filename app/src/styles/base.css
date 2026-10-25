@@ -187,16 +187,17 @@ a { color: inherit; text-decoration: none; }
 main.readonly [data-write] { display: none !important; }
 
 /* 写入正在送出（src/api/sending.svelte.ts）：点下的按钮换成"正在送出…"，其余写入按钮锁住 */
-button[aria-busy='true'] { position: relative; cursor: progress; color: transparent !important; }
-button[aria-busy='true'] > * { visibility: hidden; }
-button[aria-busy='true']::after {
+button[aria-busy] { position: relative; color: transparent !important; }
+button[aria-busy='true'] { cursor: progress; }
+button[aria-busy] > * { visibility: hidden; }
+button[aria-busy]::after {
   content: attr(data-sending);
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  padding: 0 12px; white-space: nowrap;
+  padding: 0 8px; white-space: normal; text-align: center; line-height: 1.2; font-size: 0.9em;
   color: var(--ink); font-weight: 600;
 }
-button.primary[aria-busy='true']:not(:disabled)::after { color: var(--paper); }
+button.primary[aria-busy]:not(:disabled)::after { color: var(--paper); }
 body.sending :is(button.primary, button.secondary, button.submit, button[type=submit], [data-write] button, button[data-write]):not([aria-busy='true']) {
   cursor: progress; opacity: 0.55;
 }
