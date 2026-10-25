@@ -24,7 +24,9 @@ export interface HouseSummary {
 }
 
 /** kind = 'ai'：AI 成员（docs/MCP.md，法则第 17 条）。只是标记，不限制角色；agent 是 AI 的种类，只用于显示 */
-export interface Member { id: string; name: string; role: Role; joined: string; kind?: 'human' | 'ai'; agent?: string }
+export interface Member { id: string; name: string; role: Role; joined: string; kind?: 'human' | 'ai'; agent?: string; devices?: DeviceInfo[] }
+/** 我的一台设备（docs/DEVICES.md）。name 为空 = 第一台设备；fingerprint 形如 SHA256:… */
+export interface DeviceInfo { name: string; fingerprint: string; added: string; thisDevice: boolean }
 export interface Event { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
 /** id = 留言文件的仓库路径；when = 进入茶馆的时间，writtenAt = 文件名里的时间戳 */
 export interface Note { id: string; by: string; text: string; when: string; writtenAt: string }
@@ -119,6 +121,11 @@ export interface Commands {
   seat: [HouseArg & { remove?: string; role?: { id: string; role: Role } }, WriteResult]
   invite: [HouseArg & { role?: Role; name?: string; days?: number; kind?: 'human' | 'ai'; agent?: string }, string]
   redeem: [{ relay: string; code: string; name: string }, HouseSummary]
+  /** 配对码 TH-…@relay：10 分钟、一次，对这台设备在该 Relay 上的所有茶馆有效。name = 新设备的名字 */
+  pair: [{ house?: string; name?: string }, string]
+  devices: [HouseArg, DeviceInfo[]]
+  /** 移除自己的另一台设备（设备名或 SHA256: 指纹）。不给 house 时在所有茶馆里移除；返回移除了的茶馆 */
+  unpair: [{ house?: string; device: string }, string[]]
   purgeBlob: [HouseArg & { id: string }, WriteResult]
 }
 export type Command = keyof Commands

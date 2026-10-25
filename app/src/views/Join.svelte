@@ -4,6 +4,9 @@
   import type { HouseSummary } from '../api/types'
 
   // 入座：只问名字、粘贴邀请（CLIENT-API 第 2 节，INVITE.md）。
+  // 同一个框也接受配对码（DEVICES.md）：从自己另一台设备上拿来的码，这台设备坐进同一个座位。
+  // 两种码长得一样，Relay 才分得出来；但第 02 步问的不一样——邀请问"你叫什么"，配对码问"这台设备叫什么"。
+  // 所以：粘贴的文字里写着"配对码"（"添加一台设备"复制出来的就是这样一句话）时自动切换，也可以手动勾选。
   // 老板发来的邀请是一整串"邀请码@Relay 地址"；也认得整段聊天消息里夹着的邀请码和 teahouse:// 链接。
   // 界面上不出现"密钥"：这台设备会自动生成一把只属于你的钥匙，由引擎处理。
   let { houses, onjoined }: { houses: HouseSummary[]; onjoined: (s: HouseSummary) => void } = $props()
@@ -12,6 +15,8 @@
   let relayInput = $state('')
   let name = $state('')
   let busy = $state(false)
+  /** 用户手动选的：null = 看粘贴的文字自动判断 */
+  let pairingChoice = $state<boolean | null>(null)
 
   function parse(src: string) {
     const code = src.match(/TH(?:-[0-9A-Z]{4}){4}/i)?.[0]?.toUpperCase() ?? ''
@@ -24,6 +29,11 @@
     return { code, relay }
   }
   let found = $derived(parse(pasted))
+  let pairing = $derived(pairingChoice ?? /配对码|pairing code|Kopplungscode/i.test(pasted))
+  // 配对码时替用户猜一个设备名（手机 / 电脑），可以改
+  $effect(() => {
+    if (pairing && !name.trim()) name = t(/Android|iPhone|iPad/i.test(navigator.userAgent) ? 'join.guessPhone' : 'join.guessComputer')
+  })
   let relay = $derived(found.relay || (relayInput.trim() ? (relayInput.includes('@') ? relayInput.trim() : `teahouse@${relayInput.trim()}`) : ''))
   let missing = $derived([!found.code && t('join.needCode'), found.code && !relay && t('join.needRelay'), !name.trim() && t('join.needName')].filter(Boolean) as string[])
 
@@ -55,9 +65,14 @@
       <div class="sc">
         <label for="invite"><h2>{t('join.invite')}</h2></label>
         <textarea id="invite" name="invite" rows="3" bind:value={pasted} placeholder={t('join.invitePh')}></textarea>
+        <label class="tick">
+          <input type="checkbox" checked={pairing} onchange={(e) => (pairingChoice = e.currentTarget.checked)} />
+          <span>{t('join.pairing')}</span>
+        </label>
+        {#if pairing && found.code}<p class="seen"><i></i>{t('join.pairingSeen')}</p>{/if}
         {#if found.code}
           <p class="seen">
-            <i></i>{t('join.seenCode', { code: found.code })}{#if found.relay}<br />{t('join.seenRelay', { relay: found.relay.replace(/^teahouse@/, '') })}{/if}
+            <i></i>{t(pairing ? 'join.seenPair' : 'join.seenCode', { code: found.code })}{#if found.relay}<br />{t('join.seenRelay', { relay: found.relay.replace(/^teahouse@/, '') })}{/if}
           </p>
         {/if}
         {#if found.code && !found.relay}
@@ -73,9 +88,9 @@
     <section class="step">
       <div class="sn num">02</div>
       <div class="sc">
-        <label for="name"><h2>{t('join.name')}</h2></label>
-        <input id="name" name="name" bind:value={name} autocomplete="nickname" />
-        <p class="hint">{t('join.nameHint')}</p>
+        <label for="name"><h2>{t(pairing ? 'join.deviceName' : 'join.name')}</h2></label>
+        <input id="name" name="name" bind:value={name} autocomplete={pairing ? 'off' : 'nickname'} maxlength={pairing ? 32 : undefined} />
+        <p class="hint">{t(pairing ? 'join.deviceNameHint' : 'join.nameHint')}</p>
       </div>
     </section>
 
@@ -123,6 +138,8 @@
   .seen i { flex: none; width: 10px; height: 10px; background: var(--ink); transform: translateY(-1px); }
   .field { display: flex; flex-direction: column; gap: 6px; max-width: 28em; }
   .hint { font-size: 13px; color: var(--ink-2); }
+  .tick { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
+  .tick input { width: 18px; height: 18px; padding: 0; accent-color: var(--ink); flex: none; }
 
   .demo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 24px 0; border-bottom: 1px solid var(--ink); }
   .submit { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px 32px; padding-top: 28px; }

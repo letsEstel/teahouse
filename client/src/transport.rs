@@ -87,7 +87,10 @@ pub fn house_url(relay: &str, house: &str) -> Result<String> {
     if rest.is_empty() || rest.contains(['/', ' ']) {
         return Err(Error::invalid(format!("not a relay address: {relay:?}")).with("relay", relay));
     }
-    Ok(format!("ssh://{rest}/{house}"))
+    // The ssh user defaults to `teahouse`, as everywhere else: without one,
+    // libgit2 asks for a user name and the device key is never offered.
+    let user = if rest.contains('@') { "" } else { "teahouse@" };
+    Ok(format!("ssh://{user}{rest}/{house}"))
 }
 
 /// Remote callbacks for one operation: credentials from the device key,
@@ -389,5 +392,27 @@ pub fn with_key<T>(identity: &Identity, report: &Rc<RefCell<Report>>, f: impl Fn
     {
         let _ = (identity, report);
         f()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn house_urls() {
+        assert_eq!(
+            house_url("122.10.118.71", "dev").unwrap(),
+            "ssh://teahouse@122.10.118.71/dev"
+        );
+        assert_eq!(
+            house_url("estel@127.0.0.1:2222", "dev").unwrap(),
+            "ssh://estel@127.0.0.1:2222/dev"
+        );
+        assert_eq!(
+            house_url("ssh://teahouse@r.org/", "dev").unwrap(),
+            "ssh://teahouse@r.org/dev"
+        );
+        assert!(house_url("r.org/x", "dev").is_err());
     }
 }

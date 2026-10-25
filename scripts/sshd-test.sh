@@ -74,6 +74,9 @@ unset SSH_AUTH_SOCK GIT_SSH GIT_SSH_COMMAND GIT_SSH_VARIANT TEAHOUSE_ROOT
 
 keys="$work/keys"; mkdir -p "$keys"
 ssh-keygen -q -t ed25519 -N '' -f "$work/host_key"
+# A second host key type, as on real servers: libssh2 alone picks ECDSA
+# first, libgit2 follows the user's ~/.ssh/known_hosts (E8).
+ssh-keygen -q -t ecdsa -N '' -f "$work/host_key_ecdsa"
 for p in chenli zhou wang outsider; do ssh-keygen -q -t ed25519 -N '' -C "$p@test" -f "$keys/$p"; done
 pubkey() { cut -d' ' -f1,2 "$keys/$1.pub"; }
 
@@ -131,6 +134,7 @@ global_conf() {
 Port $port
 ListenAddress 127.0.0.1
 HostKey $work/host_key
+HostKey $work/host_key_ecdsa
 PidFile $work/sshd.pid
 UsePAM no
 StrictModes yes
@@ -382,6 +386,21 @@ PY
     "$client" --root "$eng" call sync '{"house":"kehu"}' >/dev/null
     expect ok "E7 原设备同步后看到两台设备" '"name":"手机"' \
       "$client" --root "$eng" call devices '{"house":"kehu"}'
+  fi
+
+  # E8: someone who also logs into the relay with ssh: their own
+  # ~/.ssh/known_hosts holds its ed25519 key. git (libgit2) then asks for
+  # that type; the engine's other commands must ask for the same one, or
+  # the fingerprint pinned by redeem does not fit the clone after it.
+  if [[ $method == A ]]; then
+    local home8="$work/home8-$method" eng4="$work/engine4-$method" inv8
+    mkdir -p "$home8/.ssh"
+    echo "[127.0.0.1]:$port $(cut -d' ' -f1,2 "$work/host_key.pub")" >"$home8/.ssh/known_hosts"
+    inv8="$("$client" --root "$eng" call invite '{"house":"kehu","name":"也用 ssh 的人"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"])')"
+    expect ok "E8 用户自己的 known_hosts 记着 Relay：兑换和克隆用同一把主机钥匙" '"myRole":"guest"' \
+      env HOME="$home8" "$client" --root "$eng4" call redeem "{\"code\":\"$inv8\",\"name\":\"也用 ssh 的人\"}"
+    expect ok "E8 之后的同步也没问题" '"state":"synced"' \
+      env HOME="$home8" "$client" --root "$eng4" call sync '{"house":"kehu"}'
   fi
 
   sed -i 's/ [0-9a-f]*$/ 00/' "$eng/known_hosts"

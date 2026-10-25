@@ -9,6 +9,7 @@
   import Propose from './views/Propose.svelte'
   import Archive from './views/Archive.svelte'
   import Join from './views/Join.svelte'
+  import Devices from './views/Devices.svelte'
   import ErrorBar from './lib/ErrorBar.svelte'
   import { startAutoSync } from './api/autosync'
   import Sending from './lib/Sending.svelte'
@@ -89,6 +90,8 @@
         <Problems {house} {refresh} view={route.arg === 'kanban' ? 'kanban' : 'list'} compose={route.arg === 'new'} />
       {:else if route.page === 'board'}
         <Board {house} {refresh} />
+      {:else if route.page === 'devices'}
+        <Devices {house} />
       {:else if route.page === 'archive'}
         <Archive {house} id={route.arg || undefined} />
       {:else if route.page === 'propose'}

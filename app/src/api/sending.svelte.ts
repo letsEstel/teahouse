@@ -49,20 +49,33 @@ export function begin(): (outcome: unknown | null) => void {
   // 刚点过的按钮（几秒之内，中间可能先暂存了附件）就是发起这次写入的按钮
   const button = lastButton && performance.now() - lastAt < 5000 && lastButton.isConnected ? lastButton : null
   if (button) {
+    clearTimeout(Number(button.dataset.resultTimer))
     button.setAttribute('aria-busy', 'true')
     button.dataset.sending = t('send.sending')
   }
+  // 服务器慢：4 秒后按钮上改说"还在送出…不用再点"
+  const slow = setTimeout(() => { if (button) button.dataset.sending = t('send.slow') }, 4000)
   return (outcome) => {
+    clearTimeout(slow)
     sending.count = Math.max(0, sending.count - 1)
     if (sending.count === 0) document.body.classList.remove('sending')
-    if (button) {
-      button.removeAttribute('aria-busy')
-      delete button.dataset.sending
+    if (outcome === null) {   // 出错：ErrorBar 会说，按钮恢复原样
+      if (button) { button.removeAttribute('aria-busy'); delete button.dataset.sending }
+      return
     }
-    if (outcome === null) return   // 出错：ErrorBar 会说
     const w = outcome as Partial<WriteResult>
-    sending.result = w && typeof w === 'object' && 'commit' in w ? (w.commit === 'pushed' ? 'pushed' : 'local') : 'done'
+    const result = w && typeof w === 'object' && 'commit' in w ? (w.commit === 'pushed' ? 'pushed' : 'local') : 'done'
+    sending.result = result
     clearTimeout(resultTimer)
-    resultTimer = setTimeout(() => (sending.result = null), 3500)
+    resultTimer = setTimeout(() => (sending.result = null), 2500)
+    // 结果就写在这个按钮上（评审方在 #45 的决定：不另外弹条子盖住页面），2.5 秒后恢复
+    if (button) {
+      button.setAttribute('aria-busy', 'done')
+      button.dataset.sending = t(`send.${result}Short`)
+      button.dataset.resultTimer = String(setTimeout(() => {
+        button.removeAttribute('aria-busy')
+        delete button.dataset.sending
+      }, 2500))
+    }
   }
 }

@@ -158,10 +158,19 @@ screens.push(
   { name: 'wutong-archive-edit', hash: '#/wutong/archive/' + encodeURIComponent('works/0001/w2-time-sharing-plan-v2.md'), act: editPlan, widths: [1366, 390] },
   { name: 'kant-archive-guest', hash: '#/kant/archive/' + encodeURIComponent('works/0001/k2-glossary-of-terms.md') },
 )
+// 第 11 轮：我的设备、配对码、用配对码加入
+const pairMsg = '茶馆配对码（10 分钟内有效）：TH-PA1R-7Q3M-XK9D-2WFE@relay.teahouse.example'
+screens.push(
+  { name: 'wutong-devices', hash: '#/wutong/devices' },
+  { name: 'wutong-devices-code', hash: '#/wutong/devices', act: async (p) => { await p.fill('.field input', '电脑'); await p.click('.ask .primary'); await p.waitForTimeout(300) } },
+  { name: 'wutong-devices-remove', hash: '#/wutong/devices', act: async (p) => { await p.click('.act .secondary'); await p.waitForTimeout(200) } },
+  { name: 'join-pairing', hash: '#/join', act: async (p) => { await p.fill('textarea[name=invite]', pairMsg); await p.waitForTimeout(200) } },
+)
 const save = {
-  'wutong-archive': {}, 'wutong-problem': {}, 'kant-problem': {}, 'kant-archive-guest': {},
-  'wutong-problem-compose': {}, 'wutong-archive-edit': {},
+  'wutong-devices': {}, 'wutong-devices-code': { saveDe: false }, 'wutong-devices-remove': {}, 'join-pairing': {},
 }
+// 手机上也存一张"添加一台设备"（用户先在 Fold 上入座，再把电脑配进来）
+screens.push({ name: 'wutong-devices-phone', hash: '#/wutong/devices', widths: [390], save: true, saveAt: 390, act: async (p) => { await p.click('.ask .primary'); await p.waitForTimeout(300) } })
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
 // 手机
 screens.push(
