@@ -272,6 +272,7 @@ export default {
   'devices.paste': '10 分钟内在新设备上粘贴：打开茶馆 → 加入一间茶馆 → 粘贴。只能用一次，别发给别人。',
   'devices.expired': '配对码过期了，重新生成一个。',
   'devices.full': '每人最多 {n} 台设备。先移除一台不用的。',
+  'devices.joined': '「{name}」已经加入，现在和这台设备坐同一个座位。',
   'devices.copyText': '茶馆配对码（10 分钟内有效）：{code}',
   'self.devices': '我的设备',
   'join.guessPhone': '手机',

@@ -272,6 +272,7 @@ export default {
   'devices.paste': 'Paste it on the new device within 10 minutes: open Teahouse → Join a teahouse → paste. It works once; don’t send it to anyone else.',
   'devices.expired': 'The pairing code has expired. Make a new one.',
   'devices.full': 'At most {n} devices per person. Remove one you no longer use first.',
+  'devices.joined': '“{name}” has joined and now shares this seat.',
   'devices.copyText': 'Teahouse pairing code (valid 10 minutes): {code}',
   'self.devices': 'My devices',
   'join.guessPhone': 'Phone',

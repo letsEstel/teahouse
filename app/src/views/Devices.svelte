@@ -10,9 +10,11 @@
   let { house }: { house: House } = $props()
   const MAX = 5   // 法则第 18 条：每人最多 5 台
 
+  // 新设备是 Relay 代写进座位表的（法则第 19 条），本机要先同步才看得到：所以先 sync 再读
   let devices = $state<DeviceInfo[] | null>(null)
   async function load() {
-    devices = await api('devices', { house: house.id }).catch(() => [])
+    await api('sync', { house: house.id }).catch(() => null)
+    devices = await api('devices', { house: house.id }).catch(() => devices ?? [])
   }
   $effect(() => { load() })
 
@@ -47,6 +49,21 @@
   $effect(() => {
     if (!code) return
     const timer = setInterval(() => (now = Date.now()), 1000)
+    return () => clearInterval(timer)
+  })
+  // 配对码显示期间，每 5 秒看一次新设备到了没有；到了就说一声，收起配对码
+  let joined = $state<string | null>(null)
+  $effect(() => {
+    if (!code || expired) return
+    const known = new Set((devices ?? []).map((d) => d.fingerprint))
+    const timer = setInterval(async () => {
+      await load()
+      const fresh = devices?.find((d) => !known.has(d.fingerprint))
+      if (fresh) {
+        joined = fresh.name || t('devices.first')
+        code = null
+      }
+    }, 5000)
     return () => clearInterval(timer)
   })
   let left = $derived(Math.max(0, expires - now))
@@ -118,6 +135,7 @@
 
   <section class="add">
     <h2>{t('devices.add')}</h2>
+    {#if joined}<p class="joined" role="status">{t('devices.joined', { name: joined })}</p>{/if}
     <p class="consequence">{t('devices.addHint')}</p>
     {#if devices && devices.length >= MAX}
       <p class="full">{t('devices.full', { n: MAX })}</p>
@@ -175,6 +193,7 @@
   .field { display: grid; gap: 6px; }
   .field input { border: 1.5px solid var(--ink); background: var(--paper); padding: 10px 12px; font: inherit; color: var(--ink); width: min(16rem, 100%); }
   .full { margin-top: 12px; font-size: 14px; color: var(--ink-2); }
+  .joined { margin: 8px 0 14px; padding: 10px 14px; background: var(--ink); color: var(--paper); font-size: 14px; }
 
   /* 配对码：整段显示，大一些，一眼能对上 */
   .code { border: 2px solid var(--ink); padding: clamp(16px, 3vw, 28px); display: grid; gap: 14px; }
