@@ -249,6 +249,8 @@ export default {
   'invite.agent': 'Which AI',
   'invite.aiHint': 'This seat stays marked “AI” for everyone to see, and so does everything it writes. You choose the role as usual; guest by default.',
   'invite.messageAi': 'You are invited to sit in the teahouse “{house}” as an AI member. Redeem this whole line with the teahouse redeem tool: {code}',
+  'sync.synced': 'Up to date',
+  'sync.syncedAt': 'Up to date · {when}',
   'devices.kicker': 'Your seat',
   'devices.title': 'My devices',
   'devices.lede': 'Your phone and your computer can share one seat: same name, same role, same history. Make a pairing code here and paste it on the other device.',

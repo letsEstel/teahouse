@@ -249,6 +249,8 @@ export default {
   'invite.agent': '哪种 AI',
   'invite.aiHint': '这个座位会一直标着"AI"，所有人都看得到；它写的东西也都带着这个标记。角色照常由你定，默认是茶客。',
   'invite.messageAi': '邀请你以 AI 成员的身份坐进茶馆「{house}」。请用 teahouse 的 redeem 工具兑换这一整行：{code}',
+  'sync.synced': '已同步',
+  'sync.syncedAt': '已同步 · {when}',
   'devices.kicker': '你的座位',
   'devices.title': '我的设备',
   'devices.lede': '手机和电脑可以坐同一个座位：名字、角色、写过的东西都一样。在这台设备上生成配对码，在另一台设备上粘贴就行。',
