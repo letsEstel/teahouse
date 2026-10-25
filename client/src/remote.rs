@@ -247,6 +247,69 @@ fn exec_local(_: &Path, _: &Identity, _: &str, _: &mut dyn Read, _: &mut dyn Wri
     ))
 }
 
+/// The host key types to ask `host` for: the same ones libgit2 asks for in
+/// git's fetch and push. libgit2 prefers the types the user's own
+/// `~/.ssh/known_hosts` holds for the host (`find_hostkey_preference` in
+/// its `ssh_libssh2.c`), libssh2 alone does not; without this, a relay the
+/// user also logs into with ssh shows git one key and these commands
+/// another, and the pinned fingerprint fits only one of them.
+fn hostkey_prefs(s: &ssh2::Session, host: &str, port: u16) -> Option<String> {
+    use libssh2_sys as raw;
+    use std::ffi::{c_char, c_int, CString};
+    let home = ["HOME", "USERPROFILE"]
+        .iter()
+        .filter_map(std::env::var_os)
+        .find(|h| !h.is_empty())?;
+    let file = PathBuf::from(home).join(".ssh").join("known_hosts");
+    if !file.is_file() {
+        return None;
+    }
+    let file = CString::new(file.to_str()?).ok()?;
+    let host = CString::new(host).ok()?;
+    // libgit2's order.
+    let types = [
+        (raw::LIBSSH2_KNOWNHOST_KEY_ED25519, "ssh-ed25519"),
+        (raw::LIBSSH2_KNOWNHOST_KEY_ECDSA_256, "ecdsa-sha2-nistp256"),
+        (raw::LIBSSH2_KNOWNHOST_KEY_ECDSA_384, "ecdsa-sha2-nistp384"),
+        (raw::LIBSSH2_KNOWNHOST_KEY_ECDSA_521, "ecdsa-sha2-nistp521"),
+        (raw::LIBSSH2_KNOWNHOST_KEY_SSHRSA, "rsa-sha2-512"),
+        (raw::LIBSSH2_KNOWNHOST_KEY_SSHRSA, "rsa-sha2-256"),
+        (raw::LIBSSH2_KNOWNHOST_KEY_SSHRSA, "ssh-rsa"),
+    ];
+    let mut prefs = Vec::new();
+    // SAFETY: the session outlives the known-hosts collection, which is
+    // freed before returning; every pointer passed is a live CString.
+    unsafe {
+        let session: *mut raw::LIBSSH2_SESSION = &mut *s.raw();
+        let kh = raw::libssh2_knownhost_init(session);
+        if kh.is_null() {
+            return None;
+        }
+        if raw::libssh2_knownhost_readfile(kh, file.as_ptr(), raw::LIBSSH2_KNOWNHOST_FILE_OPENSSH)
+            >= 0
+        {
+            // A nonsense key: a stored key of this type then "mismatches".
+            let key: c_char = 0;
+            for (t, name) in types {
+                let rc = raw::libssh2_knownhost_checkp(
+                    kh,
+                    host.as_ptr(),
+                    port as c_int,
+                    &key,
+                    1,
+                    raw::LIBSSH2_KNOWNHOST_TYPE_PLAIN | raw::LIBSSH2_KNOWNHOST_KEYENC_RAW | t,
+                    std::ptr::null_mut(),
+                );
+                if rc == raw::LIBSSH2_KNOWNHOST_CHECK_MISMATCH {
+                    prefs.push(name);
+                }
+            }
+        }
+        raw::libssh2_knownhost_free(kh);
+    }
+    (!prefs.is_empty()).then(|| prefs.join(","))
+}
+
 #[allow(clippy::too_many_arguments)]
 fn exec_ssh(
     user: &str,
@@ -267,6 +330,10 @@ fn exec_ssh(
     let mut s = ssh2::Session::new().map_err(offline)?;
     s.set_tcp_stream(tcp);
     s.set_timeout(120_000);
+    if let Some(prefs) = hostkey_prefs(&s, host, port) {
+        s.method_pref(ssh2::MethodType::HostKey, &prefs)
+            .map_err(offline)?;
+    }
     s.handshake().map_err(offline)?;
     let hash = s
         .host_key_hash(ssh2::HashType::Sha256)
