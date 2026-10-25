@@ -187,23 +187,34 @@ fn render_problem(title: &str, status: &str, body: &[SectionArg]) -> String {
     s.trim_end_matches('\n').to_string() + "\n"
 }
 
+/// A file's frontmatter followed by `text`. A `text` that brings its own
+/// frontmatter (an editor that loaded the whole file) is the whole file, so
+/// the frontmatter is not written twice.
+fn with_text(old: &str, text: &str) -> String {
+    let (fm, _) = format::split_frontmatter(text);
+    if !fm.fields.is_empty() {
+        return text.to_string();
+    }
+    let (_, body) = format::split_frontmatter(old);
+    format!("{}{text}", &old[..old.len() - body.len()])
+}
+
 /// A problem or notice with a new title and/or new text after its
 /// frontmatter; the other fields stay.
 fn rewrite_doc(old: &str, title: Option<&str>, text: Option<&str>) -> Result<String> {
     if title.is_none() && text.is_none() {
         return Err(invalid("give title or text / 需要 title 或 text"));
     }
-    let mut new = old.to_string();
+    let mut new = match text {
+        Some(text) => with_text(old, text),
+        None => old.to_string(),
+    };
     if let Some(t) = title {
         let t = t.trim();
         if t.is_empty() {
             return Err(invalid("the title cannot be empty / 标题不能为空").with("field", "title"));
         }
         new = format::set_fields(&new, &[("title", Some(t))]);
-    }
-    if let Some(text) = text {
-        let (_, body) = format::split_frontmatter(&new);
-        new = format!("{}{text}", &new[..new.len() - body.len()]);
     }
     if new == old {
         return Err(invalid("nothing to change / 没有变化"));
@@ -711,20 +722,17 @@ impl<'c> Writer<'c> {
         let old = self.snap.text(id)?.ok_or_else(|| {
             Error::not_found(format!("no work {id} / 没有这个成果")).with("id", id)
         })?;
-        let (fm, body) = format::split_frontmatter(&old);
+        let (fm, _) = format::split_frontmatter(&old);
         let title = fm
             .get("title")
             .map(str::to_string)
             .unwrap_or_else(|| format::file_title(id));
         let kind = format::classify_work(id, Some(&fm));
         let new = match kind {
-            format::WorkFile::Work(WorkKind::Doc | WorkKind::Plan) => {
-                let head = &old[..old.len() - body.len()];
-                format!(
-                    "{head}{}",
-                    text.ok_or_else(|| invalid("text is required / 需要 text"))?
-                )
-            }
+            format::WorkFile::Work(WorkKind::Doc | WorkKind::Plan) => with_text(
+                &old,
+                text.ok_or_else(|| invalid("text is required / 需要 text"))?,
+            ),
             format::WorkFile::Work(WorkKind::Table) => text
                 .ok_or_else(|| invalid("text is required / 需要 text"))?
                 .to_string(),

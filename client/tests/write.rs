@@ -849,6 +849,67 @@ fn problems_and_notices_are_edited_directly_or_as_proposals() {
 }
 
 #[test]
+fn a_text_with_its_own_frontmatter_replaces_the_whole_file() {
+    let w = World::new("fm");
+    let (_wang, li, _zhao) = w.wutong();
+    parking(&li);
+    let r = li.ok(
+        "addWork",
+        json!({ "house": "wutong", "problem": "0001", "kind": "doc", "title": "访谈", "text": "第一版。" }),
+    );
+    let id = r["id"].as_str().unwrap().to_string();
+    // An editor that loaded the whole file (`file` gives it with its
+    // frontmatter) sends it back whole: the frontmatter is not doubled.
+    let file = li.ok("file", json!({ "house": "wutong", "id": id }));
+    let whole = file["text"]
+        .as_str()
+        .unwrap()
+        .replace("第一版。", "第二版。");
+    li.ok(
+        "updateWork",
+        json!({ "house": "wutong", "id": id, "text": whole }),
+    );
+    let file = li.ok("file", json!({ "house": "wutong", "id": id }));
+    assert_eq!(file["text"], "---\ntitle: 访谈\n---\n第二版。");
+    // The body alone keeps the frontmatter, as before.
+    li.ok(
+        "updateWork",
+        json!({ "house": "wutong", "id": id, "text": "第三版。" }),
+    );
+    let file = li.ok("file", json!({ "house": "wutong", "id": id }));
+    assert_eq!(file["text"], "---\ntitle: 访谈\n---\n第三版。");
+
+    // A problem: the whole file plus a new title; the title wins.
+    let p = w.relay_git(&[
+        "-c",
+        "core.quotePath=false",
+        "ls-tree",
+        "--name-only",
+        "main",
+        "problems/",
+    ]);
+    let p = p.trim();
+    let whole = li.ok("file", json!({ "house": "wutong", "id": p }))["text"]
+        .as_str()
+        .unwrap()
+        .replace("42", "40");
+    li.ok(
+        "updateProblem",
+        json!({ "house": "wutong", "problem": p, "text": whole, "title": "停车难" }),
+    );
+    let text = li.ok("file", json!({ "house": "wutong", "id": p }))["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    assert_eq!(text.matches("---\n").count(), 2, "{text}");
+    assert!(
+        text.contains("title: 停车难\n") && text.contains("院内共 40 个车位。"),
+        "{text}"
+    );
+    assert!(text.contains("status: open\n"), "{text}");
+}
+
+#[test]
 fn attachments_go_to_the_cache_and_into_git_as_references() {
     let w = World::new("blobs");
     let (_wang, li, _zhao) = w.wutong();
