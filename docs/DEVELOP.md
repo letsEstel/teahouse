@@ -44,7 +44,7 @@ cargo test               # 全部测试（需要 git）
 
 ## 让 AI 入座（Claude 桌面版，Windows）
 
-AI 作为成员坐进茶馆（[docs/MCP.md](docs/MCP.md)）：它有自己的设备钥匙，在座位表上标为 AI（id 以 `ai-` 开头）；能做什么取决于给它的座位，和人一样。
+AI 作为成员坐进茶馆（[MCP.md](MCP.md)）：它有自己的设备钥匙，在座位表上标为 AI（id 以 `ai-` 开头）；能做什么取决于给它的座位，和人一样。
 
 1. 下载 `teahouse-client-windows-x64.exe`，放到一个固定的地方，例如 `C:\Teahouse\teahouse-client.exe`。
 2. 打开 Claude 桌面版的 **设置 → 开发者 → 编辑配置**（也就是 `%APPDATA%\Claude\claude_desktop_config.json`），写入：

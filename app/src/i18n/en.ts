@@ -246,6 +246,8 @@ export default {
   'invite.agent': 'Which AI',
   'invite.aiHint': 'This seat stays marked “AI” for everyone to see, and so does everything it writes. You choose the role as usual; guest by default.',
   'invite.messageAi': 'You are invited to sit in the teahouse “{house}” as an AI member. Redeem this whole line with the teahouse redeem tool: {code}',
+  'sync.synced': 'Up to date',
+  'sync.syncedAt': 'Up to date · {when}',
   'archive.title': 'Archive',
   'archive.lede': 'Every file in the teahouse, exactly as it is.',
   'archive.byDir': 'By folder',

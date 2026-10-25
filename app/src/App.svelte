@@ -10,6 +10,7 @@
   import Archive from './views/Archive.svelte'
   import Join from './views/Join.svelte'
   import ErrorBar from './lib/ErrorBar.svelte'
+  import { startAutoSync } from './api/autosync'
   import Sending from './lib/Sending.svelte'
   import StatusBar from './lib/StatusBar.svelte'
   import { api, BackendError } from './api/backend'
@@ -40,6 +41,8 @@
   let failed = $state<ApiError | null>(null)
   let loaded = $state(false)
   const refresh = () => version++
+  // 自动同步：前台每 60 秒、启动时、回到前台时；有新内容就重新读取（./api/autosync.ts）
+  $effect(() => startAutoSync(refresh, () => house?.id))
   $effect(() => {
     const id = route.houseId
     void i18n.lang  // 假数据的内容跟着界面语言变；真引擎里这一行无害

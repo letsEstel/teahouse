@@ -11,15 +11,43 @@
 //! phone arrives as bytes (raw invoke body, name in `x-file-name`), but the
 //! engine attaches files by path (`fromPath`); the shell saves the bytes under
 //! the app's cache directory and answers `{ok, data: {path}}`.
+//!
+//! Background sync (CLIENT-API.md §4): while the app is in the foreground a
+//! thread syncs every teahouse every 60 s, backing off to at most 10 minutes
+//! after failures (as `teahouse-client serve` does). The interface reports
+//! foreground and background with the shell command `syncLoop {active}` (from
+//! `visibilitychange`); turning active also syncs at once (start-up, back
+//! from the background). When a sync brings anything new, the shell emits
+//! `teahouse://changed` with the teahouse ids and the interface reloads.
+//! Commands and syncs take turns behind one lock, so a sync never runs under
+//! a write.
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, Condvar, Mutex};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::ipc::InvokeBody;
-use tauri::Manager;
+use tauri::{AppHandle, Emitter, Manager};
 use teahouse_client::Client;
 
 /// `<app data>/teahouse` (CLIENT-API.md §2): houses/, blobs/, drafts/, device.
 struct Root(PathBuf);
+
+/// One engine command or background sync at a time (git work on one copy).
+struct EngineLock(Arc<Mutex<()>>);
+
+const SYNC_EVERY: Duration = Duration::from_secs(60);
+const MAX_BACKOFF: Duration = Duration::from_secs(10 * 60);
+
+/// The background sync: `active` while the app is in the foreground; `kick`
+/// asks for a sync now (start-up, back from the background).
+#[derive(Default)]
+struct SyncState {
+    active: bool,
+    kick: bool,
+}
+struct Syncer(Arc<(Mutex<SyncState>, Condvar)>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -27,7 +55,12 @@ pub fn run() {
         .setup(|app| {
             let root = app.path().app_data_dir()?.join("teahouse");
             std::fs::create_dir_all(&root)?;
+            let lock = Arc::new(Mutex::new(()));
+            let syncer = Arc::new((Mutex::new(SyncState::default()), Condvar::new()));
+            spawn_sync_loop(app.handle().clone(), root.clone(), lock.clone(), syncer.clone());
             app.manage(Root(root));
+            app.manage(EngineLock(lock));
+            app.manage(Syncer(syncer));
             Ok(())
         })
         .invoke_handler(|invoke| {
@@ -51,7 +84,21 @@ pub fn run() {
                 });
                 return true;
             }
+            if invoke.message.command() == "syncLoop" {
+                let active = matches!(invoke.message.payload(), InvokeBody::Json(v) if v.get("active").and_then(|a| a.as_bool()) == Some(true));
+                let syncer = invoke.message.webview().state::<Syncer>().0.clone();
+                let (state, wake) = &*syncer;
+                let mut s = state.lock().unwrap_or_else(|p| p.into_inner());
+                if active && !s.active {
+                    s.kick = true;
+                }
+                s.active = active;
+                wake.notify_all();
+                invoke.resolver.resolve(serde_json::json!({ "ok": true, "data": null }));
+                return true;
+            }
             let root = invoke.message.webview().state::<Root>().0.clone();
+            let lock = invoke.message.webview().state::<EngineLock>().0.clone();
             let command = invoke.message.command().to_string();
             let args = match invoke.message.payload() {
                 InvokeBody::Json(v) => v.clone(),
@@ -59,6 +106,7 @@ pub fn run() {
             };
             let resolver = invoke.resolver;
             std::thread::spawn(move || {
+                let _turn = lock.lock().unwrap_or_else(|p| p.into_inner());
                 resolver.resolve(Client::new(root).call(&command, args));
             });
             true
@@ -99,4 +147,84 @@ fn percent_decode(s: &str) -> String {
         i += 1;
     }
     String::from_utf8_lossy(&out).into_owned()
+}
+
+/// Every 60 s while active (or at once when kicked): sync each teahouse and
+/// tell the interface which ones changed. Failures back off up to 10 minutes.
+fn spawn_sync_loop(app: AppHandle, root: PathBuf, lock: Arc<Mutex<()>>, syncer: Arc<(Mutex<SyncState>, Condvar)>) {
+    std::thread::spawn(move || {
+        let mut wait = SYNC_EVERY;
+        loop {
+            {
+                let (state, wake) = &*syncer;
+                let mut s = state.lock().unwrap_or_else(|p| p.into_inner());
+                // In the background: sleep until the app comes back.
+                while !s.active {
+                    s = wake.wait(s).unwrap_or_else(|p| p.into_inner());
+                }
+                if !s.kick {
+                    let (next, timeout) = wake.wait_timeout(s, wait).unwrap_or_else(|p| p.into_inner());
+                    s = next;
+                    // Woken early by anything but a kick (e.g. going to the background): look again.
+                    if !timeout.timed_out() && !s.kick {
+                        continue;
+                    }
+                    if !s.active {
+                        continue;
+                    }
+                }
+                if s.kick {
+                    wait = SYNC_EVERY;
+                }
+                s.kick = false;
+            }
+            let (ok, changed) = {
+                let _turn = lock.lock().unwrap_or_else(|p| p.into_inner());
+                sync_all(&Client::new(root.clone()))
+            };
+            if !changed.is_empty() {
+                let _ = app.emit("teahouse://changed", &changed);
+            }
+            wait = if ok { SYNC_EVERY } else { (wait * 2).clamp(SYNC_EVERY, MAX_BACKOFF) };
+        }
+    });
+}
+
+/// Syncs every teahouse; returns whether all went through and which changed.
+/// "Changed" compares what the interface reads (the teahouse and the list of
+/// teahouses) before and after, so a new seat, note or proposal all count.
+fn sync_all(c: &Client) -> (bool, Vec<String>) {
+    let ids = c.house_ids().unwrap_or_default();
+    let mut ok = true;
+    let mut changed = Vec::new();
+    for h in &ids {
+        let before = fingerprint(c, h);
+        let s = c.call("sync", serde_json::json!({ "house": h }));
+        let state = s.pointer("/data/state").and_then(|v| v.as_str()).unwrap_or("error");
+        if !s.get("ok").and_then(|v| v.as_bool()).unwrap_or(false) || state == "offline" || state == "error" {
+            ok = false;
+        }
+        if fingerprint(c, h) != before {
+            changed.push(h.clone());
+        }
+    }
+    (ok, changed)
+}
+
+fn fingerprint(c: &Client, house: &str) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    // The sync state (last-sync time) changes on every sync; leave it out.
+    let mut h = c.call("house", serde_json::json!({ "house": house }));
+    if let Some(d) = h.get_mut("data").and_then(|d| d.as_object_mut()) {
+        d.remove("sync");
+    }
+    h.to_string().hash(&mut hasher);
+    let mut list = c.call("houses", serde_json::json!({}));
+    if let Some(a) = list.get_mut("data").and_then(|d| d.as_array_mut()) {
+        for x in a.iter_mut().filter_map(|x| x.as_object_mut()) {
+            x.remove("sync");
+        }
+    }
+    list.to_string().hash(&mut hasher);
+    hasher.finish()
 }
