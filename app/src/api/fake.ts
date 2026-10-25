@@ -27,6 +27,12 @@ const find = (id: string) => store.find((h) => h.id === id)
 /** 假数据里"上传"的文件：stageFile 的键、新附件的 id → 浏览器里的 object URL */
 export const fakeStaged = new Map<string, string>()
 let fakeAdded = 0
+// 一人多设备：假数据里的配对码，和"我的设备"
+const PAIR_CODE = 'TH-PA1R-7Q3M-XK9D-2WFE'
+const myDevices: A.DeviceInfo[] = [
+  { name: '', fingerprint: 'SHA256:q3Vb1m9Lx0fake/this+device', added: '2026-08-01T09:00:00Z', thisDevice: true },
+  { name: '手机', fingerprint: 'SHA256:Zt8wQ2kfake/phone+device', added: '2026-10-19T21:30:00Z', thisDevice: false },
+]
 
 // ---- 文件路径（成果、提案改动里的 id 就是路径）----
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x'
@@ -307,6 +313,12 @@ const handlers: Handlers = {
   // 入座：假数据里让你作为茶客坐进梧桐里
   redeem: ({ code, name }) => {
     if (!/^TH(-[0-9A-Z]{4}){4}$/i.test(code)) return fail('invalid', `not an invitation code: ${code}`)
+    // 配对码：这台设备加入"另一台设备"所在的全部茶馆，座位不变
+    if (code.toUpperCase() === PAIR_CODE) {
+      myDevices.push({ name, fingerprint: 'SHA256:fake-new-device', added: NOW.toISOString(), thisDevice: false })
+      const h = find('wutong')!
+      return ok({ id: h.id, name: L(h.name), me: meOf(h), myRole: h.members.find((m) => m.id === h.me)!.role, seats: h.members.length, pendingProposals: h.proposals.length, sync: synced })
+    }
     const h = find('wutong')!
     if (h.members.length >= 15) return { ok: false, error: { code: 'relay_refused', message: 'no free seat', reasons: ['no free seat in this teahouse / 这间茶馆已经坐满了'] } }
     const id = `new${h.members.length + 1}`
@@ -315,6 +327,16 @@ const handlers: Handlers = {
     return ok({ id: h.id, name: L(h.name), me: id, myRole: 'guest', seats: h.members.length, pendingProposals: h.proposals.length, sync: synced })
   },
   purgeBlob: () => written(),
+  // 一人多设备（DEVICES.md）：假数据里你有两台设备，这台是第一台
+  pair: () => ok(`${PAIR_CODE}@relay.teahouse.example`),
+  devices: () => ok(myDevices.map((d) => ({ ...d }))),
+  unpair: ({ device }) => {
+    const d = myDevices.find((x) => x.name === device || x.fingerprint === device)
+    if (!d) return fail('not_found', `no device ${device}`)
+    if (d.thisDevice || myDevices.length === 1) return fail('forbidden', 'cannot remove this device or the last one')
+    myDevices.splice(myDevices.indexOf(d), 1)
+    return ok(store.map((h) => h.id))
+  },
 }
 
 const writes: A.Command[] = ['openProblem', 'setStatus', 'addWork', 'updateWork', 'note', 'removeNote', 'postNotice', 'propose', 'withdraw', 'adopt', 'decline', 'seat', 'purgeBlob']
