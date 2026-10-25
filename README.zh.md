@@ -1,5 +1,7 @@
 # 茶馆
 
+*Architecture No. 1 in Rust, Op. 1*
+
 [English](README.md) · **中文** · [Deutsch](README.de.md)
 
 ## 序
