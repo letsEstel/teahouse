@@ -74,7 +74,7 @@ pub const MAX_BINARY_IN_GIT: u64 = 1024 * 1024;
 
 /// An allowed-signers file (`ssh-keygen -Y`) naming every key, of every
 /// device, on the seating chart at `rev` (the chart as the push finds it),
-/// as `<id>@teahouse`. 法第 13 条 as tightened (docs/DEVICES.md §7): a
+/// as `<id>@teahouse`. 法则第 13 条 as tightened (docs/DEVICES.md §7): a
 /// newly pushed commit counts only if signed by a key seated **now**, so a
 /// removed device stops counting at once.
 pub fn write_allowed_signers(git: &Git, rev: &str, path: &Path) -> Result<()> {

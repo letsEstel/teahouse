@@ -1,4 +1,4 @@
-//! Several devices per member (docs/DEVICES.md, 法第 18–19 条).
+//! Several devices per member (docs/DEVICES.md, 法则第 18–19 条).
 //!
 //! * `pair [--name N] [--minutes M]`: a seated key asks for a pairing code
 //!   (`TH-…`, one-time, 10 minutes by default, at most 60). Only its hash is

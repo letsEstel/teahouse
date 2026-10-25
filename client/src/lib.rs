@@ -235,7 +235,7 @@ impl Client {
         if let Some(d) = days {
             cmd.push_str(&format!(" --days {d}"));
         }
-        // 法第 17 条: an AI's seat (a guest), and which AI.
+        // 法则第 17 条: an AI's seat (a guest), and which AI.
         if let Some(k) = kind {
             cmd.push_str(&format!(" --kind {}", remote::quote(k)));
         }

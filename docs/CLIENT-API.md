@@ -2,7 +2,7 @@
 
 > 状态：评审方起草，2026-10-19，**第三版**。用户已定：**客户端优先（本地优先，像 Obsidian）**，Relay 是会合点和执法者；网页渲染（公开分享）和网页窗口以后做。这是界面（1 号）和客户端引擎（2 号）之间的合同。
 > 两边都按这份文档开发；需要改动时，先在 PR 里改这份文档，再改代码。
-> 茶馆的"法"仍以 `docs/RELAY.md` 第 3 节为准，本文只规定**内容格式**和**引擎接口**。
+> 茶馆的"法则"仍以 `docs/RELAY.md` 第 3 节为准，本文只规定**内容格式**和**引擎接口**。
 
 ---
 
@@ -18,7 +18,7 @@
                                                │ git over ssh + 附件传输（同一条 ssh 通道）
                                                ▼
 ┌──────────────── Relay（一台 VPS，或者茶馆托管服务）────────────────┐
-│ 正本：houses/<id>.git      法：pre-receive（含签名检查）            │
+│ 正本：houses/<id>.git      法则：pre-receive（含签名检查）            │
 │ 附件仓库：blobs/<sha256>   邀请码兑换、审计日志                      │
 │ 以后：公开页面渲染（像 Obsidian Publish）、网页窗口                  │
 └──────────────────────────────────────────────────────────────────┘
@@ -26,7 +26,7 @@
 
 **原则**
 1. **本地优先。** 每个客户端都有整间茶馆的完整副本，断网照常读写，联网后自动同步。读取永远只读本地，所以必须快。
-2. **只有进了正本的才算数。** 法只在 Relay 执行；引擎推送前用 `teahouse-core` 预检，给出更早、更友好的提示。
+2. **只有进了正本的才算数。** 法则只在 Relay 执行；引擎推送前用 `teahouse-core` 预检，给出更早、更友好的提示。
 3. **界面永远看不到 git。** 界面只调用第 4 节的命令。
 4. **同一组命令，两种传输。** 打包后用 Tauri `invoke`；开发期引擎同时提供本机 HTTP 接口（`127.0.0.1:7377`），方便 Vite 热更新和截图脚本。命令名、参数、返回值完全一致。
 5. **谁也冒充不了谁。** 每个提交都用作者的设备钥匙签名（git 自带的 ssh 签名），Relay 只接受座位表上有对应钥匙的签名，连 Relay 自己也伪造不了。
@@ -186,7 +186,7 @@ interface SyncState {
   message?: string              // 出错时给人看的一句话（来自 Relay 时原样转达）
 }
 
-interface Member { id: string; name: string; role: Role; joined: string; kind: 'human' | 'ai'; agent?: string; devices?: DeviceInfo[] }  // kind 只是标记，不限制角色（法第 17 条）；界面在 AI 成员旁显示"AI"标记；devices 只出现在自己的座位上
+interface Member { id: string; name: string; role: Role; joined: string; kind: 'human' | 'ai'; agent?: string; devices?: DeviceInfo[] }  // kind 只是标记，不限制角色（法则第 17 条）；界面在 AI 成员旁显示"AI"标记；devices 只出现在自己的座位上
 interface DeviceInfo { name: string; fingerprint: string; added: string; thisDevice: boolean }  // name 为空 = 第一台设备；fingerprint 形如 SHA256:…（和 ssh-keygen -l 一致）
 interface Event  { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
 interface Note   { id: string; by: string; text: string; when: string; writtenAt: string }  // id=留言文件的仓库路径  // when=进入茶馆的时间，writtenAt=文件名里的时间戳
@@ -359,7 +359,7 @@ interface ApiError {
 ## 8. 待定（需要用户或评审拍板）
 
 1. **已定（用户 10-19）**：客户端优先；Relay 是会合点和执法者；用户不接触密钥；靠邀请码入座；不做账号密码；图片和附件不进 git，只放引用；提交签名；Relay 部署要尽量简单。
-2. **"法"的修订，评审方起草后交用户确认**：
+2. **"法则"的修订，评审方起草后交用户确认**：
    - 签名检查：Relay 只接受作者是座位表成员、并且用该成员钥匙签名的提交（Relay 自己代写的提交，由 Relay 的钥匙签名，并注明"代写"）。
    - 附件：`*.ref.md` 引用文件的格式检查；git 里禁止出现超过 1 MiB 的二进制文件。
    - **编号唯一**（2 号提议，评审同意）：main 上每个编号最多对应一个 `problems/<id>-*.md`。

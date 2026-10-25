@@ -1,7 +1,7 @@
 # 开一个 Relay · Deploying a relay
 
 > 给老板（或者帮老板运维的人）看的。目标：一台最便宜的 Linux 服务器，几分钟装好。
-> 技术细节和茶馆的法见 [RELAY.md](RELAY.md)。
+> 技术细节和茶馆的法则见 [RELAY.md](RELAY.md)。
 
 ## 你需要
 

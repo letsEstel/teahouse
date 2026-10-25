@@ -54,7 +54,7 @@
 
 - [使用说明](docs/USER-GUIDE.md)：怎样使用一间茶馆，以及常见问题
 - [开一个 Relay](docs/DEPLOY.md)：开一间茶馆并维护它
-- [开发者入口](docs/DEVELOP.md)：代码、Relay 执行的法、各个接口
+- [开发者入口](docs/DEVELOP.md)：代码、Relay 执行的法则、各个接口
 
 ## 许可
 

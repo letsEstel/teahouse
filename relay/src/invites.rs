@@ -107,7 +107,7 @@ pub struct Invite {
     /// Founding invitations: the teahouse's name and signboard.
     pub house_name: Option<String>,
     pub signboard: Option<String>,
-    /// An AI's seat (法第 17 条: always a guest), and which AI.
+    /// An AI's seat (法则第 17 条: always a guest), and which AI.
     pub kind: Kind,
     pub agent: Option<String>,
 }
@@ -213,7 +213,7 @@ pub fn create(
     if role == Role::Host {
         bail!("an invitation can seat a guest or the steward, not a host / 邀请只能是茶客或伙计");
     }
-    // 法第 17 条: `kind = ai` marks an AI, in any role; `agent` names one.
+    // 法则第 17 条: `kind = ai` marks an AI, in any role; `agent` names one.
     if seat.agent.is_some() && seat.kind != Kind::Ai {
         bail!("--agent is for AI invitations (--kind ai)");
     }

@@ -1345,7 +1345,7 @@ fn an_ai_takes_a_seat_through_mcp_and_works_as_a_guest() {
     let (wang, li, _zhao) = w.wutong();
     parking(&li);
     wang.ok("sync", json!({ "house": "wutong" }));
-    // The host invites an AI (法第 17 条: always a guest).
+    // The host invites an AI (法则第 17 条: always a guest).
     let inv = wang.ok(
         "invite",
         json!({ "house": "wutong", "kind": "ai", "name": "2 号" }),
@@ -1478,7 +1478,7 @@ fn an_ai_gets_the_tools_of_its_seat() {
     let w = World::new("mcp-roles");
     let (wang, li, _zhao) = w.wutong();
     parking(&li);
-    // Make room for an AI steward (法第 17 条: a label, not a rank).
+    // Make room for an AI steward (法则第 17 条: a label, not a rank).
     wang.ok("sync", json!({ "house": "wutong" }));
     wang.ok(
         "seat",
