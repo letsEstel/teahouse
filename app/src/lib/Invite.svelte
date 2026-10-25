@@ -9,7 +9,7 @@
   let role = $state<Role>('guest')
   let days = $state(7)
   let name = $state('')
-  // 邀请 AI 成员（法第 17 条、docs/AI-入座.md）：邀请上带 kind = ai 和 agent。只是标记，不限制角色；默认茶客
+  // 邀请 AI 成员（法则第 17 条、docs/AI-入座.md）：邀请上带 kind = ai 和 agent。只是标记，不限制角色；默认茶客
   let ai = $state(false)
   let agent = $state('Claude Code')
   function setAi(on: boolean) {

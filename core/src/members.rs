@@ -7,9 +7,9 @@
 //! 4. everyone else is a guest (茶客)
 //! 5. member ids and keys are unique
 //! 6. `kind = "ai"` marks an AI; it is a label, not a rank (any role), and
-//!    `agent` appears only on AI members (法第 17 条, docs/MCP.md)
+//!    `agent` appears only on AI members (法则第 17 条, docs/MCP.md)
 //! 7. a member has 1–5 devices: `key`, plus `[[device]]` tables naming them
-//!    (`version = 2`); every key in the chart is unique (法第 18 条,
+//!    (`version = 2`); every key in the chart is unique (法则第 18 条,
 //!    docs/DEVICES.md)
 
 use crate::key::PublicKey;
@@ -23,7 +23,7 @@ pub const MAX_MEMBERS: usize = 15;
 pub const FORMAT_VERSION: i64 = 1;
 /// The format with `[[device]]` tables (docs/DEVICES.md).
 pub const FORMAT_VERSION_DEVICES: i64 = 2;
-/// Devices (keys) per member, the first included (法第 18 条).
+/// Devices (keys) per member, the first included (法则第 18 条).
 pub const MAX_DEVICES: usize = 5;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -377,7 +377,7 @@ impl Members {
                 (Some(a), Kind::Ai) => check_text(a, &format!("member {:?} agent", m.id), 64)?,
                 (None, _) => {}
             }
-            // 法第 18 条: 1–5 devices, named devices told apart.
+            // 法则第 18 条: 1–5 devices, named devices told apart.
             if 1 + m.devices.len() > MAX_DEVICES {
                 return e(format!(
                     "member {:?} has {} devices; at most {MAX_DEVICES} / 每人最多 {MAX_DEVICES} 台设备",
@@ -629,7 +629,7 @@ mod tests {
         assert_eq!(Members::parse(&t).unwrap(), m);
         assert_eq!(t.matches("kind = ").count(), 1);
 
-        // 法第 17 条: a label, not a rank. An AI may be the steward, or the host.
+        // 法则第 17 条: a label, not a rank. An AI may be the steward, or the host.
         assert!(Members::parse(&chart("", "role = \"steward\"\nkind = \"ai\"\n")).is_ok());
         let ai_host = Members::parse(&chart("kind = \"ai\"\n", "role = \"guest\"\n")).unwrap();
         assert_eq!(ai_host.host().kind, Kind::Ai);

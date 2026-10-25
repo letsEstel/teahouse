@@ -2082,7 +2082,7 @@ fn ai_members_hold_any_role() {
         format!("{chart}\n[[member]]\nid = \"ai-2\"\nname = \"2 号\"\n{extra}key = \"{ai_key}\"\n")
     };
 
-    // 法第 17 条: `agent` only on AI members…
+    // 法则第 17 条: `agent` only on AI members…
     w.write(
         &host,
         ".teahouse/members.toml",
@@ -2346,7 +2346,7 @@ fn removing_a_device_takes_effect_at_once() {
         "{}",
         s(&o)
     );
-    // …and what it signed does not count, even pushed from the laptop (法第 13 条).
+    // …and what it signed does not count, even pushed from the laptop (法则第 13 条).
     let lc = w.clone("wang", "wutong");
     w.git_ok(&lc, &["fetch", "--quiet", pc.to_str().unwrap(), "main"]);
     w.git_ok(
@@ -2434,7 +2434,7 @@ fn history_is_not_judged_again_by_todays_chart() {
     let w = World::new();
     let host = w.wutong();
     // wang proposes, then leaves; the host still adopts the proposal: its
-    // commits were checked when they arrived (法第 13 条, tightened).
+    // commits were checked when they arrived (法则第 13 条, tightened).
     let wang = w.clone("wang", "wutong");
     w.write(&wang, "works/0001/方案.md", "方案\n");
     w.commit(&wang, "方案\n\nProblem: 0001");

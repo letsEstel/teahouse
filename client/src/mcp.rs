@@ -3,7 +3,7 @@
 //!
 //! It is one more interface to the same engine: the same local clones, the
 //! same device key, the same commands and JSON as CLIENT-API.md §4.
-//! `kind = "ai"` is a label, not a rank (法第 17 条): the tools offered follow
+//! `kind = "ai"` is a label, not a rank (法则第 17 条): the tools offered follow
 //! the seats this AI holds. Every member gets the guest's tools; a steward
 //! also `setStatus` and `removeNote`; a host also `adopt`, `decline`,
 //! `seat`, `invite` and `purgeBlob`. The server adds no limits of its own:

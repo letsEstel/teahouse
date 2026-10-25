@@ -144,7 +144,7 @@ pub struct NewHouse<'a> {
     pub host_id: &'a str,
     pub host_name: &'a str,
     pub host_key: &'a str,
-    /// An AI host (法第 17 条: a label, not a rank), and which AI.
+    /// An AI host (法则第 17 条: a label, not a rank), and which AI.
     pub host_kind: Kind,
     pub host_agent: Option<&'a str>,
 }

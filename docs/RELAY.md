@@ -67,7 +67,7 @@ restart, nothing listening on a new port.
 A new teahouse is prepared under `tmp/` and moved into `houses/` with one
 `rename`, so a teahouse is either absent or complete.
 
-## 3. 茶馆的法 · The laws the relay enforces
+## 3. 茶馆的法则 · The laws the relay enforces
 
 | # | Law | Applies to |
 |---|-----|-----------|
@@ -167,7 +167,7 @@ until it is settled, this section describes them.
 * **One problem file per number on `main`.** Two `problems/0007-*.md` on
   `main` are refused; on a proposal they are allowed, and the host's client
   renumbers when adopting (`Renumbered:`).
-* **AI members are marked (法第 17 条, docs/MCP.md).** A member may carry
+* **AI members are marked (法则第 17 条, docs/MCP.md).** A member may carry
   `kind = "ai"` and, then only, `agent = "…"`. The mark is a label, not a
   rank: an AI may hold any role. `teahouse-core` refuses `agent` on a person,
   in every chart (pushed, written by an invitation, or by succession).

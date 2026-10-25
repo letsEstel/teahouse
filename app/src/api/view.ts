@@ -9,7 +9,7 @@ export const host = (h: House) => h.members.find((m) => m.role === 'host')!
 export const pad = (n: number) => String(n).padStart(2, '0')
 
 /**
- * 你对茶馆里一个文件能做什么（RELAY.md 的法，界面只用来标注，真正把关的是 Relay）：
+ * 你对茶馆里一个文件能做什么（RELAY.md 的法则，界面只用来标注，真正把关的是 Relay）：
  * write = 直接改；propose = 改动会变成提案；read = 只能看。
  * 留言写下不改，谁都是只读；.teahouse/ 和仓库根上的文件只有老板能改。
  */
