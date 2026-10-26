@@ -968,6 +968,144 @@ fn a_push_that_came_too_late_is_replayed_and_pushed_again() {
 }
 
 #[test]
+fn links_to_documents_kept_elsewhere() {
+    let w = World::new("links");
+    let (wang, li, zhao) = w.wutong();
+    parking(&li);
+    let r = li.ok(
+        "addWork",
+        json!({
+            "house": "wutong", "problem": "0001", "kind": "link", "title": "停车方案（腾讯文档）",
+            "url": "https://docs.qq.com/doc/DTest", "note": "大家一起改",
+        }),
+    );
+    let id = r["id"].as_str().unwrap().to_string();
+    assert!(
+        id.starts_with("works/0001/") && id.ends_with(".link.md"),
+        "{id}"
+    );
+    let p = li.ok("problem", json!({ "house": "wutong", "problem": "0001" }));
+    let work = p["works"][0].clone();
+    assert_eq!(
+        (&work["kind"], &work["title"], &work["url"], &work["note"]),
+        (
+            &json!("link"),
+            &json!("停车方案（腾讯文档）"),
+            &json!("https://docs.qq.com/doc/DTest"),
+            &json!("大家一起改")
+        )
+    );
+    let file = li.ok("file", json!({ "house": "wutong", "id": id }));
+    assert_eq!(file["node"]["kind"], "link");
+
+    // Only http(s); no text-less, url-less or attachment-style links.
+    for bad in [
+        json!({ "url": "javascript:alert(1)" }),
+        json!({}),
+        json!({ "url": "https://a.org", "fromPath": "/etc/hosts" }),
+    ] {
+        let mut args =
+            json!({ "house": "wutong", "problem": "0001", "kind": "link", "title": "x" });
+        args.as_object_mut()
+            .unwrap()
+            .extend(bad.as_object().unwrap().clone());
+        let e = li.err("addWork", args);
+        assert_eq!(e["code"], "invalid", "{e:#}");
+    }
+    let e = li.err(
+        "addWork",
+        json!({ "house": "wutong", "problem": "0001", "kind": "doc", "title": "x", "url": "https://a.org" }),
+    );
+    assert_eq!(e["code"], "invalid", "{e:#}");
+
+    // Change url, title and note; an empty note removes it.
+    li.ok(
+        "updateWork",
+        json!({ "house": "wutong", "id": id, "url": "https://docs.google.com/document/d/x", "title": "停车方案", "note": "" }),
+    );
+    let work =
+        li.ok("problem", json!({ "house": "wutong", "problem": "0001" }))["works"][0].clone();
+    assert_eq!(
+        (&work["url"], &work["title"], work.get("note")),
+        (
+            &json!("https://docs.google.com/document/d/x"),
+            &json!("停车方案"),
+            None
+        )
+    );
+    let e = li.err(
+        "updateWork",
+        json!({ "house": "wutong", "id": id, "url": "file:///etc/passwd" }),
+    );
+    assert_eq!(e["code"], "invalid", "{e:#}");
+
+    // A guest's link is a proposal, adopted like any other.
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    let r = zhao.ok(
+        "addWork",
+        json!({ "house": "wutong", "problem": "0001", "kind": "link", "title": "飞书表格", "url": "https://feishu.cn/sheets/x" }),
+    );
+    assert_eq!(r["becameProposal"], true);
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let h = wang.house();
+    wang.ok(
+        "adopt",
+        json!({ "house": "wutong", "proposal": h["proposals"][0]["id"] }),
+    );
+    let works =
+        wang.ok("problem", json!({ "house": "wutong", "problem": "0001" }))["works"].clone();
+    assert!(works
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|w| w["url"] == "https://feishu.cn/sheets/x"));
+
+    // Written past the engine (plain git): a non-http address is not shown.
+    let repo = wang.repo();
+    let head = repo
+        .find_commit(repo.refname_to_id("refs/heads/main").unwrap())
+        .unwrap();
+    let tree = commit::tree_with(
+        &repo,
+        Some(&head.tree().unwrap()),
+        &[Edit::Put(
+            "works/0001/坏链接.link.md".into(),
+            "---\ntitle: bad\nurl: javascript:alert(1)\n---\n"
+                .as_bytes()
+                .to_vec(),
+        )],
+    )
+    .unwrap();
+    let author = Author {
+        id: "wang".into(),
+        name: "王阿姨".into(),
+    }
+    .signature(1_792_281_600)
+    .unwrap();
+    let msg = commit::message("坏链接", None, &[("Problem", "0001".into())]);
+    let c = commit::signed_commit(
+        &repo,
+        &wang.client.identity().unwrap(),
+        &author,
+        tree,
+        &[&head],
+        &msg,
+    )
+    .unwrap();
+    commit::move_ref(&repo, "refs/heads/main", Some(head.id()), Some(c), "test").unwrap();
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let works =
+        wang.ok("problem", json!({ "house": "wutong", "problem": "0001" }))["works"].clone();
+    let bad = works
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|w| w["id"] == "works/0001/坏链接.link.md")
+        .unwrap();
+    assert_eq!((&bad["kind"], bad.get("url")), (&json!("link"), None));
+}
+
+#[test]
 fn attachments_go_to_the_cache_and_into_git_as_references() {
     let w = World::new("blobs");
     let (_wang, li, _zhao) = w.wutong();

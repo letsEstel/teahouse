@@ -133,6 +133,9 @@ pub fn classify_work(path: &str, fm: Option<&Frontmatter>) -> WorkFile {
     if lower.ends_with(".csv.meta.md") {
         return WorkFile::TableMeta;
     }
+    if lower.ends_with(".link.md") {
+        return WorkFile::Work(WorkKind::Link);
+    }
     if lower.ends_with(".md") {
         let plan = fm.and_then(|f| f.get("kind")) == Some("plan");
         return WorkFile::Work(if plan { WorkKind::Plan } else { WorkKind::Doc });
@@ -141,6 +144,19 @@ pub fn classify_work(path: &str, fm: Option<&Frontmatter>) -> WorkFile {
         return WorkFile::Work(WorkKind::Table);
     }
     WorkFile::Work(WorkKind::File)
+}
+
+/// The address of a link work: `http://` or `https://`, one line, no
+/// spaces or control characters, at most 2048 bytes. Anything else (a
+/// `javascript:` address, say) is never handed to the interface.
+pub fn valid_url(url: &str) -> bool {
+    let lower = url.to_ascii_lowercase();
+    let rest = lower
+        .strip_prefix("https://")
+        .or_else(|| lower.strip_prefix("http://"));
+    rest.is_some_and(|r| !r.is_empty() && !r.starts_with('/'))
+        && url.len() <= 2048
+        && !url.chars().any(|c| c.is_whitespace() || c.is_control())
 }
 
 /// `works/<problem>/<rest>` → `(problem, rest)`.
@@ -155,7 +171,7 @@ pub fn parse_work_path(path: &str) -> Option<(&str, &str)> {
 /// without directory and known extensions.
 pub fn file_title(path: &str) -> String {
     let name = path.rsplit('/').next().unwrap_or(path);
-    for ext in [".ref.md", ".csv.meta.md", ".md", ".csv"] {
+    for ext in [".ref.md", ".csv.meta.md", ".link.md", ".md", ".csv"] {
         if name.len() > ext.len() && name.to_lowercase().ends_with(ext) {
             return name[..name.len() - ext.len()].to_string();
         }
@@ -335,6 +351,35 @@ mod tests {
         assert_eq!(file_title("works/0001/照片.png.ref.md"), "照片.png");
         assert_eq!(file_title("works/0001/t.csv.meta.md"), "t");
         assert_eq!(file_title("works/0001/.md"), ".md");
+    }
+
+    #[test]
+    fn links() {
+        assert_eq!(
+            classify_work("works/0001/菜单.link.md", None),
+            WorkFile::Work(WorkKind::Link)
+        );
+        assert_eq!(file_title("works/0001/菜单.link.md"), "菜单");
+        for ok in [
+            "https://docs.qq.com/doc/DQ1",
+            "http://a.org",
+            "HTTPS://A.org/x?y=1#z",
+        ] {
+            assert!(valid_url(ok), "{ok}");
+        }
+        for bad in [
+            "javascript:alert(1)",
+            "https://",
+            "https:///x",
+            "ftp://a.org",
+            "https://a.org/x y",
+            "https://a.org/\n",
+            "data:text/html,x",
+            "//a.org",
+        ] {
+            assert!(!valid_url(bad), "{bad}");
+        }
+        assert!(!valid_url(&format!("https://a.org/{}", "x".repeat(2048))));
     }
 
     #[test]

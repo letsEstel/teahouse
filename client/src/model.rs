@@ -29,6 +29,8 @@ pub enum WorkKind {
     Table,
     Image,
     File,
+    /// A link to a document kept elsewhere (Tencent Docs, Google Docs…).
+    Link,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -194,6 +196,9 @@ pub struct Work {
     pub text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub blob: Option<Blob>,
+    /// A link work's address (only `http(s)://`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -318,6 +323,7 @@ pub enum NodeKind {
     Table,
     Image,
     File,
+    Link,
     Notice,
     Note,
     Members,
@@ -331,6 +337,7 @@ impl From<WorkKind> for NodeKind {
             WorkKind::Table => NodeKind::Table,
             WorkKind::Image => NodeKind::Image,
             WorkKind::File => NodeKind::File,
+            WorkKind::Link => NodeKind::Link,
         }
     }
 }
