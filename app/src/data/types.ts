@@ -2,7 +2,7 @@ import type { Text } from '../i18n/index.svelte'
 
 export type Role = 'host' | 'steward' | 'guest'
 export type Status = 'open' | 'active' | 'solved'
-export type WorkKind = 'doc' | 'table' | 'plan' | 'image'  // table：预算、报价、数据表都用它
+export type WorkKind = 'doc' | 'table' | 'plan' | 'image' | 'link'  // table：预算、报价、数据表都用它
 export type Act = 'addWork' | 'propose' | 'merge' | 'update' | 'markActive' | 'markSolved' | 'open' | 'openProblem'
 
 export interface Member { id: string; name: Text; role: Role; joined: string; kind?: 'human' | 'machine'; agent?: string }
@@ -14,6 +14,8 @@ export interface Work {
   by: string
   when: string
   note?: Text
+  /** 链接成果的地址 */
+  url?: string
   /** 首张成果的预览：定制图（只有梧桐里的车位图）或一段摘录 */
   preview?: { chart: 'parking' } | { excerpt: Text }
   /** 文本成果的正文（逐行），发起提案时可以在此基础上修改 */

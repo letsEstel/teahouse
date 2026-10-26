@@ -10,6 +10,8 @@
   import Editor from '../lib/Editor.svelte'
   import { attachImage, imageUrl, mdPieces, prepareFile } from '../lib/images'
   import MdImage from '../lib/MdImage.svelte'
+  import Linked from '../lib/Linked.svelte'
+  import { platform } from '../lib/links'
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
   import { api, write as send, blobUrl } from '../api/backend'
   import { isMachine } from '../api/types'
@@ -183,13 +185,13 @@
           <div class="para">
             <div class="label">{pad(p.body.slice(0, i + 1).filter((x) => x.heading).length)} · {b.heading}</div>
             {#each mdPieces(b.text) as piece}
-              {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p>{piece.text}</p>{/if}
+              {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p><Linked text={piece.text ?? ''} /></p>{/if}
             {/each}
           </div>
         {:else if b.text}
           <!-- 正文里单独一行的 ![标题](附件) 显示成图片 -->
           {#each mdPieces(b.text) as piece}
-            {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p class="lead">{piece.text}</p>{/if}
+            {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p class="lead"><Linked text={piece.text ?? ''} /></p>{/if}
           {/each}
         {/if}
       {:else}
@@ -264,12 +266,22 @@
         {#each p.works as w}
           {@const wm = member(house, w.by)}
           <li>
+            {#if w.kind === 'link' && w.url}
+              <!-- 链接成果：内容在外部的云文档里，点开就去那里；茶馆里只放地址和一句说明 -->
+              <a class="linkrow" href={w.url} target="_blank" rel="noopener noreferrer">
+                <WorkGlyph kind="link" size={20} />
+                <span class="fname"><span class="real">{w.title}</span><span class="human">{platform(w.url)}{w.note ? ` · ${w.note}` : ''}</span></span>
+                <span class="fby"><Shape role={wm.role} size={9} />{wm.name}<MachineMark m={wm} /> · {when(w.when)}</span>
+                <span class="open">{t('link.open')} ↗</span>
+              </a>
+            {:else}
             <a href="#/{house.id}/archive/{encodeURIComponent(w.id)}">
               <WorkGlyph kind={w.kind} size={20} />
               <span class="fname"><span class="real">{fileName(w.id)}</span><span class="human">{w.title}</span></span>
               <span class="fby"><Shape role={wm.role} size={9} />{wm.name}<MachineMark m={wm} /> · {when(w.when)}</span>
               <AccessMark a={access(house, w.id)} />
             </a>
+            {/if}
           </li>
         {/each}
       </ul>
@@ -392,6 +404,7 @@
   .node { padding-top: 5px; background: var(--paper); outline: 3px solid var(--paper); height: fit-content; position: relative; }
   .ev { font-size: 14px; line-height: 1.5; color: var(--ink-2); }
   .ev b { color: var(--ink); }
+  .open { font-size: 12px; font-weight: 700; white-space: nowrap; border-bottom: 1.5px solid currentColor; }
   .fold { display: inline-flex; align-items: center; gap: 10px; margin-top: 4px; padding: 6px 0; background: none; border: 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
   .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid currentColor; transition: transform 160ms var(--ease); }
   .tri.open { transform: rotate(180deg); }

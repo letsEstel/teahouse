@@ -4,7 +4,7 @@
 
 export type Role = 'host' | 'steward' | 'guest'
 export type Status = 'open' | 'active' | 'solved'
-export type WorkKind = 'doc' | 'plan' | 'table' | 'image' | 'file'
+export type WorkKind = 'doc' | 'plan' | 'table' | 'image' | 'file' | 'link'
 export type Act =
   | 'open-problem' | 'set-status' | 'add-work' | 'update-work' | 'note' | 'remove-note' | 'notice'
   | 'propose' | 'adopt' | 'decline' | 'seat' | 'update' | 'update-problem'
@@ -42,6 +42,8 @@ export interface Work {
   blob?: { hash: string; type: string; cached: boolean; purged?: boolean }
   /** 一句话说明（frontmatter 的 note:），显示在成果卡片标题下面 */
   note?: string
+  /** 链接成果：外部文档的地址（腾讯文档、Google 文档、飞书……），内容不在茶馆里 */
+  url?: string
 }
 
 export interface ProblemSummary {

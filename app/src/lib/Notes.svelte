@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Linked from './Linked.svelte'
   import Shape from './Shape.svelte'
   import MachineMark from './MachineMark.svelte'
   import { member, type House, type Note } from '../api/view'
@@ -29,7 +30,7 @@
           {/if}
         {/if}
       </div>
-      <p>{n.text}</p>
+      <p><Linked text={n.text} /></p>
     </li>
   {/each}
 </ol>

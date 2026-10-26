@@ -37,7 +37,7 @@ if (demo === 'onedevice') myDevices.pop()
 
 // ---- 文件路径（成果、提案改动里的 id 就是路径）----
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x'
-const ext = (k: FWork['kind']) => (k === 'image' ? 'png.ref.md' : k === 'table' ? 'csv' : 'md')
+const ext = (k: FWork['kind']) => (k === 'image' ? 'png.ref.md' : k === 'table' ? 'csv' : k === 'link' ? 'link.md' : 'md')
 export const workPath = (p: string, w: FWork) => `works/${p}/${w.id}-${slug(w.title.en)}.${ext(w.kind)}`
 
 // 表格：假数据里用空格或全角空格对齐，转成 CSV
@@ -61,6 +61,7 @@ function toWork(p: FProblem, w: FWork, file?: AFile): A.Work {
     size: file?.size ?? 0,
     text: workText(w),
     note: w.note ? L(w.note) : undefined,
+    url: w.url,
     blob: w.kind === 'image' ? { hash: `sha256:fake-${w.id}`, type: 'image/png', cached: true } : undefined,
   }
 }

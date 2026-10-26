@@ -91,6 +91,7 @@ export const wutong: House = {
           title: { zh: '一周占位记录', en: 'One week of occupancy notes', de: 'Belegungsprotokoll einer Woche' },
           note: { zh: '每晚 21:00 拍照统计', en: 'Photographed every night at 21:00', de: 'Jeden Abend um 21:00 fotografiert' },
         },
+        { id: 'w10', kind: 'link', by: 'sun', when: '2026-10-18T19:30', url: 'https://docs.qq.com/sheet/DUEtPaXxYzAbCdEf', title: { zh: '车位意见收集表', en: 'Parking feedback sheet', de: 'Rückmeldebogen Parkplätze' }, note: { zh: '大家在腾讯文档里一起填，周日汇总后贴回茶馆', en: 'Everyone fills it in together on Tencent Docs; summed up here on Sunday', de: 'Alle füllen es gemeinsam in Tencent Docs aus; sonntags hier zusammengefasst' } },
         { id: 'w5', kind: 'doc', by: 'chen', when: '2026-10-03T15:00', title: { zh: '致物业的函（草稿）', en: 'Letter to the management (draft)', de: 'Schreiben an die Hausverwaltung (Entwurf)' } },
         { id: 'w6', kind: 'table', by: 'sun', when: '2026-09-27T12:00', title: { zh: '周边收费停车场价目', en: 'Nearby car park prices', de: 'Preise der Parkhäuser in der Nähe' } },
         { id: 'w7', kind: 'image', by: 'wu', when: '2026-09-20T09:00', title: { zh: '外来车辆照片汇总', en: 'Photos of outside cars', de: 'Fotos der Fremdfahrzeuge' } },
@@ -109,6 +110,7 @@ export const wutong: House = {
         { by: 'li', when: '2026-10-13T08:40', text: { zh: '地锁报价如果用不上，报价表能不能留着？别的院子可能用得上。', en: 'If we don’t need the lock quotes, can we keep the quote table anyway? Another courtyard might use it.', de: 'Wenn wir die Bügel-Angebote nicht brauchen, können wir die Angebotstabelle trotzdem behalten? Ein anderer Hof kann sie vielleicht gebrauchen.' } },
         { by: 'zhao', when: '2026-10-17T22:30', text: { zh: 'v2 里夜班住户要提前登记。登记表谁来收？', en: 'In v2 night-shift residents register in advance. Who collects the forms?', de: 'In v2 melden sich Nachtschicht-Anwohner vorher an. Wer sammelt die Formulare ein?' } },
         { by: 'zhou', when: '2026-10-18T09:10', text: { zh: '我来收。门卫室放一个本子，每周日拍照传到这里。', en: 'I will. There’ll be a notebook in the gatehouse; I’ll photograph it every Sunday and post it here.', de: 'Mache ich. Im Pförtnerhaus liegt ein Heft; ich fotografiere es jeden Sonntag und stelle es hier ein.' } },
+        { by: 'sun', when: '2026-10-18T19:35', text: { zh: '意见收集表开好了，直接点就能填：https://docs.qq.com/sheet/DUEtPaXxYzAbCdEf', en: 'The feedback sheet is up, just open it: https://docs.qq.com/sheet/DUEtPaXxYzAbCdEf', de: 'Der Rückmeldebogen ist da, einfach öffnen: https://docs.qq.com/sheet/DUEtPaXxYzAbCdEf' } },
       ],
     },
     {
