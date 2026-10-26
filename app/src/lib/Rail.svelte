@@ -120,8 +120,8 @@
         {/each}
       </div>
     </div>
-    <!-- 版本和代号：v0.1 · 安吉白茶 -->
-    <div class="release label">v{__RELEASE__.version.split('.').slice(0, 2).join('.')} · {i18n.lang === 'zh' ? __RELEASE__.codename.zh : __RELEASE__.codename.latin}</div>
+    <!-- 版本和代号：v0.1 · Anji（代号都用拉丁字母，不翻译） -->
+    <div class="release label">v{__RELEASE__.version.split('.').slice(0, 2).join('.')} · {__RELEASE__.codename}</div>
   </div>
 </aside>
 

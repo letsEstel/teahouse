@@ -7,7 +7,7 @@ import { slimPreview } from './scripts/slim-preview.mjs'
 // @ts-ignore 纯 JS 的构建脚本
 import { engineBridge } from './scripts/engine-bridge.mjs'
 
-// 版本号和代号（每个版本一种茶，见 docs/DEVELOP.md）只写在 package.json 里
+// 版本号和代号（每个版本一种茶，拉丁字母，见 docs/DEVELOP.md）只写在 package.json 里
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
 
 export default defineConfig(({ mode }) => ({
