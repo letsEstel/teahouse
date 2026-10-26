@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Mark from './Mark.svelte'
   import Shape from './Shape.svelte'
   import { self, pad, type House } from '../api/view'
   import { i18n, langs, setLang, t, type Lang } from '../i18n/index.svelte'
@@ -34,11 +35,7 @@
 
 <aside>
   <a class="mark" href="#/{house.id}/house" aria-label={t('app.name')}>
-    <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
-      <rect x="1.5" y="1.5" width="41" height="41" fill="none" stroke="var(--ink)" stroke-width="3" />
-      <circle cx="22" cy="22" r="10" fill="var(--ink)" />
-      <rect x="17" y="39" width="10" height="5" fill="var(--paper)" />
-    </svg>
+    <Mark />
     <div class="mark-text">
       <div class="word">{t('app.name')}</div>
       <div class="label">{t('app.sub')}</div>
@@ -123,6 +120,8 @@
         {/each}
       </div>
     </div>
+    <!-- 版本和代号：v0.1 · 安吉白茶 -->
+    <div class="release label">v{__RELEASE__.version.split('.').slice(0, 2).join('.')} · {i18n.lang === 'zh' ? __RELEASE__.codename.zh : __RELEASE__.codename.latin}</div>
   </div>
 </aside>
 
@@ -141,7 +140,7 @@
     --in: clamp(20px, 2.2vw, 32px);
   }
   .mark { display: flex; gap: 14px; align-items: center; padding: 0 var(--in); }
-  .mark svg { flex: none; }
+  .mark :global(svg) { flex: none; }
   .word { font-family: var(--display); font-weight: var(--heavy); font-size: 22px; line-height: 1.1; letter-spacing: var(--track-wide); white-space: nowrap; }
   .mark .label { font-size: 10px; margin-top: 3px; }
 
@@ -201,6 +200,7 @@
   a.self .dev { margin-top: 6px; text-decoration: underline; text-underline-offset: 3px; }
   a.self:hover .self-name { text-decoration: underline; text-underline-offset: 3px; }
   .dev-glyph { display: none; flex: none; }
+  .release { font-size: 10px; color: var(--ink-3); text-transform: none; }
   .langs { display: flex; }
   .langs button {
     font-family: var(--latin); font-size: 12px; font-weight: 500; letter-spacing: 0.08em;
@@ -235,7 +235,7 @@
       --in: 20px;
     }
     .mark { grid-area: mark; padding: 12px var(--in); gap: 10px; }
-    .mark svg { width: 32px; height: 32px; }
+    .mark :global(svg) { width: 32px; height: 32px; }
     .mark .label { display: none; }
     .word { font-size: 18px; }
 
@@ -269,6 +269,7 @@
     .nm { font-size: 15px; }
 
     .foot { grid-area: foot; margin: 0; padding: 0 var(--in); flex-direction: row; align-items: center; gap: 16px; }
+    .release { display: none; }
     .self .label { display: none; }
     .dev-glyph { display: block; }
     .self { gap: 8px; }

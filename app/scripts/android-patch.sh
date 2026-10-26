@@ -2,11 +2,13 @@
 # After `tauri android init`: put our activity in place of the generated one
 # (edge to edge: pads the page clear of the status bar, navigation bar, camera
 # cutout and keyboard; bar colours follow the theme) and keep the activity
-# alive across folding/unfolding so the page is not reloaded.
+# alive across folding/unfolding so the page is not reloaded. The launcher
+# icon's background is the paper colour, not `tauri icon`'s white.
 # Used by .github/workflows/app.yml and scripts/build-android.sh; run from app/.
 set -eu
 GEN=src-tauri/gen/android/app/src/main
 cp src-tauri/android/MainActivity.kt "$GEN/java/org/teahouse/app/MainActivity.kt"
+sed -i 's/#FFFFFF/#F1ECE2/' "$GEN/res/values/ic_launcher_background.xml"
 python3 - "$GEN/AndroidManifest.xml" <<'PY'
 import re, sys
 path = sys.argv[1]

@@ -179,14 +179,16 @@ screens.push(
 // 第 13 轮：只有一台设备时的首页提醒；座位表只读；档案里直接改问题说明；带走整间茶馆
 screens.push(
   { name: 'wutong-house-onedevice', hash: '#/wutong/house', query: '&fake=onedevice' },
-  { name: 'wutong-house-onedevice-phone', hash: '#/wutong/house', query: '&fake=onedevice', widths: [390], save: true, saveAt: 390 },
+  { name: 'wutong-house-onedevice-phone', hash: '#/wutong/house', query: '&fake=onedevice', widths: [390] },
   { name: 'wutong-archive-members', hash: '#/wutong/archive/' + encodeURIComponent('.teahouse/members.toml') },
   { name: 'wutong-archive-problem-edit', hash: '#/wutong/archive/' + encodeURIComponent('problems/0001-hard-to-find-a-parking-space.md'), act: (p) => p.click('.tools button.primary') },
   { name: 'wutong-archive-exported', hash: '#/wutong/archive', act: async (p) => { await p.click('.export button.secondary'); await p.waitForSelector('.exported') }, widths: [1366, 390] },
   { name: 'wutong-house-onedevice-dark', hash: '#/wutong/house', query: '&fake=onedevice', theme: 'dark', only1366: true },
 )
+// 第 14 轮：新标志（一芽二叶）和侧栏底部的版本代号
+screens.push({ name: 'wutong-house-phone', hash: '#/wutong/house', widths: [390], save: true, saveAt: 390 })
 const save = {
-  'wutong-house-onedevice': { saveDe: true }, 'wutong-archive-members': {}, 'wutong-archive-problem-edit': {}, 'wutong-archive-exported': { saveDe: true }, 'wutong-house-onedevice-dark': {},
+  'wutong-house': { saveDe: true }, 'startup-house-dark': {}, 'join': {},
 }
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
 // 手机

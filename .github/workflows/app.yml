@@ -248,5 +248,8 @@ jobs:
               --title "最新测试版 · Nightly" --notes "每次 main 更新后自动构建。Built automatically from main." || true  # another run may have just created it
           gh release upload nightly teahouse-android-arm64.apk teahouse-windows-x64-setup.exe \
             teahouse-client-windows-x64.exe --clobber
-          gh release edit nightly --title "最新测试版 · $(date -u +%Y-%m-%d) · ${GITHUB_SHA::7}" \
+          # 版本号和代号写在 app/package.json（docs/DEVELOP.md「版本和代号」）
+          pkg=$(gh api "repos/$GITHUB_REPOSITORY/contents/app/package.json?ref=$GITHUB_SHA" -H 'Accept: application/vnd.github.raw')
+          release="v$(echo "$pkg" | jq -r '.version' | cut -d. -f1,2) $(echo "$pkg" | jq -r '.codename.latin') · $(echo "$pkg" | jq -r '.codename.zh')"
+          gh release edit nightly --title "$release · 最新测试版 · $(date -u +%Y-%m-%d) · ${GITHUB_SHA::7}" \
             --notes "每次 main 更新后自动构建。Built automatically from main at ${GITHUB_SHA::7}."
