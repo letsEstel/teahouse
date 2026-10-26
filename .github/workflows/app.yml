@@ -346,6 +346,13 @@ jobs:
           show() { echo "$1: $(printf '%s' "$2" | jq -c '{ok, me: .data.me, commit: .data.commit, error}' 2>/dev/null || printf '%s' "$2")"; }
           j=$(th join "$(jq -nc --arg r "$RELAY" --arg h "$HOUSE" '{relay: $r, house: $h}')") || { show join "$j"; exit 1; }
           show join "$j"
-          out=$(th note "$(jq -nc --arg h "$HOUSE" --arg n "$NOTICE" --arg t "$TEXT" '{house: $h, notice: $n, text: $t}')") || { show note "$out"; exit 1; }
-          show note "$out"
-          printf '%s' "$out" | jq -e '.ok and .data.commit == "pushed"' > /dev/null
+          # someone else may push in the same seconds; the engine then refuses this one (it is behind),
+          # so sync and post again, at most three times
+          for try in 1 2 3; do
+            out=$(th note "$(jq -nc --arg h "$HOUSE" --arg n "$NOTICE" --arg t "$TEXT" '{house: $h, notice: $n, text: $t}')") || true
+            show "note (try $try)" "$out"
+            printf '%s' "$out" | jq -e '.ok and .data.commit == "pushed"' > /dev/null && exit 0
+            sleep $((try * 10))
+            th sync "$(jq -nc --arg h "$HOUSE" '{house: $h}')" > /dev/null || true
+          done
+          exit 1
