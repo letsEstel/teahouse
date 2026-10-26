@@ -39,7 +39,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use teahouse_core::PublicKey;
-use write::{ChangeArg, SectionArg, WorkKindArg, Writer};
+use write::{ChangeArg, Content, SectionArg, WorkKindArg, Writer};
 
 /// `invite`'s options (CLIENT-API.md §4; `kind`/`agent`: docs/MCP.md §2).
 #[derive(Debug, Default, Deserialize)]
@@ -608,6 +608,7 @@ impl Client {
             title: String,
             text: Option<String>,
             from_path: Option<String>,
+            url: Option<String>,
             note: Option<String>,
         }
         #[derive(Deserialize)]
@@ -617,6 +618,9 @@ impl Client {
             id: String,
             text: Option<String>,
             from_path: Option<String>,
+            url: Option<String>,
+            title: Option<String>,
+            note: Option<String>,
         }
         #[derive(Deserialize)]
         struct UpdateProblemArg {
@@ -801,10 +805,13 @@ impl Client {
                 to_value(Writer::open(self, &p.house)?.add_work(
                     &p.problem,
                     p.kind,
-                    &p.title,
-                    p.text.as_deref(),
-                    p.from_path.as_deref(),
-                    p.note.as_deref(),
+                    Content {
+                        title: Some(&p.title),
+                        text: p.text.as_deref(),
+                        from_path: p.from_path.as_deref(),
+                        url: p.url.as_deref(),
+                        note: p.note.as_deref(),
+                    },
                     a,
                 )?)
             }
@@ -812,8 +819,13 @@ impl Client {
                 let p: UpdateWorkArg = parse(command, a)?;
                 to_value(Writer::open(self, &p.house)?.update_work(
                     &p.id,
-                    p.text.as_deref(),
-                    p.from_path.as_deref(),
+                    Content {
+                        title: p.title.as_deref(),
+                        text: p.text.as_deref(),
+                        from_path: p.from_path.as_deref(),
+                        url: p.url.as_deref(),
+                        note: p.note.as_deref(),
+                    },
                     a,
                 )?)
             }
