@@ -221,6 +221,51 @@ jobs:
           path: app/teahouse-arm64.apk
           if-no-files-found: error
 
+  # iPhone (问题 0017). First step: everything builds for the iOS simulator,
+  # unsigned, so the build problems show up before there is an Apple
+  # developer account. Signing and TestFlight come later. GitHub's macOS
+  # runners are free for public repositories.
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+            app/src-tauri -> target
+      # The engine alone first: its C parts (libgit2, libssh2, OpenSSL) are what
+      # is most likely to need care on a new platform
+      - name: Engine for iPhone
+        working-directory: .
+        run: cargo build --release --locked -p teahouse-client --target aarch64-apple-ios
+      - run: npm ci
+      # The Xcode project is generated from tauri.conf.json (src-tauri/gen/ is not committed)
+      - name: iOS project
+        run: |
+          brew list xcodegen > /dev/null 2>&1 || brew install xcodegen
+          npx tauri ios init --ci
+          npx tauri icon src-tauri/icons/source.png
+      - name: Build for the simulator
+        run: npx tauri ios build --target aarch64-sim --debug --ci
+      - name: What was built
+        if: always()
+        run: find src-tauri/gen/apple/build -maxdepth 4 \( -name '*.app' -o -name '*.ipa' \) 2>/dev/null | head || true
+
   # Every build of main replaces the files of the "nightly" release, so the
   # download links in README.md never change.
   release:
