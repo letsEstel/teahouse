@@ -7,7 +7,7 @@ export type Status = 'open' | 'active' | 'solved'
 export type WorkKind = 'doc' | 'plan' | 'table' | 'image' | 'file'
 export type Act =
   | 'open-problem' | 'set-status' | 'add-work' | 'update-work' | 'note' | 'remove-note' | 'notice'
-  | 'propose' | 'adopt' | 'decline' | 'seat' | 'update'
+  | 'propose' | 'adopt' | 'decline' | 'seat' | 'update' | 'update-problem'
 
 export interface SyncState {
   state: 'synced' | 'ahead' | 'behind' | 'offline' | 'error'
@@ -109,6 +109,8 @@ export interface Commands {
 
   openProblem: [HouseArg & { title: string; body: { heading: string; text: string }[] }, WriteResult]
   setStatus: [HouseArg & { problem: string; status: Status; owner?: string }, WriteResult]
+  /** text = frontmatter 之后的整段 Markdown（摘要和 ## 各节）；状态、负责人不变。茶客的自动变成提案 */
+  updateProblem: [HouseArg & { problem: string; title?: string; text?: string }, WriteResult]
   addWork: [HouseArg & { problem: string; kind: WorkKind; title: string; text?: string; fromPath?: string }, WriteResult]
   updateWork: [HouseArg & { id: string; text?: string; fromPath?: string }, WriteResult]
   note: [HouseArg & { problem?: string; notice?: string; text: string }, WriteResult]

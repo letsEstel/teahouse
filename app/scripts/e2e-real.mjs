@@ -128,6 +128,72 @@ await step('写留言、删留言（note / removeNote）', async () => {
   await p.close()
 })
 
+await step('问题列表的日期（不再全是"刚刚"）', async () => {
+  const h = await engine(HOST, 'house', { house })
+  const old = h.problems.filter((x) => Date.now() - Date.parse(x.updated) > 86400_000)
+  if (!old.length) throw new Error('no problem older than a day in the fixtures')
+  const p = await open(host.url, 'problems')
+  const shown = await p.$$eval('.when', (els) => els.map((e) => e.textContent.trim()))
+  const just = shown.filter((x) => x === '刚刚').length
+  if (just > h.problems.length - old.length) throw new Error(`${just} of ${shown.length} say 刚刚: ${shown.join(' / ')}`)
+  ok(`问题列表的日期：${shown.slice(0, 4).join(' / ')} …（${old.length} 个超过一天的不显示"刚刚"）`)
+  await p.close()
+})
+
+await step('改状态、指定负责人（setStatus）', async () => {
+  const h = await engine(HOST, 'house', { house })
+  const who = h.members.find((m) => m.id !== h.me)
+  const p = await open(host.url, `problem/${problemId}`)
+  await p.click('.manage .states button:nth-child(2)')
+  await p.waitForSelector('.manage .states button.on:nth-child(2)')
+  let got = await engine(HOST, 'problem', { house, problem: problemId })
+  if (got.status !== 'active') throw new Error(`status ${got.status}`)
+  await p.selectOption('#owner', who.id)
+  await p.waitForSelector(`.meta :text("负责人：${who.name}")`)
+  got = await engine(HOST, 'problem', { house, problem: problemId })
+  if (got.owner !== who.id || got.status !== 'active') throw new Error(`owner ${got.owner}, status ${got.status}`)
+  await shot(p, '2-status-owner')
+  await p.click('.manage .states button:nth-child(3)')
+  await p.waitForSelector('.manage .states button.on:nth-child(3)')
+  got = await engine(HOST, 'problem', { house, problem: problemId })
+  if (got.status !== 'solved') throw new Error(`status ${got.status}`)
+  await p.waitForTimeout(3500)   // 等按钮上的结果消失
+  await p.click('.manage .states button:nth-child(1)')
+  await p.waitForSelector('.manage .states button.on:nth-child(1)')
+  await p.selectOption('#owner', '')
+  await p.waitForTimeout(1500)
+  got = await engine(HOST, 'problem', { house, problem: problemId })
+  if (got.status !== 'open' || got.owner) throw new Error(`status ${got.status}, owner ${got.owner}`)
+  const list = (await engine(HOST, 'house', { house })).problems.find((x) => x.id === problemId)
+  if (list.status !== 'open') throw new Error('house still shows the old status')
+  ok(`改状态、负责人：进行中 + ${who.name} → 已办成 → 待认领 + 没有人，引擎里一致`)
+  await p.close()
+})
+
+await step('修改问题（updateProblem）；单个回车显示成换行', async () => {
+  const p = await open(host.url, `problem/${problemId}`)
+  await p.click('header button.edit')
+  await p.fill('#pedit-title', `楼道里的自行车和电动车 ${stamp}`)
+  await p.click('.pedit .cm-content')
+  await p.keyboard.press('Control+A')
+  await p.keyboard.type('第一行。\n第二行，只隔一个回车。\n\n新的一段。\n## 现状\n一楼到三楼一共 8 辆。')
+  await p.click('.pedit button[type=submit]')
+  await p.waitForSelector('.wrap > .saved')
+  const got = await engine(HOST, 'problem', { house, problem: problemId })
+  if (got.title !== `楼道里的自行车和电动车 ${stamp}`) throw new Error(`title ${got.title}`)
+  const intro = got.body.find((b) => !b.heading)?.text ?? ''
+  if (intro !== '第一行。\n第二行，只隔一个回车。\n\n新的一段。') throw new Error(`intro ${JSON.stringify(intro)}`)
+  if (!got.body.some((b) => b.heading === '现状' && b.text.includes('8 辆'))) throw new Error(`sections ${JSON.stringify(got.body)}`)
+  if (got.status !== 'open') throw new Error(`status changed to ${got.status}`)
+  // 显示：两行在屏幕上是上下两行（高度至少是一行的两倍多）
+  await p.waitForSelector('.lead:has-text("第二行")')
+  const lines = await p.$eval('.lead', (e) => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)))
+  if (lines < 4) throw new Error(`lead shows ${lines} lines`)
+  await shot(p, '3-edited-problem')
+  ok(`修改问题：标题、说明写进引擎，状态不变；摘要显示成 ${lines} 行（含空行）`)
+  await p.close()
+})
+
 await step('张贴公告（postNotice）', async () => {
   const before = (await engine(HOST, 'house', { house })).board.length
   const p = await open(host.url, 'board')
@@ -206,6 +272,23 @@ if (GUEST) {
       await p.close()
     })
   }
+  await step('茶客：看不到改状态；修改问题变成提案（updateProblem）', async () => {
+    await engine(GUEST, 'sync', { house })
+    const p = await open(guest.url, `problem/${problemId}`)
+    if (await p.$('.manage')) throw new Error('guest sees the status controls')
+    await p.click('header button.edit:has-text("提议修改")')
+    await p.fill('#pedit-title', `茶客改的标题 ${stamp}`)
+    await p.click('.pedit button[type=submit]')
+    await p.waitForSelector('.wrap > .saved:has-text("提案")')
+    await engine(GUEST, 'sync', { house })
+    await engine(HOST, 'sync', { house })
+    const got = await engine(HOST, 'problem', { house, problem: problemId })
+    if (got.title.startsWith('茶客改的标题')) throw new Error('written directly, not proposed')
+    const prop = (await engine(HOST, 'house', { house })).proposals.find((x) => x.files.some((f) => f.path.startsWith('problems/')) && x.problem === problemId)
+    if (!prop) throw new Error('no proposal on the host side')
+    ok(`茶客修改问题：没有直接写进去，老板那边有提案（${prop.id}）`)
+    await p.close()
+  })
   await guest.close()
 }
 

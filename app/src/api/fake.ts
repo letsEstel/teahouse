@@ -96,7 +96,7 @@ const toNotice = (n: FNotice): A.Notice => ({ id: n.id, by: n.by, title: L(n.tit
 
 function summary(h: FHouse, p: FProblem): A.ProblemSummary {
   return {
-    id: p.id, title: L(p.title), summary: L(p.summary), status: p.status, by: p.by,
+    id: p.id, title: L(p.title), summary: L(p.summary), status: p.status, by: p.by, owner: p.owner,
     opened: iso(p.opened), updated: iso(p.updated),
     workCount: p.works.length || (p.workCount ?? 0),
     pendingProposals: h.proposals.filter((x) => x.problem === p.id).length,
@@ -297,7 +297,21 @@ const handlers: Handlers = {
   adopt: () => written(),
   decline: () => written(),
   openProblem: () => written(),
-  setStatus: () => written(),
+  setStatus: ({ house, problem, status, owner }) => {
+    const p = find(house)?.problems.find((x) => x.id === problem)
+    if (!p) return fail('not_found', `${problem}`)
+    p.status = status
+    if (owner !== undefined) p.owner = owner || undefined
+    return written()
+  },
+  updateProblem: ({ house, problem, title }) => {
+    const h = find(house)
+    const p = h?.problems.find((x) => x.id === problem)
+    if (!h || !p) return fail('not_found', `${problem}`)
+    if (h.members.find((m) => m.id === h.me)!.role === 'guest') return written(true)
+    if (title) p.title = text(title)
+    return written()
+  },
   // 图片：假数据把选中的文件留在内存里（stageFile 放进 fakeStaged），blob 再取回来
   addWork: ({ problem, kind, title, fromPath }) => {
     if (kind !== 'image' || !fromPath) return written()
@@ -339,7 +353,7 @@ const handlers: Handlers = {
   },
 }
 
-const writes: A.Command[] = ['openProblem', 'setStatus', 'addWork', 'updateWork', 'note', 'removeNote', 'postNotice', 'propose', 'withdraw', 'adopt', 'decline', 'seat', 'purgeBlob']
+const writes: A.Command[] = ['openProblem', 'setStatus', 'updateProblem', 'addWork', 'updateWork', 'note', 'removeNote', 'postNotice', 'propose', 'withdraw', 'adopt', 'decline', 'seat', 'purgeBlob']
 // 演示"被拒绝"：Relay 的理由原样转达（RELAY.md 第 3 节的口吻）
 const refused: A.Result<never> = {
   ok: false,

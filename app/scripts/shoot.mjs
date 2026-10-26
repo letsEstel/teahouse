@@ -166,11 +166,19 @@ screens.push(
   { name: 'wutong-devices-remove', hash: '#/wutong/devices', act: async (p) => { await p.click('.act .secondary'); await p.waitForTimeout(200) } },
   { name: 'join-pairing', hash: '#/join', act: async (p) => { await p.fill('textarea[name=invite]', pairMsg); await p.waitForTimeout(200) } },
 )
+screens.push({ name: 'wutong-devices-phone', hash: '#/wutong/devices', widths: [390], act: async (p) => { await p.click('.ask .primary'); await p.waitForTimeout(300) } })
+// 第 12 轮：问题的状态和负责人（老板、伙计）；修改问题（茶客是提议修改）
+const editProblem = async (p) => { await p.click('header button.edit'); await p.waitForTimeout(200) }
+screens.push(
+  { name: 'wutong-problem-owner', hash: '#/wutong/problem/0002', act: async (p) => { await p.selectOption('#owner', { index: 2 }); await p.waitForTimeout(400) } },
+  { name: 'wutong-problem-edit', hash: '#/wutong/problem/0001', act: editProblem, widths: [1366, 390] },
+  { name: 'kant-problem-edit', hash: '#/kant/problem/0001', act: editProblem },
+  { name: 'wutong-problem-phone', hash: '#/wutong/problem/0001', widths: [390], save: true, saveAt: 390 },
+  { name: 'wutong-problem-dark', hash: '#/wutong/problem/0002', theme: 'dark', only1366: true },
+)
 const save = {
-  'wutong-devices': {}, 'wutong-devices-code': { saveDe: false }, 'wutong-devices-remove': {}, 'join-pairing': {},
+  'wutong-problem': {}, 'wutong-problem-owner': {}, 'wutong-problem-edit': {}, 'kant-problem': {}, 'kant-problem-edit': { saveDe: true }, 'wutong-problem-dark': {},
 }
-// 手机上也存一张"添加一台设备"（用户先在 Fold 上入座，再把电脑配进来）
-screens.push({ name: 'wutong-devices-phone', hash: '#/wutong/devices', widths: [390], save: true, saveAt: 390, act: async (p) => { await p.click('.ask .primary'); await p.waitForTimeout(300) } })
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
 // 手机
 screens.push(

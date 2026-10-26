@@ -39,6 +39,7 @@ export interface Problem {
   title: Text
   summary: Text
   status: Status
+  owner?: string
   by: string
   opened: string
   updated: string
