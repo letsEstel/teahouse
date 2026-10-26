@@ -238,7 +238,7 @@
 {/if}
 
 <style>
-  .lead { font-size: 17px; line-height: 1.8; margin-bottom: 22px; }
+  .lead { font-size: 17px; line-height: 1.8; margin-bottom: 22px; white-space: pre-line; }
   .wrap { padding: calc(var(--pad-top) * 0.75) var(--pad-x) 80px; }
   .back { display: inline-block; padding: 6px 0; }
   .back:hover { color: var(--ink); }
@@ -269,7 +269,7 @@
   .cols { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); gap: clamp(36px, 4.4vw, 64px); margin-top: 40px; }
 
   .para { margin-bottom: 28px; }
-  .para p { margin-top: 8px; font-size: 15px; line-height: 1.85; }
+  .para p { margin-top: 8px; font-size: 15px; line-height: 1.85; white-space: pre-line; }
   .quiet { color: var(--ink-2); line-height: 1.8; }
 
   .tl-head { margin-top: 44px; padding-bottom: 10px; border-bottom: 1px solid var(--ink); }

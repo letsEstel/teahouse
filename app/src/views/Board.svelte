@@ -112,7 +112,7 @@
   h2 { font-family: var(--display); font-weight: var(--heavy); font-size: clamp(22px, 2vw, 30px); line-height: 1.25; letter-spacing: var(--track); }
   .by { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 10px; font-size: 13px; color: var(--ink-2); }
   .by .when { font-family: var(--latin); color: var(--ink-3); }
-  .text { margin-top: 16px; font-size: 16px; line-height: 1.85; max-width: 38em; }
+  .text { margin-top: 16px; font-size: 16px; line-height: 1.85; max-width: 38em; white-space: pre-line; }
 
   .replies { margin-top: 26px; padding-left: clamp(16px, 2vw, 28px); border-left: 1px solid var(--ink); max-width: 44em; display: flex; flex-direction: column; gap: 10px; }
   .rh { padding-bottom: 4px; }

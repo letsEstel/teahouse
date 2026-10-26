@@ -63,8 +63,11 @@ export const L = (x: Text) => x[i18n.lang] ?? x.en
 
 // ---- 日期与时间 ----
 
-// M0 用固定的"现在"，保证截图稳定。M1 换成 new Date()。
+// 假数据用固定的"现在"，保证截图稳定；接真引擎时用真的时钟（backend.ts 选定后端时设置）。
 export const NOW = new Date('2026-10-18T20:10:00')
+let fixedClock = false
+export function useFixedClock(on: boolean) { fixedClock = on }
+const now = () => (fixedClock ? NOW : new Date())
 
 const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 
@@ -73,13 +76,14 @@ export function when(iso: string): string {
   const d = new Date(iso)
   const loc = locales[i18n.lang]
   const rtf = new Intl.RelativeTimeFormat(loc, { numeric: 'auto' })
-  const mins = Math.round((NOW.getTime() - d.getTime()) / 60000)
-  const days = Math.round((day(NOW) - day(d)) / 86400000)
+  const n = now()
+  const mins = Math.round((n.getTime() - d.getTime()) / 60000)
+  const days = Math.round((day(n) - day(d)) / 86400000)
   if (mins < 1) return t('time.justNow')
   if (days === 0) return mins < 60 ? rtf.format(-mins, 'minute') : rtf.format(-Math.floor(mins / 60), 'hour')
   const time = new Intl.DateTimeFormat(loc, { hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
   if (days === 1) return `${rtf.format(-1, 'day')} ${time}`
-  return date(iso, d.getFullYear() === NOW.getFullYear() ? 'short' : 'long')
+  return date(iso, d.getFullYear() === n.getFullYear() ? 'short' : 'long')
 }
 
 /** 日期：short = "10月12日" / "12 Oct" / "12. Okt."；long 带年份 */
