@@ -1,6 +1,6 @@
 <script lang="ts">
   import Shape from '../lib/Shape.svelte'
-  import AiMark from '../lib/AiMark.svelte'
+  import MachineMark from '../lib/MachineMark.svelte'
   import StatusMark from '../lib/StatusMark.svelte'
   import Editor from '../lib/Editor.svelte'
   import { write } from '../api/backend'
@@ -122,7 +122,7 @@
               <span class="cmeta">
                 <span><b class="num">{p.workCount}</b> {t('problems.works', { n: p.workCount })}</span>
                 {#if pr}<span><em class="badge">{pr}</em> {t('problems.pending')}</span>{/if}
-                <span class="by"><Shape role={m.role} size={9} />{m.name}<AiMark {m} /></span>
+                <span class="by"><Shape role={m.role} size={9} />{m.name}<MachineMark {m} /></span>
               </span>
             </a>
           {:else}
@@ -148,7 +148,7 @@
               <span class="st"><StatusMark status={p.status} /></span>
               <span class="works"><b class="num">{p.workCount}</b> {t('problems.works', { n: p.workCount })}</span>
               <span class="pr">{#if pr}<em class="badge">{pr}</em> {t('problems.pending')}{/if}</span>
-              <span class="by"><Shape role={m.role} size={10} />{m.name}<AiMark {m} /></span>
+              <span class="by"><Shape role={m.role} size={10} />{m.name}<MachineMark {m} /></span>
               <span class="when num">{when(p.updated)}</span>
             </span>
           </a>

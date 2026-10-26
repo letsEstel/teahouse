@@ -1,6 +1,6 @@
 <script lang="ts">
   import Shape from '../lib/Shape.svelte'
-  import AiMark from '../lib/AiMark.svelte'
+  import MachineMark from '../lib/MachineMark.svelte'
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import Diff from '../lib/Diff.svelte'
   import { member, self, host, type House, type Proposal } from '../api/view'
@@ -51,7 +51,7 @@
           <a href="#/{house.id}/proposal/{q.id}">
             <span class="q-no num">{q.problem}{#if q.by === me.id}<span class="mine">{t('prop.yours')}</span>{/if}</span>
             <span class="q-t hyphenate">{q.title}</span>
-            <span class="q-by"><Shape role={m.role} size={9} />{m.name}<AiMark {m} /> · {when(q.when)}</span>
+            <span class="q-by"><Shape role={m.role} size={9} />{m.name}<MachineMark {m} /> · {when(q.when)}</span>
           </a>
         </li>
       {:else}
@@ -64,7 +64,7 @@
       {#each house.decided as h}
         <li>
           <span class="q-t">{h.title}</span>
-          <span class="q-by">{member(house, h.by).name}<AiMark m={member(house, h.by)} /> · {t(h.result === 'adopted' ? 'prop.merged' : 'prop.rejected')} · {when(h.when)}</span>
+          <span class="q-by">{member(house, h.by).name}<MachineMark m={member(house, h.by)} /> · {t(h.result === 'adopted' ? 'prop.merged' : 'prop.rejected')} · {when(h.when)}</span>
         </li>
       {/each}
     </ul>
@@ -80,7 +80,7 @@
       <h2>{p.title}</h2>
 
       <div class="who">
-        <span class="person"><Shape role={author.role} size={14} /><b>{author.name}</b><AiMark m={author} />{t(`role.${author.role}`)}</span>
+        <span class="person"><Shape role={author.role} size={14} /><b>{author.name}</b><MachineMark m={author} />{t(`role.${author.role}`)}</span>
         <span>{when(p.when)}</span>
         <span>{t('prop.changes', { n: p.files.length })}</span>
       </div>

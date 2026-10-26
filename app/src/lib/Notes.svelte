@@ -1,6 +1,6 @@
 <script lang="ts">
   import Shape from './Shape.svelte'
-  import AiMark from './AiMark.svelte'
+  import MachineMark from './MachineMark.svelte'
   import { member, type House, type Note } from '../api/view'
   import { t, when, date } from '../i18n/index.svelte'
   // 写下来的话：像信纸上的段落一样排，不做气泡。
@@ -18,7 +18,7 @@
     <li>
       <div class="who">
         <Shape role={m.role} size={10} />
-        <b>{m.name}</b><AiMark {m} />
+        <b>{m.name}</b><MachineMark {m} />
         <span class="role">{t(`role.${m.role}`)}</span>
         <span class="when">{late ? t('note.writtenAt', { date: date(n.writtenAt, 'short') }) : when(n.writtenAt)}</span>
         {#if ondelete}
