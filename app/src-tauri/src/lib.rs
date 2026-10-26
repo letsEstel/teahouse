@@ -7,10 +7,12 @@
 //! `{ok: false, error}`); the shell passes it through unchanged. Git work can
 //! take a while, so each call runs on its own thread instead of the UI loop.
 //!
-//! One command belongs to the shell itself: `stageFile`. A file picked on a
-//! phone arrives as bytes (raw invoke body, name in `x-file-name`), but the
-//! engine attaches files by path (`fromPath`); the shell saves the bytes under
-//! the app's cache directory and answers `{ok, data: {path}}`.
+//! One command belongs to the shell itself: `stageFile`. A picked file arrives
+//! as bytes, but the engine attaches files by path (`fromPath`); the shell
+//! saves the bytes under the app's cache directory and answers
+//! `{ok, data: {path}}`. On desktop the bytes come as the raw invoke body
+//! (name in `x-file-name`); Android's IPC turns every body into JSON, so there
+//! the page sends `{name, data}` with the bytes in base64.
 //!
 //! `export` without a `to` ("take the whole teahouse away") goes to the
 //! Downloads folder, under `Teahouse/`: the interface cannot pick a folder on
@@ -71,16 +73,22 @@ pub fn run() {
         .invoke_handler(|invoke| {
             if invoke.message.command() == "stageFile" {
                 let staged = invoke.message.webview().path().app_cache_dir().map_err(|e| e.to_string()).and_then(|dir| {
-                    let name = invoke
-                        .message
-                        .headers()
-                        .get("x-file-name")
-                        .and_then(|v| v.to_str().ok())
-                        .map(percent_decode)
-                        .unwrap_or_default();
                     match invoke.message.payload() {
-                        InvokeBody::Raw(bytes) => stage(&dir.join("staged"), &name, bytes),
-                        InvokeBody::Json(_) => Err("stageFile expects the file's bytes".into()),
+                        InvokeBody::Raw(bytes) => {
+                            let name = invoke
+                                .message
+                                .headers()
+                                .get("x-file-name")
+                                .and_then(|v| v.to_str().ok())
+                                .map(percent_decode)
+                                .unwrap_or_default();
+                            stage(&dir.join("staged"), &name, bytes)
+                        }
+                        InvokeBody::Json(v) => {
+                            let name = v.get("name").and_then(|n| n.as_str()).unwrap_or_default();
+                            let data = v.get("data").and_then(|d| d.as_str()).ok_or("stageFile expects the file's bytes")?;
+                            stage(&dir.join("staged"), name, &base64_decode(data)?)
+                        }
                     }
                 });
                 invoke.resolver.resolve(match staged {
@@ -149,6 +157,30 @@ fn stage(dir: &Path, name: &str, bytes: &[u8]) -> Result<String, String> {
     let path = dir.join(format!("{stamp}-{base}"));
     std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
     path.into_os_string().into_string().map_err(|_| "path is not UTF-8".to_string())
+}
+
+/// Standard base64 (with or without padding) to bytes.
+fn base64_decode(s: &str) -> Result<Vec<u8>, String> {
+    let mut out = Vec::with_capacity(s.len() / 4 * 3);
+    let (mut acc, mut bits) = (0u32, 0);
+    for c in s.bytes() {
+        let v = match c {
+            b'A'..=b'Z' => c - b'A',
+            b'a'..=b'z' => c - b'a' + 26,
+            b'0'..=b'9' => c - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            b'=' | b'\n' | b'\r' => continue,
+            _ => return Err("the file's bytes are not base64".into()),
+        };
+        acc = (acc << 6) | u32::from(v);
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            out.push((acc >> bits) as u8);
+        }
+    }
+    Ok(out)
 }
 
 /// `encodeURIComponent` undone (the header carries the file name).

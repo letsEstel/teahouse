@@ -13,14 +13,17 @@
   import { markdown as md } from '@codemirror/lang-markdown'
 
   import { t } from '../i18n/index.svelte'
+  import { report } from '../api/errors.svelte'
 
-  let { value, onchange, markdown = true, placeholder = '', onimage, resolveImage }: {
+  // busy：图片还在加进来（缩小、上传）。页面用它把"保存"先锁住，免得存下一份不带图片的
+  let { value, onchange, markdown = true, placeholder = '', onimage, resolveImage, busy = $bindable(false) }: {
     value: string
     onchange?: (text: string) => void
     markdown?: boolean
     placeholder?: string
     onimage?: (file: File) => Promise<string | null>
     resolveImage?: (src: string) => Promise<string | null>
+    busy?: boolean
   } = $props()
 
   let picker = $state<HTMLInputElement>()
@@ -29,10 +32,17 @@
     const input = e.currentTarget as HTMLInputElement
     const file = input.files?.[0]
     input.value = ''
-    if (!file || !onimage) return
-    adding = true
-    const line = await onimage(file)
-    adding = false
+    if (!file || !onimage || adding) return
+    adding = busy = true
+    let line: string | null = null
+    try {
+      line = await onimage(file)
+    } catch (err) {
+      // 失败也要结束"正在加入图片"，并在页面顶部说明
+      report({ code: 'internal', message: String(err), params: { stage: file.name } })
+    } finally {
+      adding = busy = false
+    }
     if (!line || !view) return
     // 图片单独占一段：前后各空一行
     const { from } = view.state.selection.main

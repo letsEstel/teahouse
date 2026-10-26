@@ -4,7 +4,8 @@
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import { diffLines } from '../lib/diff'
   import { self, host, type House, type WorkKind, type Problem } from '../api/view'
-  import { api, write, stageFile } from '../api/backend'
+  import { api, write } from '../api/backend'
+  import { prepareFile } from '../lib/images'
   import { t } from '../i18n/index.svelte'
 
   // 发起提案（茶客的核心动作）：面向哪个问题 → 改什么 → 为什么 → 交给老板。
@@ -28,7 +29,8 @@
     const input = e.currentTarget as HTMLInputElement
     const f = input.files?.[0]
     input.value = ''
-    if (f) replacement = { name: f.name, path: await stageFile(f) }
+    const staged = f && (await prepareFile(f))
+    if (staged) replacement = { name: staged.file.name, path: staged.path }
   }
 
   // arg：问题编号、"new"（提议新问题）或 "board"（提议一条公告）

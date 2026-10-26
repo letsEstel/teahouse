@@ -8,10 +8,10 @@
   import Write from '../lib/Write.svelte'
   import AccessMark from '../lib/AccessMark.svelte'
   import Editor from '../lib/Editor.svelte'
-  import { attachImage, imageUrl, mdPieces } from '../lib/images'
+  import { attachImage, imageUrl, mdPieces, prepareFile } from '../lib/images'
   import MdImage from '../lib/MdImage.svelte'
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
-  import { api, write as send, blobUrl, stageFile } from '../api/backend'
+  import { api, write as send, blobUrl } from '../api/backend'
   import { isMachine } from '../api/types'
   import { t, when, date } from '../i18n/index.svelte'
 
@@ -39,6 +39,7 @@
 
   // 添加成果：写一份文档（编辑器），或从手机的文件选择器加入图片、附件。茶客的会自动变成提案。
   let composing = $state(false)
+  let docBusy = $state(false)
   let newTitle = $state('')
   let newText = $state('')
   let added = $state<'written' | 'proposed' | null>(null)
@@ -51,16 +52,25 @@
     await load()
   }
   let picker = $state<HTMLInputElement>()
+  // 选好文件以后马上有反馈：照片要先缩小、存到本机，再送进茶馆（附件经 Relay 上传），可能要几秒
+  let attaching = $state(false)
   async function attach(e: Event) {
     const input = e.currentTarget as HTMLInputElement
     const f = input.files?.[0]
     input.value = ''
-    if (!f) return
-    const kind = f.type.startsWith('image/') ? 'image' : 'file'
-    const r = await send('addWork', { house: house.id, problem: id, kind, title: f.name.replace(/\.[^.]+$/, ''), fromPath: await stageFile(f) })
-    if (!r) return
-    added = r.becameProposal ? 'proposed' : 'written'
-    await load()
+    if (!f || attaching) return
+    attaching = true
+    try {
+      const staged = await prepareFile(f)
+      if (!staged) return
+      const kind = f.type.startsWith('image/') ? 'image' : 'file'
+      const r = await send('addWork', { house: house.id, problem: id, kind, title: f.name.replace(/\.[^.]+$/, ''), fromPath: staged.path })
+      if (!r) return
+      added = r.becameProposal ? 'proposed' : 'written'
+      await load()
+    } finally {
+      attaching = false
+    }
   }
 
   // 问题下的讨论：留言直接写进茶馆（茶客也一样）
@@ -83,6 +93,7 @@
 
   // 修改问题本身：标题和说明（updateProblem）；状态、负责人不变。茶客的修改自动变成提案
   let editing = $state(false)
+  let editBusy = $state(false)
   let editTitle = $state('')
   let editText = $state('')
   let edited = $state<'written' | 'proposed' | null>(null)
@@ -133,11 +144,12 @@
       <label class="label" for="pedit-title">{t('newProblem.title')}</label>
       <input id="pedit-title" class="title-in" bind:value={editTitle} />
       <span class="label">{t('newProblem.body')}</span>
-      <Editor value={editText} placeholder={t('newProblem.bodyPh')} onchange={(v) => (editText = v)}
+      <Editor value={editText} placeholder={t('newProblem.bodyPh')} onchange={(v) => (editText = v)} bind:busy={editBusy}
         onimage={(f) => attachImage(house.id, id, f)} resolveImage={(src) => imageUrl(house.id, src)} />
       <p class="consequence">{t(me.role === 'guest' ? 'pedit.hintGuest' : 'pedit.hint')}</p>
       <div class="save">
-        <button type="submit" class="primary" disabled={!editChanged}><span>{t(me.role === 'guest' ? 'edit.saveProposal' : 'edit.save')}</span></button>
+        {#if editBusy}<p class="consequence">{t('edit.imageBusy')}</p>{/if}
+        <button type="submit" class="primary" disabled={!editChanged || editBusy}><span>{t(me.role === 'guest' ? 'edit.saveProposal' : 'edit.save')}</span></button>
         <button type="button" class="secondary" onclick={() => (editing = false)}>{t('edit.cancel')}</button>
       </div>
     </form>
@@ -203,7 +215,7 @@
         <div class="action" data-write>
           <p class="consequence">{action.hint}</p>
           <button class="primary" aria-expanded={composing} onclick={() => { composing = !composing; added = null }}><i>+</i><span>{t('edit.newDoc')}</span></button>
-          <button class="secondary" onclick={() => picker?.click()}>+ {t('edit.attach')}</button>
+          <button class="secondary" disabled={attaching} aria-busy={attaching || undefined} data-sending={t('edit.attaching')} onclick={() => picker?.click()}>+ {t('edit.attach')}</button>
           <input class="picker" type="file" bind:this={picker} onchange={attach} />
         </div>
       </div>
@@ -214,10 +226,11 @@
         <div class="compose" data-write>
           <label class="label" for="new-title">{t('edit.title')}</label>
           <input id="new-title" class="title-in" bind:value={newTitle} placeholder={t('edit.titlePlaceholder')} />
-          <Editor value="" placeholder={t('edit.bodyPlaceholder')} onchange={(v) => (newText = v)}
+          <Editor value="" placeholder={t('edit.bodyPlaceholder')} onchange={(v) => (newText = v)} bind:busy={docBusy}
             onimage={(f) => attachImage(house.id, id, f)} resolveImage={(src) => imageUrl(house.id, src)} />
           <div class="save">
-            <button class="primary" disabled={!newTitle.trim()} onclick={addDoc}><span>{t(me.role === 'guest' ? 'edit.saveProposal' : 'edit.save')}</span></button>
+            {#if docBusy}<p class="consequence">{t('edit.imageBusy')}</p>{/if}
+            <button class="primary" disabled={!newTitle.trim() || docBusy} onclick={addDoc}><span>{t(me.role === 'guest' ? 'edit.saveProposal' : 'edit.save')}</span></button>
             <button class="secondary" onclick={() => (composing = false)}>{t('edit.cancel')}</button>
           </div>
         </div>

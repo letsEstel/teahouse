@@ -8,9 +8,9 @@
   import AccessMark from '../lib/AccessMark.svelte'
   import Editor from '../lib/Editor.svelte'
   import MdImage from '../lib/MdImage.svelte'
-  import { attachImage, imageUrl, mdPieces } from '../lib/images'
+  import { attachImage, imageUrl, mdPieces, prepareFile } from '../lib/images'
   import { member, self, pad, access, readReason, fileName, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
-  import { api, blobUrl, write as send, stageFile, exportTo, BackendError } from '../api/backend'
+  import { api, blobUrl, write as send, exportTo, BackendError } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
   // 档案：茶馆里所有文件原原本本放在这里。左边文件树（按目录 / 按问题），右边预览和"来历"。
@@ -48,6 +48,7 @@
 
   // ---- 编辑：成果文件（文档、方案、表格）在这里直接改；茶客的改动变成提案 ----
   let editing = $state(false)
+  let draftBusy = $state(false)
   let draft = $state('')
   let saved = $state<'written' | 'proposed' | null>(null)
   let can = $derived(file ? access(house, file.node.id) : 'read')
@@ -75,9 +76,13 @@
   // 图片和附件：从手机的文件选择器换一个文件
   let picker = $state<HTMLInputElement>()
   async function replace(e: Event) {
-    const f = (e.currentTarget as HTMLInputElement).files?.[0]
+    const input = e.currentTarget as HTMLInputElement
+    const f = input.files?.[0]
+    input.value = ''
     if (!f || !file) return
-    const r = await send('updateWork', { house: house.id, id: file.node.id, fromPath: await stageFile(f) })
+    const staged = await prepareFile(f)
+    if (!staged) return
+    const r = await send('updateWork', { house: house.id, id: file.node.id, fromPath: staged.path })
     if (r) { saved = r.becameProposal ? 'proposed' : 'written'; reloads++ }
   }
   let openDiff = $state<number | null>(null)
@@ -284,11 +289,12 @@
 
       {#if editing}
         <div class="editing">
-          <Editor value={draft} markdown={node.kind !== 'table'} onchange={(v) => (draft = v)}
+          <Editor value={draft} markdown={node.kind !== 'table'} onchange={(v) => (draft = v)} bind:busy={draftBusy}
             onimage={node.kind !== 'table' && node.problem ? (f) => attachImage(house.id, node.problem!, f) : undefined}
             resolveImage={(src) => imageUrl(house.id, src)} />
           <div class="save">
-            <button class="primary" data-write onclick={save}><span>{t(can === 'write' ? 'edit.save' : 'edit.saveProposal')}</span></button>
+            {#if draftBusy}<p class="consequence">{t('edit.imageBusy')}</p>{/if}
+            <button class="primary" data-write disabled={draftBusy} onclick={save}><span>{t(can === 'write' ? 'edit.save' : 'edit.saveProposal')}</span></button>
             <button class="secondary" onclick={() => (editing = false)}>{t('edit.cancel')}</button>
           </div>
         </div>

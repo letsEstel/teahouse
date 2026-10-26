@@ -433,4 +433,7 @@ export default {
   'keytip.later': 'Got it, later',
   'access.readSeats': 'The seating chart is not edited here: people take a seat through an invitation and add devices under “My devices”, and the teahouse writes it in for you. Editing it by hand can break the teahouse, and the relay refuses it.',
   'access.readTalk': 'Posts are never edited once written. To add something, write a new one.',
+  'edit.attaching': 'Adding…',
+  'edit.imageBusy': 'The picture is still uploading; you can save once it is in.',
+  'err.stage': 'Could not read “{file}”, so it was not added. Try another file, or try again later.',
 }

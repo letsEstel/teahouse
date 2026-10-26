@@ -433,4 +433,7 @@ export default {
   'keytip.later': '知道了，以后再说',
   'access.readSeats': '座位表不能在这里改：入座走邀请，添加设备走「我的设备」，茶馆会自动写进来。手改容易把茶馆改坏，Relay 也会拒绝。',
   'access.readTalk': '留言写下就不再改。想补充，就在下面再写一条。',
+  'edit.attaching': '正在加入…',
+  'edit.imageBusy': '图片还在上传，好了以后才能保存。',
+  'err.stage': '没能读出「{file}」，没有加进茶馆。换一个文件试试，或者稍后再试。',
 }

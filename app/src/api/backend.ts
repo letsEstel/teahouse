@@ -120,9 +120,22 @@ export async function stageFile(file: File): Promise<string> {
     if (backend.kind === 'fake') fakeStaged.set(key, URL.createObjectURL(file))
     return key
   }
-  const r = await invoke<Result<{ path: string }>>('stageFile', new Uint8Array(await file.arrayBuffer()), {
-    headers: { 'x-file-name': encodeURIComponent(file.name) },
-  })
+  // 安卓的 IPC 只走 JSON（原始字节到了外壳会变成 JSON），所以安卓上用 base64；桌面直接传字节（src-tauri）
+  const r = /Android/.test(navigator.userAgent)
+    ? await invoke<Result<{ path: string }>>('stageFile', { name: file.name, data: await base64(file) })
+    : await invoke<Result<{ path: string }>>('stageFile', new Uint8Array(await file.arrayBuffer()), {
+        headers: { 'x-file-name': encodeURIComponent(file.name) },
+      })
   if (!r.ok) throw new BackendError(r.error)
   return r.data.path
+}
+
+/** 文件内容的 base64（不带 data: 前缀） */
+function base64(file: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(String(r.result).replace(/^data:[^,]*,/, ''))
+    r.onerror = () => reject(r.error)
+    r.readAsDataURL(file)
+  })
 }

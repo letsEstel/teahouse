@@ -17,5 +17,6 @@ const known = ['not_found', 'not_a_member', 'forbidden', 'invalid', 'conflict', 
 /** 一句话说明发生了什么 */
 export function errorText(e: ApiError): string {
   if (e.params?.engine === 'unreachable') return t('err.engine')
+  if (e.params?.stage) return t('err.stage', { file: e.params.stage })
   return known.includes(e.code) ? t(`err.${e.code}`, e.params ?? {}) : e.message
 }
