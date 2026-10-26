@@ -87,7 +87,12 @@
   async function takeAway() {
     if (exporting) return
     exporting = true; exported = null
-    try { exported = { path: await api('export', { house: house.id, to: exportTo }) } }
+    try {
+      const path = await api('export', { house: house.id, to: exportTo })
+      exported = { path }
+      // 安卓：让"文件"应用看得到导出的文件（MainActivity.kt 的 scanFolder）
+      ;(window as { TeahouseAndroid?: { scanFolder?: (p: string) => void } }).TeahouseAndroid?.scanFolder?.(path)
+    }
     catch (e) { exported = { error: e instanceof BackendError ? e.error.message : String(e) } }
     exporting = false
   }
