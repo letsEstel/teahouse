@@ -13,6 +13,7 @@ import { tauriBackend } from './tauri'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { report } from './errors.svelte'
 import { begin } from './sending.svelte'
+import { useFixedClock } from '../i18n/index.svelte'
 
 export interface Backend {
   kind: 'fake' | 'http' | 'tauri'
@@ -47,6 +48,7 @@ export const backend: Backend =
   which === 'local' || which === 'http' ? httpBackend(httpBase)
   : which === 'tauri' ? tauriBackend
   : fakeBackend
+useFixedClock(backend.kind === 'fake')
 
 /** 读取用：出错时抛出 BackendError，由调用的地方决定怎么显示 */
 export async function api<C extends Command>(cmd: C, args: Args<C>): Promise<Returns<C>> {
