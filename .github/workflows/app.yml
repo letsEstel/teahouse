@@ -321,7 +321,10 @@ jobs:
           ssh-keygen -y -f "$root/device" > "$root/device.pub"
           printf '%s\n' "$HOST_KEY" > "$root/known_hosts"
           th() { target/release/teahouse-client --root "$root" call "$@"; }
-          th join "$(jq -nc --arg r "$RELAY" --arg h "$HOUSE" '{relay: $r, house: $h}')" > /dev/null
-          out=$(th note "$(jq -nc --arg h "$HOUSE" --arg n "$NOTICE" --arg t "$TEXT" '{house: $h, notice: $n, text: $t}')")
-          echo "$out" | jq -c '{ok, commit: .data.commit, error: .error.code}'
-          echo "$out" | jq -e '.ok and .data.commit == "pushed"' > /dev/null
+          # the engine answers {ok, data | error} on stdout and exits non-zero on error: show it either way
+          show() { echo "$1: $(printf '%s' "$2" | jq -c '{ok, me: .data.me, commit: .data.commit, error}' 2>/dev/null || printf '%s' "$2")"; }
+          j=$(th join "$(jq -nc --arg r "$RELAY" --arg h "$HOUSE" '{relay: $r, house: $h}')") || { show join "$j"; exit 1; }
+          show join "$j"
+          out=$(th note "$(jq -nc --arg h "$HOUSE" --arg n "$NOTICE" --arg t "$TEXT" '{house: $h, notice: $n, text: $t}')") || { show note "$out"; exit 1; }
+          show note "$out"
+          printf '%s' "$out" | jq -e '.ok and .data.commit == "pushed"' > /dev/null
