@@ -34,6 +34,10 @@
   let rest = $derived(p?.works.slice(1) ?? [])
   // 经过：引擎按时间顺序给出，这里最新的在上
   let events = $derived(p ? [...p.events].reverse() : [])
+  // 经过会越来越长（0015）：默认只看最近 3 条，其余收起
+  const RECENT = 3
+  let allHistory = $state(false)
+  let shownEvents = $derived(allHistory ? events : events.slice(0, RECENT))
 
   let action = $derived(me.role === 'guest' ? { hint: t('act.proposeWorkHint') } : { hint: t('act.addWorkHint') })
 
@@ -195,7 +199,7 @@
       {#if events.length}
         <div class="label tl-head">{t('problem.history')}</div>
         <ol class="timeline">
-          {#each events as e}
+          {#each shownEvents as e}
             {@const m = member(house, e.by)}
             <li>
               <span class="node"><Shape role={m.role} size={12} /></span>
@@ -206,6 +210,11 @@
             </li>
           {/each}
         </ol>
+        {#if events.length > RECENT}
+          <button class="fold" aria-expanded={allHistory} onclick={() => (allHistory = !allHistory)}>
+            <i class="tri" class:open={allHistory}></i>{allHistory ? t('fold.recent', { n: RECENT }) : t('fold.all', { n: events.length })}
+          </button>
+        {/if}
       {/if}
     </section>
 
@@ -383,6 +392,9 @@
   .node { padding-top: 5px; background: var(--paper); outline: 3px solid var(--paper); height: fit-content; position: relative; }
   .ev { font-size: 14px; line-height: 1.5; color: var(--ink-2); }
   .ev b { color: var(--ink); }
+  .fold { display: inline-flex; align-items: center; gap: 10px; margin-top: 4px; padding: 6px 0; background: none; border: 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+  .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid currentColor; transition: transform 160ms var(--ease); }
+  .tri.open { transform: rotate(180deg); }
   .timeline .when { font-family: var(--latin); font-size: 12px; color: var(--ink-3); margin-top: 2px; }
 
   .works { min-width: 0; }
