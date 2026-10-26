@@ -349,4 +349,8 @@ export default {
   'edit.attaching': 'Wird hinzugefügt…',
   'edit.imageBusy': 'Das Bild wird noch hochgeladen; speichern geht, sobald es da ist.',
   'err.stage': '„{file}“ ließ sich nicht lesen und wurde nicht hinzugefügt. Versuch eine andere Datei oder später noch einmal.',
+  'fold.all': { other: 'Alle {n} zeigen' },
+  'fold.recent': { other: 'Nur die letzten {n}' },
+  'fold.open': 'Spalte aufklappen',
+  'fold.close': 'Spalte zuklappen',
 }

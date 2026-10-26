@@ -186,9 +186,16 @@ screens.push(
   { name: 'wutong-house-onedevice-dark', hash: '#/wutong/house', query: '&fake=onedevice', theme: 'dark', only1366: true },
 )
 // 第 14 轮：新标志（一芽二叶）和侧栏底部的版本代号
-screens.push({ name: 'wutong-house-phone', hash: '#/wutong/house', widths: [390], save: true, saveAt: 390 })
+screens.push({ name: 'wutong-house-phone', hash: '#/wutong/house', widths: [390] })
+// 第 16 轮：折叠（0015）——看板的列、问题页的经过
+const foldCol = async (p) => { if (!(await p.$('.col:nth-child(3).shut'))) await p.click('.col:nth-child(3) .col-head'); await p.waitForTimeout(200) }
+screens.push(
+  { name: 'wutong-kanban-fold', hash: '#/wutong/problems/kanban', act: foldCol },
+  { name: 'wutong-kanban-fold-phone', hash: '#/wutong/problems/kanban', act: foldCol, widths: [390], save: true, saveAt: 390 },
+  { name: 'wutong-problem-history-all', hash: '#/wutong/problem/0001', act: async (p) => { await p.click('.brief .fold'); await p.waitForTimeout(200) } },
+)
 const save = {
-  'wutong-house': { saveDe: true }, 'startup-house-dark': {}, 'join': {},
+  'wutong-kanban-fold': {}, 'wutong-problem': {}, 'wutong-problem-history-all': {},
 }
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
 // 手机

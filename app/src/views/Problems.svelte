@@ -11,6 +11,16 @@
   // 列表和看板是同一份数据的两种视图
   let { house, view = 'list', refresh, compose = false }: { house: House; view?: 'list' | 'kanban'; refresh?: () => void; compose?: boolean } = $props()
   const columns: Status[] = ['open', 'active', 'solved']
+  // 看板的每一列都能折叠（0015），每台设备记住自己折叠了哪几列
+  const foldKey = $derived(`teahouse.kanbanFold.${house.id}`)
+  let folded = $state<Status[]>([])
+  $effect(() => {
+    try { folded = JSON.parse(localStorage.getItem(foldKey) ?? '[]') } catch { folded = [] }
+  })
+  function toggleFold(c: Status) {
+    folded = folded.includes(c) ? folded.filter((x) => x !== c) : [...folded, c]
+    try { localStorage.setItem(foldKey, JSON.stringify(folded)) } catch {}
+  }
   let me = $derived(self(house))
 
   let filter = $state<'all' | Status>('all')
@@ -118,11 +128,15 @@
   </div>
 
   {#if view === 'kanban'}
-    <div class="kanban">
+    <div class="kanban" style:--cols={columns.map((c) => (folded.includes(c) ? 'auto' : 'minmax(0, 1fr)')).join(' ')}>
       {#each columns as c}
         {@const items = house.problems.filter((p) => p.status === c)}
-        <section class="col">
-          <div class="col-head"><StatusMark status={c} /><span class="num">{items.length}</span></div>
+        {@const shut = folded.includes(c)}
+        <section class="col" class:shut>
+          <button class="col-head" aria-expanded={!shut} title={t(shut ? 'fold.open' : 'fold.close')} onclick={() => toggleFold(c)}>
+            <StatusMark status={c} /><span class="num">{items.length}</span><i class="tri" class:open={!shut}></i>
+          </button>
+          {#if !shut}
           {#each items as p (p.id)}
             {@const m = member(house, p.by)}
             {@const pr = pending(p.id)}
@@ -138,6 +152,7 @@
           {:else}
             <p class="empty">{t('kanban.empty')}</p>
           {/each}
+          {/if}
         </section>
       {/each}
     </div>
@@ -200,9 +215,13 @@
   .vg.list { flex-direction: column; }
   .vg.list b { flex: none; height: 2px; margin: 1px 0; }
 
-  .kanban { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-left: 1px solid var(--ink); }
+  .kanban { display: grid; grid-template-columns: var(--cols, repeat(3, minmax(0, 1fr))); border-left: 1px solid var(--ink); }
   .col { border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 18px clamp(12px, 1.4vw, 20px) 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-  .col-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--ink); }
+  .col-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 0 0 12px; border: 0; border-bottom: 1px solid var(--ink); background: none; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+  .col-head .num { margin-left: auto; }
+  .col.shut .col-head { border-bottom: 0; padding-bottom: 0; }
+  .tri { flex: none; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid currentColor; transform: rotate(-90deg); transition: transform 160ms var(--ease); }
+  .tri.open { transform: none; }
   .col-head .num { font-size: 22px; font-weight: 300; }
   .card { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 14px; border: 1.5px solid var(--ink); background: var(--paper); transition: background 200ms var(--ease); }
   .card:hover { background: var(--paper-deep); }

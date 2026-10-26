@@ -436,4 +436,8 @@ export default {
   'edit.attaching': 'Adding…',
   'edit.imageBusy': 'The picture is still uploading; you can save once it is in.',
   'err.stage': 'Could not read “{file}”, so it was not added. Try another file, or try again later.',
+  'fold.all': { other: 'Show all {n}' },
+  'fold.recent': { other: 'Only the latest {n}' },
+  'fold.open': 'Unfold this column',
+  'fold.close': 'Fold this column',
 }

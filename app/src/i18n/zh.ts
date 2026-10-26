@@ -436,4 +436,8 @@ export default {
   'edit.attaching': '正在加入…',
   'edit.imageBusy': '图片还在上传，好了以后才能保存。',
   'err.stage': '没能读出「{file}」，没有加进茶馆。换一个文件试试，或者稍后再试。',
+  'fold.all': { other: '看全部 {n} 条' },
+  'fold.recent': { other: '只看最近 {n} 条' },
+  'fold.open': '展开这一列',
+  'fold.close': '折叠这一列',
 }
