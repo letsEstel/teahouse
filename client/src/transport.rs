@@ -11,9 +11,9 @@
 
 use crate::error::{Code, Error, Result};
 use crate::identity::Identity;
-use git2::{CertificateCheckStatus, Cred, CredentialType, RemoteCallbacks};
+use git2::RemoteCallbacks;
 use std::cell::RefCell;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 pub const LOCAL_SCHEME: &str = "teahouse-local";
@@ -25,8 +25,9 @@ pub struct Report {
     pub remote_lines: Vec<String>,
     /// `(ref, reason)` for every ref the relay refused.
     pub refused: Vec<(String, String)>,
-    /// The relay showed a different host key than the pinned one.
-    pub host_key_changed: bool,
+    /// Why the engine's own ssh could not connect or authenticate (the
+    /// relay's host key changed, the device key is unknown, offline).
+    pub connect_error: Option<Error>,
     partial: String,
 }
 
@@ -93,58 +94,11 @@ pub fn house_url(relay: &str, house: &str) -> Result<String> {
     Ok(format!("ssh://{user}{rest}/{house}"))
 }
 
-/// Remote callbacks for one operation: credentials from the device key,
-/// host keys pinned on first use, and the relay's messages collected.
-pub fn callbacks<'a>(
-    identity: &'a Identity,
-    known_hosts: &'a Path,
-    report: Rc<RefCell<Report>>,
-) -> RemoteCallbacks<'a> {
+/// Remote callbacks for one operation: the relay's messages collected.
+/// (Connecting, the device key and host keys are the `ssh://` transport's:
+/// see [`with_key`].)
+pub fn callbacks<'a>(report: Rc<RefCell<Report>>) -> RemoteCallbacks<'a> {
     let mut cb = RemoteCallbacks::new();
-    let mut tried = false;
-    cb.credentials(move |_url, user, allowed| {
-        if tried
-            || !allowed.contains(CredentialType::SSH_MEMORY)
-                && !allowed.contains(CredentialType::SSH_KEY)
-        {
-            return Err(git2::Error::from_str(
-                "the relay did not accept this device's key",
-            ));
-        }
-        tried = true;
-        let user = user.unwrap_or("teahouse");
-        // libssh2 takes keys from memory only with its OpenSSL backend
-        // (not on Windows, where it uses WinCNG): elsewhere, the key file.
-        if cfg!(unix) {
-            let private = identity
-                .private_openssh()
-                .map_err(|e| git2::Error::from_str(&e.message))?;
-            Cred::ssh_key_from_memory(user, Some(&identity.public_line()), &private, None)
-        } else {
-            Cred::ssh_key(user, None, identity.private_path(), None)
-        }
-    });
-    let r = report.clone();
-    cb.certificate_check(move |cert, host| {
-        let Some(hk) = cert.as_hostkey() else {
-            return Err(git2::Error::from_str(
-                "the relay did not show an ssh host key",
-            ));
-        };
-        let Some(hash) = hk.hash_sha256() else {
-            return Err(git2::Error::from_str(
-                "the relay's host key has no SHA-256 fingerprint",
-            ));
-        };
-        let fp: String = hash.iter().map(|b| format!("{b:02x}")).collect();
-        match pin_host_key(known_hosts, host, &fp) {
-            Ok(()) => Ok(CertificateCheckStatus::CertificateOk),
-            Err(e) => {
-                r.borrow_mut().host_key_changed = true;
-                Err(git2::Error::from_str(&e.message))
-            }
-        }
-    });
     let r = report.clone();
     cb.sideband_progress(move |data| {
         r.borrow_mut().take_text(data);
@@ -162,39 +116,24 @@ pub fn callbacks<'a>(
     cb
 }
 
-/// Trust on first use: remembers `host`'s fingerprint, and refuses a
-/// different one later.
-pub(crate) fn pin_host_key(known_hosts: &Path, host: &str, fp: &str) -> Result<()> {
-    let text = std::fs::read_to_string(known_hosts).unwrap_or_default();
-    for line in text.lines() {
-        if let Some((h, f)) = line.split_once(' ') {
-            if h == host {
-                if f.trim() == fp {
-                    return Ok(());
-                }
-                return Err(Error::new(
-                    Code::Offline,
-                    format!("the relay {host} shows a different host key than before / Relay 的主机钥匙变了"),
-                )
-                .with("relay", host)
-                .with("reason", "host_key_changed"));
-            }
-        }
-    }
-    let mut text = text;
-    text.push_str(&format!("{host} {fp}\n"));
-    std::fs::write(known_hosts, text)?;
-    Ok(())
+/// The relay's words for "this key has no seat": in this teahouse (law 1),
+/// or anywhere (a key that may only redeem an invitation).
+pub(crate) fn is_no_seat(line: &str) -> bool {
+    line.contains("you have no seat") || line.contains("has no seat yet")
 }
 
 /// Maps a failed fetch or push to the API's errors.
 pub fn classify(e: &git2::Error, report: &Report) -> Error {
     let reasons = report.reasons();
+    if let Some(err) = &report.connect_error {
+        let mut err = err.clone();
+        err.reasons = reasons;
+        return err;
+    }
     // Over ssh an unknown key fails authentication; a key seated in another
     // teahouse gets the relay's answer for "not here" (law 1: unknown
     // teahouses and teahouses without your seat look the same).
-    let no_seat = reasons.iter().any(|r| r.contains("you have no seat"))
-        || e.message().contains("you have no seat");
+    let no_seat = reasons.iter().any(|r| is_no_seat(r)) || is_no_seat(e.message());
     if no_seat
         || e.code() == git2::ErrorCode::Auth
         || e.message().contains("did not accept this device")
@@ -205,13 +144,6 @@ pub fn classify(e: &git2::Error, report: &Report) -> Error {
         );
         err.reasons = reasons;
         return err;
-    }
-    if report.host_key_changed {
-        return Error::new(
-            Code::Offline,
-            "the relay shows a different host key than before / Relay 的主机钥匙变了",
-        )
-        .with("reason", "host_key_changed");
     }
     let mut err = Error::new(
         Code::Offline,
@@ -229,19 +161,11 @@ pub use local::register_local;
 
 #[cfg(not(target_os = "android"))]
 mod local {
-    use super::LOCAL_SCHEME;
+    use super::{CONTEXT, LOCAL_SCHEME, STDERR};
     use git2::transport::{Service, SmartSubtransport, SmartSubtransportStream, Transport};
     use std::io::{Read, Write};
     use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
     use std::sync::{Arc, Mutex, Once};
-
-    thread_local! {
-        /// The device key of the operation running on this thread. libgit2
-        /// calls transports on the thread that started the fetch or push.
-        pub(super) static KEY: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
-        /// What the relay printed on stderr during this thread's operation.
-        pub(super) static STDERR: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
-    }
 
     /// Registers `teahouse-local://` once per process.
     pub fn register_local() {
@@ -323,8 +247,12 @@ mod local {
                 .find('/')
                 .ok_or_else(|| err(format!("bad URL {url}")))?;
             let (house, root) = rest.split_at(slash);
-            let key = KEY
-                .with(|k| k.borrow().clone())
+            let key = CONTEXT
+                .with(|c| {
+                    c.borrow()
+                        .as_ref()
+                        .map(|(id, _)| id.public().blob_b64().to_string())
+                })
                 .ok_or_else(|| err("no device key for the local transport"))?;
             let bin =
                 std::env::var_os("TEAHOUSE_RELAY_BIN").unwrap_or_else(|| "teahouse-relay".into());
@@ -372,26 +300,182 @@ mod local {
     }
 }
 
-/// Runs `f` with the device key available to the local transport; what the
-/// relay printed on stderr is added to `report`.
-pub fn with_key<T>(identity: &Identity, report: &Rc<RefCell<Report>>, f: impl FnOnce() -> T) -> T {
+thread_local! {
+    /// The device key and the pinned host keys of the fetch or push running
+    /// on this thread: libgit2 calls transports on the thread that started
+    /// it.
+    static CONTEXT: RefCell<Option<(Identity, PathBuf)>> = const { RefCell::new(None) };
+    /// What the relay printed on stderr during this thread's operation.
+    static STDERR: RefCell<String> = const { RefCell::new(String::new()) };
+    /// Why this thread's operation could not connect.
+    static CONNECT_ERROR: RefCell<Option<Error>> = const { RefCell::new(None) };
+}
+
+/// Runs `f` (a fetch or push) with the device key and the pinned host keys
+/// available to the transports; what the relay printed on stderr, and why
+/// a connection failed, are added to `report`.
+pub fn with_key<T>(
+    identity: &Identity,
+    known_hosts: &Path,
+    report: &Rc<RefCell<Report>>,
+    f: impl FnOnce() -> T,
+) -> T {
+    ssh::register();
     #[cfg(not(target_os = "android"))]
-    {
-        register_local();
-        local::KEY.with(|k| *k.borrow_mut() = Some(identity.public().blob_b64().to_string()));
-        local::STDERR.with(|e| e.borrow_mut().clear());
-        let out = f();
-        local::KEY.with(|k| *k.borrow_mut() = None);
-        let err = local::STDERR.with(|e| std::mem::take(&mut *e.borrow_mut()));
-        let mut r = report.borrow_mut();
-        r.take_text(err.as_bytes());
-        r.take_text(b"\n");
-        out
+    register_local();
+    CONTEXT.with(|c| *c.borrow_mut() = Some((identity.clone(), known_hosts.to_path_buf())));
+    STDERR.with(|e| e.borrow_mut().clear());
+    CONNECT_ERROR.with(|e| *e.borrow_mut() = None);
+    let out = f();
+    CONTEXT.with(|c| *c.borrow_mut() = None);
+    let err = STDERR.with(|e| std::mem::take(&mut *e.borrow_mut()));
+    let mut r = report.borrow_mut();
+    r.take_text(err.as_bytes());
+    r.take_text(b"\n");
+    r.connect_error = CONNECT_ERROR.with(|e| e.borrow_mut().take());
+    out
+}
+
+// ---------------------------------------------------------------------------
+// The ssh transport
+
+/// `ssh://` through the engine's own ssh ([`crate::remote::connect`]), in
+/// place of libgit2's: one ssh for git and for the other relay commands,
+/// with one way of pinning the relay's host key.
+mod ssh {
+    use super::{CONNECT_ERROR, CONTEXT, STDERR};
+    use crate::remote::{self, Endpoint};
+    use git2::transport::{Service, SmartSubtransport, SmartSubtransportStream, Transport};
+    use std::io::{Read, Write};
+    use std::sync::{Arc, Mutex, Once};
+
+    /// Registers `ssh://` once per process.
+    pub fn register() {
+        static ONCE: Once = Once::new();
+        ONCE.call_once(|| {
+            // SAFETY: registered once, before any remote operation of this
+            // engine uses the scheme; the factory is Send + Sync.
+            let r = unsafe {
+                git2::transport::register("ssh", |remote| {
+                    Transport::smart(
+                        remote,
+                        false,
+                        Ssh {
+                            conn: Mutex::new(None),
+                        },
+                    )
+                })
+            };
+            if let Err(e) = r {
+                eprintln!("teahouse-client: cannot register ssh: {e}");
+            }
+        });
     }
-    #[cfg(target_os = "android")]
-    {
-        let _ = (identity, report);
-        f()
+
+    struct Conn {
+        // Kept alive as long as the channel.
+        _session: ssh2::Session,
+        channel: ssh2::Channel,
+    }
+
+    #[derive(Clone)]
+    struct Shared(Arc<Mutex<Conn>>);
+
+    impl Conn {
+        /// The relay's own refusals (not seated, unknown teahouse) come on
+        /// stderr: pass them on as remote lines. Taken as soon as the relay
+        /// is done: on a refusal libgit2 returns before it closes us.
+        fn take_stderr(&mut self) {
+            let mut s = String::new();
+            let _ = self.channel.stderr().read_to_string(&mut s);
+            STDERR.with(|e| e.borrow_mut().push_str(&s));
+        }
+    }
+
+    impl Read for Shared {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+            let mut c = self.0.lock().expect("conn");
+            let n = c.channel.read(buf)?;
+            if n == 0 {
+                c.take_stderr();
+            }
+            Ok(n)
+        }
+    }
+
+    impl Write for Shared {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            let mut c = self.0.lock().expect("conn");
+            let r = c.channel.write(buf);
+            if r.is_err() {
+                c.take_stderr();
+            }
+            r
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            self.0.lock().expect("conn").channel.flush()
+        }
+    }
+
+    struct Ssh {
+        conn: Mutex<Option<Shared>>,
+    }
+
+    fn err(m: impl std::fmt::Display) -> git2::Error {
+        git2::Error::from_str(&m.to_string())
+    }
+
+    impl SmartSubtransport for Ssh {
+        fn action(
+            &self,
+            url: &str,
+            action: Service,
+        ) -> Result<Box<dyn SmartSubtransportStream>, git2::Error> {
+            let verb = match action {
+                Service::UploadPackLs => "git-upload-pack",
+                Service::ReceivePackLs => "git-receive-pack",
+                // The second half of a stateful exchange reuses the stream.
+                Service::UploadPack | Service::ReceivePack => {
+                    let c = self.conn.lock().expect("conn").clone();
+                    return c
+                        .map(|s| Box::new(s) as Box<dyn SmartSubtransportStream>)
+                        .ok_or_else(|| err("no connection to the relay"));
+                }
+            };
+            let Ok(Endpoint::Ssh { user, host, port }) = Endpoint::of_house_url(url) else {
+                return Err(err(format!("not a relay URL: {url}")));
+            };
+            let house = url.trim_end_matches('/').rsplit('/').next().unwrap_or("");
+            let (identity, known_hosts) = CONTEXT
+                .with(|c| c.borrow().clone())
+                .ok_or_else(|| err("no device key for the ssh transport"))?;
+            let fail = |e: crate::error::Error| {
+                let m = err(&e.message);
+                CONNECT_ERROR.with(|c| *c.borrow_mut() = Some(e));
+                m
+            };
+            let session =
+                remote::connect(&user, &host, port, &identity, &known_hosts).map_err(fail)?;
+            let mut channel = session.channel_session().map_err(err)?;
+            channel.exec(&format!("{verb} '/{house}'")).map_err(err)?;
+            let conn = Shared(Arc::new(Mutex::new(Conn {
+                _session: session,
+                channel,
+            })));
+            *self.conn.lock().expect("conn") = Some(conn.clone());
+            Ok(Box::new(conn))
+        }
+
+        fn close(&self) -> Result<(), git2::Error> {
+            if let Some(c) = self.conn.lock().expect("conn").take() {
+                if let Ok(mut c) = c.0.lock() {
+                    let _ = c.channel.send_eof();
+                    c.take_stderr();
+                    let _ = c.channel.wait_close();
+                }
+            }
+            Ok(())
+        }
     }
 }
 

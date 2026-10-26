@@ -74,8 +74,8 @@ unset SSH_AUTH_SOCK GIT_SSH GIT_SSH_COMMAND GIT_SSH_VARIANT TEAHOUSE_ROOT
 
 keys="$work/keys"; mkdir -p "$keys"
 ssh-keygen -q -t ed25519 -N '' -f "$work/host_key"
-# A second host key type, as on real servers: libssh2 alone picks ECDSA
-# first, libgit2 follows the user's ~/.ssh/known_hosts (E8).
+# A second host key type, as on real servers: which one a connection gets
+# must depend only on the engine's own record (E8, E9).
 ssh-keygen -q -t ecdsa -N '' -f "$work/host_key_ecdsa"
 for p in chenli zhou wang outsider; do ssh-keygen -q -t ed25519 -N '' -C "$p@test" -f "$keys/$p"; done
 pubkey() { cut -d' ' -f1,2 "$keys/$1.pub"; }
@@ -389,9 +389,8 @@ PY
   fi
 
   # E8: someone who also logs into the relay with ssh: their own
-  # ~/.ssh/known_hosts holds its ed25519 key. git (libgit2) then asks for
-  # that type; the engine's other commands must ask for the same one, or
-  # the fingerprint pinned by redeem does not fit the clone after it.
+  # ~/.ssh/known_hosts holds its ed25519 key. It must not matter: redeem
+  # and the clone after it see the same key.
   if [[ $method == A ]]; then
     local home8="$work/home8-$method" eng4="$work/engine4-$method" inv8
     mkdir -p "$home8/.ssh"
@@ -401,9 +400,38 @@ PY
       env HOME="$home8" "$client" --root "$eng4" call redeem "{\"code\":\"$inv8\",\"name\":\"也用 ssh 的人\"}"
     expect ok "E8 之后的同步也没问题" '"state":"synced"' \
       env HOME="$home8" "$client" --root "$eng4" call sync '{"house":"kehu"}'
+    # E9: the engine's directory moved to a machine with no ~/.ssh at all
+    # (a CI runner): the pinned key's type is in the engine's own record.
+    mkdir -p "$work/home9-$method"
+    expect ok "E9 引擎目录换到没有 ~/.ssh 的机器：照样同步" '"state":"synced"' \
+      env HOME="$work/home9-$method" "$client" --root "$eng4" call sync '{"house":"kehu"}'
+    expect ok "E9 记录里带着钥匙类型" "ssh-ed25519" \
+      grep -E "^127.0.0.1 [0-9a-f]+ ssh-ed25519$" "$eng4/known_hosts"
+    # A record from before the type was kept, of the relay's other key:
+    # the engine finds which key it is, and keeps the type from then on.
+    local ecdsa_fp
+    ecdsa_fp="$(cut -d' ' -f2 "$work/host_key_ecdsa.pub" | base64 -d | sha256sum | cut -d' ' -f1)"
+    echo "127.0.0.1 $ecdsa_fp" >"$eng4/known_hosts"
+    expect ok "E9 旧格式的记录（只有指纹，是 ECDSA 那把）：照样同步" '"state":"synced"' \
+      env HOME="$work/home9-$method" "$client" --root "$eng4" call sync '{"house":"kehu"}'
+    expect ok "E9 旧记录补上了类型" "ecdsa-sha2-nistp256" \
+      cat "$eng4/known_hosts"
+    expect ok "E9 引擎自己的命令（配对）也用这把" '"data":"TH-' \
+      env HOME="$work/home9-$method" "$client" --root "$eng4" call pair '{"house":"kehu","name":"另一台"}'
   fi
 
-  sed -i 's/ [0-9a-f]*$/ 00/' "$eng/known_hosts"
+  # E10: a key with no seat syncs a copied teahouse: the relay's own words
+  # come back, and it is "not a member", not "offline".
+  local eng5="$work/engine5-$method"
+  mkdir -p "$eng5" && cp -r "$eng/houses" "$eng/known_hosts" "$eng5/"
+  if [[ $method == A ]]; then
+    expect ok "E10 没有座位的钥匙同步：带上 Relay 的原话" "has no seat yet" \
+      "$client" --root "$eng5" call sync '{"house":"kehu"}'
+  fi
+  expect ok "E10 没有座位的钥匙同步：是“不认识这台设备”，不是“连不上”" '"state":"error"' \
+    "$client" --root "$eng5" call sync '{"house":"kehu"}'
+
+  sed -i -E 's/^([^ ]+) [0-9a-f]+/\1 00/' "$eng/known_hosts"
   expect ok "E4 主机钥匙变了：拒绝连接" "different host key" \
     "$client" --root "$eng" call sync '{"house":"kehu"}'
 
