@@ -217,6 +217,7 @@ export default {
   'archive.export': 'Das ganze Teehaus mitnehmen',
   'archive.exportLine': 'Die Daten gehören euch. Ihr könnt das ganze Teehaus jederzeit mitnehmen.',
   'archive.exportNote': 'Darin: alle Dateien zum direkten Öffnen (files/), das ganze Teehaus mit vollständiger Herkunft in einem Paket (.bundle, lässt sich auf einem anderen Rechner oder Relay unverändert wieder eröffnen) und die Anhänge, die dieses Gerät hat (blobs/). Siehe README.txt.',
+  'archive.downloads': 'Downloads',
   'archive.exporting': 'Wird gepackt…',
   'archive.exported': 'Mitgenommen. Gespeichert unter:',
   'archive.exportFailed': 'Mitnehmen hat nicht geklappt:',

@@ -304,6 +304,7 @@ export default {
   'archive.export': '带走整间茶馆',
   'archive.exportLine': '数据是你们的，随时可以整间带走。',
   'archive.exportNote': '里面有：可以直接打开的全部文件（files/），整间茶馆连同完整来历的一个包（.bundle，换一台电脑、换一个 Relay 都能原样重开），和这台设备上有的附件（blobs/）。说明见 README.txt。',
+  'archive.downloads': '下载',
   'archive.exporting': '正在打包…',
   'archive.exported': '已经带走，存在这里：',
   'archive.exportFailed': '没能带走：',

@@ -182,7 +182,7 @@ screens.push(
   { name: 'wutong-house-onedevice-phone', hash: '#/wutong/house', query: '&fake=onedevice', widths: [390], save: true, saveAt: 390 },
   { name: 'wutong-archive-members', hash: '#/wutong/archive/' + encodeURIComponent('.teahouse/members.toml') },
   { name: 'wutong-archive-problem-edit', hash: '#/wutong/archive/' + encodeURIComponent('problems/0001-hard-to-find-a-parking-space.md'), act: (p) => p.click('.tools button.primary') },
-  { name: 'wutong-archive-exported', hash: '#/wutong/archive', act: async (p) => { await p.click('.export button.secondary'); await p.waitForSelector('.exported') } },
+  { name: 'wutong-archive-exported', hash: '#/wutong/archive', act: async (p) => { await p.click('.export button.secondary'); await p.waitForSelector('.exported') }, widths: [1366, 390] },
   { name: 'wutong-house-onedevice-dark', hash: '#/wutong/house', query: '&fake=onedevice', theme: 'dark', only1366: true },
 )
 const save = {

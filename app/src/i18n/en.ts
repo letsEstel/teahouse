@@ -304,6 +304,7 @@ export default {
   'archive.export': 'Take the whole teahouse with you',
   'archive.exportLine': 'The data is yours. You can take the whole teahouse with you at any time.',
   'archive.exportNote': 'Inside: every file, ready to open (files/); the whole teahouse with its full history in one bundle (.bundle, reopens unchanged on another computer or relay); and the attachments this device has (blobs/). See README.txt.',
+  'archive.downloads': 'Downloads',
   'archive.exporting': 'Packing…',
   'archive.exported': 'Taken with you. Saved here:',
   'archive.exportFailed': 'Could not take it away:',

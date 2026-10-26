@@ -226,7 +226,8 @@
       {#if exported?.path}
         <div class="exported" role="status">
           <b>{t('archive.exported')}</b>
-          <code>{exported.path}</code>
+          <!-- 手机上的"下载"文件夹用人话写 -->
+          <code>{exported.path.replace(/^\/storage\/emulated\/0\/Download\//, `${t('archive.downloads')}/`)}</code>
           <p>{t('archive.exportNote')}</p>
         </div>
       {:else if exported?.error}
