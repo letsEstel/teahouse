@@ -320,6 +320,12 @@ jobs:
           # the engine knows who it is from device.pub, which is not kept with the key
           ssh-keygen -y -f "$root/device" > "$root/device.pub"
           printf '%s\n' "$HOST_KEY" > "$root/known_hosts"
+          # libgit2 asks the relay for the host key types ~/.ssh/known_hosts holds for it, otherwise
+          # for its default (another of the relay's keys than the pinned Ed25519 one). Only the type
+          # comes from here: the engine still checks the pinned fingerprint in $root/known_hosts.
+          host=${RELAY#*@}; host=${host%%:*}
+          mkdir -p ~/.ssh
+          for try in 1 2 3; do ssh-keyscan -t ed25519 "$host" >> ~/.ssh/known_hosts 2>/dev/null && [ -s ~/.ssh/known_hosts ] && break; sleep 10; done
           th() { target/release/teahouse-client --root "$root" call "$@"; }
           # the engine answers {ok, data | error} on stdout and exits non-zero on error: show it either way
           show() { echo "$1: $(printf '%s' "$2" | jq -c '{ok, me: .data.me, commit: .data.commit, error}' 2>/dev/null || printf '%s' "$2")"; }
