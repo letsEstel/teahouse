@@ -668,6 +668,7 @@ impl Snapshot {
         let mut size = f.size.unwrap_or(0);
         let mut blob = None;
         let mut body = None;
+        let mut url = None;
         match kind {
             WorkKind::Doc | WorkKind::Plan => {
                 body = text
@@ -683,6 +684,16 @@ impl Snapshot {
                     .unwrap_or_default();
                 title = meta.get("title").map(str::to_string);
                 note = meta.get("note").map(str::to_string);
+            }
+            WorkKind::Link => {
+                url = fm
+                    .as_ref()
+                    .and_then(|m| m.get("url"))
+                    .filter(|u| format::valid_url(u))
+                    .map(str::to_string);
+                body = text
+                    .as_deref()
+                    .map(|t| format::split_frontmatter(t).1.to_string());
             }
             WorkKind::Image | WorkKind::File => {
                 if let Some(r) = text.as_deref().and_then(format::parse_blob_ref) {
@@ -706,6 +717,7 @@ impl Snapshot {
             note,
             text: body,
             blob,
+            url,
         })
     }
 
