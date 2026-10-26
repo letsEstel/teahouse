@@ -59,9 +59,28 @@ fn relay_bin() -> PathBuf {
             .status()
             .unwrap();
         assert!(st.success(), "cannot build teahouse-relay");
+        // What the engines run: the relay itself, and once, when the relay
+        // root holds a file `race` naming another engine's root, that
+        // engine syncs right after this fetch: someone pushing between a
+        // fetch and the push after it.
+        let wrapper = dir.join("teahouse-relay-race");
+        fs::write(
+            &wrapper,
+            format!(
+                "#!/bin/sh\n\"{}\" \"$@\"\nst=$?\nrace=\"$2/race\"\ncase \"$SSH_ORIGINAL_COMMAND\" in\n  git-upload-pack*)\n    if other=$(cat \"$race\" 2>/dev/null) && rm \"$race\"; then\n      \"{}\" --root \"$other\" call sync '{{\"house\":\"wutong\"}}' >/dev/null\n    fi ;;\nesac\nexit $st\n",
+                bin.display(),
+                env!("CARGO_BIN_EXE_teahouse-client")
+            ),
+        )
+        .unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o755)).unwrap();
+        }
         // SAFETY: set once, before any engine runs the relay; every test
         // sets the same value.
-        unsafe { std::env::set_var("TEAHOUSE_RELAY_BIN", &bin) };
+        unsafe { std::env::set_var("TEAHOUSE_RELAY_BIN", &wrapper) };
     });
     bin
 }
@@ -907,6 +926,45 @@ fn a_text_with_its_own_frontmatter_replaces_the_whole_file() {
         "{text}"
     );
     assert!(text.contains("status: open\n"), "{text}");
+}
+
+#[test]
+fn a_push_that_came_too_late_is_replayed_and_pushed_again() {
+    let w = World::new("race");
+    let (_wang, li, zhao) = w.wutong();
+    parking(&li);
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    // li writes offline; then, between zhao's fetch and zhao's push, li
+    // comes online and pushes first.
+    let url = li.go_offline();
+    li.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "李师傅先到。" }),
+    );
+    li.go_online(&url);
+    fs::write(
+        w.relay_root.join("race"),
+        li.client.root().to_str().unwrap(),
+    )
+    .unwrap();
+    let r = zhao.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "小赵晚了两秒。" }),
+    );
+    assert!(!w.relay_root.join("race").exists(), "the race took place");
+    assert_eq!(r["commit"], "pushed", "{r:#}");
+    let log = w.relay_git(&["log", "--format=%s", "main"]);
+    let mut lines = log.lines();
+    assert_eq!(
+        (lines.next(), lines.next()),
+        (Some("小赵晚了两秒。"), Some("李师傅先到。")),
+        "{log}"
+    );
+    assert!(zhao
+        .ok("drafts", json!({ "house": "wutong" }))
+        .as_array()
+        .unwrap()
+        .is_empty());
 }
 
 #[test]
