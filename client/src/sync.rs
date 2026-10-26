@@ -223,7 +223,11 @@ impl Link<'_> {
                     }
                     .into(),
                 );
-                record.message = Some(e.message.clone());
+                // The relay's own words, when it gave a reason.
+                record.message = Some(match e.reasons.first() {
+                    Some(r) => format!("{}: {r}", e.message),
+                    None => e.message.clone(),
+                });
             }
         }
         record.save(&git_dir);

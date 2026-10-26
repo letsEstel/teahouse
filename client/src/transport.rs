@@ -116,6 +116,12 @@ pub fn callbacks<'a>(report: Rc<RefCell<Report>>) -> RemoteCallbacks<'a> {
     cb
 }
 
+/// The relay's words for "this key has no seat": in this teahouse (law 1),
+/// or anywhere (a key that may only redeem an invitation).
+pub(crate) fn is_no_seat(line: &str) -> bool {
+    line.contains("you have no seat") || line.contains("has no seat yet")
+}
+
 /// Maps a failed fetch or push to the API's errors.
 pub fn classify(e: &git2::Error, report: &Report) -> Error {
     let reasons = report.reasons();
@@ -127,8 +133,7 @@ pub fn classify(e: &git2::Error, report: &Report) -> Error {
     // Over ssh an unknown key fails authentication; a key seated in another
     // teahouse gets the relay's answer for "not here" (law 1: unknown
     // teahouses and teahouses without your seat look the same).
-    let no_seat = reasons.iter().any(|r| r.contains("you have no seat"))
-        || e.message().contains("you have no seat");
+    let no_seat = reasons.iter().any(|r| is_no_seat(r)) || is_no_seat(e.message());
     if no_seat
         || e.code() == git2::ErrorCode::Auth
         || e.message().contains("did not accept this device")
@@ -376,15 +381,36 @@ mod ssh {
     #[derive(Clone)]
     struct Shared(Arc<Mutex<Conn>>);
 
+    impl Conn {
+        /// The relay's own refusals (not seated, unknown teahouse) come on
+        /// stderr: pass them on as remote lines. Taken as soon as the relay
+        /// is done: on a refusal libgit2 returns before it closes us.
+        fn take_stderr(&mut self) {
+            let mut s = String::new();
+            let _ = self.channel.stderr().read_to_string(&mut s);
+            STDERR.with(|e| e.borrow_mut().push_str(&s));
+        }
+    }
+
     impl Read for Shared {
         fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-            self.0.lock().expect("conn").channel.read(buf)
+            let mut c = self.0.lock().expect("conn");
+            let n = c.channel.read(buf)?;
+            if n == 0 {
+                c.take_stderr();
+            }
+            Ok(n)
         }
     }
 
     impl Write for Shared {
         fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-            self.0.lock().expect("conn").channel.write(buf)
+            let mut c = self.0.lock().expect("conn");
+            let r = c.channel.write(buf);
+            if r.is_err() {
+                c.take_stderr();
+            }
+            r
         }
         fn flush(&mut self) -> std::io::Result<()> {
             self.0.lock().expect("conn").channel.flush()
@@ -443,13 +469,9 @@ mod ssh {
         fn close(&self) -> Result<(), git2::Error> {
             if let Some(c) = self.conn.lock().expect("conn").take() {
                 if let Ok(mut c) = c.0.lock() {
-                    // The relay's own refusals (not seated, unknown
-                    // teahouse) come on stderr: pass them on as remote lines.
                     let _ = c.channel.send_eof();
-                    let mut s = String::new();
-                    let _ = c.channel.stderr().read_to_string(&mut s);
+                    c.take_stderr();
                     let _ = c.channel.wait_close();
-                    STDERR.with(|e| e.borrow_mut().push_str(&s));
                 }
             }
             Ok(())

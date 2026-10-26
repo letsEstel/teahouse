@@ -127,7 +127,7 @@ fn reasons(stderr: &str) -> Vec<String> {
 
 fn refused(stderr: &str) -> Error {
     let r = reasons(stderr);
-    let mut e = if r.iter().any(|l| l.contains("you have no seat")) {
+    let mut e = if r.iter().any(|l| crate::transport::is_no_seat(l)) {
         Error::new(
             Code::NotAMember,
             "the relay does not know this device / Relay 不认识这台设备",

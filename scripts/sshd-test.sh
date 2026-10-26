@@ -420,6 +420,17 @@ PY
       env HOME="$work/home9-$method" "$client" --root "$eng4" call pair '{"house":"kehu","name":"另一台"}'
   fi
 
+  # E10: a key with no seat syncs a copied teahouse: the relay's own words
+  # come back, and it is "not a member", not "offline".
+  local eng5="$work/engine5-$method"
+  mkdir -p "$eng5" && cp -r "$eng/houses" "$eng/known_hosts" "$eng5/"
+  if [[ $method == A ]]; then
+    expect ok "E10 没有座位的钥匙同步：带上 Relay 的原话" "has no seat yet" \
+      "$client" --root "$eng5" call sync '{"house":"kehu"}'
+  fi
+  expect ok "E10 没有座位的钥匙同步：是“不认识这台设备”，不是“连不上”" '"state":"error"' \
+    "$client" --root "$eng5" call sync '{"house":"kehu"}'
+
   sed -i -E 's/^([^ ]+) [0-9a-f]+/\1 00/' "$eng/known_hosts"
   expect ok "E4 主机钥匙变了：拒绝连接" "different host key" \
     "$client" --root "$eng" call sync '{"house":"kehu"}'
