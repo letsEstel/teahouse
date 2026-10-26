@@ -248,8 +248,80 @@ jobs:
               --title "最新测试版 · Nightly" --notes "每次 main 更新后自动构建。Built automatically from main." || true  # another run may have just created it
           gh release upload nightly teahouse-android-arm64.apk teahouse-windows-x64-setup.exe \
             teahouse-client-windows-x64.exe --clobber
-          # 版本号和代号写在 app/package.json（docs/DEVELOP.md「版本和代号」）
+          # 版本号和代号写在 app/package.json（docs/RELEASING.md 第 3 节）
           pkg=$(gh api "repos/$GITHUB_REPOSITORY/contents/app/package.json?ref=$GITHUB_SHA" -H 'Accept: application/vnd.github.raw')
           release="v$(echo "$pkg" | jq -r '.version' | cut -d. -f1,2) $(echo "$pkg" | jq -r '.codename')"
           gh release edit nightly --title "$release · 最新测试版 · $(date -u +%Y-%m-%d) · ${GITHUB_SHA::7}" \
             --notes "每次 main 更新后自动构建。Built automatically from main at ${GITHUB_SHA::7}."
+
+  # The release bot (打包机): a machine member of the team's own teahouse,
+  # seated as a guest with a device key of its own. After every build of main
+  # it posts under the notice about installers: done, with the download
+  # links, or failed, with the log. A run cancelled by a newer push says
+  # nothing (the newer run will). Without the secret the job does nothing.
+  #   secrets.TEAHOUSE_BOT_DEVICE   the bot's device key (<root>/device)
+  #   vars.TEAHOUSE_BOT_RELAY       teahouse@<relay>
+  #   vars.TEAHOUSE_BOT_HOST_KEY    the relay's pinned host key line (<root>/known_hosts)
+  #   vars.TEAHOUSE_BOT_HOUSE       the teahouse id
+  #   vars.TEAHOUSE_BOT_NOTICE      the notice to answer
+  announce:
+    needs: [web, windows, android, client-windows, release]
+    if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      BOT_DEVICE: ${{ secrets.TEAHOUSE_BOT_DEVICE }}
+      RESULTS: ${{ toJSON(needs) }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      SUBJECT: ${{ github.event.head_commit.message }}
+    steps:
+      - name: What to say
+        id: say
+        run: |
+          set -eu
+          if [ -z "$BOT_DEVICE" ]; then echo "no bot key"; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          failed=$(echo "$RESULTS" | jq -r 'to_entries | map(select(.value.result == "failure")) | map(.key) | join("、")')
+          release=$(echo "$RESULTS" | jq -r '.release.result')
+          subject=$(printf '%s\n' "$SUBJECT" | head -n1)
+          if [ -n "$failed" ]; then
+            text="这次没打成（${GITHUB_SHA::7}：${subject}）。出错的步骤：${failed}。日志：${RUN_URL}"
+          elif [ "$release" = success ]; then
+            dl="https://github.com/${GITHUB_REPOSITORY}/releases/download/nightly"
+            text="打包好了：${GITHUB_SHA::7}（${subject}）。安卓：${dl}/teahouse-android-arm64.apk ；Windows：${dl}/teahouse-windows-x64-setup.exe 。直接覆盖安装，不要卸载。"
+          else
+            echo "release: $release, nothing failed: a newer run will speak"; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          printf '%s\n' "$text"
+          { echo "text<<EOT"; printf '%s\n' "$text"; echo "EOT"; } >> "$GITHUB_OUTPUT"
+      - if: steps.say.outputs.skip != '1'
+        uses: actions/checkout@v5
+      - if: steps.say.outputs.skip != '1'
+        name: Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+      - if: steps.say.outputs.skip != '1'
+        uses: Swatinem/rust-cache@v2
+      - if: steps.say.outputs.skip != '1'
+        name: Build teahouse-client
+        run: cargo build --release --locked -p teahouse-client
+      - if: steps.say.outputs.skip != '1'
+        name: Post under the notice
+        env:
+          TEXT: ${{ steps.say.outputs.text }}
+          RELAY: ${{ vars.TEAHOUSE_BOT_RELAY }}
+          HOST_KEY: ${{ vars.TEAHOUSE_BOT_HOST_KEY }}
+          HOUSE: ${{ vars.TEAHOUSE_BOT_HOUSE }}
+          NOTICE: ${{ vars.TEAHOUSE_BOT_NOTICE }}
+        run: |
+          set -eu
+          root="$RUNNER_TEMP/bot"; mkdir -p "$root"
+          umask 077; printf '%s\n' "$BOT_DEVICE" > "$root/device"; umask 022
+          # the engine knows who it is from device.pub, which is not kept with the key
+          ssh-keygen -y -f "$root/device" > "$root/device.pub"
+          printf '%s\n' "$HOST_KEY" > "$root/known_hosts"
+          th() { target/release/teahouse-client --root "$root" call "$@"; }
+          th join "$(jq -nc --arg r "$RELAY" --arg h "$HOUSE" '{relay: $r, house: $h}')" > /dev/null
+          out=$(th note "$(jq -nc --arg h "$HOUSE" --arg n "$NOTICE" --arg t "$TEXT" '{house: $h, notice: $n, text: $t}')")
+          echo "$out" | jq -c '{ok, commit: .data.commit, error: .error.code}'
+          echo "$out" | jq -e '.ok and .data.commit == "pushed"' > /dev/null
