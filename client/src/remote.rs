@@ -247,69 +247,6 @@ fn exec_local(_: &Path, _: &Identity, _: &str, _: &mut dyn Read, _: &mut dyn Wri
     ))
 }
 
-/// The host key types to ask `host` for: the same ones libgit2 asks for in
-/// git's fetch and push. libgit2 prefers the types the user's own
-/// `~/.ssh/known_hosts` holds for the host (`find_hostkey_preference` in
-/// its `ssh_libssh2.c`), libssh2 alone does not; without this, a relay the
-/// user also logs into with ssh shows git one key and these commands
-/// another, and the pinned fingerprint fits only one of them.
-fn hostkey_prefs(s: &ssh2::Session, host: &str, port: u16) -> Option<String> {
-    use libssh2_sys as raw;
-    use std::ffi::{c_char, c_int, CString};
-    let home = ["HOME", "USERPROFILE"]
-        .iter()
-        .filter_map(std::env::var_os)
-        .find(|h| !h.is_empty())?;
-    let file = PathBuf::from(home).join(".ssh").join("known_hosts");
-    if !file.is_file() {
-        return None;
-    }
-    let file = CString::new(file.to_str()?).ok()?;
-    let host = CString::new(host).ok()?;
-    // libgit2's order.
-    let types = [
-        (raw::LIBSSH2_KNOWNHOST_KEY_ED25519, "ssh-ed25519"),
-        (raw::LIBSSH2_KNOWNHOST_KEY_ECDSA_256, "ecdsa-sha2-nistp256"),
-        (raw::LIBSSH2_KNOWNHOST_KEY_ECDSA_384, "ecdsa-sha2-nistp384"),
-        (raw::LIBSSH2_KNOWNHOST_KEY_ECDSA_521, "ecdsa-sha2-nistp521"),
-        (raw::LIBSSH2_KNOWNHOST_KEY_SSHRSA, "rsa-sha2-512"),
-        (raw::LIBSSH2_KNOWNHOST_KEY_SSHRSA, "rsa-sha2-256"),
-        (raw::LIBSSH2_KNOWNHOST_KEY_SSHRSA, "ssh-rsa"),
-    ];
-    let mut prefs = Vec::new();
-    // SAFETY: the session outlives the known-hosts collection, which is
-    // freed before returning; every pointer passed is a live CString.
-    unsafe {
-        let session: *mut raw::LIBSSH2_SESSION = &mut *s.raw();
-        let kh = raw::libssh2_knownhost_init(session);
-        if kh.is_null() {
-            return None;
-        }
-        if raw::libssh2_knownhost_readfile(kh, file.as_ptr(), raw::LIBSSH2_KNOWNHOST_FILE_OPENSSH)
-            >= 0
-        {
-            // A nonsense key: a stored key of this type then "mismatches".
-            let key: c_char = 0;
-            for (t, name) in types {
-                let rc = raw::libssh2_knownhost_checkp(
-                    kh,
-                    host.as_ptr(),
-                    port as c_int,
-                    &key,
-                    1,
-                    raw::LIBSSH2_KNOWNHOST_TYPE_PLAIN | raw::LIBSSH2_KNOWNHOST_KEYENC_RAW | t,
-                    std::ptr::null_mut(),
-                );
-                if rc == raw::LIBSSH2_KNOWNHOST_CHECK_MISMATCH {
-                    prefs.push(name);
-                }
-            }
-        }
-        raw::libssh2_knownhost_free(kh);
-    }
-    (!prefs.is_empty()).then(|| prefs.join(","))
-}
-
 #[allow(clippy::too_many_arguments)]
 fn exec_ssh(
     user: &str,
@@ -321,31 +258,7 @@ fn exec_ssh(
     stdin: &mut dyn Read,
     stdout: &mut dyn Write,
 ) -> Result<()> {
-    let addr = (host, port)
-        .to_socket_addrs()
-        .map_err(offline)?
-        .next()
-        .ok_or_else(|| offline(format!("{host} has no address")))?;
-    let tcp = TcpStream::connect_timeout(&addr, Duration::from_secs(15)).map_err(offline)?;
-    let mut s = ssh2::Session::new().map_err(offline)?;
-    s.set_tcp_stream(tcp);
-    s.set_timeout(120_000);
-    if let Some(prefs) = hostkey_prefs(&s, host, port) {
-        s.method_pref(ssh2::MethodType::HostKey, &prefs)
-            .map_err(offline)?;
-    }
-    s.handshake().map_err(offline)?;
-    let hash = s
-        .host_key_hash(ssh2::HashType::Sha256)
-        .ok_or_else(|| offline("no host key"))?;
-    let fp: String = hash.iter().map(|b| format!("{b:02x}")).collect();
-    crate::transport::pin_host_key(known_hosts, host, &fp)?;
-    authenticate(&s, user, identity).map_err(|_| {
-        Error::new(
-            Code::NotAMember,
-            "the relay does not know this device / Relay 不认识这台设备",
-        )
-    })?;
+    let s = connect(user, host, port, identity, known_hosts)?;
     let mut ch = s.channel_session().map_err(offline)?;
     ch.exec(command).map_err(offline)?;
     std::io::copy(stdin, &mut ch)?;
@@ -360,6 +273,145 @@ fn exec_ssh(
     } else {
         Err(refused(&err))
     }
+}
+
+/// Host key types, in the order the engine asks a relay it has not met.
+/// Fixed, so what a relay shows depends only on the engine's own record,
+/// never on the person's `~/.ssh` (libgit2's own ssh consults that).
+const HOSTKEY_TYPES: [&str; 7] = [
+    "ssh-ed25519",
+    "ecdsa-sha2-nistp256",
+    "ecdsa-sha2-nistp384",
+    "ecdsa-sha2-nistp521",
+    "rsa-sha2-512",
+    "rsa-sha2-256",
+    "ssh-rsa",
+];
+
+/// A host key remembered in `<root>/known_hosts`: one line per relay,
+/// `<host> <sha256 hex> <key type>`. Lines written before the key type was
+/// kept have only the fingerprint.
+struct Pin {
+    fp: String,
+    kind: Option<String>,
+}
+
+fn pinned(known_hosts: &Path, host: &str) -> Option<Pin> {
+    let text = std::fs::read_to_string(known_hosts).unwrap_or_default();
+    text.lines().find_map(|l| {
+        let mut w = l.split_whitespace();
+        (w.next() == Some(host)).then(|| Pin {
+            fp: w.next().unwrap_or("").to_string(),
+            kind: w.next().map(str::to_string),
+        })
+    })
+}
+
+/// Remembers (or completes) `host`'s line.
+fn pin(known_hosts: &Path, host: &str, fp: &str, kind: &str) -> Result<()> {
+    let text = std::fs::read_to_string(known_hosts).unwrap_or_default();
+    let mut lines: Vec<String> = text
+        .lines()
+        .filter(|l| l.split_whitespace().next() != Some(host))
+        .map(str::to_string)
+        .collect();
+    lines.push(format!("{host} {fp} {kind}"));
+    std::fs::write(known_hosts, lines.join("\n") + "\n")?;
+    Ok(())
+}
+
+fn host_key_changed(host: &str) -> Error {
+    Error::new(
+        Code::Offline,
+        format!("the relay {host} shows a different host key than before / Relay 的主机钥匙变了"),
+    )
+    .with("relay", host)
+    .with("reason", "host_key_changed")
+}
+
+/// A TCP connection and an ssh handshake asking only for `kinds`. The outer
+/// error is the network's; the inner one, the handshake's (e.g. the relay
+/// has no key of these types).
+#[allow(clippy::type_complexity)]
+fn handshake(
+    host: &str,
+    port: u16,
+    kinds: &str,
+) -> Result<std::result::Result<(ssh2::Session, String), ssh2::Error>> {
+    let addr = (host, port)
+        .to_socket_addrs()
+        .map_err(offline)?
+        .next()
+        .ok_or_else(|| offline(format!("{host} has no address")))?;
+    let tcp = TcpStream::connect_timeout(&addr, Duration::from_secs(15)).map_err(offline)?;
+    let mut s = ssh2::Session::new().map_err(offline)?;
+    s.set_tcp_stream(tcp);
+    s.set_timeout(120_000);
+    s.method_pref(ssh2::MethodType::HostKey, kinds)
+        .map_err(offline)?;
+    if let Err(e) = s.handshake() {
+        return Ok(Err(e));
+    }
+    let hash = s
+        .host_key_hash(ssh2::HashType::Sha256)
+        .ok_or_else(|| offline("no host key"))?;
+    let fp = hash.iter().map(|b| format!("{b:02x}")).collect();
+    Ok(Ok((s, fp)))
+}
+
+/// An authenticated ssh session with the relay, for git (the `ssh://`
+/// transport) and for the commands here alike. The relay's host key is
+/// pinned on first use, with its type; later connections ask for that type
+/// only, so the relay always shows the same key.
+pub(crate) fn connect(
+    user: &str,
+    host: &str,
+    port: u16,
+    identity: &Identity,
+    known_hosts: &Path,
+) -> Result<ssh2::Session> {
+    let s = match pinned(known_hosts, host) {
+        None => {
+            let (s, fp) = handshake(host, port, &HOSTKEY_TYPES.join(","))?.map_err(offline)?;
+            let kind = s
+                .methods(ssh2::MethodType::HostKey)
+                .unwrap_or(HOSTKEY_TYPES[0])
+                .to_string();
+            pin(known_hosts, host, &fp, &kind)?;
+            s
+        }
+        Some(Pin {
+            fp,
+            kind: Some(kind),
+        }) => match handshake(host, port, &kind)? {
+            Ok((s, got)) if got == fp => s,
+            // A different key, or none of that type any more.
+            _ => return Err(host_key_changed(host)),
+        },
+        // A line from before the type was kept: find which of the relay's
+        // keys it is (no authentication needed), then keep the type too.
+        Some(Pin { fp, kind: None }) => {
+            let mut found = None;
+            for kind in HOSTKEY_TYPES {
+                if let Ok((s, got)) = handshake(host, port, kind)? {
+                    if got == fp {
+                        found = Some((s, kind));
+                        break;
+                    }
+                }
+            }
+            let (s, kind) = found.ok_or_else(|| host_key_changed(host))?;
+            pin(known_hosts, host, &fp, kind)?;
+            s
+        }
+    };
+    authenticate(&s, user, identity).map_err(|_| {
+        Error::new(
+            Code::NotAMember,
+            "the relay does not know this device / Relay 不认识这台设备",
+        )
+    })?;
+    Ok(s)
 }
 
 /// The device key, from memory where libssh2 can (its OpenSSL backend),
@@ -380,6 +432,29 @@ fn authenticate(s: &ssh2::Session, user: &str, identity: &Identity) -> Result<()
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pins() {
+        let dir = std::env::temp_dir().join(format!("teahouse-pins-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let f = dir.join("known_hosts");
+        std::fs::write(&f, "a.org 11\nb.org 22 ssh-ed25519\n").unwrap();
+        let p = pinned(&f, "a.org").unwrap();
+        assert_eq!((p.fp.as_str(), p.kind), ("11", None));
+        let p = pinned(&f, "b.org").unwrap();
+        assert_eq!(
+            (p.fp.as_str(), p.kind.as_deref()),
+            ("22", Some("ssh-ed25519"))
+        );
+        assert!(pinned(&f, "c.org").is_none());
+        // Completing an old line replaces it; other relays stay.
+        pin(&f, "a.org", "11", "ecdsa-sha2-nistp256").unwrap();
+        assert_eq!(
+            std::fs::read_to_string(&f).unwrap(),
+            "b.org 22 ssh-ed25519\na.org 11 ecdsa-sha2-nistp256\n"
+        );
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 
     #[test]
     fn endpoints() {

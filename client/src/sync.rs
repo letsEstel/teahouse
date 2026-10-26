@@ -155,13 +155,9 @@ impl Link<'_> {
     pub fn fetch(&self) -> Result<()> {
         let mut remote = self.repo.find_remote("origin")?;
         let report = Rc::new(RefCell::new(Report::default()));
-        let result = transport::with_key(self.identity, &report, || {
+        let result = transport::with_key(self.identity, self.known_hosts, &report, || {
             let mut opts = FetchOptions::new();
-            opts.remote_callbacks(transport::callbacks(
-                self.identity,
-                self.known_hosts,
-                report.clone(),
-            ));
+            opts.remote_callbacks(transport::callbacks(report.clone()));
             opts.prune(FetchPrune::On);
             opts.download_tags(git2::AutotagOption::None);
             remote.fetch(
@@ -184,13 +180,9 @@ impl Link<'_> {
         }
         let mut remote = self.repo.find_remote("origin")?;
         let report = Rc::new(RefCell::new(Report::default()));
-        let result = transport::with_key(self.identity, &report, || {
+        let result = transport::with_key(self.identity, self.known_hosts, &report, || {
             let mut opts = PushOptions::new();
-            opts.remote_callbacks(transport::callbacks(
-                self.identity,
-                self.known_hosts,
-                report.clone(),
-            ));
+            opts.remote_callbacks(transport::callbacks(report.clone()));
             let specs: Vec<&str> = specs.iter().map(String::as_str).collect();
             remote.push(&specs, Some(&mut opts))
         });

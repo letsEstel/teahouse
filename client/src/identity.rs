@@ -14,6 +14,7 @@ use teahouse_core::PublicKey;
 /// The namespace git signs commits in.
 const GIT_NAMESPACE: &str = "git";
 
+#[derive(Clone)]
 pub struct Identity {
     key: PrivateKey,
     /// `<root>/device`, for ssh libraries that cannot take a key from memory
