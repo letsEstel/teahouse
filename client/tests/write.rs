@@ -1476,7 +1476,7 @@ fn an_ai_takes_a_seat_through_mcp_and_works_as_a_guest() {
         .clone();
     assert_eq!(
         (&ai["kind"], &ai["agent"], &ai["role"]),
-        (&json!("ai"), &json!("Claude Code"), &json!("guest"))
+        (&json!("machine"), &json!("Claude Code"), &json!("guest"))
     );
     assert_eq!(h["proposals"][0]["by"], me.as_str());
     wang.ok("adopt", json!({ "house": "wutong", "proposal": proposal }));
@@ -1547,7 +1547,7 @@ fn an_ai_gets_the_tools_of_its_seat() {
     );
     let inv = wang.ok(
         "invite",
-        json!({ "house": "wutong", "kind": "ai", "role": "steward", "name": "2 号" }),
+        json!({ "house": "wutong", "kind": "machine", "role": "steward", "name": "2 号" }),
     );
 
     let mut m = Mcp::start(&w.tmp.0.join("ai-steward"));
@@ -1562,6 +1562,20 @@ fn an_ai_gets_the_tools_of_its_seat() {
     );
     assert!(!err, "{h:#}");
     assert_eq!(h["myRole"], "steward");
+    // `kind: machine`: the id carries `bot-`, and it is shown as a machine.
+    assert_eq!(h["me"], "bot-2");
+    let (_, house) = m.tool("house", json!({ "house": "wutong" }));
+    let me = house["members"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|x| x["id"] == "bot-2")
+        .unwrap()
+        .clone();
+    assert_eq!(
+        (&me["kind"], &me["agent"]),
+        (&json!("machine"), &json!("Claude Code"))
+    );
     // The seat changed what it may do: the client is told, and the list grows.
     let names = m.tool_names();
     assert_eq!(m.notes, ["notifications/tools/list_changed"]);

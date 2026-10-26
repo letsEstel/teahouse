@@ -253,7 +253,7 @@ fn command(root: &Root, key: &PublicKey, words: Vec<String>, restricted: bool) -
             let kind = match kind.as_deref() {
                 None => Kind::Human,
                 Some(k) => Kind::parse(k).ok_or_else(|| {
-                    crate::error::Error(format!("unknown kind {k:?} (human or ai)"))
+                    crate::error::Error(format!("unknown kind {k:?} (human or machine)"))
                 })?,
             };
             let role = match role.as_deref() {

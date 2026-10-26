@@ -47,7 +47,8 @@ pub struct InviteOptions {
     pub role: Option<String>,
     pub name: Option<String>,
     pub days: Option<u64>,
-    /// `"ai"` for an AI's seat (always a guest).
+    /// `"machine"` for a machine's seat (an AI, a CI job; any role). The
+    /// older `"ai"` is still accepted.
     pub kind: Option<String>,
     pub agent: Option<String>,
 }
@@ -235,7 +236,7 @@ impl Client {
         if let Some(d) = days {
             cmd.push_str(&format!(" --days {d}"));
         }
-        // 法则第 17 条: an AI's seat (a guest), and which AI.
+        // 法则第 17 条: a machine's seat (any role), and which machine.
         if let Some(k) = kind {
             cmd.push_str(&format!(" --kind {}", remote::quote(k)));
         }

@@ -1604,8 +1604,12 @@ impl World {
     }
 
     fn chart(&self) -> Members {
+        Members::parse(&self.chart_text()).unwrap()
+    }
+
+    fn chart_text(&self) -> String {
         let host = self.clone("chenli", "wutong");
-        Members::parse(&fs::read_to_string(host.join(".teahouse/members.toml")).unwrap()).unwrap()
+        fs::read_to_string(host.join(".teahouse/members.toml")).unwrap()
     }
 }
 
@@ -2089,7 +2093,7 @@ fn ai_members_hold_any_role() {
         &with("role = \"guest\"\nagent = \"Claude Code\"\n"),
     );
     w.commit(&host, "人带 agent\n\nProblem: meta");
-    w.push_denied(&host, &["main"], "only for AI members");
+    w.push_denied(&host, &["main"], "only for machines");
     w.git_ok(&host, &["reset", "--quiet", "--hard", "origin/main"]);
 
     // …but `kind = ai` is a label, not a rank: an AI steward is fine.
@@ -2152,7 +2156,7 @@ fn invitations_can_seat_an_ai_in_any_role() {
         &host,
         "shell",
         "invite wutong --agent 'Claude Code'",
-        "for AI invitations",
+        "for machines",
     );
     w.command_err(&host, "shell", "invite wutong --kind robot", "unknown kind");
 
@@ -2180,7 +2184,33 @@ fn invitations_can_seat_an_ai_in_any_role() {
         &format!("redeem {code} --name x --agent bot"),
         b"",
     );
-    assert!(s(&o).contains("for a person, not an AI"), "{}", s(&o));
+    assert!(s(&o).contains("for a person, not a machine"), "{}", s(&o));
+
+    // `kind = machine`: a CI job, say. Its id carries `bot-`, and the chart
+    // says `machine`; the AI seated above keeps its `ai` as written, though
+    // the relay rewrote the whole chart for this seat.
+    let code = w.invite("--kind machine --name 打包机 --agent 'GitHub Actions'");
+    let k = key_for(33);
+    let o = w.command(
+        &k,
+        "redeem-shell",
+        &format!("redeem {code} --name 打包机"),
+        b"",
+    );
+    assert!(o.status.success(), "{}", s(&o));
+    let m = w.chart();
+    let ci = m.members.iter().find(|x| x.key == k).unwrap();
+    assert_eq!(
+        (ci.id.as_str(), ci.kind, ci.agent.as_deref()),
+        (
+            "bot-1",
+            teahouse_core::Kind::Machine,
+            Some("GitHub Actions")
+        )
+    );
+    let text = w.chart_text();
+    assert!(text.contains("kind = \"machine\"\n"), "{text}");
+    assert!(text.contains("kind = \"ai\"\n"), "{text}");
 }
 
 #[test]
@@ -2206,7 +2236,7 @@ fn a_founding_invitation_can_seat_an_ai_host() {
     assert!(out.contains("host") && out.contains("ai-1"), "{out}");
     let o = w.relay(&["found", "x", "--name", "x", "--agent", "bot"]);
     assert!(
-        !o.status.success() && s(&o).contains("for AI invitations"),
+        !o.status.success() && s(&o).contains("for machines"),
         "{}",
         s(&o)
     );

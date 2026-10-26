@@ -107,7 +107,7 @@ pub struct Invite {
     /// Founding invitations: the teahouse's name and signboard.
     pub house_name: Option<String>,
     pub signboard: Option<String>,
-    /// An AI's seat (法则第 17 条: always a guest), and which AI.
+    /// A machine's seat (法则第 17 条: a label, any role), and which machine.
     pub kind: Kind,
     pub agent: Option<String>,
 }
@@ -126,8 +126,8 @@ impl Invite {
             "prefix = {}\nrole = {}\ncreated = {}\nexpires = {}\nby = {}\n",
             self.prefix, self.role, self.created, self.expires, self.by
         );
-        if self.kind == Kind::Ai {
-            s.push_str("kind = ai\n");
+        if self.kind.is_machine() {
+            s.push_str(&format!("kind = {}\n", self.kind.as_str()));
         }
         for (k, v) in [
             ("name", &self.name),
@@ -213,9 +213,10 @@ pub fn create(
     if role == Role::Host {
         bail!("an invitation can seat a guest or the steward, not a host / 邀请只能是茶客或伙计");
     }
-    // 法则第 17 条: `kind = ai` marks an AI, in any role; `agent` names one.
-    if seat.agent.is_some() && seat.kind != Kind::Ai {
-        bail!("--agent is for AI invitations (--kind ai)");
+    // 法则第 17 条: `kind = machine` marks a machine, in any role; `agent`
+    // names which.
+    if seat.agent.is_some() && !seat.kind.is_machine() {
+        bail!("--agent is for machines (--kind machine)");
     }
     if let Some(a) = seat.agent {
         check_name(a)?;
@@ -281,8 +282,8 @@ pub fn create_founding(
     kind: Kind,
     agent: Option<&str>,
 ) -> Result<String> {
-    if agent.is_some() && kind != Kind::Ai {
-        bail!("--agent is for AI invitations (--kind ai)");
+    if agent.is_some() && !kind.is_machine() {
+        bail!("--agent is for machines (--kind machine)");
     }
     if let Some(a) = agent {
         check_name(a)?;
@@ -407,13 +408,16 @@ pub fn new_member_id(name: &str, kind: Kind, taken: &[&str]) -> String {
     }
     let base: String = base.trim_matches('-').chars().take(24).collect();
     let mut base = base.trim_end_matches('-').to_string();
-    // AI members always carry `ai-` (docs/MCP.md), and nobody else does, so
-    // an id alone tells people from AIs: in the chart and in post names.
+    // Machines always carry `bot-` (`ai-` from invitations that still say
+    // `kind = ai`), and nobody else does, so an id alone tells people from
+    // machines: in the chart and in post names.
     let (fallback, prefix) = match kind {
+        Kind::Machine => ("bot-", "bot-"),
         Kind::Ai => ("ai-", "ai-"),
         Kind::Human => ("m", ""),
     };
-    if kind == Kind::Human && (base == "ai" || base.starts_with("ai-")) {
+    let marked = |p: &str| base == p || base.starts_with(&format!("{p}-"));
+    if kind == Kind::Human && (marked("ai") || marked("bot")) {
         base = format!("h-{base}");
     }
     let base = if base.is_empty() {
@@ -646,10 +650,10 @@ fn redeem_locked(
         fs::remove_file(&file)?;
         bail!("this invitation has expired; ask the host for a new one / 邀请已过期，请向老板要一个新的");
     }
-    // The invitation decides whether this seat is an AI's; the AI may name
-    // its agent when the host did not.
-    if agent.is_some() && inv.kind != Kind::Ai {
-        bail!("this invitation is for a person, not an AI / 这个邀请是给人的，不是给 AI 的");
+    // The invitation decides whether this seat is a machine's; the machine
+    // may name its agent when the host did not.
+    if agent.is_some() && !inv.kind.is_machine() {
+        bail!("this invitation is for a person, not a machine / 这个邀请是给人的，不是给机器的");
     }
     if let Some(a) = agent {
         check_name(a)?;
@@ -875,6 +879,13 @@ mod tests {
         assert_eq!(new_member_id("AI Wang", h, &[]), "h-ai-wang");
         assert_eq!(new_member_id("ai", h, &[]), "h-ai");
         assert!(valid_member_id(&new_member_id(&"x".repeat(80), a, &[])));
+        // Machines: always `bot-`.
+        let b = Kind::Machine;
+        assert_eq!(new_member_id("打包机", b, &[]), "bot-1");
+        assert_eq!(new_member_id("CI", b, &[]), "bot-ci");
+        assert_eq!(new_member_id("bot", h, &[]), "h-bot");
+        assert_eq!(new_member_id("Bot Li", h, &[]), "h-bot-li");
+        assert_eq!(new_member_id("Bottle", h, &[]), "bottle");
     }
 
     #[test]
@@ -890,6 +901,11 @@ mod tests {
             signboard: None,
             kind: Kind::Ai,
             agent: Some("Claude Code".into()),
+        };
+        assert_eq!(Invite::parse(&inv.render()), Some(inv.clone()));
+        let inv = Invite {
+            kind: Kind::Machine,
+            ..inv
         };
         assert_eq!(Invite::parse(&inv.render()), Some(inv));
     }

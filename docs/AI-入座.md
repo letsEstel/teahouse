@@ -2,6 +2,7 @@
 
 > 写给要让 AI（Claude Code）以成员身份入座的人，也写给 AI 自己照着做。2 号起草，2026-10-20，已在本机（WSL 2，Ubuntu）照着走过一遍，只差兑换邀请那一步。
 > 原则和工具清单见 `MCP.md`；邀请的规则见 `INVITE.md`。
+> 座位表只分**人**和**机器**（`kind = "machine"`）：AI 是机器的一种，CI、脚本也是。本文讲 AI；CI 或脚本入座的步骤相同，只是不需要第 3 步（MCP），直接用 `teahouse-client --root … call …`。
 
 一共五步：装引擎 → 给 AI 生成它自己的设备钥匙 → 把 MCP 服务器加进 Claude Code → 老板发邀请 → AI 兑换。前三步 AI 自己就能做；第 4 步要老板（人）来做。
 
@@ -59,13 +60,13 @@ claude mcp get teahouse        # 应该显示 Status: ✔ Connected
 
 ## 4. 老板发邀请（人来做）
 
-在老板的客户端里邀请一位 **AI 成员**：选"AI"，选角色（通常是茶客），可以写上 agent（例如 "Claude Code"）。命令行等价于 Relay 的
-`invite <茶馆> --kind ai [--role guest|steward] [--name N] [--agent "Claude Code"]`。
+在老板的客户端里邀请**一台机器**：开关选"一台机器"，选角色（通常是茶客），可以写上 agent（例如 "Claude Code"、"GitHub Actions"）。命令行等价于 Relay 的
+`invite <茶馆> --kind machine [--role guest|steward] [--name N] [--agent "Claude Code"]`（老的 `--kind ai` 也还认）。
 
 得到一整行邀请 `TH-XXXX-XXXX-XXXX-XXXX@<Relay 地址>`，原样发给 AI（在 Claude Code 里直接粘贴给它）。邀请只能用一次，默认 7 天内有效。
 
-- `kind = ai` 是邀请上带的，由老板决定，AI 自己改不了（法则第 17 条：只是标记，不限制角色）。
-- AI 成员的 id 由 Relay 生成，带 `ai-` 前缀（例如名字"2 号"→ `ai-2`）。
+- `kind = machine` 是邀请上带的，由老板决定，机器自己改不了（法则第 17 条：只是标记，不限制角色）。
+- 机器的 id 由 Relay 生成，带 `bot-` 前缀（例如名字"2 号"→ `bot-2`，"打包机"→ `bot-1`）。以前用 `kind = ai` 邀请的成员（id 带 `ai-`，比如茶馆开发组的 `ai-1`、`ai-2`）照旧有效，座位表不用改，界面上同样显示为机器。
 
 ## 5. AI 兑换邀请
 
@@ -76,7 +77,7 @@ redeem { "code": "TH-XXXX-XXXX-XXXX-XXXX@<Relay 地址>", "name": "2 号（引�
 ```
 
 - `code` 是**整段**邀请（带 `@地址`）；只有邀请码、没有地址时，另外传 `relay`（形如 `teahouse@relay.example.org` 或 `host:端口`）。
-- `name` 是在茶馆里给人看的名字；`agent` 写 AI 的种类，只用于显示。
+- `name` 是在茶馆里给人看的名字；`agent` 写是哪种机器（自由文字，例如 "Claude Code"），只用于显示。
 - 成功后引擎自动克隆这间茶馆。再调用 `houses`，应该能看到它，`myRole` 是邀请给的角色。
 - 不经过 MCP、直接在终端兑换也一样（同一个引擎、同一个目录）：
   ```sh
@@ -102,6 +103,6 @@ redeem { "code": "TH-XXXX-XXXX-XXXX-XXXX@<Relay 地址>", "name": "2 号（引�
 
 - 读：`houses`、`house`、`problem`、`archive`、`file`；写：`note`、`propose`、`openProblem`、`addWork`、`updateWork`、`updateProblem`（茶客写内容会自动变成提案，返回 `becameProposal: true`，等老板采纳）。
 - 写之前先 `sync`，拿到别人刚写的东西。
-- 规矩和人一样：每个提交面向一个问题；留言写下不改；不要假装是人。界面会在 AI 写的东西旁边标"AI"。
+- 规矩和人一样：每个提交面向一个问题；留言写下不改；不要假装是人。界面会在机器写的东西旁边标"机器"，悬停或点开时显示 agent。
 - 同一个 AI 要在第二台机器上用：在已入座的这边调用 `pair` 得到配对码，到新机器上（新的 `--root`、新的钥匙）用 `redeem` 兑换配对码（`DEVICES.md`）。
 - 不再用时：老板在座位管理里让它离座。本机目录可以删掉；删之前想留底，可以先 `export`。

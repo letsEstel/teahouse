@@ -187,7 +187,7 @@ are words; single quotes quote (`--name '王阿姨'`); nothing is expanded.
 | `blob-put <id> <sha256> <size>` | seated | reads exactly `size` bytes, checks the hash, stores it (100 MiB each, `blob_quota_mib` per teahouse, default 2048) |
 | `blob-get <id> <sha256>` | seated | writes the attachment |
 | `blob-purge <id> <sha256>` | host | deletes it for good |
-| `invite <id> [--role guest\|steward] [--name N] [--days 1–30] [--kind ai [--agent A]]` | host | prints a one-time code `TH-XXXX-XXXX-XXXX-XXXX` (80 bits, default 7 days); `--kind ai` marks the seat as an AI's (any role); its id starts with `ai-` |
+| `invite <id> [--role guest\|steward] [--name N] [--days 1–30] [--kind machine [--agent A]]` | host | prints a one-time code `TH-XXXX-XXXX-XXXX-XXXX` (80 bits, default 7 days); `--kind machine` marks the seat as a machine's (an AI, a CI job, a script; any role); its id starts with `bot-`. `--kind ai` is still accepted (id `ai-`, written `kind = "ai"` as before) |
 | `uninvite <id> <first four>` | host | revokes it |
 | `redeem <code> --name N [--agent A]` | anyone, incl. a key with no seat | seats the key; prints `house <id>` and `member <id>`; `--agent` only for an AI's invitation. With a pairing code: adds the key as a device named N, one `house`/`member` pair per teahouse |
 | `pair [--name N] [--minutes 1–60]` | any seated key | prints a one-time pairing code (default 10 minutes) for another device of the same member, in every teahouse where this key sits (law 19) |
