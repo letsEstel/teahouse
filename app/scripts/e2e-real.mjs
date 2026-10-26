@@ -350,6 +350,30 @@ await step('修改问题时插图', async () => {
   await p.close()
 })
 
+await step('加入链接（addWork kind=link）：问题页和档案里显示成卡片', async () => {
+  const p = await open(host.url, `problem/${problemId}`)
+  await p.click('.works-head button:has-text("加入链接")')
+  await p.fill('#link-url', 'https://docs.qq.com/sheet/DTest' + stamp)
+  await p.fill('#link-note', '大家在这里一起填')
+  await p.click('form.compose button[type=submit]')
+  await p.waitForSelector('a.linkrow', { timeout: 30_000 })
+  const got = await engine(HOST, 'problem', { house, problem: problemId })
+  const w = got.works.find((x) => x.kind === 'link')
+  if (!w || w.url !== 'https://docs.qq.com/sheet/DTest' + stamp) throw new Error(`no link work: ${JSON.stringify(got.works.map((x) => [x.kind, x.url]))}`)
+  if (w.title !== '腾讯文档') throw new Error(`title ${w.title} (expected the platform name when left empty)`)
+  if (w.note !== '大家在这里一起填') throw new Error(`note ${w.note}`)
+  const row = await p.textContent('a.linkrow')
+  if (!row.includes('腾讯文档') || !row.includes('打开')) throw new Error(`row: ${row}`)
+  if ((await p.getAttribute('a.linkrow', 'href')) !== w.url) throw new Error('row does not point at the url')
+  await shot(p, '8-link-work')
+  const a = await open(host.url, `archive/${encodeURIComponent(w.id)}`)
+  await a.waitForSelector('.linkcard .lc-url', { timeout: 15_000 })
+  if ((await a.textContent('.linkcard .lc-url')) !== w.url) throw new Error('archive card url')
+  if (await a.$('.tools button:has-text("换一个文件")')) throw new Error('a link offers to replace a file')
+  ok(`加入链接：引擎里是 kind=link、url、note，标题默认是平台名；问题页、档案里都是卡片`)
+  await a.close(); await p.close()
+})
+
 await step('每个页面都能在真数据上打开', async () => {
   const pages = ['house', 'board', 'problems', 'problems/kanban', `problem/${problemId}`, 'problem/0001', 'proposals', 'archive', 'propose']
   for (const hash of pages) {

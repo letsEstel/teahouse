@@ -360,4 +360,12 @@ export default {
   'link.shimo': 'Shimo',
   'link.notion': 'Notion',
   'link.yuque': 'Yuque',
+  'link.add': 'Link hinzufügen',
+  'link.url': 'Adresse',
+  'link.titlePh': 'Wie heißt dieses Dokument',
+  'link.note': 'Ein Satz dazu (optional)',
+  'link.notePh': 'z. B. alle füllen es hier aus; sonntags zusammengefasst',
+  'link.hint': 'Der Inhalt bleibt auf der Plattform, das Teehaus hält nur den Link. Steht die Fassung, schreibt sie auch ins Teehaus.',
+  'link.badUrl': 'Die Adresse muss mit http:// oder https:// beginnen.',
+  'archive.kind.link': 'Link',
 }

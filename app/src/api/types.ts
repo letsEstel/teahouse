@@ -4,7 +4,7 @@
 
 export type Role = 'host' | 'steward' | 'guest'
 export type Status = 'open' | 'active' | 'solved'
-export type WorkKind = 'doc' | 'plan' | 'table' | 'image' | 'file'
+export type WorkKind = 'doc' | 'plan' | 'table' | 'image' | 'file' | 'link'
 export type Act =
   | 'open-problem' | 'set-status' | 'add-work' | 'update-work' | 'note' | 'remove-note' | 'notice'
   | 'propose' | 'adopt' | 'decline' | 'seat' | 'update' | 'update-problem'
@@ -42,6 +42,8 @@ export interface Work {
   blob?: { hash: string; type: string; cached: boolean; purged?: boolean }
   /** 一句话说明（frontmatter 的 note:），显示在成果卡片标题下面 */
   note?: string
+  /** 链接成果（kind = link）：外部文档的地址，只有链接成果才有；界面只用它，不自己去文件里解析 */
+  url?: string
 }
 
 export interface ProblemSummary {
@@ -114,8 +116,9 @@ export interface Commands {
   setStatus: [HouseArg & { problem: string; status: Status; owner?: string }, WriteResult]
   /** text = frontmatter 之后的整段 Markdown（摘要和 ## 各节）；状态、负责人不变。茶客的自动变成提案 */
   updateProblem: [HouseArg & { problem: string; title?: string; text?: string }, WriteResult]
-  addWork: [HouseArg & { problem: string; kind: WorkKind; title: string; text?: string; fromPath?: string }, WriteResult]
-  updateWork: [HouseArg & { id: string; text?: string; fromPath?: string }, WriteResult]
+  /** 链接成果：kind = link，带 url（http/https）和可选的 note；text 是说明 */
+  addWork: [HouseArg & { problem: string; kind: WorkKind; title: string; text?: string; fromPath?: string; url?: string; note?: string }, WriteResult]
+  updateWork: [HouseArg & { id: string; text?: string; fromPath?: string; url?: string; title?: string; note?: string }, WriteResult]
   note: [HouseArg & { problem?: string; notice?: string; text: string }, WriteResult]
   removeNote: [HouseArg & { id: string }, WriteResult]
   postNotice: [HouseArg & { title: string; text: string }, WriteResult]

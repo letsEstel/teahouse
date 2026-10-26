@@ -91,6 +91,7 @@ export const wutong: House = {
           title: { zh: '一周占位记录', en: 'One week of occupancy notes', de: 'Belegungsprotokoll einer Woche' },
           note: { zh: '每晚 21:00 拍照统计', en: 'Photographed every night at 21:00', de: 'Jeden Abend um 21:00 fotografiert' },
         },
+        { id: 'w10', kind: 'link', by: 'sun', when: '2026-10-18T19:30', url: 'https://docs.qq.com/sheet/DUEtPaXxYzAbCdEf', title: { zh: '车位意见收集表', en: 'Parking feedback sheet', de: 'Rückmeldebogen Parkplätze' }, note: { zh: '大家在腾讯文档里一起填，周日汇总后贴回茶馆', en: 'Everyone fills it in together on Tencent Docs; summed up here on Sunday', de: 'Alle füllen es gemeinsam in Tencent Docs aus; sonntags hier zusammengefasst' } },
         { id: 'w5', kind: 'doc', by: 'chen', when: '2026-10-03T15:00', title: { zh: '致物业的函（草稿）', en: 'Letter to the management (draft)', de: 'Schreiben an die Hausverwaltung (Entwurf)' } },
         { id: 'w6', kind: 'table', by: 'sun', when: '2026-09-27T12:00', title: { zh: '周边收费停车场价目', en: 'Nearby car park prices', de: 'Preise der Parkhäuser in der Nähe' } },
         { id: 'w7', kind: 'image', by: 'wu', when: '2026-09-20T09:00', title: { zh: '外来车辆照片汇总', en: 'Photos of outside cars', de: 'Fotos der Fremdfahrzeuge' } },
