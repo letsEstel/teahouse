@@ -21,7 +21,7 @@ export const startup: House = {
     { id: 'linz', name: { zh: '林舟', en: 'Lin Zhou', de: 'Lin Zhou' }, role: 'host', joined: '2026-08-01' },
     { id: 'song', name: { zh: '宋雨桐', en: 'Song Yutong', de: 'Song Yutong' }, role: 'steward', joined: '2026-08-01' },
     { id: 'ma', name: { zh: '马克', en: 'Ma Ke', de: 'Ma Ke' }, role: 'guest', joined: '2026-08-03' },
-    { id: 'claude', name: { zh: 'Claude', en: 'Claude' }, role: 'guest', kind: 'ai', agent: 'Claude Code', joined: '2026-10-12' },
+    { id: 'claude', name: { zh: 'Claude', en: 'Claude' }, role: 'guest', kind: 'machine', agent: 'Claude Code', joined: '2026-10-12' },
   ],
   problems: [
     {

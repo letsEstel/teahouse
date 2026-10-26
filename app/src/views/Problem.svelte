@@ -1,6 +1,6 @@
 <script lang="ts">
   import Shape from '../lib/Shape.svelte'
-  import AiMark from '../lib/AiMark.svelte'
+  import MachineMark from '../lib/MachineMark.svelte'
   import StatusMark from '../lib/StatusMark.svelte'
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import ParkingMap from '../lib/ParkingMap.svelte'
@@ -11,6 +11,7 @@
   import { attachImage, imageUrl } from '../lib/images'
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
   import { api, write as send, blobUrl, stageFile } from '../api/backend'
+  import { isMachine } from '../api/types'
   import { t, when, date } from '../i18n/index.svelte'
 
   let { house, id, refresh }: { house: House; id: string; refresh?: () => void } = $props()
@@ -113,10 +114,10 @@
       <StatusMark status={p.status} />
       <h1>{p.title}</h1>
       <div class="meta">
-        <span><Shape role={author.role} size={10} />{t('problem.raisedBy', { name: author.name })}<AiMark m={author} /> · {t(`role.${author.role}`)}</span>
+        <span><Shape role={author.role} size={10} />{t('problem.raisedBy', { name: author.name })}<MachineMark m={author} /> · {t(`role.${author.role}`)}</span>
         <span>{t('problem.since', { date: date(p.opened, 'short') })}</span>
         <span>{t('problem.works', { n: p.workCount })}</span>
-        {#if owner}<span><Shape role={owner.role} size={10} />{t('problem.owner', { name: owner.name })}<AiMark m={owner} /></span>{/if}
+        {#if owner}<span><Shape role={owner.role} size={10} />{t('problem.owner', { name: owner.name })}<MachineMark m={owner} /></span>{/if}
       </div>
       {#if !editing}
         <button class="secondary small edit" data-write onclick={startEdit}>{t(me.role === 'guest' ? 'pedit.startGuest' : 'pedit.start')}</button>
@@ -153,7 +154,7 @@
           <label class="label" for="owner">{t('manage.owner')}</label>
           <select id="owner" value={p.owner ?? ''} onchange={(e) => setStatus(p!.status, e.currentTarget.value)}>
             <option value="">{t('manage.nobody')}</option>
-            {#each house.members as m}<option value={m.id}>{m.name}{m.kind === 'ai' ? ' · AI' : ''}</option>{/each}
+            {#each house.members as m}<option value={m.id}>{m.name}{isMachine(m) ? ` · ${t('machine.short')}` : ''}</option>{/each}
           </select>
           <p class="consequence">{t('manage.hint')}</p>
         </div>
@@ -180,7 +181,7 @@
             <li>
               <span class="node"><Shape role={m.role} size={12} /></span>
               <div>
-                <div class="ev"><b>{m.name}</b><AiMark {m} /> {eventText(e, true)}</div>
+                <div class="ev"><b>{m.name}</b><MachineMark {m} /> {eventText(e, true)}</div>
                 <div class="when">{when(e.when)}</div>
               </div>
             </li>
@@ -237,7 +238,7 @@
             <a href="#/{house.id}/archive/{encodeURIComponent(w.id)}">
               <WorkGlyph kind={w.kind} size={20} />
               <span class="fname"><span class="real">{fileName(w.id)}</span><span class="human">{w.title}</span></span>
-              <span class="fby"><Shape role={wm.role} size={9} />{wm.name}<AiMark m={wm} /> · {when(w.when)}</span>
+              <span class="fby"><Shape role={wm.role} size={9} />{wm.name}<MachineMark m={wm} /> · {when(w.when)}</span>
               <AccessMark a={access(house, w.id)} />
             </a>
           </li>
@@ -265,7 +266,7 @@
                 <div class="t">{feature.title}</div>
                 {#if feature.note}<div class="note">{feature.note}</div>{/if}
               </div>
-              <div class="by"><Shape role={fm.role} size={10} />{fm.name}<AiMark m={fm} /><span>{when(feature.when)}</span></div>
+              <div class="by"><Shape role={fm.role} size={10} />{fm.name}<MachineMark m={fm} /><span>{when(feature.when)}</span></div>
             </div>
           </article>
         {/if}
@@ -279,7 +280,7 @@
             </div>
             <div class="t hyphenate">{w.title}</div>
             {#if w.note}<div class="note hyphenate">{w.note}</div>{/if}
-            <div class="by"><Shape role={wm.role} size={10} /><b>{wm.name}</b><AiMark m={wm} /><span>{when(w.when)}</span></div>
+            <div class="by"><Shape role={wm.role} size={10} /><b>{wm.name}</b><MachineMark m={wm} /><span>{when(w.when)}</span></div>
           </article>
         {/each}
       </div>

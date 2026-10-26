@@ -23,8 +23,10 @@ export interface HouseSummary {
   sync: SyncState
 }
 
-/** kind = 'ai'：AI 成员（docs/MCP.md，法则第 17 条）。只是标记，不限制角色；agent 是 AI 的种类，只用于显示 */
-export interface Member { id: string; name: string; role: Role; joined: string; kind?: 'human' | 'ai'; agent?: string; devices?: DeviceInfo[] }
+/** 座位表只分人和机器（法则第 17 条）：kind = machine 是机器成员，只是标记，不限制角色；agent 是哪种机器，只用于显示。
+ *  'ai' 是旧引擎的说法，也算机器 */
+export interface Member { id: string; name: string; role: Role; joined: string; kind?: 'human' | 'machine' | 'ai'; agent?: string; devices?: DeviceInfo[] }
+export const isMachine = (m: Pick<Member, 'kind'>) => m.kind === 'machine' || m.kind === 'ai'
 /** 我的一台设备（docs/DEVICES.md）。name 为空 = 第一台设备；fingerprint 形如 SHA256:… */
 export interface DeviceInfo { name: string; fingerprint: string; added: string; thisDevice: boolean }
 export interface Event { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
@@ -124,7 +126,7 @@ export interface Commands {
   adopt: [HouseArg & { proposal: string }, WriteResult]
   decline: [HouseArg & { proposal: string; reason?: string }, WriteResult]
   seat: [HouseArg & { remove?: string; role?: { id: string; role: Role } }, WriteResult]
-  invite: [HouseArg & { role?: Role; name?: string; days?: number; kind?: 'human' | 'ai'; agent?: string }, string]
+  invite: [HouseArg & { role?: Role; name?: string; days?: number; kind?: 'human' | 'machine'; agent?: string }, string]
   redeem: [{ relay: string; code: string; name: string }, HouseSummary]
   /** 配对码 TH-…@relay：10 分钟、一次，对这台设备在该 Relay 上的所有茶馆有效。name = 新设备的名字 */
   pair: [{ house?: string; name?: string }, string]

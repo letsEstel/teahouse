@@ -9,22 +9,23 @@
   let role = $state<Role>('guest')
   let days = $state(7)
   let name = $state('')
-  // 邀请 AI 成员（法则第 17 条、docs/AI-入座.md）：邀请上带 kind = ai 和 agent。只是标记，不限制角色；默认茶客
-  let ai = $state(false)
-  let agent = $state('Claude Code')
-  function setAi(on: boolean) {
-    ai = on
+  // 邀请一台机器（法则第 17 条、docs/AI-入座.md）：AI、CI、脚本都算。邀请上带 kind = machine 和 agent（哪种机器）。
+  // 只是标记，不限制角色；默认茶客
+  let machine = $state(false)
+  let agent = $state('')
+  function setMachine(on: boolean) {
+    machine = on
     if (on) role = 'guest'
   }
   let code = $state<string | null>(null)
   let copied = $state(false)
 
   async function create() {
-    code = await write('invite', { house: house.id, role, days, name: name.trim() || undefined, ...(ai ? { kind: 'ai' as const, agent: agent.trim() || undefined } : {}) })
+    code = await write('invite', { house: house.id, role, days, name: name.trim() || undefined, ...(machine ? { kind: 'machine' as const, agent: agent.trim() || undefined } : {}) })
     copied = false
   }
   // 发给对方的一段话：邀请本身已经带着茶馆的地址，对方整段粘贴即可
-  let message = $derived(code ? t(ai ? 'invite.messageAi' : 'invite.message', { house: house.name, code }) : '')
+  let message = $derived(code ? t(machine ? 'invite.messageMachine' : 'invite.message', { house: house.name, code }) : '')
   async function copy() {
     try {
       await navigator.clipboard.writeText(message)
@@ -45,16 +46,16 @@
     <div class="row">
       <span class="label">{t('invite.who')}</span>
       <div class="seg" role="radiogroup" aria-label={t('invite.who')}>
-        <button role="radio" aria-checked={!ai} class:on={!ai} onclick={() => setAi(false)}>{t('invite.person')}</button>
-        <button role="radio" aria-checked={ai} class:on={ai} onclick={() => setAi(true)}>{t('invite.ai')}</button>
+        <button role="radio" aria-checked={!machine} class:on={!machine} onclick={() => setMachine(false)}>{t('invite.person')}</button>
+        <button role="radio" aria-checked={machine} class:on={machine} onclick={() => setMachine(true)}>{t('invite.machine')}</button>
       </div>
     </div>
-    {#if ai}
+    {#if machine}
       <label class="row">
         <span class="label">{t('invite.agent')}</span>
-        <input bind:value={agent} placeholder="Claude Code" />
+        <input bind:value={agent} placeholder="Claude Code · GitHub Actions" />
       </label>
-      <p class="consequence ai-note">{t('invite.aiHint')}</p>
+      <p class="consequence ai-note">{t('invite.machineHint')}</p>
     {/if}
     <div class="row">
       <span class="label">{t('invite.role')}</span>
