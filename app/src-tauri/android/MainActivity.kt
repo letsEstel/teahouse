@@ -14,10 +14,17 @@
 //     dark, and the bar icons switch to dark-on-light or light-on-dark to match.
 //     The page reports its theme through `window.TeahouseAndroid.setDark(...)`;
 //     until it does (and in "follow system" mode) the system night mode decides.
+//
+// "Take the whole teahouse away" writes into Download/Teahouse/ by path, which
+// the media store does not notice: Files apps list the folders but no files.
+// The page calls `window.TeahouseAndroid.scanFolder(path)` afterwards, and the
+// media scanner registers every file under it (only under Download/Teahouse/).
 
 package org.teahouse.app
 
 import android.content.res.Configuration
+import android.media.MediaScannerConnection
+import android.os.Environment
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -27,6 +34,7 @@ import android.webkit.WebView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import java.io.File
 
 class MainActivity : TauriActivity() {
   // The two paper colours of app/src/styles/base.css (--paper, light and dark).
@@ -106,6 +114,16 @@ class MainActivity : TauriActivity() {
         pageDark = dark
         applyTheme()
       }
+    }
+
+    /** Registers the files of an exported teahouse with the media store. */
+    @JavascriptInterface
+    fun scanFolder(path: String) {
+      val root = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Teahouse").canonicalFile
+      val dir = File(path).canonicalFile
+      if (!dir.path.startsWith(root.path + File.separator)) return
+      val files = dir.walkTopDown().filter { it.isFile }.map { it.path }.toList()
+      if (files.isNotEmpty()) MediaScannerConnection.scanFile(applicationContext, files.toTypedArray(), null, null)
     }
   }
 }
