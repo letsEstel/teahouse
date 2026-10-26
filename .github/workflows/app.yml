@@ -228,6 +228,10 @@ jobs:
   ios:
     runs-on: macos-15
     timeout-minutes: 60
+    env:
+      # Rust and the C parts (cc) must aim at the same iOS, or the link fails
+      # (e.g. ___chkstk_darwin, which only newer iOS has). 14.0 is Tauri's minimum.
+      IPHONEOS_DEPLOYMENT_TARGET: '14.0'
     defaults:
       run:
         working-directory: app
@@ -252,7 +256,7 @@ jobs:
       # is most likely to need care on a new platform
       - name: Engine for iPhone
         working-directory: .
-        run: cargo build --release --locked -p teahouse-client --target aarch64-apple-ios
+        run: cargo build --release --locked -p teahouse-client --lib --target aarch64-apple-ios
       - run: npm ci
       # The Xcode project is generated from tauri.conf.json (src-tauri/gen/ is not committed)
       - name: iOS project
