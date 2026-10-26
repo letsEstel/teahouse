@@ -44,10 +44,10 @@ cargo test               # 全部测试（需要 git）
 
 ## 版本和代号
 
-- 每个版本有一个版本号和一个代号。代号是一种茶，由产品负责人起名。**v0.1 的代号是「安吉白茶」**（英文、德文写 *Anji*）。
-- 版本号和代号只写在一个地方：`app/package.json` 的 `version` 和 `codename`（`{ "zh": "安吉白茶", "latin": "Anji" }`）。界面侧栏底部的"v0.1 · 安吉白茶"和 nightly 发布页的标题都从这里读；改版本时，Rust 的 `Cargo.toml`（工作区和 `app/src-tauri`）和 `app/src-tauri/tauri.conf.json` 的 `version` 一起改。
-- 三种语言的 README 标题下面写一行"v0.1 · 安吉白茶"。
-- 给用户的安装包按 `teahouse-<版本>-<拉丁代号小写>-arm64.apk` 命名，例如 `teahouse-0.1.0-anji-arm64.apk`。git 标签只用版本号（`v0.1.0`）。
+- 每个版本有一个版本号和一个代号。代号是一种茶的名字，**用拉丁字母写，不翻译**，由产品负责人起名。**v0.1 的代号是 Anji**（安吉白茶）。
+- 版本号和代号只写在一个地方：`app/package.json` 的 `version` 和 `codename`。界面侧栏底部的"v0.1 · Anji"和 nightly 发布页的标题（"v0.1 Anji · 最新测试版 · …"）都从这里读；改版本时，Rust 的 `Cargo.toml`（工作区和 `app/src-tauri`）和 `app/src-tauri/tauri.conf.json` 的 `version` 一起改。
+- 三种语言的 README 标题下面写一行"v0.1 · *Anji*（安吉白茶）"，这是唯一写茶的中文名的地方。
+- 安装包只用项目名和版本号：`teahouse-0.1.0-arm64.apk`，不带代号。git 标签也只用版本号（`v0.1.0`）。
 - 应用图标是这个版本的茶：v0.1 是墨色圆里的一芽二叶（`app/src-tauri/icons/source.svg`，界面里的 `app/src/lib/Mark.svelte` 是同一份几何）。改了 `source.svg` 以后，先渲染出 1024×1024 的 `source.png`，再运行 `npx tauri icon src-tauri/icons/source.png`（在 `app/` 里）。
 
 ## 让 AI 入座（Claude 桌面版，Windows）

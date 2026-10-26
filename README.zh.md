@@ -2,7 +2,7 @@
 
 *Architecture No. 1 in Rust, Op. 1*
 
-v0.1 · 安吉白茶
+v0.1 · *Anji*（安吉白茶）
 
 [English](README.md) · **中文** · [Deutsch](README.de.md)
 
