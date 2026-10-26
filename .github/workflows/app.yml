@@ -269,12 +269,20 @@ jobs:
     if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read   # the previous successful build, for "what changed since"
     env:
+      GH_TOKEN: ${{ github.token }}
       BOT_DEVICE: ${{ secrets.TEAHOUSE_BOT_DEVICE }}
       RESULTS: ${{ toJSON(needs) }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       SUBJECT: ${{ github.event.head_commit.message }}
     steps:
+      # full history: the release notes are the commits since the last successful build
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: What to say
         id: say
         run: |
@@ -287,14 +295,21 @@ jobs:
             text="这次没打成（${GITHUB_SHA::7}：${subject}）。出错的步骤：${failed}。日志：${RUN_URL}"
           elif [ "$release" = success ]; then
             dl="https://github.com/${GITHUB_REPOSITORY}/releases/download/nightly"
-            text="打包好了：${GITHUB_SHA::7}（${subject}）。安卓：${dl}/teahouse-android-arm64.apk ；Windows：${dl}/teahouse-windows-x64-setup.exe 。直接覆盖安装，不要卸载。"
+            # what changed since the last build that was announced (scripts/release-notes.py)
+            prev=$(gh run list -R "$GITHUB_REPOSITORY" --workflow app.yml --branch main --status success --limit 10 \
+              --json databaseId,headSha -q "[.[] | select(.databaseId != $GITHUB_RUN_ID)][0].headSha" || true)
+            notes=""
+            if [ -n "$prev" ] && git cat-file -e "$prev^{commit}" 2>/dev/null; then
+              notes=$(python3 scripts/release-notes.py "$prev" "$GITHUB_SHA" || true)
+            fi
+            head="打包好了：${GITHUB_SHA::7}（${subject}）。"
+            links="安卓：${dl}/teahouse-android-arm64.apk ；Windows：${dl}/teahouse-windows-x64-setup.exe 。直接覆盖安装，不要卸载。"
+            if [ -n "$notes" ]; then text=$(printf '%s\n\n%s\n\n%s' "$head" "$notes" "$links"); else text="$head$links"; fi
           else
             echo "release: $release, nothing failed: a newer run will speak"; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0
           fi
           printf '%s\n' "$text"
           { echo "text<<EOT"; printf '%s\n' "$text"; echo "EOT"; } >> "$GITHUB_OUTPUT"
-      - if: steps.say.outputs.skip != '1'
-        uses: actions/checkout@v5
       - if: steps.say.outputs.skip != '1'
         name: Rust toolchain
         run: |
