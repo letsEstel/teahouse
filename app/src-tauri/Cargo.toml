@@ -22,6 +22,8 @@ tauri-build = { version = "2", features = [] }
 # The shell. protocol-asset lets the interface show attachments from the engine's
 # local blob cache through convertFileSrc (CLIENT-API.md §4, blob).
 tauri = { version = "2", features = ["protocol-asset"] }
+# Links (a cloud doc, a link in a post) open in the system browser or the right app, not in the window.
+tauri-plugin-opener = "2"
 serde_json = "1"
 # The engine: every command of CLIENT-API.md §4 goes through Client::call.
 teahouse-client = { path = "../../client" }

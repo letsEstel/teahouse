@@ -440,4 +440,11 @@ export default {
   'fold.recent': { other: 'Only the latest {n}' },
   'fold.open': 'Unfold this column',
   'fold.close': 'Fold this column',
+  'link.open': 'Open',
+  'link.tencent': 'Tencent Docs',
+  'link.google': 'Google Docs',
+  'link.feishu': 'Feishu',
+  'link.shimo': 'Shimo',
+  'link.notion': 'Notion',
+  'link.yuque': 'Yuque',
 }

@@ -10,6 +10,7 @@
   import Editor from '../lib/Editor.svelte'
   import { attachImage, imageUrl, mdPieces, prepareFile } from '../lib/images'
   import MdImage from '../lib/MdImage.svelte'
+  import Linked from '../lib/Linked.svelte'
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
   import { api, write as send, blobUrl } from '../api/backend'
   import { isMachine } from '../api/types'
@@ -183,13 +184,13 @@
           <div class="para">
             <div class="label">{pad(p.body.slice(0, i + 1).filter((x) => x.heading).length)} · {b.heading}</div>
             {#each mdPieces(b.text) as piece}
-              {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p>{piece.text}</p>{/if}
+              {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p><Linked text={piece.text ?? ''} /></p>{/if}
             {/each}
           </div>
         {:else if b.text}
           <!-- 正文里单独一行的 ![标题](附件) 显示成图片 -->
           {#each mdPieces(b.text) as piece}
-            {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p class="lead">{piece.text}</p>{/if}
+            {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p class="lead"><Linked text={piece.text ?? ''} /></p>{/if}
           {/each}
         {/if}
       {:else}
