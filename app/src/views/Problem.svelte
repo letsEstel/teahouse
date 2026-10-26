@@ -8,7 +8,8 @@
   import Write from '../lib/Write.svelte'
   import AccessMark from '../lib/AccessMark.svelte'
   import Editor from '../lib/Editor.svelte'
-  import { attachImage, imageUrl } from '../lib/images'
+  import { attachImage, imageUrl, mdPieces } from '../lib/images'
+  import MdImage from '../lib/MdImage.svelte'
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
   import { api, write as send, blobUrl, stageFile } from '../api/backend'
   import { isMachine } from '../api/types'
@@ -132,7 +133,8 @@
       <label class="label" for="pedit-title">{t('newProblem.title')}</label>
       <input id="pedit-title" class="title-in" bind:value={editTitle} />
       <span class="label">{t('newProblem.body')}</span>
-      <Editor value={editText} placeholder={t('newProblem.bodyPh')} onchange={(v) => (editText = v)} />
+      <Editor value={editText} placeholder={t('newProblem.bodyPh')} onchange={(v) => (editText = v)}
+        onimage={(f) => attachImage(house.id, id, f)} resolveImage={(src) => imageUrl(house.id, src)} />
       <p class="consequence">{t(me.role === 'guest' ? 'pedit.hintGuest' : 'pedit.hint')}</p>
       <div class="save">
         <button type="submit" class="primary" disabled={!editChanged}><span>{t(me.role === 'guest' ? 'edit.saveProposal' : 'edit.save')}</span></button>
@@ -164,10 +166,15 @@
         {#if b.heading}
           <div class="para">
             <div class="label">{pad(p.body.slice(0, i + 1).filter((x) => x.heading).length)} · {b.heading}</div>
-            <p>{b.text}</p>
+            {#each mdPieces(b.text) as piece}
+              {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p>{piece.text}</p>{/if}
+            {/each}
           </div>
         {:else if b.text}
-          <p class="lead">{b.text}</p>
+          <!-- 正文里单独一行的 ![标题](附件) 显示成图片 -->
+          {#each mdPieces(b.text) as piece}
+            {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p class="lead">{piece.text}</p>{/if}
+          {/each}
         {/if}
       {:else}
         <p class="quiet">{p.summary}</p>

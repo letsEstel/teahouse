@@ -106,6 +106,15 @@ export function blobUrl(house: string, id: string, path: string): string {
  * 浏览器里（假数据、开发期）：没有本机路径可给，返回一个占位名，假数据不会去读它。
  */
 export async function stageFile(file: File): Promise<string> {
+  // 开发期接真引擎（http）：浏览器没法把文件放到引擎读得到的地方。测试脚本可以在页面上挂
+  // window.__teahouseStage(文件名, base64) 代存，返回本机路径（scripts/e2e-real.mjs）
+  const hook = (window as { __teahouseStage?: (name: string, b64: string) => Promise<string> }).__teahouseStage
+  if (backend.kind === 'http' && hook) {
+    const bytes = new Uint8Array(await file.arrayBuffer())
+    let bin = ''
+    for (const b of bytes) bin += String.fromCharCode(b)
+    return hook(file.name, btoa(bin))
+  }
   if (backend.kind !== 'tauri') {
     const key = `staged:${Date.now()}-${file.name}`
     if (backend.kind === 'fake') fakeStaged.set(key, URL.createObjectURL(file))

@@ -17,3 +17,45 @@ export async function imageUrl(house: string, src: string): Promise<string | nul
   const path = await api('blob', { house, id: src }).catch(() => null)
   return path ? blobUrl(house, src, path) : null
 }
+
+/** 一段文字按行切开：单独一行的 ![标题](地址) 是图片，相邻的其余行合成一段文字（去掉首尾的空行） */
+export function mdPieces(p: string): { text?: string; img?: { alt: string; src: string } }[] {
+  const out: { text?: string; img?: { alt: string; src: string } }[] = []
+  for (const line of p.split('\n')) {
+    const m = /^\s*!\[([^\]]*)\]\(([^)\s]+)\)\s*$/.exec(line)
+    if (m) out.push({ img: { alt: m[1], src: m[2] } })
+    else if (out.length && out[out.length - 1].text !== undefined) out[out.length - 1].text += '\n' + line
+    else out.push({ text: line })
+  }
+  return out
+    .map((x) => (x.text === undefined ? x : { text: x.text.replace(/^\n+|\n+$/g, '') }))
+    .filter((x) => x.img || x.text?.trim())
+}
+
+// 提出问题时问题还没有编号，图片挂不上去：先留在本机（pending:N），提出以后再作为附件加进去
+const pending = new Map<string, File>()
+let pendingCount = 0
+/** 先记下图片，返回插进正文的一行（地址是 pending:N，预览时用 pendingUrl） */
+export function holdImage(file: File): string {
+  const key = `pending:${++pendingCount}`
+  pending.set(key, file)
+  return `![${file.name.replace(/\.[^.]+$/, '')}](${key})`
+}
+export function pendingUrl(src: string): string | null {
+  const f = pending.get(src)
+  return f ? URL.createObjectURL(f) : null
+}
+/** 问题提出以后：正文里每张 pending 图片作为附件加进问题，换成真正的地址；有一张失败就返回 null */
+export async function attachPending(house: string, problem: string, text: string): Promise<string | null> {
+  let out = text
+  for (const [key, file] of pending) {
+    if (!out.includes(`(${key})`)) continue
+    const line = await attachImage(house, problem, file)
+    if (!line) return null
+    out = out.replace(new RegExp(`!\\[[^\\]]*\\]\\(${key}\\)`), line)
+    pending.delete(key)
+  }
+  return out
+}
+/** 正文里还有没挂上的图片吗 */
+export const hasPending = (text: string) => /\(pending:\d+\)/.test(text)
