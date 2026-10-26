@@ -10,6 +10,10 @@
 //!    moved, replays our commits on top of the relay's `main` (re-signed),
 //!    renumbering a new problem whose number someone else took meanwhile;
 //! 4. pushes everything in one push, so the relay judges it as a whole.
+//!    When someone pushed between our fetch and our push, the relay refuses
+//!    ours as not a fast-forward: then the sync starts over from 1, on top
+//!    of theirs (a few times), and only a refusal on the relay's own terms
+//!    is `relay_refused`.
 
 use crate::commit;
 use crate::error::{Code, Error, Result};
@@ -110,6 +114,29 @@ pub fn house_of_url(url: &str) -> Option<String> {
         .map(|h| h.trim_end_matches(".git").to_string())
 }
 
+/// How many times a sync starts over when others push at the same moment.
+const TRIES: usize = 3;
+
+/// Why [`Link::sync_inner`] did not finish.
+enum Retry {
+    /// Someone pushed between our fetch and our push.
+    Again,
+    Stop(Error),
+}
+use Retry::{Again, Stop};
+
+impl From<Error> for Retry {
+    fn from(e: Error) -> Retry {
+        Stop(e)
+    }
+}
+
+impl From<git2::Error> for Retry {
+    fn from(e: git2::Error) -> Retry {
+        Stop(e.into())
+    }
+}
+
 /// How a sync ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Outcome {
@@ -207,7 +234,20 @@ impl Link<'_> {
             return Ok(Outcome::NoRemote);
         }
         let mut record = Record::load(&git_dir);
-        let result = self.sync_inner();
+        let mut result = self.sync_inner();
+        for _ in 1..TRIES {
+            match result {
+                Err(Again) => result = self.sync_inner(),
+                _ => break,
+            }
+        }
+        let result = result.map_err(|e| match e {
+            Again => Error::new(
+                Code::RelayRefused,
+                "others kept writing at the same time; try again / 别人也在同时写入，请再试一次",
+            ),
+            Stop(e) => e,
+        });
         match &result {
             Ok(_) => {
                 record.last_ok = Some(now());
@@ -234,7 +274,7 @@ impl Link<'_> {
         result
     }
 
-    fn sync_inner(&self) -> Result<Outcome> {
+    fn sync_inner(&self) -> std::result::Result<Outcome, Retry> {
         let repo = self.repo;
         let old_main = repo.refname_to_id(TRACKING_MAIN).ok();
         let old_props = refs_under(repo, TRACKING_PROPOSALS)?;
@@ -284,7 +324,7 @@ impl Link<'_> {
         let _ = old_main;
         match (local_main, new_main) {
             (_, None) => {
-                return Err(Error::internal("the relay has no main for this teahouse"));
+                return Err(Error::internal("the relay has no main for this teahouse").into());
             }
             (None, Some(t)) => set_ref(repo, MAIN, Some(t))?,
             (Some(l), Some(t)) if l == t => {}
@@ -309,7 +349,18 @@ impl Link<'_> {
         if !specs.is_empty() {
             self.upload_attachments()?;
         }
-        self.push(&specs)?;
+        if let Err(e) = self.push(&specs) {
+            // Refused, and the relay's main has moved since our fetch:
+            // someone pushed in between. Start over on top of theirs.
+            if e.code == Code::RelayRefused
+                && specs.iter().any(|s| s.starts_with(MAIN))
+                && self.fetch().is_ok()
+                && repo.refname_to_id(TRACKING_MAIN).ok() != new_main
+            {
+                return Err(Again);
+            }
+            return Err(Stop(e));
+        }
         for (name, to) in after {
             set_ref(repo, &name, to)?;
         }
