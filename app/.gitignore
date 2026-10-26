@@ -4,3 +4,4 @@ screenshots/*.tmp
 dist-preview
 *.apk
 dist-e2e-*
+*.apk.idsig

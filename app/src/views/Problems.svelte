@@ -35,6 +35,7 @@
   let title = $state('')
   let text = $state('')
   let busy = $state(false)
+  let textBusy = $state(false)
   function sections(src: string) {
     const body: { heading: string; text: string }[] = [{ heading: '', text: '' }]
     for (const line of src.split('\n')) {
@@ -86,11 +87,11 @@
       <label class="label" for="problem-title">{t('newProblem.title')}</label>
       <input id="problem-title" class="title-in" bind:value={title} placeholder={t('newProblem.titlePh')} />
       <span class="label">{t('newProblem.body')}</span>
-      <Editor value="" placeholder={t('newProblem.bodyPh')} onchange={(v) => (text = v)}
+      <Editor value="" placeholder={t('newProblem.bodyPh')} onchange={(v) => (text = v)} bind:busy={textBusy}
         onimage={async (f) => holdImage(f)} resolveImage={async (src) => pendingUrl(src)} />
       <p class="consequence">{t('newProblem.hint')}</p>
       <div class="save">
-        <button type="submit" class="primary" disabled={!title.trim() || busy}><span>{t('newProblem.submit')}</span></button>
+        <button type="submit" class="primary" disabled={!title.trim() || busy || textBusy}><span>{t('newProblem.submit')}</span></button>
         <button type="button" class="secondary" onclick={() => (composing = false)}>{t('newProblem.cancel')}</button>
       </div>
     </form>

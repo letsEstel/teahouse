@@ -346,4 +346,7 @@ export default {
   'keytip.later': 'Verstanden, später',
   'access.readSeats': 'Die Sitzordnung wird nicht hier bearbeitet: Platz nimmt man über eine Einladung, Geräte kommen unter „Meine Geräte“ dazu, und das Teehaus trägt es selbst ein. Von Hand bearbeitet geht das Teehaus leicht kaputt, und das Relay lehnt es ab.',
   'access.readTalk': 'Beiträge werden nach dem Schreiben nicht mehr geändert. Wer etwas ergänzen will, schreibt einen neuen.',
+  'edit.attaching': 'Wird hinzugefügt…',
+  'edit.imageBusy': 'Das Bild wird noch hochgeladen; speichern geht, sobald es da ist.',
+  'err.stage': '„{file}“ ließ sich nicht lesen und wurde nicht hinzugefügt. Versuch eine andere Datei oder später noch einmal.',
 }

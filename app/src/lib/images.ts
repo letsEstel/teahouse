@@ -2,11 +2,49 @@
 // 正文里写一行 Markdown 指向这份附件：![标题](works/0001/w12-照片.png.ref.md)。
 // 显示时用 blob 命令拿到本地缓存的地址。
 import { api, write, stageFile, blobUrl } from '../api/backend'
+import { report } from '../api/errors.svelte'
+
+/**
+ * 照片在上传之前先缩小：长边最多 2048 像素，存成 JPEG（质量 0.85）。手机原图动辄 5 MB，
+ * 而 Relay 的线路一秒只有 100 KB 上下；缩小以后几百 KB，几秒传完。小图、动图、矢量图原样不动。
+ */
+export async function shrinkImage(file: File): Promise<File> {
+  if (!/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type) || file.size < 600 * 1024) return file
+  try {
+    const bmp = await createImageBitmap(file)
+    const scale = Math.min(1, 2048 / Math.max(bmp.width, bmp.height))
+    const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale)
+    const canvas = document.createElement('canvas')
+    canvas.width = w; canvas.height = h
+    const g = canvas.getContext('2d')!
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h)   // 透明的地方变白，不变黑
+    g.drawImage(bmp, 0, 0, w, h)
+    bmp.close()
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.85))
+    if (!blob || blob.size >= file.size) return file
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' })
+  } catch {
+    return file
+  }
+}
+
+/** 选中的文件交给引擎之前：照片先缩小，再存到引擎读得到的地方。失败时在页面顶部说明，返回 null */
+export async function prepareFile(file: File): Promise<{ path: string; file: File } | null> {
+  try {
+    const ready = file.type.startsWith('image/') ? await shrinkImage(file) : file
+    return { path: await stageFile(ready), file: ready }
+  } catch (e) {
+    report({ code: 'internal', message: String(e), params: { stage: file.name } })
+    return null
+  }
+}
 
 /** 把选中的图片作为附件加进问题，返回要插进正文的那一行；变成提案（茶客）或失败时返回 null */
 export async function attachImage(house: string, problem: string, file: File): Promise<string | null> {
   const title = file.name.replace(/\.[^.]+$/, '')
-  const r = await write('addWork', { house, problem, kind: 'image', title, fromPath: await stageFile(file) })
+  const staged = await prepareFile(file)
+  if (!staged) return null
+  const r = await write('addWork', { house, problem, kind: 'image', title, fromPath: staged.path })
   if (!r || r.becameProposal || !r.id) return null
   return `![${title}](${r.id})`
 }
