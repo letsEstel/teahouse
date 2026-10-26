@@ -8,9 +8,12 @@
   import AccessMark from '../lib/AccessMark.svelte'
   import Editor from '../lib/Editor.svelte'
   import MdImage from '../lib/MdImage.svelte'
+  import Linked from '../lib/Linked.svelte'
+  import { platform } from '../lib/links'
+  import { openUrl } from '@tauri-apps/plugin-opener'
   import { attachImage, imageUrl, mdPieces, prepareFile } from '../lib/images'
   import { member, self, pad, access, readReason, fileName, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
-  import { api, blobUrl, write as send, exportTo, BackendError } from '../api/backend'
+  import { api, blobUrl, write as send, exportTo, BackendError, inApp } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
   // 档案：茶馆里所有文件原原本本放在这里。左边文件树（按目录 / 按问题），右边预览和"来历"。
@@ -45,6 +48,23 @@
   })
 
   let closed = $state<Record<string, boolean>>({})
+
+  // 链接成果：地址只用引擎给的 Work.url（问题的成果列表里），不自己去文件里解析
+  let link = $state<{ url: string; note?: string; text?: string } | null>(null)
+  $effect(() => {
+    link = null
+    const n = file?.node
+    if (n?.kind !== 'link' || !n.problem) return
+    api('problem', { house: house.id, problem: n.problem }).then((p) => {
+      const w = p.works.find((x) => x.id === n.id)
+      if (w?.url && file?.node.id === n.id) link = { url: w.url, note: w.note, text: w.text }
+    }).catch(() => {})
+  })
+  function openExternal(e: MouseEvent, url: string) {
+    if (!inApp) return
+    e.preventDefault()
+    openUrl(url).catch(() => {})
+  }
 
   // ---- 编辑：成果文件（文档、方案、表格）在这里直接改；茶客的改动变成提案 ----
   let editing = $state(false)
@@ -265,7 +285,7 @@
             <button class="primary small" data-write onclick={startEdit}><i><AccessMark a={can} /></i><span>{t(can === 'write' ? 'edit.start' : 'edit.startPropose')}</span></button>
             <span class="consequence" data-write>{t(can === 'write' ? 'access.writeHint' : 'access.proposeHint')}</span>
           {/if}
-        {:else if isWork(node) && can !== 'read'}
+        {:else if isWork(node) && can !== 'read' && node.kind !== 'link'}
           <button class="primary small" data-write onclick={() => picker?.click()}><i><AccessMark a={can} /></i><span>{t('edit.replaceFile')}</span></button>
           <input class="picker" type="file" bind:this={picker} onchange={replace} />
           <span class="consequence" data-write>{t(can === 'write' ? 'access.writeHint' : 'access.proposeHint')}</span>
@@ -300,7 +320,18 @@
         </div>
       {:else}
       <article class="content">
-        {#if node.kind === 'members'}
+        {#if node.kind === 'link'}
+          {#if link}
+            <div class="linkcard">
+              <div class="label">{platform(link.url)}</div>
+              <a class="lc-url" href={link.url} target="_blank" rel="noopener noreferrer" onclick={(e) => openExternal(e, link!.url)}>{link.url}</a>
+              {#if link.note}<p class="lc-note">{link.note}</p>{/if}
+              {#if link.text}<p class="pre-plain"><Linked text={link.text} /></p>{/if}
+              <a class="primary small lc-open" href={link.url} target="_blank" rel="noopener noreferrer" onclick={(e) => openExternal(e, link!.url)}><i>↗</i><span>{t('link.open')}</span></a>
+              <p class="consequence">{t('link.hint')}</p>
+            </div>
+          {/if}
+        {:else if node.kind === 'members'}
           <table>
             <thead><tr><th>{t('archive.colName')}</th><th>{t('archive.colRole')}</th><th>{t('archive.colJoined')}</th></tr></thead>
             <tbody>
@@ -392,6 +423,9 @@
   .lede .num { margin-left: 8px; color: var(--ink-3); font-size: 14px; }
   .export { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 26em; text-align: right; }
   .export .secondary { gap: 12px; }
+  .linkcard { display: grid; gap: 10px; justify-items: start; padding: 18px 20px; border: 2px solid var(--ink); max-width: 40em; }
+  .lc-url { font-family: var(--latin); font-size: 14px; overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 3px; color: inherit; }
+  .lc-note { font-size: 15px; line-height: 1.7; }
   .readonly { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1.5px solid var(--ink); font-size: 13px; font-weight: 600; }
   .exported { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid var(--ink); font-size: 13px; line-height: 1.6; text-align: left; }
   .exported code { font-family: var(--latin); font-size: 12px; overflow-wrap: anywhere; background: var(--paper-deep); padding: 4px 6px; }

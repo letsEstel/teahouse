@@ -3,7 +3,7 @@
 // path 是仓库里的真实路径，只给程序用，界面上一律不显示。
 import type { DiffLine, House, Note, Notice, Problem, Work } from './types'
 
-export type FileKind = 'problem' | 'doc' | 'table' | 'plan' | 'image' | 'notice' | 'note' | 'members'
+export type FileKind = 'problem' | 'doc' | 'table' | 'plan' | 'image' | 'notice' | 'note' | 'members' | 'link'
 
 /** "来历"里的一条：谁、什么时候、为了哪个问题、做了什么。problem 是问题编号、'board' 或 'meta' */
 export interface HistEntry {

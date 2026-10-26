@@ -10,6 +10,10 @@
   import Editor from '../lib/Editor.svelte'
   import { attachImage, imageUrl, mdPieces, prepareFile } from '../lib/images'
   import MdImage from '../lib/MdImage.svelte'
+  import { platform } from '../lib/links'
+  import { inApp } from '../api/backend'
+  import { openUrl } from '@tauri-apps/plugin-opener'
+  import Linked from '../lib/Linked.svelte'
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
   import { api, write as send, blobUrl } from '../api/backend'
   import { isMachine } from '../api/types'
@@ -75,6 +79,29 @@
     } finally {
       attaching = false
     }
+  }
+
+  // 加入链接（腾讯文档、Google 文档、飞书……）：实时协作交给云文档，茶馆里放一张链接卡片
+  let linking = $state(false)
+  let linkUrl = $state('')
+  let linkTitle = $state('')
+  let linkNote = $state('')
+  const urlOk = (u: string) => /^https?:\/\/[^\s/]+/.test(u.trim())
+  async function addLink() {
+    if (!urlOk(linkUrl)) return
+    const url = linkUrl.trim()
+    const title = linkTitle.trim() || platform(url)
+    const r = await send('addWork', { house: house.id, problem: id, kind: 'link', title, url, note: linkNote.trim() || undefined })
+    if (!r) return
+    added = r.becameProposal ? 'proposed' : 'written'
+    linking = false; linkUrl = ''; linkTitle = ''; linkNote = ''
+    await load()
+  }
+  /** 应用里交给系统打开（浏览器或对应的 App），浏览器里照常开新标签页 */
+  function openExternal(e: MouseEvent, url: string) {
+    if (!inApp) return
+    e.preventDefault()
+    openUrl(url).catch(() => {})
   }
 
   // 问题下的讨论：留言直接写进茶馆（茶客也一样）
@@ -183,13 +210,13 @@
           <div class="para">
             <div class="label">{pad(p.body.slice(0, i + 1).filter((x) => x.heading).length)} · {b.heading}</div>
             {#each mdPieces(b.text) as piece}
-              {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p>{piece.text}</p>{/if}
+              {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p><Linked text={piece.text ?? ''} /></p>{/if}
             {/each}
           </div>
         {:else if b.text}
           <!-- 正文里单独一行的 ![标题](附件) 显示成图片 -->
           {#each mdPieces(b.text) as piece}
-            {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p class="lead">{piece.text}</p>{/if}
+            {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p class="lead"><Linked text={piece.text ?? ''} /></p>{/if}
           {/each}
         {/if}
       {:else}
@@ -226,8 +253,26 @@
           <button class="primary" aria-expanded={composing} onclick={() => { composing = !composing; added = null }}><i>+</i><span>{t('edit.newDoc')}</span></button>
           <button class="secondary" disabled={attaching} aria-busy={attaching || undefined} data-sending={t('edit.attaching')} onclick={() => picker?.click()}>+ {t('edit.attach')}</button>
           <input class="picker" type="file" bind:this={picker} onchange={attach} />
+          <button class="secondary" aria-expanded={linking} onclick={() => { linking = !linking; composing = false; added = null }}>+ {t('link.add')}</button>
         </div>
       </div>
+
+      {#if linking}
+        <form class="compose" data-write onsubmit={(e) => { e.preventDefault(); addLink() }}>
+          <label class="label" for="link-url">{t('link.url')}</label>
+          <input id="link-url" class="title-in url-in" type="url" inputmode="url" bind:value={linkUrl} placeholder="https://docs.qq.com/…" />
+          {#if linkUrl.trim() && !urlOk(linkUrl)}<p class="consequence">{t('link.badUrl')}</p>{/if}
+          <label class="label" for="link-title">{t('edit.title')}</label>
+          <input id="link-title" class="title-in" bind:value={linkTitle} placeholder={urlOk(linkUrl) ? platform(linkUrl.trim()) : t('link.titlePh')} />
+          <label class="label" for="link-note">{t('link.note')}</label>
+          <input id="link-note" class="note-in" bind:value={linkNote} placeholder={t('link.notePh')} />
+          <p class="consequence">{t('link.hint')}</p>
+          <div class="save">
+            <button type="submit" class="primary" disabled={!urlOk(linkUrl)}><span>{t(me.role === 'guest' ? 'edit.saveProposal' : 'edit.save')}</span></button>
+            <button type="button" class="secondary" onclick={() => (linking = false)}>{t('edit.cancel')}</button>
+          </div>
+        </form>
+      {/if}
 
       {#if added}<p class="saved" role="status">{t(added === 'written' ? 'edit.written' : 'edit.proposed')}</p>{/if}
 
@@ -264,12 +309,22 @@
         {#each p.works as w}
           {@const wm = member(house, w.by)}
           <li>
+            {#if w.kind === 'link' && w.url}
+              <!-- 链接成果：内容在外部的云文档里，点开就去那里；茶馆里只放地址和一句说明 -->
+              <a class="linkrow" href={w.url} target="_blank" rel="noopener noreferrer" onclick={(e) => openExternal(e, w.url!)}>
+                <WorkGlyph kind="link" size={20} />
+                <span class="fname"><span class="real">{w.title}</span><span class="human">{platform(w.url)}{w.note ? ` · ${w.note}` : ''}</span></span>
+                <span class="fby"><Shape role={wm.role} size={9} />{wm.name}<MachineMark m={wm} /> · {when(w.when)}</span>
+                <span class="open">{t('link.open')} ↗</span>
+              </a>
+            {:else}
             <a href="#/{house.id}/archive/{encodeURIComponent(w.id)}">
               <WorkGlyph kind={w.kind} size={20} />
               <span class="fname"><span class="real">{fileName(w.id)}</span><span class="human">{w.title}</span></span>
               <span class="fby"><Shape role={wm.role} size={9} />{wm.name}<MachineMark m={wm} /> · {when(w.when)}</span>
               <AccessMark a={access(house, w.id)} />
             </a>
+            {/if}
           </li>
         {/each}
       </ul>
@@ -392,6 +447,9 @@
   .node { padding-top: 5px; background: var(--paper); outline: 3px solid var(--paper); height: fit-content; position: relative; }
   .ev { font-size: 14px; line-height: 1.5; color: var(--ink-2); }
   .ev b { color: var(--ink); }
+  .open { font-size: 12px; font-weight: 700; white-space: nowrap; border-bottom: 1.5px solid currentColor; }
+  .url-in { font-family: var(--latin); font-size: 15px; font-weight: 500; }
+  .note-in { border: 1.5px solid var(--ink); background: var(--paper); padding: 10px 14px; font: inherit; font-size: 15px; color: var(--ink); }
   .fold { display: inline-flex; align-items: center; gap: 10px; margin-top: 4px; padding: 6px 0; background: none; border: 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
   .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid currentColor; transition: transform 160ms var(--ease); }
   .tri.open { transform: rotate(180deg); }

@@ -57,8 +57,22 @@ pub struct ChangeArg {
     pub title: Option<String>,
     pub text: Option<String>,
     pub from_path: Option<String>,
+    pub url: Option<String>,
+    pub note: Option<String>,
     #[serde(default)]
     pub delete: bool,
+}
+
+impl ChangeArg {
+    fn content(&self) -> Content<'_> {
+        Content {
+            title: self.title.as_deref(),
+            text: self.text.as_deref(),
+            from_path: self.from_path.as_deref(),
+            url: self.url.as_deref(),
+            note: self.note.as_deref(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
@@ -69,6 +83,31 @@ pub enum WorkKindArg {
     Table,
     Image,
     File,
+    Link,
+}
+
+/// What a work is made of, as `addWork`, `updateWork` and a proposal's
+/// changes give it. Which fields count depends on the kind: `text` for
+/// documents, plans and tables (and a link's description), `fromPath` for
+/// attachments, `url` for links; `title` and `note` sit in the frontmatter.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Content<'a> {
+    pub title: Option<&'a str>,
+    pub text: Option<&'a str>,
+    pub from_path: Option<&'a str>,
+    pub url: Option<&'a str>,
+    pub note: Option<&'a str>,
+}
+
+fn check_url(url: &str) -> Result<()> {
+    if format::valid_url(url) {
+        Ok(())
+    } else {
+        Err(
+            invalid("a link must be an http(s) address / 链接只能是 http(s) 网址")
+                .with("field", "url"),
+        )
+    }
 }
 
 /// What to undo if the relay refuses.
@@ -594,12 +633,19 @@ impl<'c> Writer<'c> {
         &self,
         pid: &str,
         kind: WorkKindArg,
-        title: &str,
-        text: Option<&str>,
-        from_path: Option<&str>,
-        note: Option<&str>,
+        c: Content<'_>,
     ) -> Result<(String, Vec<Edit>)> {
-        let title = title.trim();
+        let Content {
+            title,
+            text,
+            from_path,
+            url,
+            note,
+        } = c;
+        if url.is_some() && kind != WorkKindArg::Link {
+            return Err(invalid("only links take a url / 只有链接才有 url").with("field", "url"));
+        }
+        let title = title.unwrap_or("").trim();
         if title.is_empty() {
             return Err(invalid("a work needs a title / 成果需要标题").with("field", "title"));
         }
@@ -631,6 +677,23 @@ impl<'c> Writer<'c> {
                         Edit::Put(format!("{path}.meta.md"), meta.into_bytes()),
                     ],
                 ))
+            }
+            WorkKindArg::Link => {
+                let url = url.map(str::trim).ok_or_else(|| {
+                    invalid("a link needs a url / 链接需要 url").with("field", "url")
+                })?;
+                check_url(url)?;
+                if from_path.is_some() {
+                    return Err(invalid("a link takes no fromPath / 链接不带 fromPath")
+                        .with("field", "fromPath"));
+                }
+                fields.push(("url", url));
+                if let Some(n) = note {
+                    fields.push(("note", n));
+                }
+                let path = self.free_path(&dir, &stem, ".link.md");
+                let content = format::render_frontmatter(&fields) + text.unwrap_or("");
+                Ok((path.clone(), vec![Edit::Put(path, content.into_bytes())]))
             }
             WorkKindArg::Image | WorkKindArg::File => {
                 let from = from_path.ok_or_else(|| {
@@ -689,20 +752,18 @@ impl<'c> Writer<'c> {
         self,
         pid: &str,
         kind: WorkKindArg,
-        title: &str,
-        text: Option<&str>,
-        from_path: Option<&str>,
-        note: Option<&str>,
+        content: Content<'_>,
         args: &Value,
     ) -> Result<WriteResult> {
         self.require_problem(pid)?;
-        let (path, edits) = self.work_files(pid, kind, title, text, from_path, note)?;
+        let (path, edits) = self.work_files(pid, kind, content)?;
+        let title = content.title.unwrap_or("").trim();
         if self.role() == Role::Guest {
-            return self.into_proposal(pid, title.trim(), None, &edits, "addWork", args);
+            return self.into_proposal(pid, title, None, &edits, "addWork", args);
         }
         let c = self.commit_main(
             &edits,
-            title.trim(),
+            title,
             None,
             &[("Problem", pid.to_string()), ("Act", "add-work".into())],
         )?;
@@ -710,12 +771,14 @@ impl<'c> Writer<'c> {
     }
 
     /// The edits that replace a work's content, keeping its title.
-    fn work_update(
-        &self,
-        id: &str,
-        text: Option<&str>,
-        from_path: Option<&str>,
-    ) -> Result<(String, String, Vec<Edit>)> {
+    fn work_update(&self, id: &str, c: Content<'_>) -> Result<(String, String, Vec<Edit>)> {
+        let Content {
+            title: new_title,
+            text,
+            from_path,
+            url,
+            note,
+        } = c;
         let Some((pid, _)) = format::parse_work_path(id) else {
             return Err(Error::not_found(format!("{id} is not a work / 不是成果")).with("id", id));
         };
@@ -728,7 +791,44 @@ impl<'c> Writer<'c> {
             .map(str::to_string)
             .unwrap_or_else(|| format::file_title(id));
         let kind = format::classify_work(id, Some(&fm));
+        let is_link = kind == format::WorkFile::Work(WorkKind::Link);
+        if !is_link && (url.is_some() || new_title.is_some() || note.is_some()) {
+            return Err(invalid(
+                "url, title and note are changed here only on links / 这里只能改链接的 url、标题和说明",
+            ));
+        }
         let new = match kind {
+            format::WorkFile::Work(WorkKind::Link) => {
+                if url.is_none() && new_title.is_none() && note.is_none() && text.is_none() {
+                    return Err(invalid(
+                        "give url, title, note or text / 需要 url、title、note 或 text",
+                    ));
+                }
+                let mut new = match text {
+                    Some(t) => with_text(&old, t),
+                    None => old.clone(),
+                };
+                let mut fields: Vec<(&str, Option<&str>)> = Vec::new();
+                if let Some(u) = url.map(str::trim) {
+                    check_url(u)?;
+                    fields.push(("url", Some(u)));
+                }
+                if let Some(t) = new_title.map(str::trim) {
+                    if t.is_empty() {
+                        return Err(invalid("the title cannot be empty / 标题不能为空")
+                            .with("field", "title"));
+                    }
+                    fields.push(("title", Some(t)));
+                }
+                if let Some(n) = note {
+                    // An empty note removes it.
+                    fields.push(("note", Some(n).filter(|n| !n.trim().is_empty())));
+                }
+                if !fields.is_empty() {
+                    new = format::set_fields(&new, &fields);
+                }
+                new
+            }
             format::WorkFile::Work(WorkKind::Doc | WorkKind::Plan) => with_text(
                 &old,
                 text.ok_or_else(|| invalid("text is required / 需要 text"))?,
@@ -751,6 +851,7 @@ impl<'c> Writer<'c> {
         if new == old {
             return Err(invalid("nothing to change / 没有变化"));
         }
+        let title = new_title.map(|t| t.trim().to_string()).unwrap_or(title);
         Ok((
             pid.to_string(),
             title,
@@ -758,14 +859,8 @@ impl<'c> Writer<'c> {
         ))
     }
 
-    pub fn update_work(
-        self,
-        id: &str,
-        text: Option<&str>,
-        from_path: Option<&str>,
-        args: &Value,
-    ) -> Result<WriteResult> {
-        let (pid, title, edits) = self.work_update(id, text, from_path)?;
+    pub fn update_work(self, id: &str, content: Content<'_>, args: &Value) -> Result<WriteResult> {
+        let (pid, title, edits) = self.work_update(id, content)?;
         if self.role() == Role::Guest {
             return self.into_proposal(&pid, &title, None, &edits, "updateWork", args);
         }
@@ -1002,23 +1097,14 @@ impl<'c> Writer<'c> {
                     }
                 }
                 (Some(id), false) => {
-                    let (_, _, e) =
-                        self.work_update(id, ch.text.as_deref(), ch.from_path.as_deref())?;
+                    let (_, _, e) = self.work_update(id, ch.content())?;
                     edits.extend(e);
                 }
                 (None, _) => {
                     let kind = ch
                         .kind
                         .ok_or_else(|| invalid("a new file needs a kind / 新文件需要 kind"))?;
-                    let title = ch.title.as_deref().unwrap_or("");
-                    let (_, e) = self.work_files(
-                        problem,
-                        kind,
-                        title,
-                        ch.text.as_deref(),
-                        ch.from_path.as_deref(),
-                        None,
-                    )?;
+                    let (_, e) = self.work_files(problem, kind, ch.content())?;
                     edits.extend(e);
                 }
             }

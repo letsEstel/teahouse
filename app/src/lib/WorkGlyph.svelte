@@ -18,6 +18,10 @@
   {:else if kind === 'plan'}
     <circle cx="14" cy="14" r="9" fill="none" stroke="var(--ink)" stroke-width="2" />
     <rect x="18" y="18" width="18" height="18" fill="none" stroke="var(--ink)" stroke-width="2" />
+  {:else if kind === 'link'}
+    <!-- 链接：两个相扣的圆环 -->
+    <circle cx="15" cy="20" r="9" fill="none" stroke="var(--ink)" stroke-width="2" />
+    <circle cx="25" cy="20" r="9" fill="none" stroke="var(--ink)" stroke-width="2" />
   {:else if kind === 'file'}
     <!-- 附件：方框，一半实心 -->
     <rect x="6" y="6" width="28" height="28" fill="none" stroke="var(--ink)" stroke-width="2" />
