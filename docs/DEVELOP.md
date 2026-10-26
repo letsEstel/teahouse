@@ -25,6 +25,7 @@
 4. [MCP.md](MCP.md)、[AI-入座.md](AI-入座.md)：AI 怎样作为成员坐进来。
 5. [WEB.md](WEB.md)：网页版的可行性分析（还没做）。
 6. [RELEASING.md](RELEASING.md)：版本号、代号和发布。
+7. [IDENTITY.md](IDENTITY.md)：茶馆怎么认人、人怎么认茶馆（主机钥匙），出过的问题和以后的方向。
 
 ## 编译和测试
 
