@@ -2,6 +2,8 @@
 
 *Architecture No. 1 in Rust, Op. 1*
 
+v0.1 · *Anji Baicha* (安吉白茶)
+
 **English** · [中文](README.zh.md) · [Deutsch](README.de.md)
 
 ## Preface

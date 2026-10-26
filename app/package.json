@@ -3,6 +3,7 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "version": "0.1.0",
+  "codename": { "zh": "安吉白茶", "latin": "Anji Baicha" },
   "type": "module",
   "scripts": {
     "dev": "vite",

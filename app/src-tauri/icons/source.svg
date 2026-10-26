@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- 茶馆的标志：一间方形的屋子，中间一张圆桌，底边正中是门 -->
+  <!-- 茶馆的标志：墨色的圆里一芽二叶（安吉白茶），叶子是米白的 -->
   <rect width="1024" height="1024" fill="#f1ece2"/>
-  <rect x="212" y="212" width="600" height="600" fill="none" stroke="#141414" stroke-width="56"/>
-  <circle cx="512" cy="512" r="146" fill="#141414"/>
-  <rect x="440" y="770" width="144" height="80" fill="#f1ece2"/>
+  <circle cx="512" cy="512" r="350" fill="#141414"/>
+  <rect x="502.5" y="431.8" width="19.0" height="285.0" fill="#f1ece2"/><circle cx="512.0" cy="716.8" r="9.5" fill="#f1ece2"/><g transform="translate(512.0 626.5) rotate(-56)"><path d="M0 0 A210.0 210.0 0 0 1 0 -256.5 A210.0 210.0 0 0 1 0 0Z" fill="#f1ece2"/></g><g transform="translate(512.0 550.5) rotate(56)"><path d="M0 0 A182.9 182.9 0 0 1 0 -223.2 A182.9 182.9 0 0 1 0 0Z" fill="#f1ece2"/></g><g transform="translate(512.0 446.0) rotate(0)"><path d="M0 0 A211.5 211.5 0 0 1 0 -194.8 A211.5 211.5 0 0 1 0 0Z" fill="#f1ece2"/></g>
 </svg>
