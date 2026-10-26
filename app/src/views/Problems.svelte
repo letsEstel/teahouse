@@ -4,6 +4,7 @@
   import StatusMark from '../lib/StatusMark.svelte'
   import Editor from '../lib/Editor.svelte'
   import { write } from '../api/backend'
+  import { holdImage, pendingUrl, attachPending, hasPending } from '../lib/images'
   import { member, self, pad, type House, type Status } from '../api/view'
   import { t, when } from '../i18n/index.svelte'
 
@@ -46,7 +47,14 @@
   async function submit() {
     if (!title.trim() || busy) return
     busy = true
-    const r = await write('openProblem', { house: house.id, title: title.trim(), body: sections(text) })
+    // 正文里的图片要等问题有了编号才能挂上：先不带图片提出，再把图片作为附件加进去、补进正文
+    const withImages = hasPending(text) ? text : null
+    const body = withImages ? sections(text.replace(/^\s*!\[[^\]]*\]\(pending:\d+\)\s*$/gm, '')) : sections(text)
+    const r = await write('openProblem', { house: house.id, title: title.trim(), body })
+    if (r && withImages && r.id && !r.becameProposal) {
+      const full = await attachPending(house.id, r.id, withImages)
+      if (full) await write('updateProblem', { house: house.id, problem: r.id, text: full })
+    }
     busy = false
     if (!r) return
     composing = false
@@ -78,7 +86,8 @@
       <label class="label" for="problem-title">{t('newProblem.title')}</label>
       <input id="problem-title" class="title-in" bind:value={title} placeholder={t('newProblem.titlePh')} />
       <span class="label">{t('newProblem.body')}</span>
-      <Editor value="" placeholder={t('newProblem.bodyPh')} onchange={(v) => (text = v)} />
+      <Editor value="" placeholder={t('newProblem.bodyPh')} onchange={(v) => (text = v)}
+        onimage={async (f) => holdImage(f)} resolveImage={async (src) => pendingUrl(src)} />
       <p class="consequence">{t('newProblem.hint')}</p>
       <div class="save">
         <button type="submit" class="primary" disabled={!title.trim() || busy}><span>{t('newProblem.submit')}</span></button>

@@ -8,8 +8,8 @@
 // 每一步打印 ok / FAIL；有 FAIL 时退出码 1。
 import { build, preview } from 'vite'
 import { chromium } from 'playwright'
-import { existsSync, readdirSync, mkdirSync } from 'node:fs'
-import { homedir } from 'node:os'
+import { existsSync, readdirSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const HOST = Number(process.env.HOST_PORT ?? 7377)
@@ -45,8 +45,15 @@ const cache = join(homedir(), '.cache/ms-playwright')
 const dir = readdirSync(cache).filter((d) => d.startsWith('chromium_headless_shell-')).sort().pop()
 const browser = await chromium.launch({ executablePath: join(cache, dir, 'chrome-headless-shell-linux64/chrome-headless-shell'), env })
 
+// 选文件：页面在 http 模式下把文件交给 window.__teahouseStage，这里存进临时目录，路径交给引擎（backend.ts stageFile）
+const stageDir = mkdtempSync(join(tmpdir(), 'teahouse-e2e-stage-'))
 async function open(base, hash) {
   const page = await browser.newPage({ viewport: { width: 1366, height: 900 }, reducedMotion: 'reduce' })
+  await page.exposeFunction('__teahouseStage', (name, b64) => {
+    const path = join(stageDir, `${Date.now()}-${name.replace(/[\\/]/g, '_')}`)
+    writeFileSync(path, Buffer.from(b64, 'base64'))
+    return path
+  })
   page.on('pageerror', (e) => fail('page error', e.message))
   await page.goto(`${base}?lang=zh&tour=off#/${house}/${hash}`)
   await page.waitForLoadState('networkidle')
@@ -295,6 +302,51 @@ await step('带走整间茶馆（export）', async () => {
   const problems = ls(join(path, 'files/problems')).length
   await shot(p, '6-exported')
   ok(`带走：${path}（${top.join('、')}；问题 ${problems} 个）`)
+  await p.close()
+})
+
+// 一张 8×8 的墨色方块 PNG，给插图用
+const dot = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAD0lEQVR4nGMQwQEYhpYEAN0TDwGnz5/SAAAAAElFTkSuQmCC', 'base64')
+
+await step('提出问题时插图（先提出、再挂附件、补进正文）', async () => {
+  const p = await open(host.url, 'problems')
+  await p.click('.action button.primary')
+  await p.fill('#problem-title', `有图的问题 ${stamp}`)
+  await p.click('.compose .cm-content')
+  await p.keyboard.type('车棚现在的样子：')
+  await p.setInputFiles('.compose input.picker', { name: 'shed.png', mimeType: 'image/png', buffer: dot })
+  await p.waitForFunction(() => document.querySelector('.compose .cm-content')?.textContent?.includes('pending') || !!document.querySelector('.compose .cm-content img'))
+  await p.keyboard.press('Control+End')
+  await p.keyboard.type('一共 6 辆。')
+  await p.click('.compose button[type=submit]')
+  await p.waitForURL(/#\/wutong\/problem\/\d{4}$/, { timeout: 30_000 })
+  const id = p.url().split('/').pop()
+  const got = await engine(HOST, 'problem', { house, problem: id })
+  const all = got.body.map((b) => b.text).join('\n')
+  const m = /!\[shed\]\((works\/[^)]+\.ref\.md)\)/.exec(all)
+  if (!m) throw new Error(`no image line in ${JSON.stringify(all)}`)
+  if (all.includes('pending:')) throw new Error('placeholder left in the text')
+  if (!got.works.some((w) => w.id === m[1] && w.kind === 'image')) throw new Error('image is not a work of the problem')
+  await engine(HOST, 'blob', { house, id: m[1] })
+  await p.waitForSelector('.brief figure img', { timeout: 15_000 })
+  await shot(p, '7-problem-with-image')
+  ok(`提出问题时插图：正文里是 ${m[1]}，是这个问题的图片成果，页面上显示出来了`)
+  await p.close()
+})
+
+await step('修改问题时插图', async () => {
+  const p = await open(host.url, `problem/${problemId}`)
+  await p.click('header button.edit')
+  await p.click('.pedit .cm-content')
+  await p.keyboard.press('Control+End')
+  await p.setInputFiles('.pedit input.picker', { name: 'bikes.png', mimeType: 'image/png', buffer: dot })
+  await p.waitForFunction(() => /works\//.test(document.querySelector('.pedit .cm-content')?.textContent ?? '') || !!document.querySelector('.pedit .cm-content img'), null, { timeout: 30_000 })
+  await p.click('.pedit button[type=submit]')
+  await p.waitForSelector('.wrap > .saved')
+  const got = await engine(HOST, 'problem', { house, problem: problemId })
+  if (!got.body.some((b) => /!\[bikes\]\(works\/[^)]+\)/.test(b.text))) throw new Error(`no image line: ${JSON.stringify(got.body)}`)
+  await p.waitForSelector('.brief figure img', { timeout: 15_000 })
+  ok('修改问题时插图：正文里有图片，页面上显示出来了')
   await p.close()
 })
 
