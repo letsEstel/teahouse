@@ -18,7 +18,13 @@ export function access(h: House, path: string): Access {
   const role = self(h).role
   if (path.startsWith('talk/')) return 'read'
   if (/^(problems|works|board)\//.test(path)) return role === 'guest' ? 'propose' : 'write'
+  // .teahouse/（座位表）只经过邀请、座位管理和设备配对来改：手改容易把茶馆改坏，Relay 也会拒绝不合规的座位表
+  if (path.startsWith('.teahouse/')) return 'read'
   return role === 'host' ? 'write' : 'read'
+}
+/** 只能看的原因：座位表 / 留言 / 角色不够 */
+export function readReason(path: string): 'seats' | 'talk' | 'role' {
+  return path.startsWith('.teahouse/') ? 'seats' : path.startsWith('talk/') ? 'talk' : 'role'
 }
 /** 文件在茶馆里的真实名字。附件只有一份引用文件（CLIENT-API 1.6），显示附件本身的名字 */
 export const fileName = (path: string) => (path.split('/').pop() ?? path).replace(/\.ref\.md$/, '')
@@ -27,11 +33,13 @@ export const fileName = (path: string) => (path.split('/').pop() ?? path).replac
 // 提交说明的第一行就是界面上显示的动作描述（CLIENT-API 1.4），所以 title 有内容时原样显示；
 // 没有时（比如有人直接用 git 提交）才按动作给一句通用的说法。
 export function eventText(e: Event, inProblem = false): string {
-  if (e.title) return e.title
+  // 改状态、改问题的提交标题就是问题名，在问题页里写成做了什么
+  if (e.title && !(inProblem && (e.act === 'set-status' || e.act === 'update-problem'))) return e.title
   const ref = ''
   switch (e.act) {
     case 'open-problem': return inProblem ? t('ev.open') : t('ev.openProblem', { ref })
-    case 'set-status': return t(e.status === 'solved' ? 'ev.markSolved' : 'ev.markActive')
+    case 'set-status': return t(e.status === 'solved' ? 'ev.markSolved' : e.status === 'open' ? 'ev.markOpen' : 'ev.markActive')
+    case 'update-problem': return t('ev.updateProblem')
     case 'add-work': return t('ev.addWork', { ref })
     case 'update-work':
     case 'update': return t('ev.update', { ref })

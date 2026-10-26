@@ -5,6 +5,7 @@
   import { fit } from '../lib/fit'
   import Invite from '../lib/Invite.svelte'
   import { member, self, host, pad, eventText, nameLines, type House, type Role } from '../api/view'
+  import { api } from '../api/backend'
   import { t, when, date, i18n } from '../i18n/index.svelte'
 
   let { house }: { house: House } = $props()
@@ -15,6 +16,19 @@
   let notice = $derived(house.board[0])
   let inviting = $state(false)
   const count = (r: Role) => house.members.filter((m) => m.role === r).length
+
+  // 钥匙只在这一台设备上时，首页提醒：卸载应用或丢了手机就进不了茶馆，先在第二台设备上添加（0007）
+  const dismissKey = 'teahouse.oneDeviceTip'
+  let dismissed = $state((() => { try { return localStorage.getItem(dismissKey) === '1' } catch { return false } })())
+  let onlyDevice = $state(false)
+  $effect(() => {
+    if (dismissed) return
+    api('devices', { house: house.id }).then((d) => (onlyDevice = d.length === 1)).catch(() => {})
+  })
+  function dismiss() {
+    dismissed = true
+    try { localStorage.setItem(dismissKey, '1') } catch {}
+  }
 
   // 每个角色在首页的最主要动作
   let action = $derived(
@@ -56,6 +70,20 @@
       <a href="#/{house.id}/problem/0001"><b class="num">{pad(works)}</b><span>{t('stat.works')}</span></a>
       <a href="#/{house.id}/proposals" class:todo={house.proposals.length > 0}><b class="num">{pad(house.proposals.length)}</b><span>{t('stat.pending')}</span></a>
     </div>
+
+    {#if onlyDevice && !dismissed}
+      <aside class="keytip" data-write>
+        <svg class="key" width="34" height="16" viewBox="0 0 34 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="var(--ink)" stroke-width="2.5" /><rect x="14" y="6.75" width="19" height="2.5" fill="var(--ink)" /><rect x="26" y="9" width="2.5" height="5" fill="var(--ink)" /><rect x="30.5" y="9" width="2.5" height="4" fill="var(--ink)" /></svg>
+        <div>
+          <div class="label">{t('keytip.kicker')}</div>
+          <p>{t('keytip.text')}</p>
+          <div class="keytip-act">
+            <a class="secondary" href="#/{house.id}/devices">{t('keytip.add')} →</a>
+            <button class="quietbtn" onclick={dismiss}>{t('keytip.later')}</button>
+          </div>
+        </div>
+      </aside>
+    {/if}
 
     {#if notice}
       {@const nm = member(house, notice.by)}
@@ -129,6 +157,12 @@
   .action { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-top: 36px; }
   .action .consequence { flex: 1 1 16em; }
 
+  .keytip { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; margin-top: 28px; padding: 18px 20px; border: 2px solid var(--ink); max-width: 40em; }
+  .key { margin-top: 2px; }
+  .keytip p { margin-top: 6px; font-size: 15px; line-height: 1.7; }
+  .keytip-act { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin-top: 12px; }
+  .quietbtn { background: none; border: 0; padding: 6px 0; font: inherit; font-size: 13px; color: var(--ink-2); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+  .quietbtn:hover { color: var(--ink); }
   .stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

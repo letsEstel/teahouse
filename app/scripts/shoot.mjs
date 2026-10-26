@@ -166,11 +166,28 @@ screens.push(
   { name: 'wutong-devices-remove', hash: '#/wutong/devices', act: async (p) => { await p.click('.act .secondary'); await p.waitForTimeout(200) } },
   { name: 'join-pairing', hash: '#/join', act: async (p) => { await p.fill('textarea[name=invite]', pairMsg); await p.waitForTimeout(200) } },
 )
+screens.push({ name: 'wutong-devices-phone', hash: '#/wutong/devices', widths: [390], act: async (p) => { await p.click('.ask .primary'); await p.waitForTimeout(300) } })
+// 第 12 轮：问题的状态和负责人（老板、伙计）；修改问题（茶客是提议修改）
+const editProblem = async (p) => { await p.click('header button.edit'); await p.waitForTimeout(200) }
+screens.push(
+  { name: 'wutong-problem-owner', hash: '#/wutong/problem/0002', act: async (p) => { await p.selectOption('#owner', { index: 2 }); await p.waitForTimeout(400) } },
+  { name: 'wutong-problem-edit', hash: '#/wutong/problem/0001', act: editProblem, widths: [1366, 390] },
+  { name: 'kant-problem-edit', hash: '#/kant/problem/0001', act: editProblem },
+  { name: 'wutong-problem-phone', hash: '#/wutong/problem/0001', widths: [390] },
+  { name: 'wutong-problem-dark', hash: '#/wutong/problem/0002', theme: 'dark', only1366: true },
+)
+// 第 13 轮：只有一台设备时的首页提醒；座位表只读；档案里直接改问题说明；带走整间茶馆
+screens.push(
+  { name: 'wutong-house-onedevice', hash: '#/wutong/house', query: '&fake=onedevice' },
+  { name: 'wutong-house-onedevice-phone', hash: '#/wutong/house', query: '&fake=onedevice', widths: [390], save: true, saveAt: 390 },
+  { name: 'wutong-archive-members', hash: '#/wutong/archive/' + encodeURIComponent('.teahouse/members.toml') },
+  { name: 'wutong-archive-problem-edit', hash: '#/wutong/archive/' + encodeURIComponent('problems/0001-hard-to-find-a-parking-space.md'), act: (p) => p.click('.tools button.primary') },
+  { name: 'wutong-archive-exported', hash: '#/wutong/archive', act: async (p) => { await p.click('.export button.secondary'); await p.waitForSelector('.exported') }, widths: [1366, 390] },
+  { name: 'wutong-house-onedevice-dark', hash: '#/wutong/house', query: '&fake=onedevice', theme: 'dark', only1366: true },
+)
 const save = {
-  'wutong-devices': {}, 'wutong-devices-code': { saveDe: false }, 'wutong-devices-remove': {}, 'join-pairing': {},
+  'wutong-house-onedevice': { saveDe: true }, 'wutong-archive-members': {}, 'wutong-archive-problem-edit': {}, 'wutong-archive-exported': { saveDe: true }, 'wutong-house-onedevice-dark': {},
 }
-// 手机上也存一张"添加一台设备"（用户先在 Fold 上入座，再把电脑配进来）
-screens.push({ name: 'wutong-devices-phone', hash: '#/wutong/devices', widths: [390], save: true, saveAt: 390, act: async (p) => { await p.click('.ask .primary'); await p.waitForTimeout(300) } })
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
 // 手机
 screens.push(

@@ -13,7 +13,7 @@
   import { api, write as send, blobUrl, stageFile } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
-  let { house, id }: { house: House; id: string } = $props()
+  let { house, id, refresh }: { house: House; id: string; refresh?: () => void } = $props()
   let p = $state<Problem | null>(null)
   let image = $state<string | null>(null)   // 首张成果是图片时，本地缓存里的地址
   async function load() {
@@ -70,6 +70,36 @@
   async function remove(n: Note) {
     if (await send('removeNote', { house: house.id, id: n.id })) await load()
   }
+
+  // 状态和负责人（老板、伙计）：setStatus，点一下就写进茶馆
+  let canManage = $derived(me.role !== 'guest')
+  let owner = $derived(p?.owner ? member(house, p.owner) : null)
+  async function setStatus(status: Problem['status'], ownerId = p?.owner ?? '') {
+    if (!p || (status === p.status && ownerId === (p.owner ?? ''))) return
+    if (await send('setStatus', { house: house.id, problem: id, status, owner: ownerId })) { await load(); refresh?.() }
+  }
+
+  // 修改问题本身：标题和说明（updateProblem）；状态、负责人不变。茶客的修改自动变成提案
+  let editing = $state(false)
+  let editTitle = $state('')
+  let editText = $state('')
+  let edited = $state<'written' | 'proposed' | null>(null)
+  const bodyText = (body: Problem['body']) => body.map((b) => (b.heading ? `## ${b.heading}\n${b.text}` : b.text)).join('\n\n')
+  function startEdit() {
+    if (!p) return
+    editTitle = p.title; editText = bodyText(p.body); edited = null; editing = true
+  }
+  let editChanged = $derived(!!p && !!editTitle.trim() && (editTitle.trim() !== p.title || editText.trim() !== bodyText(p.body).trim()))
+  async function saveEdit() {
+    if (!p || !editChanged) return
+    const title = editTitle.trim() !== p.title ? editTitle.trim() : undefined
+    const text = editText.trim() !== bodyText(p.body).trim() ? editText.trim() + '\n' : undefined
+    const r = await send('updateProblem', { house: house.id, problem: id, title, text })
+    if (!r) return
+    edited = r.becameProposal ? 'proposed' : 'written'
+    editing = false
+    await load(); refresh?.()
+  }
 </script>
 
 {#if p && author}
@@ -86,12 +116,48 @@
         <span><Shape role={author.role} size={10} />{t('problem.raisedBy', { name: author.name })}<AiMark m={author} /> · {t(`role.${author.role}`)}</span>
         <span>{t('problem.since', { date: date(p.opened, 'short') })}</span>
         <span>{t('problem.works', { n: p.workCount })}</span>
+        {#if owner}<span><Shape role={owner.role} size={10} />{t('problem.owner', { name: owner.name })}<AiMark m={owner} /></span>{/if}
       </div>
+      {#if !editing}
+        <button class="secondary small edit" data-write onclick={startEdit}>{t(me.role === 'guest' ? 'pedit.startGuest' : 'pedit.start')}</button>
+      {/if}
     </div>
   </header>
 
+  {#if edited}<p class="saved" role="status">{t(edited === 'written' ? 'edit.written' : 'edit.proposed')}</p>{/if}
+
+  {#if editing}
+    <form class="pedit" data-write onsubmit={(e) => { e.preventDefault(); saveEdit() }}>
+      <label class="label" for="pedit-title">{t('newProblem.title')}</label>
+      <input id="pedit-title" class="title-in" bind:value={editTitle} />
+      <span class="label">{t('newProblem.body')}</span>
+      <Editor value={editText} placeholder={t('newProblem.bodyPh')} onchange={(v) => (editText = v)} />
+      <p class="consequence">{t(me.role === 'guest' ? 'pedit.hintGuest' : 'pedit.hint')}</p>
+      <div class="save">
+        <button type="submit" class="primary" disabled={!editChanged}><span>{t(me.role === 'guest' ? 'edit.saveProposal' : 'edit.save')}</span></button>
+        <button type="button" class="secondary" onclick={() => (editing = false)}>{t('edit.cancel')}</button>
+      </div>
+    </form>
+  {/if}
+
   <div class="cols">
     <section class="brief">
+      {#if canManage}
+        <div class="manage" data-write>
+          <div class="label">{t('manage.status')}</div>
+          <div class="states" role="group" aria-label={t('manage.status')}>
+            {#each ['open', 'active', 'solved'] as const as s}
+              <button class:on={p.status === s} aria-pressed={p.status === s} onclick={() => setStatus(s)}><StatusMark status={s} /></button>
+            {/each}
+          </div>
+          <label class="label" for="owner">{t('manage.owner')}</label>
+          <select id="owner" value={p.owner ?? ''} onchange={(e) => setStatus(p!.status, e.currentTarget.value)}>
+            <option value="">{t('manage.nobody')}</option>
+            {#each house.members as m}<option value={m.id}>{m.name}{m.kind === 'ai' ? ' · AI' : ''}</option>{/each}
+          </select>
+          <p class="consequence">{t('manage.hint')}</p>
+        </div>
+      {/if}
       <!-- 没有小标题的一段（第一个 "## " 之前）是摘要，不编号；有小标题的各节依次编号 -->
       {#each p.body as b, i}
         {#if b.heading}
@@ -238,6 +304,23 @@
 {/if}
 
 <style>
+  .edit { margin-top: 16px; }
+  .small { min-height: 40px; font-size: 13px; padding: 6px 16px; }
+  .wrap > .saved { margin: 20px 0 0; }
+  .pedit { display: grid; gap: 10px; max-width: 52rem; margin-top: 28px; padding: clamp(16px, 2.5vw, 24px); border: 2px solid var(--ink); }
+  .pedit .save { display: flex; flex-wrap: wrap; gap: 10px; }
+  .pedit .primary:disabled { background: transparent; color: var(--ink-3); border-color: var(--ink-3); cursor: default; }
+  .manage { display: grid; gap: 10px; padding-bottom: 24px; margin-bottom: 28px; border-bottom: 1px solid var(--ink); }
+  .states { display: grid; grid-template-columns: 1fr; border: 1.5px solid var(--ink); }
+  .states button { display: flex; padding: 9px 12px; background: var(--paper); border: 0; border-top: 1px solid var(--ink); cursor: pointer; color: var(--ink); text-align: left; }
+  .states button:first-child { border-top: 0; }
+  .states button:hover { background: var(--paper-deep); }
+  .states button.on { background: var(--ink); color: var(--paper); }
+  .states button.on :global(i) { border-color: var(--paper); }
+  .states button.on :global(.status.solved i), .states button.on :global(.status.active i::before) { background: var(--paper); }
+  .states button.on :global(span) { color: var(--paper); }
+  .states :global(button.on[aria-busy])::after { color: var(--paper); }
+  select { font: inherit; font-size: 15px; padding: 9px 12px; border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink); border-radius: 0; min-width: 0; }
   .lead { font-size: 17px; line-height: 1.8; margin-bottom: 22px; white-space: pre-line; }
   .wrap { padding: calc(var(--pad-top) * 0.75) var(--pad-x) 80px; }
   .back { display: inline-block; padding: 6px 0; }

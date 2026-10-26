@@ -97,7 +97,7 @@
       {:else if route.page === 'propose'}
         <Propose {house} arg={route.arg} />
       {:else if route.page === 'problem'}
-        <ProblemView {house} id={route.arg ?? '0001'} />
+        <ProblemView {house} {refresh} id={route.arg ?? '0001'} />
       {:else if route.page === 'proposals' || route.page === 'proposal'}
         <Proposal {house} {refresh} id={route.page === 'proposal' ? route.arg : undefined} />
       {:else}
