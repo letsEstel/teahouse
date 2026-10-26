@@ -353,4 +353,11 @@ export default {
   'fold.recent': { other: 'Nur die letzten {n}' },
   'fold.open': 'Spalte aufklappen',
   'fold.close': 'Spalte zuklappen',
+  'link.open': 'Öffnen',
+  'link.tencent': 'Tencent Docs',
+  'link.google': 'Google Docs',
+  'link.feishu': 'Feishu',
+  'link.shimo': 'Shimo',
+  'link.notion': 'Notion',
+  'link.yuque': 'Yuque',
 }

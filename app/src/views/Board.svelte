@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Linked from '../lib/Linked.svelte'
   import Shape from '../lib/Shape.svelte'
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
@@ -70,7 +71,7 @@
             <span>{t('board.postedBy', { name: m.name })} · {t(`role.${m.role}`)}</span>
             <span class="when">{when(n.when)}</span>
           </div>
-          <p class="text">{n.text}</p>
+          <p class="text"><Linked text={n.text} /></p>
 
           <div class="replies">
             <div class="label rh">{t('board.replies', { n: n.replies.length })}</div>

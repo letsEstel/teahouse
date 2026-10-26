@@ -440,4 +440,11 @@ export default {
   'fold.recent': { other: '只看最近 {n} 条' },
   'fold.open': '展开这一列',
   'fold.close': '折叠这一列',
+  'link.open': '打开',
+  'link.tencent': '腾讯文档',
+  'link.google': 'Google 文档',
+  'link.feishu': '飞书',
+  'link.shimo': '石墨文档',
+  'link.notion': 'Notion',
+  'link.yuque': '语雀',
 }
