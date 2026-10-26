@@ -67,9 +67,13 @@ public = true          # 公开围观；没有这一行 = 不公开
 
 ## 6. 部署
 
-- 公开目录是纯静态文件，前面放 Caddy（自动签发 HTTPS 证书）或 nginx。
-- `install.sh` 加一个选项 `--public <域名>`：装 Caddy，把 `https://<域名>/` 指向 `<relay root>/public/`。没有这个选项时，Relay 照样生成公开目录，只是没有对外的网址。
-- **需要一个域名**才能拿到正常的 HTTPS 证书。服务器现在只有 IP（122.10.118.71）的话，可以先用 http 测试，或者先给它配一个域名。
+- 公开目录是纯静态文件，由服务器上现有的网页服务器提供。
+- **茶馆开发组的服务器（122.10.118.71，香港，不需要 ICP 备案）**：上面已经有 Apache 2.4 在 80/443 端口上提供 `jiankangzhao.com` 的 HTTPS 网站，DNS 在 Cloudflare。所以：
+  1. 在 Cloudflare 加一条 DNS 记录：`teahouse.jiankangzhao.com` → A → `122.10.118.71`；
+  2. Apache 加一个虚拟主机 `teahouse.jiankangzhao.com`，`DocumentRoot` 指向 `<relay root>/public/`，只读，不执行任何脚本；
+  3. 给子域名签证书（certbot，和主站一样）；
+  4. 可选：Cloudflare 的代理（橙色云朵）打开后，静态文件由 Cloudflare 缓存，围观的人再多也基本不到服务器。`head` 文件要设成不缓存，或者最多缓存几秒，否则实时刷新会变慢。
+- `install.sh --public <域名>`：检测到已有 Apache 时，写入上面的虚拟主机配置并重新加载 Apache；没有网页服务器时才装 Caddy（自动签发证书）。不加这个选项时，Relay 照样生成公开目录，只是没有对外的网址。
 - 这条路只读、没有登录、没有令牌，所以不会像 WEB.md 里的网页写入那样多出 CSRF、偷令牌这类风险。
 
 ## 7. 测试计划
@@ -88,6 +92,6 @@ public = true          # 公开围观；没有这一行 = 不公开
 
 1. **开关放在座位表里**（`[teahouse] public = true`），由老板签名；第一次打开之前，所有成员的客户端先更新。
 2. **`data/` 由 Relay 调用 `teahouse-client publish` 生成**，数据格式和界面完全一致；Relay 的发布包里一起带上这个程序。
-3. **域名以后再定**：先用 http 加 IP（122.10.118.71）测试；有了域名，用 `install.sh --public <域名>` 换上 HTTPS。teahouse.com、.app、.io、.org、.dev 都已被注册。公开网址发出去以后最好不再换，所以正式公开前要定下来。如果服务器在中国大陆，域名指向它之前还要先做 ICP 备案。
+3. **域名：`teahouse.jiankangzhao.com`**（用户的个人域名下的子域名，2026-10-26）。服务器在香港，不需要 ICP 备案；用现有的 Apache 和证书方式（第 6 节）。teahouse.com、.app、.io、.org、.dev 都已被注册，以后有了正式域名再换；公开网址发出去以后最好不再换，所以正式公开前要定下来。
 
 **还要评审方审定**：第 3 节第 1 条的补充和第 20 条的文字。
