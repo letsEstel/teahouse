@@ -6,8 +6,10 @@
 //! 3. at most one steward (伙计)
 //! 4. everyone else is a guest (茶客)
 //! 5. member ids and keys are unique
-//! 6. `kind = "ai"` marks an AI; it is a label, not a rank (any role), and
-//!    `agent` appears only on AI members (法则第 17 条, docs/MCP.md)
+//! 6. `kind = "machine"` marks a machine (an AI, a CI job, a script); it is a
+//!    label, not a rank (any role), and `agent` appears only on machines
+//!    (法则第 17 条, docs/MCP.md). The older spelling `kind = "ai"` means
+//!    the same and is kept as written.
 //! 7. a member has 1–5 devices: `key`, plus `[[device]]` tables naming them
 //!    (`version = 2`); every key in the chart is unique (法则第 18 条,
 //!    docs/DEVICES.md)
@@ -63,11 +65,16 @@ impl Role {
     }
 }
 
-/// Whether a seat is held by a person or an AI (docs/MCP.md §2).
+/// Whether a seat is held by a person or a machine (docs/MCP.md §2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
 pub enum Kind {
     #[default]
     Human,
+    Machine,
+    /// A machine, spelled `ai` as charts and invitations made before
+    /// machines were named so. Kept as written: a chart the relay
+    /// rewrites (pairing, invitations) must stay readable by clients that
+    /// know only `ai`.
     Ai,
 }
 
@@ -75,15 +82,31 @@ impl Kind {
     pub fn parse(s: &str) -> Option<Kind> {
         match s {
             "human" => Some(Kind::Human),
+            "machine" => Some(Kind::Machine),
             "ai" => Some(Kind::Ai),
             _ => None,
         }
     }
 
+    /// As written in the chart.
     pub fn as_str(self) -> &'static str {
         match self {
             Kind::Human => "human",
+            Kind::Machine => "machine",
             Kind::Ai => "ai",
+        }
+    }
+
+    pub fn is_machine(self) -> bool {
+        self != Kind::Human
+    }
+
+    /// What people are shown: `human` or `machine`.
+    pub fn label(self) -> &'static str {
+        if self.is_machine() {
+            "machine"
+        } else {
+            "human"
         }
     }
 }
@@ -100,9 +123,10 @@ pub struct Member {
     pub name: String,
     pub role: Role,
     pub key: PublicKey,
-    /// `human` unless the chart says `kind = "ai"`.
+    /// `human` unless the chart says `kind = "machine"` (or `"ai"`).
     pub kind: Kind,
-    /// What kind of AI (`agent = "Claude Code"`), for display only.
+    /// What machine it is (`agent = "Claude Code"`, `"GitHub Actions"`),
+    /// for display only.
     pub agent: Option<String>,
     /// Further devices, beyond the one in `key` (`[[device]]`).
     pub devices: Vec<Device>,
@@ -287,8 +311,9 @@ impl Members {
                 .map_err(|err| MembersError(format!("{ctx}.key: {err}")))?;
             let kind = match t.get("kind") {
                 None => Kind::Human,
-                Some(Value::Str(k)) => Kind::parse(k)
-                    .ok_or_else(|| MembersError(format!("{ctx}.kind {k:?} must be human or ai")))?,
+                Some(Value::Str(k)) => Kind::parse(k).ok_or_else(|| {
+                    MembersError(format!("{ctx}.kind {k:?} must be human or machine"))
+                })?,
                 Some(_) => return e(format!("{ctx}.kind must be a string")),
             };
             let agent = match t.get("agent") {
@@ -367,15 +392,15 @@ impl Members {
                 ));
             }
             check_text(&m.name, &format!("member {:?} name", m.id), 64)?;
-            match (&m.agent, m.kind) {
-                (Some(_), Kind::Human) => {
+            match &m.agent {
+                Some(_) if !m.kind.is_machine() => {
                     return e(format!(
-                        "member {:?}: `agent` is only for AI members (kind = \"ai\")",
+                        "member {:?}: `agent` is only for machines (kind = \"machine\")",
                         m.id
                     ))
                 }
-                (Some(a), Kind::Ai) => check_text(a, &format!("member {:?} agent", m.id), 64)?,
-                (None, _) => {}
+                Some(a) => check_text(a, &format!("member {:?} agent", m.id), 64)?,
+                None => {}
             }
             // 法则第 18 条: 1–5 devices, named devices told apart.
             if 1 + m.devices.len() > MAX_DEVICES {
@@ -459,8 +484,8 @@ impl Members {
             s.push_str(&format!("id = {}\n", q(&m.id)));
             s.push_str(&format!("name = {}\n", q(&m.name)));
             s.push_str(&format!("role = {}\n", q(m.role.as_str())));
-            if m.kind == Kind::Ai {
-                s.push_str("kind = \"ai\"\n");
+            if m.kind.is_machine() {
+                s.push_str(&format!("kind = {}\n", q(m.kind.as_str())));
             }
             if let Some(a) = &m.agent {
                 s.push_str(&format!("agent = {}\n", q(a)));
@@ -604,7 +629,7 @@ mod tests {
     }
 
     #[test]
-    fn ai_members_are_marked_in_any_role() {
+    fn machines_are_marked_in_any_role() {
         let k = |n: u8| key(n).openssh();
         let chart = |host_extra: &str, extra: &str| {
             format!(
@@ -637,12 +662,28 @@ mod tests {
         let m2 = Members::parse(&chart("", "role = \"steward\"\nkind = \"ai\"\n")).unwrap();
         assert_eq!(m2.succeed().unwrap().host().id, "ai-2");
 
+        // Machines: `machine`, and the older `ai`, each kept as written.
+        let m = Members::parse(&chart(
+            "",
+            "role = \"guest\"\nkind = \"machine\"\nagent = \"GitHub Actions\"\n",
+        ))
+        .unwrap();
+        let ci = m.by_id("ai-2").unwrap();
+        assert_eq!((ci.kind, ci.kind.label()), (Kind::Machine, "machine"));
+        assert_eq!(
+            (Kind::Ai.label(), Kind::Human.label()),
+            ("machine", "human")
+        );
+        assert!(m.to_toml().unwrap().contains("kind = \"machine\"\n"));
+        let old = Members::parse(&chart("", "role = \"guest\"\nkind = \"ai\"\n")).unwrap();
+        assert!(old.to_toml().unwrap().contains("kind = \"ai\"\n"));
+
         for (bad, why) in [
             (
                 "role = \"guest\"\nagent = \"Claude Code\"\n",
-                "only for AI members",
+                "only for machines",
             ),
-            ("role = \"guest\"\nkind = \"robot\"\n", "human or ai"),
+            ("role = \"guest\"\nkind = \"robot\"\n", "human or machine"),
             ("role = \"guest\"\nkind = 1\n", "must be a string"),
         ] {
             let err = Members::parse(&chart("", bad)).unwrap_err();

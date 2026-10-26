@@ -3,8 +3,8 @@
 //!
 //! It is one more interface to the same engine: the same local clones, the
 //! same device key, the same commands and JSON as CLIENT-API.md §4.
-//! `kind = "ai"` is a label, not a rank (法则第 17 条): the tools offered follow
-//! the seats this AI holds. Every member gets the guest's tools; a steward
+//! `kind = "machine"` is a label, not a rank (法则第 17 条): the tools offered
+//! follow the seats this AI holds. Every member gets the guest's tools; a steward
 //! also `setStatus` and `removeNote`; a host also `adopt`, `decline`,
 //! `seat`, `invite` and `purgeBlob`. The server adds no limits of its own:
 //! the engine and the relay's laws decide, per teahouse, as for anyone.
@@ -20,8 +20,8 @@ use std::io::{BufRead, Write};
 const VERSIONS: &[&str] = &["2025-06-18", "2025-03-26", "2024-11-05"];
 
 const INSTRUCTIONS: &str = "\
-你坐在一间茶馆里（Teahouse）：不超过 15 人的小团体在这里把事情办成。你是 AI 成员，座位表上标着 kind = ai。
-You sit in a teahouse: a small group (at most 15) getting things done. You are an AI member, marked kind = ai on the seating chart.
+你坐在一间茶馆里（Teahouse）：不超过 15 人的小团体在这里把事情办成。你是 AI，在座位表上算作机器（kind = machine，老的座位表写作 kind = ai）。
+You sit in a teahouse: a small group (at most 15) getting things done. You are an AI: on the seating chart a machine (kind = machine; older charts say kind = ai).
 
 规矩 · The rules:
 1. 每个提交都面向一个问题。先用 house 看有哪些问题，用 problem 读全文，再动手。
@@ -29,8 +29,8 @@ You sit in a teahouse: a small group (at most 15) getting things done. You are a
 2. 留言写下后不能修改，也不能删除；想改口就再写一条。Posts are never edited; write a new one.
 3. 你能做什么，看你的座位（houses 里的 myRole），和人一样：茶客写的成果、新问题、公告会变成提案，由老板决定是否采纳（返回 becameProposal: true）；伙计直接写，也管状态和删留言；老板还管采纳、座位和邀请。
    What you may do follows your seat (myRole in `houses`), as for people: a guest's works, problems and notices become proposals; a steward writes directly and moderates; a host also adopts, seats and invites.
-4. 不要假装是人。你的名字旁边会显示 AI，你的每个提交都用你自己的钥匙签名。
-   Never pretend to be a person: you are shown as AI and sign everything with your own key.
+4. 不要假装是人。你的名字旁边会显示“机器”，你的每个提交都用你自己的钥匙签名。
+   Never pretend to be a person: you are shown as a machine and sign everything with your own key.
 5. 先 sync 再读，写完的结果里会告诉你是否已经推送（commit: pushed / local）。
    `sync` before reading; write results say whether they were pushed.
 6. 有权限的事，也要像人一样谨慎：采纳、拒绝、改座位、删留言都会留在历史里。拿不准就先留言问。
@@ -57,7 +57,7 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
     let kind = json!({ "type": "string", "enum": ["doc", "plan", "table", "image", "file"], "description": "doc/plan: markdown text; table: CSV text; image/file: fromPath" });
     vec![
         ("houses", "The teahouses this device sits in, with your member id, role and sync state. Start here.", obj(json!({}), &[])),
-        ("house", "One teahouse: members (kind ai marks AI members), problems, recent events, open proposals, decisions, notices.", obj(json!({ "house": house() }), &["house"])),
+        ("house", "One teahouse: members (kind machine marks machines: AIs, CI jobs, scripts), problems, recent events, open proposals, decisions, notices.", obj(json!({ "house": house() }), &["house"])),
         ("problem", "One problem in full: summary, sections, works (results), events, and the discussion in the order it happened. Read this before writing about a problem.", obj(json!({ "house": house(), "problem": s("4-digit problem id, e.g. 0001") }), &["house", "problem"])),
         ("archive", "The teahouse's files as a tree, by directory or by problem.", obj(json!({ "house": house(), "view": { "type": "string", "enum": ["dirs", "problems"] } }), &["house", "view"])),
         ("file", "One file by its path (the `id` from archive or works): its text and its history with diffs.", obj(json!({ "house": house(), "id": s("repository path") }), &["house", "id"])),
@@ -91,9 +91,9 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
         ("adopt", "Adopt a proposal: merge it into main and close it. Host.", obj(json!({ "house": house(), "proposal": s("proposal id, <author>/<name>") }), &["house", "proposal"])),
         ("decline", "Decline a proposal with a reason; it is closed and the decision stays in history. Host.", obj(json!({ "house": house(), "proposal": s("proposal id"), "reason": s("why, for its author") }), &["house", "proposal"])),
         ("seat", "Change the seating chart: remove a member, or change a member's role. New members come only by invitation. Host.", obj(json!({ "house": house(), "remove": s("member id to remove"), "role": { "type": "object", "properties": { "id": s("member id"), "role": { "type": "string", "enum": ["guest", "steward", "host"] } }, "required": ["id", "role"] } }), &["house"])),
-        ("invite", "Create a one-time invitation (TH-…@relay) for a person or an AI. Host.", obj(json!({ "house": house(), "role": { "type": "string", "enum": ["guest", "steward"] }, "name": s("whom it is for"), "days": { "type": "integer", "minimum": 1, "maximum": 30 }, "kind": { "type": "string", "enum": ["human", "ai"] }, "agent": s("for an AI: which one") }), &["house"])),
+        ("invite", "Create a one-time invitation (TH-…@relay) for a person or a machine (an AI, a CI job, a script). Host.", obj(json!({ "house": house(), "role": { "type": "string", "enum": ["guest", "steward"] }, "name": s("whom it is for"), "days": { "type": "integer", "minimum": 1, "maximum": 30 }, "kind": { "type": "string", "enum": ["human", "machine"] }, "agent": s("for a machine: which one, e.g. Claude Code, GitHub Actions") }), &["house"])),
         ("purgeBlob", "Remove an attachment's content for good (the reference stays, marked purged). Host.", obj(json!({ "house": house(), "id": s("the attachment reference's path") }), &["house", "id"])),
-        ("redeem", "Take a seat with an invitation (TH-XXXX-XXXX-XXXX-XXXX@relay) from the host, then clone the teahouse. Give your name as people should see it; agent names what you are (e.g. Claude Code).", obj(json!({ "code": s("the whole invitation as pasted"), "name": s("your name in this teahouse"), "agent": s("what kind of AI you are"), "relay": s("relay address, only if the invitation has none") }), &["code", "name"])),
+        ("redeem", "Take a seat with an invitation (TH-XXXX-XXXX-XXXX-XXXX@relay) from the host, then clone the teahouse. Give your name as people should see it; agent names what you are (e.g. Claude Code).", obj(json!({ "code": s("the whole invitation as pasted"), "name": s("your name in this teahouse"), "agent": s("what machine you are, e.g. Claude Code"), "relay": s("relay address, only if the invitation has none") }), &["code", "name"])),
     ]
 }
 
@@ -309,7 +309,7 @@ mod tests {
         assert!(init["result"]["instructions"]
             .as_str()
             .unwrap()
-            .contains("kind = ai"));
+            .contains("kind = machine"));
         let init = handle(&c, &json!({ "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": { "protocolVersion": "1999-01-01" } })).unwrap();
         assert_eq!(init["result"]["protocolVersion"], VERSIONS[0]);
         assert!(handle(

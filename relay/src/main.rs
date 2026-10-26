@@ -39,7 +39,7 @@ OPERATOR COMMANDS:
     open <id> --name NAME --host-id ID --host-name NAME --host-key KEY|@FILE [--signboard TEXT]
                          open a new teahouse with its host (老板)
     found <id> --name NAME [--signboard TEXT] [--days 1-30] [--address HOST[:PORT]]
-          [--kind ai [--agent A]]
+          [--kind machine [--agent A]]
                          a one-time invitation that opens teahouse <id> with
                          whoever redeems it as host (prints TH-…[@address])
     adopt <id> --from DIR --key KEY|@FILE [--rev REV]
@@ -169,7 +169,7 @@ fn run() -> Result<()> {
             let kind = match kind.as_deref() {
                 None => teahouse_core::Kind::Human,
                 Some(k) => teahouse_core::Kind::parse(k)
-                    .ok_or_else(|| Error(format!("unknown kind {k:?} (human or ai)")))?,
+                    .ok_or_else(|| Error(format!("unknown kind {k:?} (human or machine)")))?,
             };
             let days = match days {
                 None => None,

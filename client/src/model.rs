@@ -110,7 +110,8 @@ pub struct Member {
     pub id: String,
     pub name: String,
     pub role: &'static str,
-    /// `human` or `ai` (docs/MCP.md §2): the interface marks AI members.
+    /// `human` or `machine` (docs/MCP.md §2; a chart's older `ai` is shown
+    /// as `machine`): the interface marks machines.
     pub kind: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent: Option<String>,

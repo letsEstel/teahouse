@@ -575,7 +575,7 @@ impl Snapshot {
                 id: m.id.clone(),
                 name: m.name.clone(),
                 role: m.role.as_str(),
-                kind: m.kind.as_str(),
+                kind: m.kind.label(),
                 agent: m.agent.clone(),
                 joined: self
                     .joined
