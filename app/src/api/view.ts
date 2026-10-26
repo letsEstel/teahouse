@@ -18,7 +18,13 @@ export function access(h: House, path: string): Access {
   const role = self(h).role
   if (path.startsWith('talk/')) return 'read'
   if (/^(problems|works|board)\//.test(path)) return role === 'guest' ? 'propose' : 'write'
+  // .teahouse/（座位表）只经过邀请、座位管理和设备配对来改：手改容易把茶馆改坏，Relay 也会拒绝不合规的座位表
+  if (path.startsWith('.teahouse/')) return 'read'
   return role === 'host' ? 'write' : 'read'
+}
+/** 只能看的原因：座位表 / 留言 / 角色不够 */
+export function readReason(path: string): 'seats' | 'talk' | 'role' {
+  return path.startsWith('.teahouse/') ? 'seats' : path.startsWith('talk/') ? 'talk' : 'role'
 }
 /** 文件在茶馆里的真实名字。附件只有一份引用文件（CLIENT-API 1.6），显示附件本身的名字 */
 export const fileName = (path: string) => (path.split('/').pop() ?? path).replace(/\.ref\.md$/, '')

@@ -33,6 +33,7 @@ const myDevices: A.DeviceInfo[] = [
   { name: '', fingerprint: 'SHA256:q3Vb1m9Lx0fake/this+device', added: '2026-08-01T09:00:00Z', thisDevice: true },
   { name: '手机', fingerprint: 'SHA256:Zt8wQ2kfake/phone+device', added: '2026-10-19T21:30:00Z', thisDevice: false },
 ]
+if (demo === 'onedevice') myDevices.pop()
 
 // ---- 文件路径（成果、提案改动里的 id 就是路径）----
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x'
@@ -251,7 +252,7 @@ const handlers: Handlers = {
   },
   // 假数据里只有车位图是"图片"，界面认得这个特殊地址
   blob: ({ id }) => (fakeStaged.has(id) ? ok(fakeStaged.get(id)!) : id.includes('/w1-') ? ok('fake:parking') : fail('not_found', 'no blob in M0')),
-  export: () => ok(null),
+  export: ({ house }) => ok(`/storage/emulated/0/Download/Teahouse/${house}-20261018`),
   sync: () => {
     // 演示：同步一次就送出了积压的修改（离线时仍然离线）
     if (synced.state !== 'offline') synced = { state: 'synced', unpushed: 0, lastSync: NOW.toISOString() }
@@ -304,6 +305,11 @@ const handlers: Handlers = {
     if (owner !== undefined) p.owner = owner || undefined
     return written()
   },
+  updateNotice: ({ house }) => {
+    const h = find(house)
+    if (!h) return fail('not_found', house)
+    return written(h.members.find((m) => m.id === h.me)!.role === 'guest')
+  },
   updateProblem: ({ house, problem, title }) => {
     const h = find(house)
     const p = h?.problems.find((x) => x.id === problem)
@@ -353,7 +359,7 @@ const handlers: Handlers = {
   },
 }
 
-const writes: A.Command[] = ['openProblem', 'setStatus', 'updateProblem', 'addWork', 'updateWork', 'note', 'removeNote', 'postNotice', 'propose', 'withdraw', 'adopt', 'decline', 'seat', 'purgeBlob']
+const writes: A.Command[] = ['openProblem', 'setStatus', 'updateProblem', 'updateNotice', 'addWork', 'updateWork', 'note', 'removeNote', 'postNotice', 'propose', 'withdraw', 'adopt', 'decline', 'seat', 'purgeBlob']
 // 演示"被拒绝"：Relay 的理由原样转达（RELAY.md 第 3 节的口吻）
 const refused: A.Result<never> = {
   ok: false,

@@ -173,11 +173,20 @@ screens.push(
   { name: 'wutong-problem-owner', hash: '#/wutong/problem/0002', act: async (p) => { await p.selectOption('#owner', { index: 2 }); await p.waitForTimeout(400) } },
   { name: 'wutong-problem-edit', hash: '#/wutong/problem/0001', act: editProblem, widths: [1366, 390] },
   { name: 'kant-problem-edit', hash: '#/kant/problem/0001', act: editProblem },
-  { name: 'wutong-problem-phone', hash: '#/wutong/problem/0001', widths: [390], save: true, saveAt: 390 },
+  { name: 'wutong-problem-phone', hash: '#/wutong/problem/0001', widths: [390] },
   { name: 'wutong-problem-dark', hash: '#/wutong/problem/0002', theme: 'dark', only1366: true },
 )
+// 第 13 轮：只有一台设备时的首页提醒；座位表只读；档案里直接改问题说明；带走整间茶馆
+screens.push(
+  { name: 'wutong-house-onedevice', hash: '#/wutong/house', query: '&fake=onedevice' },
+  { name: 'wutong-house-onedevice-phone', hash: '#/wutong/house', query: '&fake=onedevice', widths: [390], save: true, saveAt: 390 },
+  { name: 'wutong-archive-members', hash: '#/wutong/archive/' + encodeURIComponent('.teahouse/members.toml') },
+  { name: 'wutong-archive-problem-edit', hash: '#/wutong/archive/' + encodeURIComponent('problems/0001-hard-to-find-a-parking-space.md'), act: (p) => p.click('.tools button.primary') },
+  { name: 'wutong-archive-exported', hash: '#/wutong/archive', act: async (p) => { await p.click('.export button.secondary'); await p.waitForSelector('.exported') } },
+  { name: 'wutong-house-onedevice-dark', hash: '#/wutong/house', query: '&fake=onedevice', theme: 'dark', only1366: true },
+)
 const save = {
-  'wutong-problem': {}, 'wutong-problem-owner': {}, 'wutong-problem-edit': {}, 'kant-problem': {}, 'kant-problem-edit': { saveDe: true }, 'wutong-problem-dark': {},
+  'wutong-house-onedevice': { saveDe: true }, 'wutong-archive-members': {}, 'wutong-archive-problem-edit': {}, 'wutong-archive-exported': { saveDe: true }, 'wutong-house-onedevice-dark': {},
 }
 for (const sc of screens) if (save[sc.name]) Object.assign(sc, { save: true }, save[sc.name])
 // 手机

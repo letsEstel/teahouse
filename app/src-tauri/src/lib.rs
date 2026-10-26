@@ -12,6 +12,11 @@
 //! engine attaches files by path (`fromPath`); the shell saves the bytes under
 //! the app's cache directory and answers `{ok, data: {path}}`.
 //!
+//! `export` without a `to` ("take the whole teahouse away") goes to the
+//! Downloads folder, under `Teahouse/`: the interface cannot pick a folder on
+//! a phone, and Downloads is where people look. On Android that is the shared
+//! `Download/` (an app may create its own files there without a permission).
+//!
 //! Background sync (CLIENT-API.md §4): while the app is in the foreground a
 //! thread syncs every teahouse every 60 s, backing off to at most 10 minutes
 //! after failures (as `teahouse-client serve` does). The interface reports
@@ -100,10 +105,15 @@ pub fn run() {
             let root = invoke.message.webview().state::<Root>().0.clone();
             let lock = invoke.message.webview().state::<EngineLock>().0.clone();
             let command = invoke.message.command().to_string();
-            let args = match invoke.message.payload() {
+            let mut args = match invoke.message.payload() {
                 InvokeBody::Json(v) => v.clone(),
                 InvokeBody::Raw(_) => serde_json::Value::Null,
             };
+            if command == "export" && args.get("to").and_then(|t| t.as_str()).is_none_or(|t| t.trim().is_empty()) {
+                if let (Some(dir), Some(obj)) = (export_dir(invoke.message.webview().app_handle()), args.as_object_mut()) {
+                    obj.insert("to".into(), dir.to_string_lossy().into_owned().into());
+                }
+            }
             let resolver = invoke.resolver;
             std::thread::spawn(move || {
                 let _turn = lock.lock().unwrap_or_else(|p| p.into_inner());
@@ -113,6 +123,17 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running the Teahouse app");
+}
+
+/// Where `export` puts a teahouse when the interface gives no folder.
+fn export_dir(app: &AppHandle) -> Option<PathBuf> {
+    #[cfg(target_os = "android")]
+    let downloads = Some(PathBuf::from("/storage/emulated/0/Download"));
+    #[cfg(not(target_os = "android"))]
+    let downloads = app.path().download_dir().ok().or_else(|| app.path().document_dir().ok());
+    #[cfg(target_os = "android")]
+    let _ = app;
+    downloads.map(|d| d.join("Teahouse"))
 }
 
 /// Save a picked file as `<dir>/<time>-<name>` and return its path. Only the

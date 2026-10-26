@@ -102,7 +102,8 @@ export interface Commands {
   archive: [HouseArg & { view: 'dirs' | 'problems' }, ArchiveNode]
   file: [HouseArg & { id: string }, { node: ArchiveNode; text?: string; history: HistoryEntry[] }]
   blob: [HouseArg & { id: string }, string]
-  export: [HouseArg & { to: string }, null]
+  /** 返回导出的文件夹路径。to 为空时，应用把它放进下载文件夹的 Teahouse/（src-tauri） */
+  export: [HouseArg & { to: string }, string]
 
   sync: [{ house?: string }, SyncState]
   join: [{ relay: string; house: string }, HouseSummary]
@@ -116,6 +117,8 @@ export interface Commands {
   note: [HouseArg & { problem?: string; notice?: string; text: string }, WriteResult]
   removeNote: [HouseArg & { id: string }, WriteResult]
   postNotice: [HouseArg & { title: string; text: string }, WriteResult]
+  /** notice = 公告名或路径；茶客的自动变成提案 */
+  updateNotice: [HouseArg & { notice: string; title?: string; text?: string }, WriteResult]
   propose: [HouseArg & { problem: string; title: string; reason?: string; changes: Change[] }, WriteResult]
   withdraw: [HouseArg & { proposal: string }, WriteResult]
   adopt: [HouseArg & { proposal: string }, WriteResult]

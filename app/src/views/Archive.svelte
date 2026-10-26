@@ -9,8 +9,8 @@
   import Editor from '../lib/Editor.svelte'
   import MdImage from '../lib/MdImage.svelte'
   import { attachImage, imageUrl } from '../lib/images'
-  import { member, self, pad, access, fileName, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
-  import { api, blobUrl, write as send, stageFile } from '../api/backend'
+  import { member, self, pad, access, readReason, fileName, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
+  import { api, blobUrl, write as send, stageFile, exportTo, BackendError } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
 
   // 档案：茶馆里所有文件原原本本放在这里。左边文件树（按目录 / 按问题），右边预览和"来历"。
@@ -53,14 +53,21 @@
   let can = $derived(file ? access(house, file.node.id) : 'read')
   const isWork = (n: ArchiveNode) => n.id.startsWith('works/')
   const textual = (n: ArchiveNode) => n.kind === 'doc' || n.kind === 'plan' || n.kind === 'table'
+  // 问题说明、公告也在这里直接改：只改正文（frontmatter 里的标题、状态、负责人不动），走 updateProblem / updateNotice
+  const bodyOnly = (n: ArchiveNode) => n.kind === 'problem' || n.kind === 'notice'
+  const stripFront = (s = '') => s.replace(/^---\n[\s\S]*?\n---\n?/, '').replace(/^\n+/, '')
+  let editable = $derived(!!file && can !== 'read' && (isWork(file.node) ? textual(file.node) : bodyOnly(file.node)))
   function startEdit() {
-    draft = file?.text ?? ''
+    draft = file && bodyOnly(file.node) ? stripFront(file.text) : file?.text ?? ''
     saved = null
     editing = true
   }
   async function save() {
     if (!file) return
-    const r = await send('updateWork', { house: house.id, id: file.node.id, text: draft })
+    const n = file.node
+    const r = n.kind === 'problem' && n.problem ? await send('updateProblem', { house: house.id, problem: n.problem, text: draft })
+      : n.kind === 'notice' ? await send('updateNotice', { house: house.id, notice: n.id, text: draft })
+      : await send('updateWork', { house: house.id, id: n.id, text: draft })
     if (!r) return
     saved = r.becameProposal ? 'proposed' : 'written'
     reloads++
@@ -74,7 +81,16 @@
     if (r) { saved = r.becameProposal ? 'proposed' : 'written'; reloads++ }
   }
   let openDiff = $state<number | null>(null)
+  // 带走整间茶馆（export）：全部历史 + 可以直接打开的文件夹 + 这台设备上有的附件
   let exporting = $state(false)
+  let exported = $state<{ path?: string; error?: string } | null>(null)
+  async function takeAway() {
+    if (exporting) return
+    exporting = true; exported = null
+    try { exported = { path: await api('export', { house: house.id, to: exportTo }) } }
+    catch (e) { exported = { error: e instanceof BackendError ? e.error.message : String(e) } }
+    exporting = false
+  }
 
   // 目录名由界面翻译（引擎给代码 dir）；用户写的内容（标题、名字）直接用 label
   const label = (n: ArchiveNode) => (n.dir ? t(`archive.${n.dir}`) : n.kind === 'members' ? t('archive.members') : (n.label ?? ''))
@@ -203,11 +219,19 @@
       <p class="lede">{t('archive.lede')} <span class="num">{t('archive.files', { n: all.length })}</span></p>
     </div>
     <div class="export">
-      <button class="secondary" aria-expanded={exporting} onclick={() => (exporting = !exporting)}>
+      <button class="secondary" aria-busy={exporting || undefined} data-sending={t('archive.exporting')} onclick={takeAway}>
         <i class="box"></i>{t('archive.export')}
       </button>
       <p class="tagline">{t('archive.exportLine')}</p>
-      {#if exporting}<p class="consequence note">{t('archive.exportNote')}</p>{/if}
+      {#if exported?.path}
+        <div class="exported" role="status">
+          <b>{t('archive.exported')}</b>
+          <code>{exported.path}</code>
+          <p>{t('archive.exportNote')}</p>
+        </div>
+      {:else if exported?.error}
+        <p class="exported failed" role="alert">{t('archive.exportFailed')} {exported.error}</p>
+      {/if}
     </div>
   </header>
 
@@ -236,7 +260,7 @@
       </div>
 
       <div class="tools">
-        {#if isWork(node) && can !== 'read' && textual(node)}
+        {#if editable}
           {#if !editing}
             <button class="primary small" data-write onclick={startEdit}><i><AccessMark a={can} /></i><span>{t(can === 'write' ? 'edit.start' : 'edit.startPropose')}</span></button>
             <span class="consequence" data-write>{t(can === 'write' ? 'access.writeHint' : 'access.proposeHint')}</span>
@@ -245,6 +269,9 @@
           <button class="primary small" data-write onclick={() => picker?.click()}><i><AccessMark a={can} /></i><span>{t('edit.replaceFile')}</span></button>
           <input class="picker" type="file" bind:this={picker} onchange={replace} />
           <span class="consequence" data-write>{t(can === 'write' ? 'access.writeHint' : 'access.proposeHint')}</span>
+        {:else if can === 'read' && readReason(node.id) !== 'role'}
+          <span class="readonly"><AccessMark a="read" label /></span>
+          <span class="consequence">{t(readReason(node.id) === 'seats' ? 'access.readSeats' : 'access.readTalk')}</span>
         {:else if node.kind !== 'note' && node.kind !== 'members'}
           {#if me.role === 'guest'}
             <a class="primary small" data-write href="#/{house.id}/propose/{node.problem === 'meta' ? '' : node.problem}"><i>+</i><span>{t('archive.proposeEdit')}</span></a>
@@ -364,9 +391,12 @@
   .lede .num { margin-left: 8px; color: var(--ink-3); font-size: 14px; }
   .export { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 26em; text-align: right; }
   .export .secondary { gap: 12px; }
+  .readonly { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1.5px solid var(--ink); font-size: 13px; font-weight: 600; }
+  .exported { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid var(--ink); font-size: 13px; line-height: 1.6; text-align: left; }
+  .exported code { font-family: var(--latin); font-size: 12px; overflow-wrap: anywhere; background: var(--paper-deep); padding: 4px 6px; }
+  .exported p { color: var(--ink-2); }
   .box { display: block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-width: 5px; }
   .tagline { font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: var(--track); }
-  .note { text-align: right; }
 
   .cols { display: grid; grid-template-columns: clamp(250px, 24vw, 340px) minmax(0, 1fr); gap: clamp(28px, 3.5vw, 56px); margin-top: 28px; }
 
@@ -454,6 +484,5 @@
     .wrap:not(.detail) .view { display: none; }
     .back { display: inline-block; }
     .export { align-items: flex-start; text-align: left; }
-    .note { text-align: left; }
   }
 </style>

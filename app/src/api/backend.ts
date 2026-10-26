@@ -50,6 +50,9 @@ export const backend: Backend =
   : fakeBackend
 useFixedClock(backend.kind === 'fake')
 
+/** 带走整间茶馆：应用里交给外壳决定放哪（下载文件夹）；开发期放 VITE_EXPORT_DIR */
+export const exportTo: string = backend.kind === 'http' ? (import.meta.env.VITE_EXPORT_DIR ?? '/tmp/teahouse-export') : ''
+
 /** 读取用：出错时抛出 BackendError，由调用的地方决定怎么显示 */
 export async function api<C extends Command>(cmd: C, args: Args<C>): Promise<Returns<C>> {
   const r = await backend.call(cmd, args)

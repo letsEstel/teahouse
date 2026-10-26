@@ -218,6 +218,86 @@ await step('邀请（invite）', async () => {
   await p.close()
 })
 
+const findNode = (n, f) => (f(n) ? n : (n.children ?? []).map((c) => findNode(c, f)).find(Boolean))
+
+await step('首页：只有一台设备时提醒添加第二台（0007）', async () => {
+  const devs = await engine(HOST, 'devices', { house })
+  const p = await open(host.url, 'house')
+  await p.waitForTimeout(800)
+  const tip = await p.$('.keytip')
+  if (devs.length === 1 && !tip) throw new Error('one device but no tip')
+  if (devs.length > 1 && tip) throw new Error(`${devs.length} devices but the tip shows`)
+  if (tip) {
+    await shot(p, '4-key-tip')
+    await p.click('.keytip .quietbtn')
+    await p.waitForSelector('.keytip', { state: 'detached' })
+    await p.reload(); await p.waitForTimeout(800)
+    if (await p.$('.keytip')) throw new Error('tip came back after 知道了')
+    await p.evaluate(() => localStorage.removeItem('teahouse.oneDeviceTip'))
+  }
+  ok(`首页提醒：${devs.length} 台设备，${tip ? '显示提醒；点"知道了"以后不再出现' : '不显示'}`)
+  await p.close()
+})
+
+await step('档案：座位表只读并说明原因（0012）', async () => {
+  const p = await open(host.url, `archive/${encodeURIComponent('.teahouse/members.toml')}`)
+  await p.waitForSelector('.tools .readonly')
+  if (await p.$('.tools button.primary')) throw new Error('members.toml has an edit button')
+  const why = await p.textContent('.tools .consequence')
+  if (!why.includes('座位表不能在这里改')) throw new Error(`reason: ${why}`)
+  await shot(p, '5-members-readonly')
+  ok('座位表：标着"只能看"，没有编辑按钮，写了原因')
+  await p.close()
+})
+
+await step('档案：直接改问题说明（updateProblem）和公告（updateNotice）', async () => {
+  const tree = await engine(HOST, 'archive', { house, view: 'dirs' })
+  const pf = findNode(tree, (n) => n.kind === 'problem' && n.problem === problemId)
+  const before = await engine(HOST, 'problem', { house, problem: problemId })
+  let p = await open(host.url, `archive/${encodeURIComponent(pf.id)}`)
+  await p.click('.tools button.primary')
+  const draft = await p.textContent('.editing .cm-content')
+  if (draft.includes('title:') || draft.includes('status:')) throw new Error('editor shows the frontmatter')
+  await p.click('.editing .cm-content')
+  await p.keyboard.press('Control+End')
+  await p.keyboard.type('\n在档案里补的一行。')
+  await p.click('.editing .save .primary')
+  await p.waitForSelector('.saved')
+  const after = await engine(HOST, 'problem', { house, problem: problemId })
+  if (!after.body.some((b) => b.text.includes('在档案里补的一行'))) throw new Error('line not in the problem')
+  if (after.title !== before.title || after.status !== before.status) throw new Error('title or status changed')
+  ok('改问题说明：引擎里有新的一行，标题和状态没动')
+  await p.close()
+  const nf = findNode(tree, (n) => n.kind === 'notice')
+  p = await open(host.url, `archive/${encodeURIComponent(nf.id)}`)
+  await p.click('.tools button.primary')
+  await p.click('.editing .cm-content')
+  await p.keyboard.press('Control+End')
+  await p.keyboard.type(`\n补充 ${stamp}`)
+  await p.click('.editing .save .primary')
+  await p.waitForSelector('.saved')
+  const f = await engine(HOST, 'file', { house, id: nf.id })
+  if (!f.text.includes(`补充 ${stamp}`)) throw new Error('notice not changed')
+  if ((f.text.match(/^---$/gm) ?? []).length !== 2) throw new Error('frontmatter written twice')
+  ok('改公告：文件里有补充，frontmatter 只有一份')
+  await p.close()
+})
+
+await step('带走整间茶馆（export）', async () => {
+  const p = await open(host.url, 'archive')
+  await p.click('.export button.secondary')
+  await p.waitForSelector('.exported', { timeout: 60_000 })
+  const path = (await p.textContent('.exported code'))?.trim()
+  if (!path) throw new Error(await p.textContent('.exported'))
+  const { readdirSync: ls, existsSync: has } = await import('node:fs')
+  const top = ls(path)
+  if (!top.some((x) => x.endsWith('.bundle')) || !has(join(path, 'files/.teahouse/members.toml')) || !has(join(path, 'README.txt'))) throw new Error(`exported ${top.join(', ')}`)
+  const problems = ls(join(path, 'files/problems')).length
+  await shot(p, '6-exported')
+  ok(`带走：${path}（${top.join('、')}；问题 ${problems} 个）`)
+  await p.close()
+})
+
 await step('每个页面都能在真数据上打开', async () => {
   const pages = ['house', 'board', 'problems', 'problems/kanban', `problem/${problemId}`, 'problem/0001', 'proposals', 'archive', 'propose']
   for (const hash of pages) {
