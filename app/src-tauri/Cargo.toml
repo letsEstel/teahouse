@@ -28,6 +28,12 @@ serde_json = "1"
 # The engine: every command of CLIENT-API.md §4 goes through Client::call.
 teahouse-client = { path = "../../client" }
 
+# On Apple platforms libz-sys links the system zlib as a dylib, but the iOS app
+# is linked by Xcode from our staticlib and never sees that flag (_crc32
+# undefined). Building zlib in makes the staticlib whole.
+[target.'cfg(target_os = "ios")'.dependencies]
+libz-sys = { version = "1", features = ["static"] }
+
 [profile.release]
 lto = true
 codegen-units = 1
