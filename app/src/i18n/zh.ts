@@ -447,4 +447,12 @@ export default {
   'link.shimo': '石墨文档',
   'link.notion': 'Notion',
   'link.yuque': '语雀',
+  'link.add': '加入链接',
+  'link.url': '网址',
+  'link.titlePh': '这份文档叫什么',
+  'link.note': '一句说明（可以不填）',
+  'link.notePh': '比如：大家在这里一起填，周日汇总',
+  'link.hint': '内容留在那个平台上，茶馆里只放链接。定稿以后，最好把最终版也写进茶馆。',
+  'link.badUrl': '网址要以 http:// 或 https:// 开头。',
+  'archive.kind.link': '链接',
 }

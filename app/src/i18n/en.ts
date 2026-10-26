@@ -447,4 +447,12 @@ export default {
   'link.shimo': 'Shimo',
   'link.notion': 'Notion',
   'link.yuque': 'Yuque',
+  'link.add': 'Add a link',
+  'link.url': 'Address',
+  'link.titlePh': 'What this document is called',
+  'link.note': 'One line about it (optional)',
+  'link.notePh': 'e.g. everyone fills it in here; summed up on Sunday',
+  'link.hint': 'The content stays on that platform; the teahouse keeps only the link. Once it is final, write the final version into the teahouse too.',
+  'link.badUrl': 'The address must start with http:// or https://.',
+  'archive.kind.link': 'Link',
 }
