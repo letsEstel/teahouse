@@ -9,7 +9,7 @@
 //! can be executed.
 //!
 //! Keys with no seat anywhere get `redeem-shell` instead (INVITE.md rule 6):
-//! the same entry, restricted to `redeem`.
+//! the same entry, restricted to `redeem` and `invite-info`.
 
 use crate::audit::{self, Entry};
 use crate::bail;
@@ -191,7 +191,7 @@ fn host_only(member: &Member, what: &str) -> Result<()> {
 fn command(root: &Root, key: &PublicKey, words: Vec<String>, restricted: bool) -> Result<()> {
     let mut o = Opts { words };
     let verb = o.positional("command")?;
-    if restricted && verb != "redeem" {
+    if restricted && verb != "redeem" && verb != "invite-info" {
         audit::log(
             root,
             Entry::new("shell.refused")
@@ -204,9 +204,8 @@ fn command(root: &Root, key: &PublicKey, words: Vec<String>, restricted: bool) -
     match verb.as_str() {
         "redeem" => {
             let code = o.positional("invitation code")?;
-            let name = o
-                .flag("--name")?
-                .ok_or_else(|| crate::error::Error("missing --name".into()))?;
+            // Without a name, the one the host wrote in the invitation.
+            let name = o.flag("--name")?.unwrap_or_default();
             let agent = o.flag("--agent")?;
             o.done()?;
             let s = invites::redeem(root, key, &code, &name, agent.as_deref())?;
@@ -217,6 +216,28 @@ fn command(root: &Root, key: &PublicKey, words: Vec<String>, restricted: bool) -
                 println!("house {house}");
                 println!("member {member}");
             }
+            Ok(())
+        }
+        "invite-info" => {
+            let code = o.positional("invitation code")?;
+            o.done()?;
+            if let Some(n) = invites::suggested_name(root, key, &code)? {
+                println!("name {n}");
+            }
+            Ok(())
+        }
+        "rename" => {
+            let house = o.positional("teahouse")?;
+            let name = o
+                .flag("--name")?
+                .ok_or_else(|| crate::error::Error("missing --name".into()))?;
+            let member = o.flag("--member")?;
+            o.done()?;
+            seated(root, &house, key)?;
+            println!(
+                "{}",
+                invites::rename(root, key, &house, &name, member.as_deref())?
+            );
             Ok(())
         }
         "pair" => {

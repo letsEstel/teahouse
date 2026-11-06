@@ -71,6 +71,24 @@ fn is_repository(dir: &Path) -> bool {
     dir.join(".git").exists() || dir.join("HEAD").is_file()
 }
 
+/// The code and the relay of a pasted invitation (`TH-…@<relay>`); `relay`,
+/// when given, goes first.
+fn invitation<'a>(relay: Option<&'a str>, code: &'a str) -> Result<(&'a str, remote::Endpoint)> {
+    let (code_part, from_code) = match code.trim().split_once('@') {
+        Some((c, r)) => (c.trim(), Some(r.trim())),
+        None => (code.trim(), None),
+    };
+    let relay = relay
+        .map(str::trim)
+        .filter(|r| !r.is_empty())
+        .or(from_code)
+        .ok_or_else(|| {
+            Error::invalid("which relay? the invitation has no address / 邀请里没有 Relay 地址")
+                .with("field", "relay")
+        })?;
+    Ok((code_part, remote::Endpoint::parse(relay)?))
+}
+
 impl Client {
     pub fn new(root: impl Into<PathBuf>) -> Client {
         Client { root: root.into() }
@@ -254,32 +272,17 @@ impl Client {
         &self,
         relay: Option<&str>,
         code: &str,
-        name: &str,
+        name: Option<&str>,
         agent: Option<&str>,
     ) -> Result<model::HouseSummary> {
-        if name.trim().is_empty() {
-            return Err(Error::invalid("your name, please / 请写上你的名字").with("field", "name"));
-        }
-        let (code_part, from_code) = match code.trim().split_once('@') {
-            Some((c, r)) => (c.trim(), Some(r.trim())),
-            None => (code.trim(), None),
-        };
-        let relay = relay
-            .map(str::trim)
-            .filter(|r| !r.is_empty())
-            .or(from_code)
-            .ok_or_else(|| {
-                Error::invalid("which relay? the invitation has no address / 邀请里没有 Relay 地址")
-                    .with("field", "relay")
-            })?;
-        let endpoint = remote::Endpoint::parse(relay)?;
+        let (code_part, endpoint) = invitation(relay, code)?;
         let identity = self.identity()?;
         let out = remote::exec_text(&endpoint, &identity, &self.known_hosts(), &{
-            let mut cmd = format!(
-                "redeem {} --name {}",
-                remote::quote(code_part),
-                remote::quote(name.trim())
-            );
+            let mut cmd = format!("redeem {}", remote::quote(code_part));
+            // Without a name, the relay uses the one in the invitation.
+            if let Some(n) = name.map(str::trim).filter(|n| !n.is_empty()) {
+                cmd.push_str(&format!(" --name {}", remote::quote(n)));
+            }
             if let Some(a) = agent.filter(|a| !a.trim().is_empty()) {
                 cmd.push_str(&format!(" --agent {}", remote::quote(a.trim())));
             }
@@ -390,6 +393,57 @@ impl Client {
             self.sync_house(h)?;
         }
         Ok(houses)
+    }
+
+    /// The name the host suggested in an invitation, to fill in the form
+    /// before redeeming it (nothing is used up).
+    pub fn invite_info(&self, relay: Option<&str>, code: &str) -> Result<Option<String>> {
+        let (code_part, endpoint) = invitation(relay, code)?;
+        let out = remote::exec_text(
+            &endpoint,
+            &self.identity()?,
+            &self.known_hosts(),
+            &format!("invite-info {}", remote::quote(code_part)),
+        )?;
+        Ok(out
+            .lines()
+            .find_map(|l| l.strip_prefix("name "))
+            .map(|n| n.trim().to_string()))
+    }
+
+    /// A new name: one's own, or, for the host, any member's. The id stays.
+    /// The relay writes it, as a guest may not touch the chart; returns the
+    /// member's id.
+    pub fn rename(&self, house: &str, name: &str, member: Option<&str>) -> Result<String> {
+        if name.trim().is_empty() {
+            return Err(Error::invalid("a name, please / 请写上名字").with("field", "name"));
+        }
+        let snap = self.snapshot(house)?;
+        let Some(me) = snap.me.as_ref() else {
+            return Err(Error::new(
+                Code::NotAMember,
+                "the relay does not know this device / Relay 不认识这台设备",
+            ));
+        };
+        let member = member.filter(|m| !m.is_empty() && *m != me.id);
+        if member.is_some() && me.role != teahouse_core::Role::Host {
+            return Err(Error::new(
+                Code::Forbidden,
+                "only the host can rename someone else / 只有老板能改别人的名字",
+            )
+            .with("action", "rename"));
+        }
+        let (endpoint, remote_house) = self.endpoint(&snap)?;
+        let mut cmd = format!(
+            "rename {remote_house} --name {}",
+            remote::quote(name.trim())
+        );
+        if let Some(m) = member {
+            cmd.push_str(&format!(" --member {}", remote::quote(m)));
+        }
+        let id = remote::exec_text(&endpoint, &self.identity()?, &self.known_hosts(), &cmd)?;
+        self.sync_house(house)?;
+        Ok(id.trim().to_string())
     }
 
     /// The local file of an attachment, downloaded from the relay (and its
@@ -738,11 +792,36 @@ impl Client {
                 struct RedeemArg {
                     relay: Option<String>,
                     code: String,
-                    name: String,
+                    name: Option<String>,
                     agent: Option<String>,
                 }
                 let a: RedeemArg = parse(command, a)?;
-                to_value(self.redeem(a.relay.as_deref(), &a.code, &a.name, a.agent.as_deref())?)
+                to_value(self.redeem(
+                    a.relay.as_deref(),
+                    &a.code,
+                    a.name.as_deref(),
+                    a.agent.as_deref(),
+                )?)
+            }
+            "inviteInfo" => {
+                #[derive(Deserialize)]
+                struct InviteInfoArg {
+                    relay: Option<String>,
+                    code: String,
+                }
+                let a: InviteInfoArg = parse(command, a)?;
+                let name = self.invite_info(a.relay.as_deref(), &a.code)?;
+                Ok(json!({ "name": name }))
+            }
+            "rename" => {
+                #[derive(Deserialize)]
+                struct RenameArg {
+                    house: String,
+                    name: String,
+                    member: Option<String>,
+                }
+                let a: RenameArg = parse(command, a)?;
+                to_value(self.rename(&a.house, &a.name, a.member.as_deref())?)
             }
             "pair" => {
                 #[derive(Deserialize)]

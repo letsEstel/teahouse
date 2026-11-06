@@ -420,6 +420,21 @@ PY
       env HOME="$work/home9-$method" "$client" --root "$eng4" call pair '{"house":"kehu","name":"另一台"}'
   fi
 
+  # E11: names over the real sshd: a key with no seat reads the host's
+  # suggestion (redeem-shell), a seated guest renames itself.
+  if [[ $method == A ]]; then
+    local eng6="$work/engine6-$method" inv11
+    inv11="$("$client" --root "$eng" call invite '{"house":"kehu","name":"老周"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"])')"
+    expect ok "E11 没有座位的钥匙能看到老板写的名字" '"name":"老周"' \
+      "$client" --root "$eng6" call inviteInfo "{\"code\":\"$inv11\"}"
+    expect ok "E11 不写名字就用老板写的" '"ok":true' \
+      "$client" --root "$eng6" call redeem "{\"code\":\"$inv11\"}"
+    expect ok "E11 茶客改自己的名字" '"ok":true' \
+      "$client" --root "$eng6" call rename '{"house":"kehu","name":"周师傅"}'
+    expect ok "E11 Relay 上的座位表改了" "周师傅" \
+      git -C "$root/houses/kehu.git" show main:.teahouse/members.toml
+  fi
+
   # E10: a key with no seat syncs a copied teahouse: the relay's own words
   # come back, and it is "not a member", not "offline".
   local eng5="$work/engine5-$method"
