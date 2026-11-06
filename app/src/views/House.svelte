@@ -4,17 +4,19 @@
   import MachineMark from '../lib/MachineMark.svelte'
   import { fit } from '../lib/fit'
   import Invite from '../lib/Invite.svelte'
+  import Rename from '../lib/Rename.svelte'
   import { member, self, host, pad, eventText, nameLines, type House, type Role } from '../api/view'
   import { api } from '../api/backend'
   import { t, when, date, i18n } from '../i18n/index.svelte'
 
-  let { house }: { house: House } = $props()
+  let { house, refresh }: { house: House; refresh: () => void } = $props()
   let me = $derived(self(house))
   let owner = $derived(host(house))
   let works = $derived(house.problems.reduce((n, p) => n + p.workCount, 0))
   let free = $derived(house.capacity - house.members.length)
   let notice = $derived(house.board[0])
   let inviting = $state(false)
+  let renaming = $state(false)
   const count = (r: Role) => house.members.filter((m) => m.role === r).length
 
   // 钥匙只在这一台设备上时，首页提醒：卸载应用或丢了手机就进不了茶馆，先在第二台设备上添加（0007）
@@ -124,6 +126,13 @@
       <span><Shape role="guest" size={12} />{t('role.guest')} <em class="num">{count('guest')}</em></span>
       <span><Shape role={null} size={12} />{t('role.empty')} <em class="num">{free}</em></span>
     </div>
+    {#if house.me}
+      {#if renaming}
+        <Rename {house} {refresh} onclose={() => (renaming = false)} />
+      {:else}
+        <div class="rename-open"><button class="secondary small" data-write onclick={() => (renaming = true)}>{t(me.role === 'host' ? 'rename.openHost' : 'rename.open')}</button></div>
+      {/if}
+    {/if}
   </section>
 </div>
 
@@ -205,6 +214,7 @@
   .when { font-family: var(--latin); font-size: 12px; color: var(--ink-3); white-space: nowrap; text-align: right; }
 
   .seats { display: flex; flex-direction: column; padding-top: 8px; min-width: 0; }
+  .rename-open { margin-top: 14px; }
   .seats > div:first-child { width: 100%; }
   .legend {
     display: flex;

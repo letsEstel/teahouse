@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { write, inApp, demoMode, setDemo } from '../api/backend'
+  import { api, write, inApp, demoMode, setDemo } from '../api/backend'
   import { t } from '../i18n/index.svelte'
   import type { HouseSummary } from '../api/types'
 
@@ -33,6 +33,22 @@
   // 配对码时替用户猜一个设备名（手机 / 电脑），可以改
   $effect(() => {
     if (pairing && !name.trim()) name = t(/Android|iPhone|iPad/i.test(navigator.userAgent) ? 'join.guessPhone' : 'join.guessComputer')
+  })
+  // 老板写的名字只是预填（法则第 21 条）：名字框先填好，本人可以改，以本人确认的为准。
+  // 一张邀请只问一次；手填地址要等填完才问，因为猜错的次数算进 Relay 的限速。
+  // 还没升级的 Relay 不认这个命令，那就和以前一样空着。
+  let nameTouched = $state(false)
+  let suggested = $state(false)
+  let relayDone = $state('')
+  let asked = ''
+  $effect(() => {
+    const address = found.relay || relayDone
+    const key = `${found.code}@${address}`
+    if (!found.code || !address || key === asked) return
+    asked = key
+    api('inviteInfo', { relay: address, code: found.code }).then((info) => {
+      if (info.name && !nameTouched && asked === key) { name = info.name; suggested = true }
+    }).catch(() => {})
   })
   let relay = $derived(found.relay || (relayInput.trim() ? (relayInput.includes('@') ? relayInput.trim() : `teahouse@${relayInput.trim()}`) : ''))
   let missing = $derived([!found.code && t('join.needCode'), found.code && !relay && t('join.needRelay'), !name.trim() && t('join.needName')].filter(Boolean) as string[])
@@ -78,7 +94,7 @@
         {#if found.code && !found.relay}
           <label class="field">
             <span class="label">{t('join.relay')}</span>
-            <input name="relay" bind:value={relayInput} placeholder="relay.example.org" />
+            <input name="relay" bind:value={relayInput} placeholder="relay.example.org" onchange={() => (relayDone = relay)} />
             <span class="hint">{t('join.relayHint')}</span>
           </label>
         {/if}
@@ -89,7 +105,8 @@
       <div class="sn num">02</div>
       <div class="sc">
         <label for="name"><h2>{t(pairing ? 'join.deviceName' : 'join.name')}</h2></label>
-        <input id="name" name="name" bind:value={name} autocomplete={pairing ? 'off' : 'nickname'} maxlength={pairing ? 32 : undefined} />
+        <input id="name" name="name" bind:value={name} oninput={() => { nameTouched = true; suggested = false }} autocomplete={pairing ? 'off' : 'nickname'} maxlength={pairing ? 32 : 64} />
+        {#if suggested && !pairing}<p class="seen"><i></i>{t('join.nameSuggested')}</p>{/if}
         <p class="hint">{t(pairing ? 'join.deviceNameHint' : 'join.nameHint')}</p>
       </div>
     </section>
