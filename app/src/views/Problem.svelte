@@ -8,12 +8,11 @@
   import Write from '../lib/Write.svelte'
   import AccessMark from '../lib/AccessMark.svelte'
   import Editor from '../lib/Editor.svelte'
-  import { attachImage, imageUrl, mdPieces, prepareFile } from '../lib/images'
-  import MdImage from '../lib/MdImage.svelte'
+  import { attachImage, imageUrl, prepareFile } from '../lib/images'
+  import Markdown from '../lib/Markdown.svelte'
   import { platform } from '../lib/links'
   import { inApp } from '../api/backend'
   import { openUrl } from '@tauri-apps/plugin-opener'
-  import Linked from '../lib/Linked.svelte'
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
   import { api, write as send, blobUrl } from '../api/backend'
   import { isMachine } from '../api/types'
@@ -209,15 +208,10 @@
         {#if b.heading}
           <div class="para">
             <div class="label">{pad(p.body.slice(0, i + 1).filter((x) => x.heading).length)} · {b.heading}</div>
-            {#each mdPieces(b.text) as piece}
-              {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p><Linked text={piece.text ?? ''} /></p>{/if}
-            {/each}
+            <Markdown text={b.text} house={house.id} />
           </div>
         {:else if b.text}
-          <!-- 正文里单独一行的 ![标题](附件) 显示成图片 -->
-          {#each mdPieces(b.text) as piece}
-            {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />{:else}<p class="lead"><Linked text={piece.text ?? ''} /></p>{/if}
-          {/each}
+          <Markdown text={b.text} house={house.id} lead="all" />
         {/if}
       {:else}
         <p class="quiet">{p.summary}</p>
@@ -406,7 +400,6 @@
   .states button.on :global(span) { color: var(--paper); }
   .states :global(button.on[aria-busy])::after { color: var(--paper); }
   select { font: inherit; font-size: 15px; padding: 9px 12px; border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink); border-radius: 0; min-width: 0; }
-  .lead { font-size: 17px; line-height: 1.8; margin-bottom: 22px; white-space: pre-line; }
   .wrap { padding: calc(var(--pad-top) * 0.75) var(--pad-x) 80px; }
   .back { display: inline-block; padding: 6px 0; }
   .back:hover { color: var(--ink); }
@@ -437,7 +430,6 @@
   .cols { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); gap: clamp(36px, 4.4vw, 64px); margin-top: 40px; }
 
   .para { margin-bottom: 28px; }
-  .para p { margin-top: 8px; font-size: 15px; line-height: 1.85; white-space: pre-line; }
   .quiet { color: var(--ink-2); line-height: 1.8; }
 
   .tl-head { margin-top: 44px; padding-bottom: 10px; border-bottom: 1px solid var(--ink); }

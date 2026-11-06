@@ -3,6 +3,8 @@
   import MachineMark from '../lib/MachineMark.svelte'
   import WorkGlyph from '../lib/WorkGlyph.svelte'
   import Diff from '../lib/Diff.svelte'
+  import Markdown from '../lib/Markdown.svelte'
+  import { bodyLines, isMarkdown, stripFront } from '../lib/markdown'
   import { member, self, host, type House, type Proposal } from '../api/view'
   import { write } from '../api/backend'
   import { fit } from '../lib/fit'
@@ -32,9 +34,16 @@
     if (done) outcome = adopt ? 'merged' : 'rejected'
   }
 
-  const tally = (f: Proposal['files'][number]) => ({
-    add: (f.lines ?? []).filter((l) => l.kind === 'add').length,
-    del: (f.lines ?? []).filter((l) => l.kind === 'del').length,
+  type File = Proposal['files'][number]
+  // Markdown 文件能看成品。新文件全是新增，差异没有意义，默认看成品；改动过的默认看改了什么
+  const canRead = (f: File) => isMarkdown(f.path) && f.change !== 'delete' && !!f.lines?.length
+  let views = $state<Record<string, 'read' | 'diff'>>({})
+  const showing = (f: File) => views[f.path] ?? (canRead(f) && f.change === 'add' ? 'read' : 'diff')
+  const after = (f: File) => (f.lines ?? []).filter((l) => l.kind !== 'del').map((l) => l.text).join('\n')
+  const shown = (f: File) => (isMarkdown(f.path) ? bodyLines(f.lines ?? []) : f.lines ?? [])
+  const tally = (f: File) => ({
+    add: shown(f).filter((l) => l.kind === 'add').length,
+    del: shown(f).filter((l) => l.kind === 'del').length,
   })
 </script>
 
@@ -98,15 +107,25 @@
             <span class="ft">{f.title}</span>
             <span class="tally">{outcome === 'merged' ? t('prop.mergedText') : t('prop.tally', tl)}</span>
           </div>
-          {#if outcome === 'merged'}
-            <!-- 采纳后：直接显示合并后的正文，没有标记和行号 -->
-            <div class="doc">
-              {#each (f.lines ?? []).filter((l) => l.kind !== 'del') as l}
-                <p class:gap={!l.text}>{l.text}</p>
-              {/each}
+          {#if outcome !== 'merged' && canRead(f)}
+            <div class="seg view" role="group">
+              <button class:on={showing(f) === 'read'} aria-pressed={showing(f) === 'read'} onclick={() => (views[f.path] = 'read')}>{t('prop.viewRead')}</button>
+              <button class:on={showing(f) === 'diff'} aria-pressed={showing(f) === 'diff'} onclick={() => (views[f.path] = 'diff')}>{t('prop.viewDiff')}</button>
+            </div>
+          {/if}
+          {#if outcome === 'merged' || showing(f) === 'read'}
+            <!-- 采纳后、或者"看成品"：直接显示合并后的正文，没有标记和行号 -->
+            <div class="doc" class:muted={outcome === 'rejected'}>
+              {#if canRead(f)}
+                <Markdown text={stripFront(after(f))} house={house.id} />
+              {:else}
+                {#each (f.lines ?? []).filter((l) => l.kind !== 'del') as l}
+                  <p class:gap={!l.text}>{l.text}</p>
+                {/each}
+              {/if}
             </div>
           {:else}
-            <Diff lines={f.lines ?? []} muted={outcome === 'rejected'} />
+            <Diff lines={shown(f)} muted={outcome === 'rejected'} />
           {/if}
         </div>
       {/each}
@@ -215,6 +234,11 @@
   .tally { margin-left: auto; font-size: 13px; color: var(--ink-2); }
 
   .doc { padding: 14px 0 6px; animation: settle 520ms var(--ease) both; }
+  .doc.muted { color: var(--ink-3); }
+  .view { display: flex; gap: 0; margin-top: 10px; }
+  .view button { padding: 4px 12px; background: transparent; border: 1px solid var(--ink); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+  .view button + button { border-left: 0; }
+  .view button.on { background: var(--ink); color: var(--paper); }
   .doc p { font-size: 15px; line-height: 1.75; padding: 3px 0; white-space: pre-wrap; }
   .doc p.gap { height: 0.9em; padding: 0; }
   @keyframes settle { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }

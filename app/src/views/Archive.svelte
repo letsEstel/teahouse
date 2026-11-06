@@ -7,11 +7,12 @@
   import Diff from '../lib/Diff.svelte'
   import AccessMark from '../lib/AccessMark.svelte'
   import Editor from '../lib/Editor.svelte'
-  import MdImage from '../lib/MdImage.svelte'
+  import Markdown from '../lib/Markdown.svelte'
+  import { bodyLines, isMarkdown as isMd, stripFront } from '../lib/markdown'
   import Linked from '../lib/Linked.svelte'
   import { platform } from '../lib/links'
   import { openUrl } from '@tauri-apps/plugin-opener'
-  import { attachImage, imageUrl, mdPieces, prepareFile } from '../lib/images'
+  import { attachImage, imageUrl, prepareFile } from '../lib/images'
   import { member, self, pad, access, readReason, fileName, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
   import { api, blobUrl, write as send, exportTo, BackendError, inApp } from '../api/backend'
   import { t, when, date } from '../i18n/index.svelte'
@@ -76,7 +77,6 @@
   const textual = (n: ArchiveNode) => n.kind === 'doc' || n.kind === 'plan' || n.kind === 'table'
   // 问题说明、公告也在这里直接改：只改正文（frontmatter 里的标题、状态、负责人不动），走 updateProblem / updateNotice
   const bodyOnly = (n: ArchiveNode) => n.kind === 'problem' || n.kind === 'notice'
-  const stripFront = (s = '') => s.replace(/^---\n[\s\S]*?\n---\n?/, '').replace(/^\n+/, '')
   let editable = $derived(!!file && can !== 'read' && (isWork(file.node) ? textual(file.node) : bodyOnly(file.node)))
   function startEdit() {
     draft = file && bodyOnly(file.node) ? stripFront(file.text) : file?.text ?? ''
@@ -151,11 +151,7 @@
       const i = line.indexOf(':')
       if (i > 0) front[line.slice(0, i).trim()] = line.slice(i + 1).trim()
     }
-    const blocks = (m ? src.slice(m[0].length) : src).split(/\n{2,}/).filter((b) => b.trim())
-    return {
-      front,
-      blocks: blocks.map((b) => (b.startsWith('## ') ? { h: b.slice(3).split('\n')[0], p: b.split('\n').slice(1).join('\n') } : { h: '', p: b })),
-    }
+    return { front, body: m ? src.slice(m[0].length) : src }
   }
   /** CSV → 行（支持引号） */
   function csv(src = '') {
@@ -370,16 +366,7 @@
           {#if md.front.status}<StatusMark status={md.front.status as Status} />{/if}
           {#if md.front.title}<h3>{md.front.title}</h3>{/if}
           {#if md.front.note}<p class="sum">{md.front.note}</p>{/if}
-          {#each md.blocks as b, i}
-            {#if b.h}<h4>{b.h}</h4>{/if}
-            {#if b.p}
-              <!-- 只有一张图片的行显示成图片，其余照常是文字 -->
-              {#each mdPieces(b.p) as piece}
-                {#if piece.img}<MdImage house={house.id} src={piece.img.src} alt={piece.img.alt} />
-                {:else}<p class:sum={node.kind === 'problem' && i === 0 && !b.h} class="pre-plain">{piece.text}</p>{/if}
-              {/each}
-            {/if}
-          {/each}
+          <Markdown text={md.body} house={house.id} lead={node.kind === 'problem' ? 'first' : undefined} />
         {/if}
       </article>
       {/if}
@@ -403,7 +390,7 @@
               </button>
               {#if openDiff === i}
                 <div class="diff">
-                  {#if e.diff?.length}<Diff lines={e.diff} />{:else}<p class="quiet">{t('archive.noDiff')}</p>{/if}
+                  {#if e.diff?.length}<Diff lines={isMd(file.node.id) ? bodyLines(e.diff) : e.diff} />{:else}<p class="quiet">{t('archive.noDiff')}</p>{/if}
                 </div>
               {/if}
             </li>
@@ -483,7 +470,6 @@
   .saved { margin-top: 4px; padding: 10px 14px; background: var(--ink); color: var(--paper); font-size: 14px; }
   .picker { display: none; }
   .content h3 { font-family: var(--display); font-weight: 700; font-size: 22px; line-height: 1.3; margin: 10px 0 12px; letter-spacing: var(--track); }
-  .content h4 { margin: 18px 0 4px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; }
   .content p { font-size: 15px; line-height: 1.85; }
   .content .sum { color: var(--ink-2); }
   .content .pre-plain { white-space: pre-line; }

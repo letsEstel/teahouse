@@ -381,4 +381,8 @@ export default {
   'rename.taken': 'In diesem Teehaus heißt schon jemand so.',
   'rename.submit': 'Diesen Namen verwenden',
   'rename.done': 'Heißt jetzt „{name}“.',
+
+  // 提案：Markdown 文件看成品或看改动
+  'prop.viewRead': 'Lesen',
+  'prop.viewDiff': 'Änderungen',
 }
