@@ -2,6 +2,13 @@
 
 *Architecture No. 1 in Rust, Op. 1*
 
+<p align="center">
+  <img src="docs/screenshots/1-seats.jpg" alt="Seats: people and machines" width="24%">
+  <img src="docs/screenshots/2-problems.jpg" alt="Problems" width="24%">
+  <img src="docs/screenshots/3-archive.jpg" alt="Archive: take the whole teahouse with you" width="24%">
+  <img src="docs/screenshots/4-files.jpg" alt="Every file, with what you may do to it" width="24%">
+</p>
+
 v0.1 · *Anji* (安吉白茶)
 
 **English** · [中文](README.zh.md) · [Deutsch](README.de.md)
