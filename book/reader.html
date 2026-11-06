@@ -53,6 +53,7 @@ a { color: inherit; }
 .start-here { display: block; padding: 8px 22px 2px; font-size: 12.5px; font-weight: 700; }
 .start-here::before { content: "▼ "; font-size: 10px; }
 .subs { list-style: none; margin: 2px 0 6px; padding: 0 22px 0 calc(22px + 2.4em + 4px); }
+.front-item + .subs { padding-left: 34px; }
 .subs button { display: block; width: 100%; padding: 2px 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
 .subs button:hover { color: var(--ink); text-decoration: underline; }
 .progress { padding: 12px 22px; border-top: 2px solid var(--ink); font-size: 13px; }
@@ -204,16 +205,14 @@ function headings(id) {
 }
 
 function drawTree(current) {
-  let html = sections.filter((s) => !s.num).map((s) => item(s, current)).join('')
+  const withSubs = (s) => item(s, current) + (s.id === current
+    ? '<ul class="subs">' + headings(s.id).map((h, j) => `<li><button data-h="${j}">${esc(h)}</button></li>`).join('') + '</ul>'
+    : '')
+  let html = sections.filter((s) => !s.num).map(withSubs).join('')
   book.parts.forEach((p, i) => {
     html += `<div class="part"><b>${esc(p.title)}</b><span>${esc(p.who)}</span></div>`
     if (reader && i + 1 === startPart()) html += '<span class="start-here">你从这里开始</span>'
-    for (const s of sections.filter((x) => x.part === i + 1)) {
-      html += item(s, current)
-      if (s.id === current) {
-        html += '<ul class="subs">' + headings(s.id).map((h, j) => `<li><button data-h="${j}">${esc(h)}</button></li>`).join('') + '</ul>'
-      }
-    }
+    html += sections.filter((x) => x.part === i + 1).map(withSubs).join('')
   })
   $('tree').innerHTML = html
   const counted = sections.filter((s) => s.num)
