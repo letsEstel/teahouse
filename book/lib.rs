@@ -3,6 +3,8 @@
 
 #[doc = include_str!("sections/how-to-read.md")]
 pub mod how_to_read {}
+#[doc = include_str!("sections/0-overview/1-big-picture.md")]
+pub mod s0 {}
 #[doc = include_str!("sections/1-start/1-terminal.md")]
 pub mod s1_1 {}
 #[doc = include_str!("sections/1-start/2-first-program.md")]
@@ -21,3 +23,5 @@ pub mod s2_2 {}
 pub mod s3_1 {}
 #[doc = include_str!("sections/3-architecture/2-your-own-hook.md")]
 pub mod s3_2 {}
+#[doc = include_str!("sections/3-architecture/3-what-it-defends.md")]
+pub mod s3_3 {}

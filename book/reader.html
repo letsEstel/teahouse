@@ -130,6 +130,7 @@ blockquote { margin: 1.4em 0; padding: .3em 1.1em; background: var(--deep); bord
 .path em { font-style: normal; font-weight: 700; white-space: nowrap; padding-right: 8px; }
 @media (max-width: 520px) { .path { grid-template-columns: 44px minmax(0, 1fr); } .path em { grid-column: 2; } }
 .path.mine { background: var(--deep); }
+.first { margin: 0 0 18px; font-weight: 700; }
 .also { margin-top: 28px; font-size: 15px; color: var(--ink-2); }
 
 /* 搜索结果 */
@@ -227,9 +228,10 @@ function cover() {
   $('here').innerHTML = ''
   $('page').innerHTML = `<article class="cover"><h1>茶馆</h1>
     <p class="lead">一本可以运行的书。读完以后，你能写 Rust，能维护这个项目，也能自己做 hook 这样的设计。</p>
+    <p class="first">无论你是哪一种读者，都先读<a href="#big-picture">全景：从一个问题到三万行代码</a>。然后选一条路：</p>
     <div class="paths">${paths.map((p) => `<a class="path${reader === p.key ? ' mine' : ''}" href="#${firstOf(p.part).id}" data-path="${p.key}">
       ${shape[p.shape]}<div><b>${esc(p.title)}</b><span>${esc(p.text)}</span></div><em>从 ${firstOf(p.part).num} 开始 →</em></a>`).join('')}</div>
-    <p class="also">也可以先读<a href="#preface">前言</a>，或者<a href="#how-to-read">怎么读这本书</a>。</p></article>`
+    <p class="also">也可以先读<a href="#preface">前言</a>和<a href="#how-to-read">怎么读这本书</a>。</p></article>`
 }
 
 function chapter(s) {

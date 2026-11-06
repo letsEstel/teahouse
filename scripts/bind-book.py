@@ -142,6 +142,7 @@ def blocks(text):
 
 def clean(text):
     text = re.sub(r"finished in [\d.]+s", "finished in 0.00s", text)
+    text = re.sub(r"thread '([^']*)' \(\d+\)", r"thread '\1'", text)
     return [line.rstrip() for line in text.split("\n") if line.strip()]
 
 
@@ -159,7 +160,11 @@ def run(tags, code):
         # 测试默认并行，一个一个跑，输出的顺序才固定
         command = [str(Path(d) / "prog")] + (["--test-threads=1"] if "test" in tags else [])
         ran = subprocess.run(command, cwd=d, capture_output=True, text=True)
-        return True, ran.stdout
+        # should_panic 和 fails：程序就是要失败，报错也算结果
+        failing = "should_panic" in tags or "fails" in tags
+        if bool(ran.returncode) != failing:
+            sys.exit(f"这段代码运行的结果不对（退出状态 {ran.returncode}）：\n{code}\n{ran.stderr}")
+        return True, ran.stdout + (ran.stderr if failing else "")
 
 
 def check_quote(entry, code):
@@ -273,7 +278,7 @@ def reader():
             n, j = n + 1, j + 1
             text = (BOOK / "src" / f"{n:02}.md").read_text(encoding="utf8")
             sections.append({
-                "id": f"s{p}-{j}" if p else "how-to-read",
+                "id": f"s{p}-{j}" if p else re.sub(r"^\d+-", "", Path(line).stem),
                 "num": f"{p}.{j}" if p else "",
                 "part": p,
                 "title": re.search(r"^# (.+)$", text, re.M).group(1),
