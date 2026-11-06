@@ -13,3 +13,11 @@ pub mod s1_3 {}
 pub mod s1_4 {}
 #[doc = include_str!("sections/1-start/5-functions.md")]
 pub mod s1_5 {}
+#[doc = include_str!("sections/2-rust/1-ownership.md")]
+pub mod s2_1 {}
+#[doc = include_str!("sections/2-rust/2-enums.md")]
+pub mod s2_2 {}
+#[doc = include_str!("sections/3-architecture/1-a-push.md")]
+pub mod s3_1 {}
+#[doc = include_str!("sections/3-architecture/2-your-own-hook.md")]
+pub mod s3_2 {}
