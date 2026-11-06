@@ -468,4 +468,8 @@ export default {
   'rename.taken': 'Someone in this teahouse already has that name.',
   'rename.submit': 'Use this name',
   'rename.done': 'Now called “{name}”.',
+
+  // 提案：Markdown 文件看成品或看改动
+  'prop.viewRead': 'Read it',
+  'prop.viewDiff': 'See changes',
 }

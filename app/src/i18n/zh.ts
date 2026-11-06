@@ -468,4 +468,8 @@ export default {
   'rename.taken': '这间茶馆里已经有人叫这个名字了。',
   'rename.submit': '改成这个名字',
   'rename.done': '已经改成“{name}”。',
+
+  // 提案：Markdown 文件看成品或看改动
+  'prop.viewRead': '看成品',
+  'prop.viewDiff': '看改动',
 }

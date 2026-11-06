@@ -56,20 +56,6 @@ export async function imageUrl(house: string, src: string): Promise<string | nul
   return path ? blobUrl(house, src, path) : null
 }
 
-/** 一段文字按行切开：单独一行的 ![标题](地址) 是图片，相邻的其余行合成一段文字（去掉首尾的空行） */
-export function mdPieces(p: string): { text?: string; img?: { alt: string; src: string } }[] {
-  const out: { text?: string; img?: { alt: string; src: string } }[] = []
-  for (const line of p.split('\n')) {
-    const m = /^\s*!\[([^\]]*)\]\(([^)\s]+)\)\s*$/.exec(line)
-    if (m) out.push({ img: { alt: m[1], src: m[2] } })
-    else if (out.length && out[out.length - 1].text !== undefined) out[out.length - 1].text += '\n' + line
-    else out.push({ text: line })
-  }
-  return out
-    .map((x) => (x.text === undefined ? x : { text: x.text.replace(/^\n+|\n+$/g, '') }))
-    .filter((x) => x.img || x.text?.trim())
-}
-
 // 提出问题时问题还没有编号，图片挂不上去：先留在本机（pending:N），提出以后再作为附件加进去
 const pending = new Map<string, File>()
 let pendingCount = 0
