@@ -280,7 +280,9 @@ interface HistoryEntry { by: string; when: string; act: Act; problem: string; ti
 | `decline` | `{ house, proposal, reason? }` | 老板 | `decline`，同时删除提案分支 |
 | `seat` | `{ house, remove?: id, role?: {id, role} }` | 老板 | `seat`（加人只走邀请） |
 | `invite` | `{ house, role?, name?, days? }` | 老板 | 无提交；返回**完整邀请** `TH-XXXX-XXXX-XXXX-XXXX@<relay>[:端口]`（`@` 后是 Relay 地址，ssh 用户默认 `teahouse`），界面整段复制给对方 |
-| `redeem` | `{ relay, code, name }` | 尚未入座的人，或要加入的新设备 | Relay 代写 `seat`；完成后自动克隆茶馆。界面从粘贴的整段文字里认出 `TH-…@地址` 或 `teahouse://地址/…`；只有邀请码时才多问地址。**同一个入口也接受配对码**：配对码覆盖几间茶馆，就加入几间 |
+| `inviteInfo` | `{ relay?, code }` | 拿着邀请码或配对码的人 | 无提交；返回 `{ name?: string }`，即老板预填的名字（配对码则是新设备的名字），不消耗邀请；猜错计入和 `redeem` 相同的限速 |
+| `redeem` | `{ relay, code, name? }` | 尚未入座的人，或要加入的新设备 | Relay 代写 `seat`；完成后自动克隆茶馆。界面从粘贴的整段文字里认出 `TH-…@地址` 或 `teahouse://地址/…`；只有邀请码时才多问地址。**同一个入口也接受配对码**：配对码覆盖几间茶馆，就加入几间 |
+| `rename` | `{ house, name, member? }` | 本人改自己；老板可以改任何人 | Relay 代写 `seat`（`Rename: <成员>`），id 不变；同一间茶馆不重名（不分大小写），重名返回 `relay_refused`；返回成员 id，然后同步 |
 | `pair` | `{ house?, name? }` | 所有人（AI 也可以） | 无提交；返回配对码 `TH-…@<relay>`，10 分钟内有效、只能用一次，对这台设备在该 Relay 上入座的**所有茶馆**有效。`name` 是新设备的名字（如"手机"）。界面在"添加一台设备"里整段显示，供新设备粘贴（见 DEVICES.md） |
 | `devices` | `{ house }` | 所有人 | 无提交；返回 `DeviceInfo[]`（我的全部设备） |
 | `unpair` | `{ house?, device }` | 所有人（只能移除自己的另一台设备） | Relay 代写座位变更；`device` 是设备名或 `SHA256:` 指纹。不指定 `house` 时先同步，再在所有有这台设备的茶馆里移除。正在用的这台、最后一台都不能移除。返回移除了的茶馆 id |

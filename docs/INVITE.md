@@ -9,7 +9,7 @@
 老板的客户端 ──ssh──▶ relay: invite <house> [--role guest|steward] [--name 王阿姨]
                        ◀── 邀请码  TH-7KQ2-M9XF-3RDP-WC5L（一次性，默认 7 天有效）
 老板通过微信等任何渠道把邀请码发给对方
-新人的客户端（自动生成设备密钥）──ssh──▶ relay: redeem TH-… --name 王阿姨
+新人的客户端（自动生成设备密钥）──ssh──▶ relay: redeem TH-… [--name 王阿姨]   # 老板写的名字只是预填，本人可以改
 relay 校验 → 以老板的名义向 main 提交一次座位变更（Act: seat）→ 新人入座
 ```
 
