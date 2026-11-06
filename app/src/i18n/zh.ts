@@ -384,7 +384,7 @@ export default {
   'invite.stewardTaken': '这间茶馆已经有伙计了',
   'invite.days': '有效期',
   'invite.name': '名字（可不填）',
-  'invite.namePh': '对方入座时自己填',
+  'invite.namePh': '替对方写一个，对方入座时可以改',
   'invite.hint': '邀请只能用一次，过期作废；对方入座时，座位表会记一笔。',
   'invite.create': '生成邀请',
   'invite.ready': { other: '把这段邀请发给对方（微信、短信都行）。只能用一次，{n} 天后作废。' },
@@ -455,4 +455,17 @@ export default {
   'link.hint': '内容留在那个平台上，茶馆里只放链接。定稿以后，最好把最终版也写进茶馆。',
   'link.badUrl': '网址要以 http:// 或 https:// 开头。',
   'archive.kind.link': '链接',
+
+  // 名字归本人（法则第 21 条）
+  'join.nameSuggested': '老板替你写了这个名字。你可以直接用，也可以改。',
+  'rename.open': '改我的名字',
+  'rename.openHost': '改名字',
+  'rename.title': '改名字',
+  'rename.who': '改谁的名字',
+  'rename.new': '新名字',
+  'rename.hintSelf': '茶馆里的人都会看到新名字，以前的留言也显示新名字。改名这件事会留在历史里。',
+  'rename.hintOther': '名字归本人，一般由{name}自己改。你改了也会留在历史里，以前的留言也显示新名字。',
+  'rename.taken': '这间茶馆里已经有人叫这个名字了。',
+  'rename.submit': '改成这个名字',
+  'rename.done': '已经改成“{name}”。',
 }

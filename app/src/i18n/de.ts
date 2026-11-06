@@ -297,7 +297,7 @@ export default {
   'invite.stewardTaken': 'Dieses Teehaus hat schon einen Gehilfen',
   'invite.days': 'Gültig für',
   'invite.name': 'Name (optional)',
-  'invite.namePh': 'Sie können ihn selbst eintragen',
+  'invite.namePh': 'Ein Vorschlag; beim Eintreten änderbar',
   'invite.hint': 'Eine Einladung gilt einmal und läuft dann ab; die Sitzordnung hält fest, wer Platz genommen hat.',
   'invite.create': 'Einladung erstellen',
   'invite.ready': { one: 'Schick das der Person (jeder Messenger geht). Es gilt einmal und läuft in {n} Tag ab.', other: 'Schick das der Person (jeder Messenger geht). Es gilt einmal und läuft in {n} Tagen ab.' },
@@ -368,4 +368,17 @@ export default {
   'link.hint': 'Der Inhalt bleibt auf der Plattform, das Teehaus hält nur den Link. Steht die Fassung, schreibt sie auch ins Teehaus.',
   'link.badUrl': 'Die Adresse muss mit http:// oder https:// beginnen.',
   'archive.kind.link': 'Link',
+
+  // 名字归本人（法则第 21 条）
+  'join.nameSuggested': 'Der Wirt hat diesen Namen für dich eingetragen. Behalte oder ändere ihn.',
+  'rename.open': 'Meinen Namen ändern',
+  'rename.openHost': 'Einen Namen ändern',
+  'rename.title': 'Einen Namen ändern',
+  'rename.who': 'Wessen Name',
+  'rename.new': 'Neuer Name',
+  'rename.hintSelf': 'Alle hier sehen den neuen Namen, auch bei alten Beiträgen. Die Änderung bleibt in der Geschichte.',
+  'rename.hintOther': 'Ein Name gehört seinem Träger; normalerweise ändert {name} ihn selbst. Deine Änderung bleibt in der Geschichte, und alte Beiträge zeigen den neuen Namen.',
+  'rename.taken': 'In diesem Teehaus heißt schon jemand so.',
+  'rename.submit': 'Diesen Namen verwenden',
+  'rename.done': 'Heißt jetzt „{name}“.',
 }

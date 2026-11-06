@@ -130,7 +130,12 @@ export interface Commands {
   decline: [HouseArg & { proposal: string; reason?: string }, WriteResult]
   seat: [HouseArg & { remove?: string; role?: { id: string; role: Role } }, WriteResult]
   invite: [HouseArg & { role?: Role; name?: string; days?: number; kind?: 'human' | 'machine'; agent?: string }, string]
-  redeem: [{ relay: string; code: string; name: string }, HouseSummary]
+  /** 老板在邀请里预填的名字（配对码则是新设备的名字）；不消耗邀请，猜错计入和 redeem 相同的限速 */
+  inviteInfo: [{ relay?: string; code: string }, { name?: string }]
+  /** name 不写就用邀请里的名字 */
+  redeem: [{ relay: string; code: string; name?: string }, HouseSummary]
+  /** 名字归本人（法则第 21 条）：不写 member 是改自己，老板可以改任何人。id 不变，重名返回 relay_refused；返回成员 id */
+  rename: [HouseArg & { name: string; member?: string }, string]
   /** 配对码 TH-…@relay：10 分钟、一次，对这台设备在该 Relay 上的所有茶馆有效。name = 新设备的名字 */
   pair: [{ house?: string; name?: string }, string]
   devices: [HouseArg, DeviceInfo[]]
