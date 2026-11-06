@@ -486,8 +486,8 @@ mod tests {
     #[test]
     fn house_urls() {
         assert_eq!(
-            house_url("122.10.118.71", "dev").unwrap(),
-            "ssh://teahouse@122.10.118.71/dev"
+            house_url("relay.example.org", "dev").unwrap(),
+            "ssh://teahouse@relay.example.org/dev"
         );
         assert_eq!(
             house_url("estel@127.0.0.1:2222", "dev").unwrap(),
