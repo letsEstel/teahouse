@@ -2,3 +2,7 @@ target/
 /CLAUDE.md
 # 说明书的符号链接，指向共享目录，不进仓库
 CLAUDE.md
+
+# The bound book is generated (scripts/bind-book.py)
+/book/src/
+/book/out/

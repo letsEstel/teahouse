@@ -1,0 +1,18 @@
+[book]
+title = "茶馆"
+language = "zh-CN"
+src = "src"
+
+[build]
+build-dir = "out"
+create-missing = false
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "ayu"
+additional-css = ["theme.css"]
+smart-punctuation = false
+git-repository-url = "https://github.com/letsEstel/teahouse"
+
+[output.html.playground]
+runnable = false
