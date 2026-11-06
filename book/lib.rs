@@ -5,6 +5,8 @@
 pub mod how_to_read {}
 #[doc = include_str!("sections/0-overview/1-big-picture.md")]
 pub mod s0 {}
+#[doc = include_str!("sections/glossary.md")]
+pub mod glossary {}
 #[doc = include_str!("sections/1-start/1-terminal.md")]
 pub mod s1_1 {}
 #[doc = include_str!("sections/1-start/2-first-program.md")]

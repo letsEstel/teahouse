@@ -16,7 +16,7 @@ git 的 hook 就是仓库 `hooks/` 目录里、名字固定的可执行文件。
 
 ## 准备一个“服务器”
 
-服务器上的仓库不需要工作文件，这种仓库叫**裸仓库**。Relay 的 `houses/<id>.git` 就是这样的目录。在一个空目录里运行：
+服务器上的仓库不需要工作文件，这种仓库叫**裸仓库**（bare repository）。Relay 的 `houses/<id>.git` 就是这样的目录。在一个空目录里运行：
 
 ```sh
 git init --bare -b main house.git
