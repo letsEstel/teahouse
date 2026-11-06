@@ -395,6 +395,106 @@ pub(crate) fn check_name(name: &str) -> Result<()> {
     Ok(())
 }
 
+/// 法则第 21 条: no two members of a teahouse share a name, so nobody can pass
+/// for someone else. Checked when a seat is taken or a name changes; names
+/// that already repeat in a chart stay.
+fn check_name_free(members: &Members, name: &str, except: Option<&str>) -> Result<()> {
+    let same = |m: &Member| m.name.trim().to_lowercase() == name.trim().to_lowercase();
+    if members
+        .members
+        .iter()
+        .any(|m| Some(m.id.as_str()) != except && same(m))
+    {
+        bail!("someone here already has that name / 这个名字已经有人用了");
+    }
+    Ok(())
+}
+
+/// `rename <house> --name N [--member ID]`: the key's own seat gets a new
+/// name, or, from the host, any seat (法则第 21 条, 第 8 条). The id stays.
+/// Written by the relay, as a guest may not touch the chart. Returns the id.
+pub fn rename(
+    root: &Root,
+    key: &PublicKey,
+    house: &str,
+    name: &str,
+    member: Option<&str>,
+) -> Result<String> {
+    check_name(name)?;
+    let name = name.trim();
+    let _lock = Lock::take(root)?;
+    let (id, old, by) = edit_chart(root, house, "teahouse: member renamed", |members| {
+        let me = members.by_key(key).ok_or_else(|| {
+            Error(
+                "teahouse not found, or you have no seat in it / 茶馆不存在，或者你在这里没有座位"
+                    .into(),
+            )
+        })?;
+        let id = member.unwrap_or(&me.id);
+        if id != me.id && me.role != Role::Host {
+            bail!("only the host can rename someone else / 只有老板能改别人的名字");
+        }
+        let Some(target) = members.by_id(id) else {
+            bail!("no member {id:?} / 没有这位成员");
+        };
+        if target.name.trim() == name {
+            bail!("nothing to change / 没有变化");
+        }
+        check_name_free(members, name, Some(id))?;
+        let old = target.name.clone();
+        let mut next = members.clone();
+        let m = next
+            .members
+            .iter_mut()
+            .find(|m| m.id == id)
+            .expect("present");
+        m.name = name.to_string();
+        Ok(ChartEdit {
+            author: me.id.clone(),
+            message: format!("{old} 改名为 {name}\n\nProblem: meta\nAct: seat\nRename: {id}\n"),
+            next,
+            value: (id.to_string(), old, me.id.clone()),
+        })
+    })?;
+    audit::log(
+        root,
+        Entry::new("member.renamed")
+            .house(house)
+            .member(&by)
+            .field("target", id.clone())
+            .field("old", old),
+    );
+    Ok(id)
+}
+
+/// `invite-info <code>`: the name the host suggested, to fill in the form
+/// before redeeming. Only someone holding the code learns it; guesses count
+/// against the same limit as redeeming.
+pub fn suggested_name(root: &Root, key: &PublicKey, code: &str) -> Result<Option<String>> {
+    let _lock = Lock::take(root)?;
+    let short = key.short();
+    if let Some(why) = rate_limited(root, &short)? {
+        bail!("{why}");
+    }
+    let lookup = || -> Result<Option<String>> {
+        let code = normalize(code).ok_or_else(|| Error(NOT_VALID.into()))?;
+        let Some((_, file)) = find(root, &code)? else {
+            return crate::devices::pair_name(root, &code).ok_or_else(|| Error(NOT_VALID.into()));
+        };
+        let inv = fs::read_to_string(&file)
+            .ok()
+            .and_then(|t| Invite::parse(&t))
+            .filter(|i| now() <= i.expires)
+            .ok_or_else(|| Error(NOT_VALID.into()))?;
+        Ok(inv.name)
+    };
+    let result = lookup();
+    if result.is_err() {
+        record_attempt(root, &short, false)?;
+    }
+    result
+}
+
 /// A member id for a new seat: the name's ASCII letters and digits if it
 /// has any, else `m`; numbered when taken (`wang`, `wang2`; `m1`, `m2`).
 pub fn new_member_id(name: &str, kind: Kind, taken: &[&str]) -> String {
@@ -634,7 +734,6 @@ fn redeem_locked(
     agent: Option<&str>,
 ) -> Result<Seated> {
     let code = normalize(code).ok_or_else(|| Error(NOT_VALID.into()))?;
-    check_name(name)?;
     let Some((house_id, file)) = find(root, &code)? else {
         // Not an invitation: perhaps a pairing code (docs/DEVICES.md).
         if let Some(seated) = crate::devices::redeem_pair(root, key, &code, name)? {
@@ -650,6 +749,13 @@ fn redeem_locked(
         fs::remove_file(&file)?;
         bail!("this invitation has expired; ask the host for a new one / 邀请已过期，请向老板要一个新的");
     }
+    // The name is the newcomer's; what the host wrote is only a suggestion,
+    // used when they give none (a machine, say).
+    let name = match name.trim() {
+        "" => inv.name.as_deref().unwrap_or(""),
+        n => n,
+    };
+    check_name(name)?;
     // The invitation decides whether this seat is a machine's; the machine
     // may name its agent when the host did not.
     if agent.is_some() && !inv.kind.is_machine() {
@@ -677,6 +783,7 @@ fn redeem_locked(
             if inv.role == Role::Steward && members.steward().is_some() {
                 bail!("the teahouse already has a steward / 茶馆已经有伙计了");
             }
+            check_name_free(members, name, None)?;
             let taken: Vec<&str> = members.members.iter().map(|m| m.id.as_str()).collect();
             let id = new_member_id(name, inv.kind, &taken);
             let mut next: Members = members.clone();

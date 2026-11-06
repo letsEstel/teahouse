@@ -1783,6 +1783,110 @@ fn invitations_expire_are_revoked_and_respect_the_chart() {
 }
 
 #[test]
+fn names_belong_to_the_member_and_the_host_may_change_them() {
+    let w = World::new();
+    let _ = w.wutong();
+    let host = key_for(1);
+    let name_of = |w: &World, k: &PublicKey| {
+        let m = w.chart();
+        let m = m.members.iter().find(|x| &x.key == k).unwrap();
+        (m.id.clone(), m.name.clone())
+    };
+
+    // The host's name is a suggestion: anyone with the code can read it,
+    // nothing is used up, and it is used when the newcomer gives no name.
+    let code = w.invite("--name 王阿姨");
+    let (a, b) = (key_for(41), key_for(42));
+    let o = w.command(&a, "redeem-shell", &format!("invite-info {code}"), b"");
+    assert_eq!(
+        String::from_utf8_lossy(&o.stdout),
+        "name 王阿姨\n",
+        "{}",
+        s(&o)
+    );
+    w.command_err(
+        &a,
+        "redeem-shell",
+        "invite-info TH-AAAA-AAAA-AAAA-AAAA",
+        "not valid",
+    );
+    let o = w.command(&a, "redeem-shell", &format!("redeem {code}"), b"");
+    assert!(o.status.success(), "{}", s(&o));
+    assert_eq!(name_of(&w, &a).1, "王阿姨");
+    // No suggestion: nothing to print.
+    let code = w.invite("");
+    let o = w.command(&b, "redeem-shell", &format!("invite-info {code}"), b"");
+    assert_eq!(String::from_utf8_lossy(&o.stdout), "", "{}", s(&o));
+    // Nor a name from the newcomer: refused, and the code still works.
+    w.command_err(&b, "redeem-shell", &format!("redeem {code}"), "1 to 32");
+
+    // No two members share a name; what they type wins over the suggestion.
+    let o = w.redeem(&b, &code, "王阿姨");
+    assert!(s(&o).contains("already has that name"), "{}", s(&o));
+    let code2 = w.invite("--name 占位");
+    let o = w.redeem(&b, &code, "小周");
+    assert!(o.status.success(), "{}", s(&o));
+    assert_eq!(name_of(&w, &b).1, "小周");
+    w.command_ok(&host, &format!("uninvite wutong {}", &code2[3..7]));
+
+    // One's own name; the id stays.
+    let (id_a, _) = name_of(&w, &a);
+    let out = w.command_ok(&a, "rename wutong --name '王姐'");
+    assert_eq!(out, id_a);
+    assert_eq!(name_of(&w, &a), (id_a.clone(), "王姐".to_string()));
+    let git = |args: &[&str]| {
+        let o = Command::new("git")
+            .arg("-C")
+            .arg(w.root.join("houses/wutong.git"))
+            .args(args)
+            .output()
+            .unwrap();
+        String::from_utf8_lossy(&o.stdout).trim().to_string()
+    };
+    assert_eq!(
+        git(&["log", "-1", "--format=%s|%ae|%ce", "main"]),
+        format!("王阿姨 改名为 王姐|{id_a}@teahouse|relay@teahouse")
+    );
+    assert!(git(&["log", "-1", "--format=%b", "main"]).contains(&format!("Rename: {id_a}")));
+
+    // Refused: no change, someone else's name, someone else's seat.
+    w.command_err(
+        &a,
+        "shell",
+        "rename wutong --name 王姐",
+        "nothing to change",
+    );
+    w.command_err(
+        &a,
+        "shell",
+        "rename wutong --name 小周",
+        "already has that name",
+    );
+    w.command_err(
+        &a,
+        "shell",
+        "rename wutong --name 小周周 --member chenli",
+        "only the host",
+    );
+    w.command_err(&key_for(99), "shell", "rename wutong --name x", "no seat");
+
+    // The host may rename anyone, and it says who did.
+    let (id_b, _) = name_of(&w, &b);
+    w.command_ok(&host, &format!("rename wutong --name 老周 --member {id_b}"));
+    assert_eq!(name_of(&w, &b), (id_b.clone(), "老周".to_string()));
+    assert_eq!(
+        git(&["log", "-1", "--format=%s|%ae", "main"]),
+        "小周 改名为 老周|chenli@teahouse"
+    );
+    w.command_err(
+        &host,
+        "shell",
+        "rename wutong --name x --member nobody",
+        "no member",
+    );
+}
+
+#[test]
 fn redeeming_is_rate_limited() {
     let w = World::new();
     let _ = w.wutong();
