@@ -384,7 +384,7 @@ export default {
   'invite.stewardTaken': 'This teahouse already has a steward',
   'invite.days': 'Valid for',
   'invite.name': 'Name (optional)',
-  'invite.namePh': 'They can fill it in themselves',
+  'invite.namePh': 'A suggestion; they can change it when they join',
   'invite.hint': 'An invitation works once and then expires; the seating chart records who took the seat.',
   'invite.create': 'Create invitation',
   'invite.ready': { one: 'Send this to them (any messenger works). It works once and expires in {n} day.', other: 'Send this to them (any messenger works). It works once and expires in {n} days.' },
@@ -455,4 +455,17 @@ export default {
   'link.hint': 'The content stays on that platform; the teahouse keeps only the link. Once it is final, write the final version into the teahouse too.',
   'link.badUrl': 'The address must start with http:// or https://.',
   'archive.kind.link': 'Link',
+
+  // 名字归本人（法则第 21 条）
+  'join.nameSuggested': 'The host wrote this name for you. Keep it or change it.',
+  'rename.open': 'Change my name',
+  'rename.openHost': 'Change a name',
+  'rename.title': 'Change a name',
+  'rename.who': 'Whose name',
+  'rename.new': 'New name',
+  'rename.hintSelf': 'Everyone here will see the new name, on old posts too. The change stays in the history.',
+  'rename.hintOther': 'A name belongs to its owner; usually {name} would change it. Your change stays in the history, and old posts show the new name too.',
+  'rename.taken': 'Someone in this teahouse already has that name.',
+  'rename.submit': 'Use this name',
+  'rename.done': 'Now called “{name}”.',
 }

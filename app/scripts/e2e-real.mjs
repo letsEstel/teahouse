@@ -225,6 +225,51 @@ await step('邀请（invite）', async () => {
   await p.close()
 })
 
+await step('老板写的名字只是预填（inviteInfo）', async () => {
+  const full = await engine(HOST, 'invite', { house, name: `小满${stamp}` })
+  const at = full.indexOf('@')   // INVITE.md：按第一个 @ 切开
+  const [code, relay] = [full.slice(0, at), full.slice(at + 1)]
+  const info = await engine(HOST, 'inviteInfo', { relay, code })
+  if (info.name !== `小满${stamp}`) throw new Error(`engine says ${JSON.stringify(info)}`)
+  const again = await engine(HOST, 'inviteInfo', { relay, code })
+  if (again.name !== info.name) throw new Error('inviteInfo used the invitation up')
+  ok('引擎查得到老板写的名字，查两次都在（没有用掉邀请）')
+})
+
+await step('改名（rename）：老板改自己、改别人，重名被拒绝', async () => {
+  const before = await engine(HOST, 'house', { house })
+  const me = before.members.find((m) => m.id === before.me)
+  const other = before.members.find((m) => m.id !== before.me && m.role === 'guest')
+  const p = await open(host.url, 'house')
+  await p.click('.rename-open button')
+  await p.fill('.rename input', other.name)
+  await p.waitForSelector('.rename .taken')
+  if (!(await p.$eval('.rename .primary', (b) => b.disabled))) throw new Error('duplicate name can be submitted')
+  ok('重名：界面提示，按钮不能点')
+  await p.fill('.rename input', `${me.name}${stamp}`)
+  await p.click('.rename .primary')
+  await p.waitForSelector('.rename .done')
+  await p.waitForFunction((n) => document.querySelector('.room')?.textContent.includes(n), `${me.name}${stamp}`)
+  let now = await engine(HOST, 'house', { house })
+  if (now.members.find((m) => m.id === me.id).name !== `${me.name}${stamp}`) throw new Error('engine still has the old name')
+  ok('本人改名：引擎确认，座位图上显示新名字，id 不变')
+  await shot(p, 'rename')
+  await p.click(`.rename .people button:has-text("${other.name}")`)
+  await p.fill('.rename input', `${other.name}${stamp}`)
+  await p.click('.rename .primary')
+  await p.waitForSelector('.rename .done')
+  now = await engine(HOST, 'house', { house })
+  if (now.members.find((m) => m.id === other.id).name !== `${other.name}${stamp}`) throw new Error('host could not rename a member')
+  ok('老板改别人的名字：引擎确认')
+  let refused = null
+  await engine(HOST, 'rename', { house, name: `${me.name}${stamp}`, member: other.id }).catch((e) => { refused = e.message })
+  if (!refused?.includes('relay_refused')) throw new Error(`relay accepted a duplicate: ${refused}`)
+  ok('重名绕过界面直接发给 Relay：被拒绝')
+  await engine(HOST, 'rename', { house, name: me.name })
+  await engine(HOST, 'rename', { house, name: other.name, member: other.id })
+  await p.close()
+})
+
 const findNode = (n, f) => (f(n) ? n : (n.children ?? []).map((c) => findNode(c, f)).find(Boolean))
 
 await step('首页：只有一台设备时提醒添加第二台（0007）', async () => {
@@ -428,6 +473,22 @@ if (GUEST) {
       await p.close()
     })
   }
+  await step('茶客改自己的名字（rename）', async () => {
+    const before = await engine(GUEST, 'house', { house })
+    const me = before.members.find((m) => m.id === before.me)
+    const p = await open(guest.url, 'house')
+    await p.click('.rename-open button')
+    if (await p.$('.rename .people')) throw new Error('a guest can pick other members')
+    await p.fill('.rename input', `${me.name}${stamp}`)
+    await p.click('.rename .primary')
+    await p.waitForSelector('.rename .done')
+    await engine(HOST, 'sync', { house })
+    const seen = (await engine(HOST, 'house', { house })).members.find((m) => m.id === me.id).name
+    if (seen !== `${me.name}${stamp}`) throw new Error(`host sees ${seen}`)
+    ok('茶客只能改自己，老板那边同步后看到新名字')
+    await engine(GUEST, 'rename', { house, name: me.name })
+    await p.close()
+  })
   await step('茶客：看不到改状态；修改问题变成提案（updateProblem）', async () => {
     await engine(GUEST, 'sync', { house })
     const p = await open(guest.url, `problem/${problemId}`)

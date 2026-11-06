@@ -101,7 +101,7 @@
       {:else if route.page === 'proposals' || route.page === 'proposal'}
         <Proposal {house} {refresh} id={route.page === 'proposal' ? route.arg : undefined} />
       {:else}
-        <House {house} />
+        <House {house} {refresh} />
       {/if}
     </div>
   {/key}

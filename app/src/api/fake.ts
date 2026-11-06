@@ -332,7 +332,19 @@ const handlers: Handlers = {
   // 邀请：给出的是一整串"邀请码@Relay 地址"，粘贴时界面能一并认出地址（已在 PR 里提出）
   invite: () => ok('TH-7KQ2-M9XF-3RDP-WC5L@relay.teahouse.example'),
   // 入座：假数据里让你作为茶客坐进梧桐里
-  redeem: ({ code, name }) => {
+  // 假数据：老板在这张邀请里替对方写了名字
+  inviteInfo: ({ code }) => ok(code.toUpperCase() === 'TH-7KQ2-M9XF-3RDP-WC5L' ? { name: L({ zh: '林小满', en: 'Lin Xiaoman', de: 'Lin Xiaoman' }) } : {}),
+  rename: ({ house, name, member }) => {
+    const h = find(house)
+    const m = h?.members.find((x) => x.id === (member ?? h.me))
+    if (!h || !m) return fail('not_found', 'no such member')
+    if (h.members.some((x) => x !== m && L(x.name).toLowerCase() === name.toLowerCase())) {
+      return { ok: false, error: { code: 'relay_refused', message: 'name taken', reasons: ['that name is taken in this teahouse / 这间茶馆里已经有人叫这个名字了'] } }
+    }
+    m.name = text(name)
+    return ok(m.id)
+  },
+  redeem: ({ code, name = '' }) => {
     if (!/^TH(-[0-9A-Z]{4}){4}$/i.test(code)) return fail('invalid', `not an invitation code: ${code}`)
     // 配对码：这台设备加入"另一台设备"所在的全部茶馆，座位不变
     if (code.toUpperCase() === PAIR_CODE) {
@@ -360,7 +372,7 @@ const handlers: Handlers = {
   },
 }
 
-const writes: A.Command[] = ['openProblem', 'setStatus', 'updateProblem', 'updateNotice', 'addWork', 'updateWork', 'note', 'removeNote', 'postNotice', 'propose', 'withdraw', 'adopt', 'decline', 'seat', 'purgeBlob']
+const writes: A.Command[] = ['openProblem', 'setStatus', 'updateProblem', 'updateNotice', 'addWork', 'updateWork', 'note', 'removeNote', 'postNotice', 'propose', 'withdraw', 'adopt', 'decline', 'seat', 'rename', 'purgeBlob']
 // 演示"被拒绝"：Relay 的理由原样转达（RELAY.md 第 3 节的口吻）
 const refused: A.Result<never> = {
   ok: false,

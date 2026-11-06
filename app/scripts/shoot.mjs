@@ -209,6 +209,19 @@ screens.push(
   { name: 'wutong-refused-dark', hash: '#/wutong/problem/0001', query: '&fake=refuse', theme: 'dark', only1366: true, act: async (p) => { await p.fill('.talk-write textarea', '我同意，周六我也来帮忙喷编号。'); await p.click('.talk-write button.submit'); await p.waitForTimeout(300) } },
 )
 
+// 第 17 轮：名字归本人（法则第 21 条）——入座预填、自己改名、老板改任何人的名字
+const prefill = async (p) => { await p.fill('#invite', '邀请你坐进茶馆。TH-7KQ2-M9XF-3RDP-WC5L@relay.teahouse.example'); await p.waitForSelector('.seen:has-text("老板"), .seen:has-text("host"), .seen:has-text("Wirt")') }
+const openRename = async (p) => { await p.click('.rename-open button'); await p.waitForSelector('.rename') }
+const renameTaken = async (p) => { await openRename(p); await p.fill('.rename input', '周小满') }
+screens.push(
+  { name: 'join-prefill', hash: '#/join', act: prefill, widths: [1366, 390], save: true },
+  { name: 'wutong-rename-host', hash: '#/wutong/house', act: openRename, widths: [1366, 390], save: true },
+  { name: 'wutong-rename-phone', hash: '#/wutong/house', act: openRename, widths: [390], save: true, saveAt: 390 },
+  { name: 'wutong-rename-taken', hash: '#/wutong/house', act: renameTaken, only1366: true, save: true },
+  { name: 'kant-rename-guest', hash: '#/kant/house', act: openRename, only1366: true, save: true },
+  { name: 'wutong-rename-host-dark', hash: '#/wutong/house', act: openRename, theme: 'dark', only1366: true, save: true },
+)
+
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
 function audit() {
   const vw = document.documentElement.clientWidth
