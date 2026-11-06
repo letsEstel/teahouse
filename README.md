@@ -3,9 +3,12 @@
 *Architecture No. 1 in Rust, Op. 1*
 
 <p align="center">
+  <img src="docs/screenshots/0-desktop-overview.jpg" alt="Desktop, German, dark: a neighbourhood teahouse (example data)" width="49%">
+  <img src="docs/screenshots/0-desktop-notices.jpg" alt="Desktop, English, light: notice board with replies (example data)" width="49%">
+</p>
+<p align="center">
   <img src="docs/screenshots/1-seats.jpg" alt="Seats: people and machines" width="24%">
   <img src="docs/screenshots/2-problems.jpg" alt="Problems" width="24%">
-  <img src="docs/screenshots/3-archive.jpg" alt="Archive: take the whole teahouse with you" width="24%">
   <img src="docs/screenshots/4-files.jpg" alt="Every file, with what you may do to it" width="24%">
 </p>
 
