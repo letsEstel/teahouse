@@ -3,9 +3,12 @@
 *Architecture No. 1 in Rust, Op. 1*
 
 <p align="center">
+  <img src="docs/screenshots/0-desktop-overview.jpg" alt="电脑版，德文，深色：一间邻里茶馆（示例数据）" width="49%">
+  <img src="docs/screenshots/0-desktop-notices.jpg" alt="电脑版，英文，浅色：公告板和回复（示例数据）" width="49%">
+</p>
+<p align="center">
   <img src="docs/screenshots/1-seats.jpg" alt="座位：人和机器" width="24%">
   <img src="docs/screenshots/2-problems.jpg" alt="问题" width="24%">
-  <img src="docs/screenshots/3-archive.jpg" alt="档案：随时带走整个茶馆" width="24%">
   <img src="docs/screenshots/4-files.jpg" alt="每个文件，以及你能对它做什么" width="24%">
 </p>
 
