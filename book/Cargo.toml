@@ -1,0 +1,11 @@
+# 书里的每一节都是可以运行的：cargo test 把每个小节当成测试来跑。
+[package]
+name = "teahouse-book"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "lib.rs"
+
+[workspace]

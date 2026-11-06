@@ -1,3 +1,10 @@
-# 这本书的章节顺序。.rs 是一章代码，.md 是一章纯文字。
-book/front/how-to-read.md
-core/src/members.rs
+# 这本书的目录。
+# 以 ## 开头的是一个部分；其余每行是一节。.md 是文字和代码写在一起的一节，
+# .rs 是写在真实代码文件里的一节（书的文字以 //| 开头）。
+book/sections/how-to-read.md
+## 第一部分 从零开始
+book/sections/1-start/1-terminal.md
+book/sections/1-start/2-first-program.md
+book/sections/1-start/3-names.md
+book/sections/1-start/4-decisions.md
+book/sections/1-start/5-functions.md

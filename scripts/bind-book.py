@@ -1,22 +1,20 @@
 #!/usr/bin/env python3
-"""装订这本书：把代码文件变成阅读版。
+"""装订这本书。书有两种小节，目录在 book/chapters.txt：
 
-书写在代码文件里，装订只是换一种排版，不增加也不减少内容：
+* `.md`：文字和代码写在一起。`cargo test --manifest-path book/Cargo.toml` 运行里面的代码。
+* `.rs`：写在真实代码文件里。`//|` 开头的行是书的文字，文档注释里的例子单独排出来，
+  其余每一行都是代码，原样放进代码块，一行不少，顺序不变。
 
-* `//|` 开头的行是书的正文（Markdown）；
-* 文档注释里 ``` 围起来的例子单独排出来，`cargo test` 每次都会运行它们；
-* 其余每一行都是代码，原样放进代码块，一行不少，顺序不变。
-
-章节顺序写在 book/chapters.txt 里。结果放进 book/src/（不进 git），
-装好了 mdbook 的话，接着生成 book/out/。
+结果放进 book/src/（不进 git），装好了 mdbook 的话，接着生成 book/out/。
 
     python3 scripts/bind-book.py           # 装订
-    python3 scripts/bind-book.py --check   # 只检查：每章的代码是否一行不少
+    python3 scripts/bind-book.py --check   # 检查：书上印的结果和真实运行的结果一样，.rs 小节的代码一行不少
 """
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -111,11 +109,81 @@ def check(path, shown):
         sys.exit(f"{path}: 装订出来的代码和文件不一致")
 
 
-def chapters():
+def contents():
+    """目录里的每一行：(部分的标题, None) 或 (None, 文件)。"""
     for line in (BOOK / "chapters.txt").read_text(encoding="utf8").splitlines():
         line = line.strip()
-        if line and not line.startswith("#"):
-            yield line
+        if line.startswith("## "):
+            yield line[3:], None
+        elif line and not line.startswith("#"):
+            yield None, line
+
+
+def chapters():
+    return [entry for _, entry in contents() if entry]
+
+
+FENCE = re.compile(r"^```(\S*)\n(.*?)\n```$", re.S | re.M)
+
+
+def blocks(text):
+    """每段 Rust 代码，配上它后面最近的结果：(标记, 代码, 结果的种类, 结果)。"""
+    pairs = []
+    for info, body in FENCE.findall(text):
+        if info.startswith("rust"):
+            pairs.append([info, body, "", ""])
+        elif info in ("text,output", "text,error") and pairs and not pairs[-1][2]:
+            pairs[-1][2:] = [info.split(",")[1], body]
+    return pairs
+
+
+def clean(text):
+    text = re.sub(r"finished in [\d.]+s", "finished in 0.00s", text)
+    return [line.rstrip() for line in text.split("\n") if line.strip()]
+
+
+def run(tags, code):
+    """像读者那样编译并运行一段代码，返回 (是否编译成功, 输出)。"""
+    with tempfile.TemporaryDirectory() as d:
+        (Path(d) / "src").mkdir()
+        (Path(d) / "src/main.rs").write_text(code, encoding="utf8")
+        args = ["rustc", "--edition=2021", "-Awarnings", "src/main.rs", "-o", "prog"]
+        if "test" in tags:
+            args.insert(1, "--test")
+        done = subprocess.run(args, cwd=d, capture_output=True, text=True)
+        if done.returncode:
+            return False, done.stderr
+        # 测试默认并行，一个一个跑，输出的顺序才固定
+        command = [str(Path(d) / "prog")] + (["--test-threads=1"] if "test" in tags else [])
+        ran = subprocess.run(command, cwd=d, capture_output=True, text=True)
+        return True, ran.stdout
+
+
+def check_outputs(entry):
+    """书上印的结果必须和真实运行的结果一样；印出来的报错必须是真实报错里的原话。
+    没有印结果的代码也要能编译（compile_fail 的要编译不过）。"""
+    text = (ROOT / entry).read_text(encoding="utf8")
+    n = 0
+    for tags, code, kind, printed in blocks(text):
+        compiled, actual = run(tags, code)
+        if "compile_fail" in tags:
+            if compiled:
+                sys.exit(f"{entry}: 这段代码应该编译不过，却编译过了：\n{code}")
+        elif not compiled:
+            sys.exit(f"{entry}: 这段代码编译不过：\n{code}\n{actual}")
+        if kind == "output" and clean(printed) != clean(actual):
+            sys.exit(f"{entry}: 书上印的结果不对。\n书上：\n{printed}\n实际：\n{actual}")
+        if kind == "error" and not all(line in clean(actual) for line in clean(printed)):
+            sys.exit(f"{entry}: 书上印的报错不对。\n书上：\n{printed}\n实际：\n{actual}")
+        n += 1
+    return n
+
+
+def present(text):
+    """给运行结果加上小标题。"""
+    return text.replace("```text,output", '<p class="out">运行结果</p>\n\n```text').replace(
+        "```text,error", '<p class="out">报错</p>\n\n```text'
+    )
 
 
 def preface():
@@ -135,28 +203,34 @@ def bind():
     (SRC / "preface.md").write_text(preface(), encoding="utf8")
     toc = ["# 目录\n", "[前言](preface.md)\n"]
     n = 0
-    for entry in chapters():
+    for part, entry in contents():
+        if part:
+            toc.append(f"\n# {part}\n")
+            continue
         if entry.endswith(".md"):
-            text = (ROOT / entry).read_text(encoding="utf8")
+            text = present((ROOT / entry).read_text(encoding="utf8"))
         else:
             text, shown = weave(entry)
             check(entry, shown)
-            text = f'<p class="source">这一章就是 <code>{entry}</code></p>\n\n' + text
+            text = f'<p class="source">这一节就是 <code>{entry}</code></p>\n\n' + text
         title = re.search(r"^# (.+)$", text, re.M).group(1)
         n += 1
         name = f"{n:02}.md"
         (SRC / name).write_text(text, encoding="utf8")
         toc.append(f"- [{title}]({name})")
     (SRC / "SUMMARY.md").write_text("\n".join(toc) + "\n", encoding="utf8")
-    print(f"装订了 {n} 章 → {SRC.relative_to(ROOT)}")
+    print(f"装订了 {n} 节 → {SRC.relative_to(ROOT)}")
 
 
 def main():
     if "--check" in sys.argv:
+        n = 0
         for entry in chapters():
-            if not entry.endswith(".md"):
+            if entry.endswith(".md"):
+                n += check_outputs(entry)
+            else:
                 check(entry, weave(entry)[1])
-        print("每一章的代码都一行不少")
+        print(f"书上的 {n} 段代码都和真实运行一致")
         return
     bind()
     if shutil.which("mdbook"):

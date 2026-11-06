@@ -29,3 +29,8 @@ blockquote { background: var(--paper-deep); border: 0; border-left: 6px solid va
 .hljs-keyword, .hljs-built_in, .hljs-type, .hljs-title { font-weight: 700; }
 .hljs-string, .hljs-comment, .hljs-meta { color: var(--ink-3) !important; }
 pre code { font-family: var(--mono-font); }
+.out, .wont { margin: 1.4em 0 -.7em; font-size: 1.3rem; font-weight: 700; }
+.out + pre { border-left: 0; background: var(--paper-deep) !important; padding: .8em 1.2em !important; }
+.wont + pre { border-left: 6px solid var(--ink); }
+details { margin: 1.2em 0; border-top: 1px solid var(--ink-3); border-bottom: 1px solid var(--ink-3); padding: .6em 0; }
+summary { cursor: pointer; font-weight: 700; }
