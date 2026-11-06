@@ -189,7 +189,9 @@ are words; single quotes quote (`--name '王阿姨'`); nothing is expanded.
 | `blob-purge <id> <sha256>` | host | deletes it for good |
 | `invite <id> [--role guest\|steward] [--name N] [--days 1–30] [--kind machine [--agent A]]` | host | prints a one-time code `TH-XXXX-XXXX-XXXX-XXXX` (80 bits, default 7 days); `--kind machine` marks the seat as a machine's (an AI, a CI job, a script; any role); its id starts with `bot-`. `--kind ai` is still accepted (id `ai-`, written `kind = "ai"` as before) |
 | `uninvite <id> <first four>` | host | revokes it |
-| `redeem <code> --name N [--agent A]` | anyone, incl. a key with no seat | seats the key; prints `house <id>` and `member <id>`; `--agent` only for an AI's invitation. With a pairing code: adds the key as a device named N, one `house`/`member` pair per teahouse |
+| `redeem <code> [--name N] [--agent A]` | anyone, incl. a key with no seat | seats the key; prints `house <id>` and `member <id>`. N is the newcomer's name; without it, the name the host wrote in the invitation. `--agent` only for a machine's invitation. With a pairing code: adds the key as a device named N, one `house`/`member` pair per teahouse |
+| `invite-info <code>` | anyone, incl. a key with no seat | prints `name <N>` when the invitation (or pairing code) suggests a name, nothing otherwise; uses nothing up; failed guesses count against the same limit as `redeem` |
+| `rename <id> --name N [--member M]` | a seated key; `--member` for someone else: host | changes the name, never the id; refused when another member already has it. Written by the relay (`Act: seat`, `Rename: <member>`), author: whoever renamed; prints the member id |
 | `pair [--name N] [--minutes 1–60]` | any seated key | prints a one-time pairing code (default 10 minutes) for another device of the same member, in every teahouse where this key sits (law 19) |
 | `unpair <id> <device name \| SHA256:fingerprint>` | the member | removes another of the member's own devices in that teahouse; never the device in use or the last one |
 

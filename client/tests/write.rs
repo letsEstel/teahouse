@@ -1106,6 +1106,66 @@ fn links_to_documents_kept_elsewhere() {
 }
 
 #[test]
+fn a_name_is_suggested_by_the_host_and_kept_by_the_member() {
+    let w = World::new("names");
+    let (wang, li, zhao) = w.wutong();
+    let code = wang.ok("invite", json!({ "house": "wutong", "name": "老周" }));
+    let new = w.person("zhou");
+    let info = new.ok("inviteInfo", json!({ "code": code }));
+    assert_eq!(info["name"], "老周");
+    // No name given: the host's. (What the form sends when it is left as filled in.)
+    let h = new.ok("redeem", json!({ "code": code }));
+    assert_eq!(h["me"], "m1");
+    let me = |p: &Person| {
+        let h = p.house();
+        let id = h["me"].clone();
+        h["members"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|m| m["id"] == id)
+            .unwrap()["name"]
+            .clone()
+    };
+    assert_eq!(me(&new), "老周");
+
+    // A guest renames itself, and everyone sees it after a sync.
+    let r = zhao.ok("rename", json!({ "house": "wutong", "name": "赵同学" }));
+    assert_eq!(r, "zhao");
+    assert_eq!(me(&zhao), "赵同学");
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let h = wang.house();
+    let name = h["members"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|m| m["id"] == "zhao")
+        .unwrap()["name"]
+        .clone();
+    assert_eq!(name, "赵同学");
+
+    // Not someone else's seat, unless you are the host.
+    let e = li.err(
+        "rename",
+        json!({ "house": "wutong", "name": "x", "member": "zhao" }),
+    );
+    assert_eq!(e["code"], "forbidden", "{e:#}");
+    let e = zhao.err("rename", json!({ "house": "wutong", "name": "老周" }));
+    assert_eq!(e["code"], "relay_refused", "{e:#}");
+    assert!(
+        e["message"].as_str().unwrap().contains("that name")
+            || e["reasons"].to_string().contains("that name"),
+        "{e:#}"
+    );
+    wang.ok(
+        "rename",
+        json!({ "house": "wutong", "name": "小赵", "member": "zhao" }),
+    );
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    assert_eq!(me(&zhao), "小赵");
+}
+
+#[test]
 fn attachments_go_to_the_cache_and_into_git_as_references() {
     let w = World::new("blobs");
     let (_wang, li, _zhao) = w.wutong();

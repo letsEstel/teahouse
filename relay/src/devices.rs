@@ -157,6 +157,17 @@ fn free_name(member: &Member, name: &str) -> String {
 
 /// Redeems a pairing code for the new device `key`, under the invitation
 /// lock (`invites::redeem` calls this). `Ok(None)`: not a pairing code.
+/// The device name a pairing code suggests: `None` when there is no such
+/// code (or it expired), `Some(None)` when it suggests none.
+pub fn pair_name(root: &Root, code: &str) -> Option<Option<String>> {
+    let file = pairs_dir(root).join(format!("{}.pair", code_hash(code)));
+    fs::read_to_string(&file)
+        .ok()
+        .and_then(|t| Pair::parse(&t))
+        .filter(|p| now() <= p.expires)
+        .map(|p| p.name)
+}
+
 pub fn redeem_pair(
     root: &Root,
     key: &PublicKey,

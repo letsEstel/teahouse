@@ -82,6 +82,7 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
         ("updateWork", "Change an existing work's content (by its id); a link's url, title and note too. As a guest this becomes a proposal.", obj(json!({ "house": house(), "id": s("the work's path"), "text": s("the new content"), "fromPath": s("a local file, for attachments"), "url": s("a link's new http(s) address"), "title": s("a link's new title"), "note": s("a link's new note (empty removes it)") }), &["house", "id"])),
         ("updateProblem", "Change a problem's title and/or its text (the Markdown after the frontmatter: summary and ## sections); status and owner stay. As a guest this becomes a proposal.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "title": s("the new title"), "text": s("the new text") }), &["house", "problem"])),
         ("sync", "Fetch what others wrote and push what you wrote. Without house: every teahouse.", obj(json!({ "house": house() }), &[])),
+        ("rename", "Change your own name in a teahouse (your id stays). Names are unique within a teahouse. The host may give member to rename someone else.", obj(json!({ "house": house(), "name": s("the new name"), "member": s("host only: the member's id") }), &["house", "name"])),
         ("pair", "Make a pairing code (TH-…@relay, 10 minutes, once) so another device of yours (or another machine you run on) joins as the same member, in every teahouse you sit in there.", obj(json!({ "house": s("any teahouse you sit in at that relay (default: the first)"), "name": s("a name for the new device, e.g. 手机") }), &[])),
         ("devices", "Your devices in a teahouse: name, SHA256 fingerprint, when added, and which one this is.", obj(json!({ "house": house() }), &["house"])),
         ("unpair", "Remove another of your own devices (e.g. a lost one), by name or SHA256 fingerprint; without house, everywhere you have it. Not the device in use, never the last one.", obj(json!({ "house": house(), "device": s("device name or SHA256:… fingerprint") }), &["device"])),
@@ -93,7 +94,7 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
         ("seat", "Change the seating chart: remove a member, or change a member's role. New members come only by invitation. Host.", obj(json!({ "house": house(), "remove": s("member id to remove"), "role": { "type": "object", "properties": { "id": s("member id"), "role": { "type": "string", "enum": ["guest", "steward", "host"] } }, "required": ["id", "role"] } }), &["house"])),
         ("invite", "Create a one-time invitation (TH-…@relay) for a person or a machine (an AI, a CI job, a script). Host.", obj(json!({ "house": house(), "role": { "type": "string", "enum": ["guest", "steward"] }, "name": s("whom it is for"), "days": { "type": "integer", "minimum": 1, "maximum": 30 }, "kind": { "type": "string", "enum": ["human", "machine"] }, "agent": s("for a machine: which one, e.g. Claude Code, GitHub Actions") }), &["house"])),
         ("purgeBlob", "Remove an attachment's content for good (the reference stays, marked purged). Host.", obj(json!({ "house": house(), "id": s("the attachment reference's path") }), &["house", "id"])),
-        ("redeem", "Take a seat with an invitation (TH-XXXX-XXXX-XXXX-XXXX@relay) from the host, then clone the teahouse. Give your name as people should see it; agent names what you are (e.g. Claude Code).", obj(json!({ "code": s("the whole invitation as pasted"), "name": s("your name in this teahouse"), "agent": s("what machine you are, e.g. Claude Code"), "relay": s("relay address, only if the invitation has none") }), &["code", "name"])),
+        ("redeem", "Take a seat with an invitation (TH-XXXX-XXXX-XXXX-XXXX@relay) from the host, then clone the teahouse. Give your name as people should see it; agent names what you are (e.g. Claude Code).", obj(json!({ "code": s("the whole invitation as pasted"), "name": s("your name in this teahouse; without it, the name the host wrote in the invitation"), "agent": s("what machine you are, e.g. Claude Code"), "relay": s("relay address, only if the invitation has none") }), &["code"])),
     ]
 }
 
@@ -338,9 +339,9 @@ mod tests {
         ] {
             assert!(!names.iter().any(|n| n == absent), "{absent}");
         }
-        // No seat anywhere: the guest's tools only (of 24 in all).
-        assert_eq!(names.len(), 17);
-        assert_eq!(tools().len(), 24);
+        // No seat anywhere: the guest's tools only (of 25 in all).
+        assert_eq!(names.len(), 18);
+        assert_eq!(tools().len(), 25);
         let r = handle(&c, &json!({ "jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": { "name": "adopt", "arguments": {} } })).unwrap();
         assert_eq!(r["result"]["isError"], true);
         let r = handle(&c, &json!({ "jsonrpc": "2.0", "id": 4, "method": "nope" })).unwrap();
