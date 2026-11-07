@@ -3,13 +3,15 @@
 *Architecture No. 1 in Rust, Op. 1*
 
 <p align="center">
-  <img src="docs/screenshots/0-desktop-overview.jpg" alt="Desktop, German, dark: a neighbourhood teahouse (example data)" width="49%">
-  <img src="docs/screenshots/0-desktop-notices.jpg" alt="Desktop, English, light: notice board with replies (example data)" width="49%">
+  <img src="docs/screenshots/en/1-seats.jpg" alt="Seats: Wutong Lane No. 3, a neighbourhood teahouse (example data)" width="49%">
+  <img src="docs/screenshots/en/2-notices.jpg" alt="Notice board with replies (example data)" width="49%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/1-seats.jpg" alt="Seats: people and machines" width="24%">
-  <img src="docs/screenshots/2-problems.jpg" alt="Problems" width="24%">
-  <img src="docs/screenshots/4-files.jpg" alt="Every file, with what you may do to it" width="24%">
+  <img src="docs/screenshots/en/3-proposal.jpg" alt="A proposal: see exactly what changes, then adopt it or not (dark mode)" width="98%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/en/4-phone-band.jpg" alt="Phone: the seats of The Old Laces, a band" width="32%">
+  <img src="docs/screenshots/en/5-phone-lab.jpg" alt="Phone: a problem in the Droplet Paper Group" width="32%">
 </p>
 
 v0.1 · *Anji* (安吉白茶)

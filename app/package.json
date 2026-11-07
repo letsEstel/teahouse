@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check": "node scripts/i18n-check.mjs && svelte-check --tsconfig ./tsconfig.json",
     "shoot": "node scripts/shoot.mjs",
     "preview:publish": "node scripts/preview.mjs",
     "export-fixtures": "node scripts/export-fixtures.mjs",
