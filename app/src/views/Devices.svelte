@@ -10,11 +10,14 @@
   let { house }: { house: House } = $props()
   const MAX = 5   // 法则第 18 条：每人最多 5 台
 
-  // 新设备是 Relay 代写进座位表的（法则第 19 条），本机要先同步才看得到：所以先 sync 再读
+  // 新设备是 Relay 代写进座位表的（法则第 19 条），本机要同步才看得到。
+  // 先显示本机已有的（马上就有），再同步、再读一次（同步要连服务器，要几秒，0034）
   let devices = $state<DeviceInfo[] | null>(null)
+  const list = async () => { devices = await api('devices', { house: house.id }).catch(() => devices ?? []) }
   async function load() {
+    await list()
     await api('sync', { house: house.id }).catch(() => null)
-    devices = await api('devices', { house: house.id }).catch(() => devices ?? [])
+    await list()
   }
   $effect(() => { load() })
 

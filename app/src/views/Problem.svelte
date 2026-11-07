@@ -14,18 +14,29 @@
   import { inApp } from '../api/backend'
   import { openUrl } from '@tauri-apps/plugin-opener'
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
-  import { api, write as send, blobUrl } from '../api/backend'
-  import { isMachine } from '../api/types'
+  import { api, write as send, blobUrl, BackendError } from '../api/backend'
+  import Loading from '../lib/Loading.svelte'
+  import { isMachine, type ApiError } from '../api/types'
   import { t, when, date } from '../i18n/index.svelte'
 
   let { house, id, refresh }: { house: House; id: string; refresh?: () => void } = $props()
   let p = $state<Problem | null>(null)
   let image = $state<string | null>(null)   // 首张成果是图片时，本地缓存里的地址
+  let failed = $state<ApiError | null>(null)
+  // 先显示文字，图片随后再到：本机没有的图片要从 Relay 下载，要几秒，不能让整页等它（0034）
   async function load() {
-    const fresh = await api('problem', { house: house.id, problem: id })
+    let fresh: Problem
+    try {
+      fresh = await api('problem', { house: house.id, problem: id })
+    } catch (e) {
+      failed = e instanceof BackendError ? e.error : { code: 'internal', message: String(e) }
+      return
+    }
+    failed = null
     const first = fresh.works[0]
-    image = first?.kind === 'image' ? await api('blob', { house: house.id, id: first.id }).catch(() => null) : null
+    if (first?.kind !== 'image' || first.id !== p?.works[0]?.id) image = null
     p = fresh
+    if (first?.kind === 'image') image = await api('blob', { house: house.id, id: first.id }).catch(() => null)
   }
   $effect(() => { load() })
 
@@ -380,6 +391,8 @@
   </div>
 </div>
 
+{:else}
+  <Loading error={failed} retry={load} />
 {/if}
 
 <style>

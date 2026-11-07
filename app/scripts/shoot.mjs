@@ -244,6 +244,14 @@ for (const [h, role] of [['wutong', 'host'], ['family', 'steward'], ['kant', 'gu
   )
 }
 
+// 第 23 轮：还没读到时不留空白（0024）
+screens.push(
+  { name: 'loading-house', hash: '#/wutong/house', query: '&fake=loading', widths: [1366, 390], save: true },
+  { name: 'loading-problem', hash: '#/wutong/problem/0001', query: '&fake=loadpage', save: true },
+  { name: 'loading-problem-failed', hash: '#/wutong/problem/0001', query: '&fake=loadfail', save: true },
+  { name: 'loading-problem-dark', hash: '#/wutong/problem/0001', query: '&fake=loadpage', theme: 'dark', only1366: true, save: true },
+)
+
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
 function audit() {
   const vw = document.documentElement.clientWidth

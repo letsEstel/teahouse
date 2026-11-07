@@ -12,6 +12,7 @@
   import Devices from './views/Devices.svelte'
   import Design from './views/Design.svelte'
   import ErrorBar from './lib/ErrorBar.svelte'
+  import Loading from './lib/Loading.svelte'
   import { startAutoSync } from './api/autosync'
   import Sending from './lib/Sending.svelte'
   import StatusBar from './lib/StatusBar.svelte'
@@ -115,14 +116,9 @@
 {#if route.page === 'house'}
   {#key house.id}<Tour {house} />{/key}
 {/if}
-{:else if failed}
-  <!-- 读不到茶馆（比如引擎没启动）：说清楚，给一个重试 -->
-  <div class="failed">
-    <h1>{t('err.loadFailed')}</h1>
-    <p>{errorText(failed)}</p>
-    <p class="detail">{failed.message}</p>
-    <button class="secondary" onclick={refresh}>{t('err.retry')}</button>
-  </div>
+{:else}
+  <!-- 还没读到（引擎在忙）或读不到（比如引擎没启动）：不留空白，说清楚，给一个重试（0024） -->
+  <Loading what="house" error={failed} retry={refresh} />
 {/if}
 
 <Sending />
@@ -130,9 +126,6 @@
 <style>
   main { margin-left: var(--rail); min-height: 100vh; }
   main.solo { margin-left: 0; }
-  .failed { padding: var(--pad-top) var(--pad-x); display: flex; flex-direction: column; align-items: flex-start; gap: 16px; max-width: 40em; }
-  .failed h1 { font-family: var(--display); font-weight: var(--heavy); font-size: clamp(32px, 4vw, 56px); letter-spacing: var(--track); }
-  .failed .detail { font-size: 13px; color: var(--ink-3); font-family: var(--latin); overflow-wrap: anywhere; }
   .page { animation: enter 360ms var(--ease) both; }
   @keyframes enter { from { opacity: 0; } to { opacity: 1; } }
 </style>

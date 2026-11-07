@@ -42,9 +42,14 @@
     void reloads
     editing = false
     if (!target) return
+    // 先显示文件，附件随后再到（本机没有时要从 Relay 下载，0034）
     api('file', { house: house.id, id: target }).then(async (f) => {
-      image = f.node.kind === 'image' || f.node.kind === 'file' ? await api('blob', { house: house.id, id: target }).catch(() => null) : null
-      if (selected === target) file = f
+      if (selected !== target) return
+      if (file?.node.id !== f.node.id) image = null
+      file = f
+      if (f.node.kind !== 'image' && f.node.kind !== 'file') return
+      const path = await api('blob', { house: house.id, id: target }).catch(() => null)
+      if (selected === target) image = path
     })
   })
 
