@@ -1,3 +1,4 @@
+// 西夏碑：翻译（docs/NAMES.zh.md）。
 // 界面文字全部走翻译键：t('key', { 参数 })。
 // 词条可以是字符串，也可以是按复数分类的对象 { one, other }（用参数 n 选择）。
 import zh from './zh'

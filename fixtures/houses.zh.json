@@ -75,7 +75,7 @@
             "by": "wang",
             "opened": "2026-03-16T09:00:00Z",
             "updated": "2026-10-18T16:02:00.000Z",
-            "workCount": 9,
+            "workCount": 10,
             "pendingProposals": 1
           },
           {
@@ -292,25 +292,25 @@
             "when": "2026-10-16T18:00:00.000Z",
             "replies": [
               {
+                "id": "talk/board/b2/20261016T183100Z-wang.md",
                 "by": "wang",
                 "text": "我来，带两把扫帚。",
                 "when": "2026-10-16T18:31:00.000Z",
-                "writtenAt": "2026-10-16T18:31:00.000Z",
-                "id": "talk/board/b2/20261016T183100Z-wang.md"
+                "writtenAt": "2026-10-16T18:31:00.000Z"
               },
               {
+                "id": "talk/board/b2/20261017T055000Z-wu.md",
                 "by": "wu",
                 "text": "喷漆的活我熟，算我一个。",
                 "when": "2026-10-17T05:50:00.000Z",
-                "writtenAt": "2026-10-17T05:50:00.000Z",
-                "id": "talk/board/b2/20261017T055000Z-wu.md"
+                "writtenAt": "2026-10-17T05:50:00.000Z"
               },
               {
+                "id": "talk/board/b2/20261017T100200Z-lin.md",
                 "by": "lin",
                 "text": "上午要陪老人看病，下午可以来收尾。",
                 "when": "2026-10-17T10:02:00.000Z",
-                "writtenAt": "2026-10-17T10:02:00.000Z",
-                "id": "talk/board/b2/20261017T100200Z-lin.md"
+                "writtenAt": "2026-10-17T10:02:00.000Z"
               }
             ]
           },
@@ -322,11 +322,11 @@
             "when": "2026-10-08T17:00:00.000Z",
             "replies": [
               {
+                "id": "talk/board/b1/20261008T191500Z-zhao.md",
                 "by": "zhao",
                 "text": "收到，v2 周末前提交。",
                 "when": "2026-10-08T19:15:00.000Z",
-                "writtenAt": "2026-10-08T19:15:00.000Z",
-                "id": "talk/board/b1/20261008T191500Z-zhao.md"
+                "writtenAt": "2026-10-08T19:15:00.000Z"
               }
             ]
           }
@@ -346,7 +346,7 @@
           "by": "wang",
           "opened": "2026-03-16T09:00:00Z",
           "updated": "2026-10-18T16:02:00.000Z",
-          "workCount": 9,
+          "workCount": 10,
           "pendingProposals": 1,
           "body": [
             {
@@ -404,6 +404,16 @@
               "when": "2026-10-09T19:30:00.000Z",
               "size": 44,
               "note": "每晚 21:00 拍照统计"
+            },
+            {
+              "id": "works/0001/w10-parking-feedback-sheet.link.md",
+              "kind": "link",
+              "title": "车位意见收集表",
+              "by": "sun",
+              "when": "2026-10-18T17:30:00.000Z",
+              "size": 85,
+              "note": "大家在腾讯文档里一起填，周日汇总后贴回茶馆",
+              "url": "https://docs.qq.com/sheet/DUEtPaXxYzAbCdEf"
             },
             {
               "id": "works/0001/w5-letter-to-the-management-draft.md",
@@ -498,25 +508,25 @@
           ],
           "notes": [
             {
+              "id": "talk/0001/20261013T064000Z-li.md",
               "by": "li",
               "text": "地锁报价如果用不上，报价表能不能留着？别的院子可能用得上。",
               "when": "2026-10-13T06:40:00.000Z",
-              "writtenAt": "2026-10-13T06:40:00.000Z",
-              "id": "talk/0001/20261013T064000Z-li.md"
+              "writtenAt": "2026-10-13T06:40:00.000Z"
             },
             {
+              "id": "talk/0001/20261017T203000Z-zhao.md",
               "by": "zhao",
               "text": "v2 里夜班住户要提前登记。登记表谁来收？",
               "when": "2026-10-17T20:30:00.000Z",
-              "writtenAt": "2026-10-17T20:30:00.000Z",
-              "id": "talk/0001/20261017T203000Z-zhao.md"
+              "writtenAt": "2026-10-17T20:30:00.000Z"
             },
             {
+              "id": "talk/0001/20261018T071000Z-zhou.md",
               "by": "zhou",
               "text": "我来收。门卫室放一个本子，每周日拍照传到这里。",
               "when": "2026-10-18T07:10:00.000Z",
-              "writtenAt": "2026-10-18T07:10:00.000Z",
-              "id": "talk/0001/20261018T071000Z-zhou.md"
+              "writtenAt": "2026-10-18T07:10:00.000Z"
             }
           ]
         },
@@ -748,6 +758,21 @@
             {
               "by": "wang",
               "when": "2026-10-09T19:30:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/w10-parking-feedback-sheet.link.md",
+          "kind": "link",
+          "problem": "0001",
+          "text": "---\ntitle: 车位意见收集表\nnote: 大家在腾讯文档里一起填，周日汇总后贴回茶馆\n---\n",
+          "history": [
+            {
+              "by": "sun",
+              "when": "2026-10-18T17:30:00.000Z",
               "act": "add-work",
               "problem": "0001",
               "title": "新建了它"
@@ -1232,18 +1257,18 @@
             "when": "2026-10-17T08:00:00.000Z",
             "replies": [
               {
+                "id": "talk/board/b2/20261017T104000Z-xu.md",
                 "by": "xu",
                 "text": "可以。我会把术语表的提案先交上来，周五一起看。",
                 "when": "2026-10-17T10:40:00.000Z",
-                "writtenAt": "2026-10-17T10:40:00.000Z",
-                "id": "talk/board/b2/20261017T104000Z-xu.md"
+                "writtenAt": "2026-10-17T10:40:00.000Z"
               },
               {
+                "id": "talk/board/b2/20261017T160300Z-tang.md",
                 "by": "tang",
                 "text": "周五我要晚到半小时。",
                 "when": "2026-10-17T16:03:00.000Z",
-                "writtenAt": "2026-10-17T16:03:00.000Z",
-                "id": "talk/board/b2/20261017T160300Z-tang.md"
+                "writtenAt": "2026-10-17T16:03:00.000Z"
               }
             ]
           },
@@ -1374,25 +1399,25 @@
           ],
           "notes": [
             {
+              "id": "talk/0001/20261002T205000Z-tang.md",
               "by": "tang",
               "text": "我倾向于读成两步。§21 自己说了“证明的开端”，说明还没完。",
               "when": "2026-10-02T20:50:00.000Z",
-              "writtenAt": "2026-10-02T20:50:00.000Z",
-              "id": "talk/0001/20261002T205000Z-tang.md"
+              "writtenAt": "2026-10-02T20:50:00.000Z"
             },
             {
+              "id": "talk/0001/20261009T211000Z-luo.md",
               "by": "luo",
               "text": "同意两步，但第二步到底多证了什么，我还是说不出来。",
               "when": "2026-10-09T21:10:00.000Z",
-              "writtenAt": "2026-10-09T21:10:00.000Z",
-              "id": "talk/0001/20261009T211000Z-luo.md"
+              "writtenAt": "2026-10-09T21:10:00.000Z"
             },
             {
+              "id": "talk/0001/20261016T204500Z-he.md",
               "by": "he",
               "text": "第三稿里把第二步写成“范围的扩展”：从“被统一的直观”扩到“我们的一切感性直观”。周五请挑错。",
               "when": "2026-10-16T20:45:00.000Z",
-              "writtenAt": "2026-10-16T20:45:00.000Z",
-              "id": "talk/0001/20261016T204500Z-he.md"
+              "writtenAt": "2026-10-16T20:45:00.000Z"
             }
           ]
         },
@@ -2002,18 +2027,18 @@
             "when": "2026-10-18T17:30:00.000Z",
             "replies": [
               {
+                "id": "talk/board/b2/20261018T175200Z-mum.md",
                 "by": "mum",
                 "text": "我包饺子。",
                 "when": "2026-10-18T17:52:00.000Z",
-                "writtenAt": "2026-10-18T17:52:00.000Z",
-                "id": "talk/board/b2/20261018T175200Z-mum.md"
+                "writtenAt": "2026-10-18T17:52:00.000Z"
               },
               {
+                "id": "talk/board/b2/20261018T180500Z-ping.md",
                 "by": "ping",
                 "text": "我五点前到。",
                 "when": "2026-10-18T18:05:00.000Z",
-                "writtenAt": "2026-10-18T18:05:00.000Z",
-                "id": "talk/board/b2/20261018T180500Z-ping.md"
+                "writtenAt": "2026-10-18T18:05:00.000Z"
               }
             ]
           },
@@ -2025,11 +2050,11 @@
             "when": "2026-10-02T19:00:00.000Z",
             "replies": [
               {
+                "id": "talk/board/b1/20261003T061500Z-dad.md",
                 "by": "dad",
                 "text": "被子我自己带。",
                 "when": "2026-10-03T06:15:00.000Z",
-                "writtenAt": "2026-10-03T06:15:00.000Z",
-                "id": "talk/board/b1/20261003T061500Z-dad.md"
+                "writtenAt": "2026-10-03T06:15:00.000Z"
               }
             ]
           }
@@ -2158,25 +2183,25 @@
           ],
           "notes": [
             {
+              "id": "talk/0001/20261016T072000Z-mum.md",
               "by": "mum",
               "text": "扶手别装太高，我够不着。",
               "when": "2026-10-16T07:20:00.000Z",
-              "writtenAt": "2026-10-16T07:20:00.000Z",
-              "id": "talk/0001/20261016T072000Z-mum.md"
+              "writtenAt": "2026-10-16T07:20:00.000Z"
             },
             {
+              "id": "talk/0001/20261016T190500Z-lei.md",
               "by": "lei",
               "text": "按 80 厘米装。妈，下回我带尺子来，您站着比一下。",
               "when": "2026-10-16T19:05:00.000Z",
-              "writtenAt": "2026-10-16T19:05:00.000Z",
-              "id": "talk/0001/20261016T190500Z-lei.md"
+              "writtenAt": "2026-10-16T19:05:00.000Z"
             },
             {
+              "id": "talk/0001/20261018T121000Z-yu.md",
               "by": "yu",
               "text": "防滑砖我看了三款，照片传到“现状照片”里了，奶奶喜欢浅色那款。",
               "when": "2026-10-18T12:10:00.000Z",
-              "writtenAt": "2026-10-18T12:10:00.000Z",
-              "id": "talk/0001/20261018T121000Z-yu.md"
+              "writtenAt": "2026-10-18T12:10:00.000Z"
             }
           ]
         },
@@ -2627,6 +2652,14 @@
             "name": "马克",
             "role": "guest",
             "joined": "2026-08-03T09:00:00Z"
+          },
+          {
+            "id": "claude",
+            "name": "Claude",
+            "role": "guest",
+            "joined": "2026-10-12T09:00:00Z",
+            "kind": "machine",
+            "agent": "Claude Code"
           }
         ],
         "problems": [
@@ -2672,10 +2705,17 @@
             "opened": "2026-10-10T09:00:00Z",
             "updated": "2026-10-10T09:00:00Z",
             "workCount": 1,
-            "pendingProposals": 0
+            "pendingProposals": 1
           }
         ],
         "recent": [
+          {
+            "by": "claude",
+            "when": "2026-10-18T19:05:00.000Z",
+            "problem": "0004",
+            "act": "propose",
+            "title": "发起提案《离线方案：第一版只做离线记账》"
+          },
           {
             "by": "ma",
             "when": "2026-10-18T13:20:00.000Z",
@@ -2743,6 +2783,36 @@
                 ]
               }
             ]
+          },
+          {
+            "id": "p2",
+            "title": "离线方案：第一版只做离线记账",
+            "by": "claude",
+            "problem": "0004",
+            "when": "2026-10-18T19:05:00.000Z",
+            "reason": "14 家里有 11 家后厨信号差，但都说月底才对账。所以第一版只要能离线记、联网后补传，不必做离线查询，大约省两周。",
+            "files": [
+              {
+                "path": "works/0004/offline-plan.md",
+                "title": "离线方案",
+                "kind": "plan",
+                "change": "modify",
+                "lines": [
+                  {
+                    "kind": "add",
+                    "text": "第一版：断网时照常记账，存在手机里。"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "联网后自动补传，按记账时间排好。"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "离线时不能查月报，界面上说清楚。"
+                  }
+                ]
+              }
+            ]
           }
         ],
         "decided": [
@@ -2763,11 +2833,11 @@
             "when": "2026-10-17T07:00:00.000Z",
             "replies": [
               {
+                "id": "talk/board/b1/20261017T074000Z-ma.md",
                 "by": "ma",
                 "text": "好，我九点前把访谈记录整理完。",
                 "when": "2026-10-17T07:40:00.000Z",
-                "writtenAt": "2026-10-17T07:40:00.000Z",
-                "id": "talk/board/b1/20261017T074000Z-ma.md"
+                "writtenAt": "2026-10-17T07:40:00.000Z"
               }
             ]
           }
@@ -2878,18 +2948,25 @@
           ],
           "notes": [
             {
+              "id": "talk/0001/20261018T133000Z-ma.md",
               "by": "ma",
               "text": "第 9 家和第 12 家都说，只要能拍小票就愿意试。下周先去这两家。",
               "when": "2026-10-18T13:30:00.000Z",
-              "writtenAt": "2026-10-18T13:30:00.000Z",
-              "id": "talk/0001/20261018T133000Z-ma.md"
+              "writtenAt": "2026-10-18T13:30:00.000Z"
             },
             {
+              "id": "talk/0001/20261018T150500Z-linz.md",
               "by": "linz",
               "text": "同意。去之前把演示视频剪到 60 秒以内。",
               "when": "2026-10-18T15:05:00.000Z",
-              "writtenAt": "2026-10-18T15:05:00.000Z",
-              "id": "talk/0001/20261018T150500Z-linz.md"
+              "writtenAt": "2026-10-18T15:05:00.000Z"
+            },
+            {
+              "id": "talk/0001/20261018T184000Z-claude.md",
+              "by": "claude",
+              "text": "我把 14 份访谈按\"愿意试用的理由\"归了类：拍小票 6 家、月底对账 4 家、其他 4 家。第 9 家和第 12 家都在\"拍小票\"里，先去这两家是对的。",
+              "when": "2026-10-18T18:40:00.000Z",
+              "writtenAt": "2026-10-18T18:40:00.000Z"
             }
           ]
         },
@@ -2932,7 +3009,7 @@
           "opened": "2026-10-10T09:00:00Z",
           "updated": "2026-10-10T09:00:00Z",
           "workCount": 1,
-          "pendingProposals": 0,
+          "pendingProposals": 1,
           "body": [],
           "works": [],
           "events": [],
@@ -3128,6 +3205,21 @@
           ]
         },
         {
+          "path": "talk/0001/20261018T204000Z-claude.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "我把 14 份访谈按\"愿意试用的理由\"归了类：拍小票 6 家、月底对账 4 家、其他 4 家。第 9 家和第 12 家都在\"拍小票\"里，先去这两家是对的。",
+          "history": [
+            {
+              "by": "claude",
+              "when": "2026-10-18T18:40:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
           "path": "talk/board/b1/20261017T094000Z-ma.md",
           "kind": "note",
           "problem": "board",
@@ -3146,7 +3238,7 @@
           "path": ".teahouse/members.toml",
           "kind": "members",
           "problem": "meta",
-          "text": "[[member]]\nid = \"linz\"\nname = \"林舟\"\nrole = \"host\"\njoined = 2026-08-01\n\n[[member]]\nid = \"song\"\nname = \"宋雨桐\"\nrole = \"steward\"\njoined = 2026-08-01\n\n[[member]]\nid = \"ma\"\nname = \"马克\"\nrole = \"guest\"\njoined = 2026-08-03",
+          "text": "[[member]]\nid = \"linz\"\nname = \"林舟\"\nrole = \"host\"\njoined = 2026-08-01\n\n[[member]]\nid = \"song\"\nname = \"宋雨桐\"\nrole = \"steward\"\njoined = 2026-08-01\n\n[[member]]\nid = \"ma\"\nname = \"马克\"\nrole = \"guest\"\njoined = 2026-08-03\n\n[[member]]\nid = \"claude\"\nname = \"Claude\"\nrole = \"guest\"\njoined = 2026-10-12",
           "history": [
             {
               "by": "linz",
@@ -3168,6 +3260,13 @@
               "act": "seat",
               "problem": "meta",
               "title": "让马克入座"
+            },
+            {
+              "by": "linz",
+              "when": "2026-10-12T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让Claude入座"
             }
           ]
         }
@@ -3357,18 +3456,18 @@
             "when": "2026-10-15T10:00:00.000Z",
             "replies": [
               {
+                "id": "talk/board/b1/20261015T111000Z-susu.md",
                 "by": "susu",
                 "text": "八点到，带相机。",
                 "when": "2026-10-15T11:10:00.000Z",
-                "writtenAt": "2026-10-15T11:10:00.000Z",
-                "id": "talk/board/b1/20261015T111000Z-susu.md"
+                "writtenAt": "2026-10-15T11:10:00.000Z"
               },
               {
+                "id": "talk/board/b1/20261015T174500Z-ji.md",
                 "by": "ji",
                 "text": "能来，九点前到。",
                 "when": "2026-10-15T17:45:00.000Z",
-                "writtenAt": "2026-10-15T17:45:00.000Z",
-                "id": "talk/board/b1/20261015T174500Z-ji.md"
+                "writtenAt": "2026-10-15T17:45:00.000Z"
               }
             ]
           }
@@ -3488,25 +3587,25 @@
           ],
           "notes": [
             {
+              "id": "talk/0001/20261018T205500Z-zhu.md",
               "by": "zhu",
               "text": "咖啡馆只能用电鼓，我不太愿意。",
               "when": "2026-10-18T20:55:00.000Z",
-              "writtenAt": "2026-10-18T20:55:00.000Z",
-              "id": "talk/0001/20261018T205500Z-zhu.md"
+              "writtenAt": "2026-10-18T20:55:00.000Z"
             },
             {
+              "id": "talk/0001/20261018T210200Z-fang.md",
               "by": "fang",
               "text": "那就 livehouse 或者仓库。老季，仓库那边的音响你能借到吗？",
               "when": "2026-10-18T21:02:00.000Z",
-              "writtenAt": "2026-10-18T21:02:00.000Z",
-              "id": "talk/0001/20261018T210200Z-fang.md"
+              "writtenAt": "2026-10-18T21:02:00.000Z"
             },
             {
+              "id": "talk/0001/20261018T212000Z-ji.md",
               "by": "ji",
               "text": "能借一套小的，四十个人够用。但搬的时候要两个人帮忙。",
               "when": "2026-10-18T21:20:00.000Z",
-              "writtenAt": "2026-10-18T21:20:00.000Z",
-              "id": "talk/0001/20261018T212000Z-ji.md"
+              "writtenAt": "2026-10-18T21:20:00.000Z"
             }
           ]
         },
@@ -4021,11 +4120,11 @@
             "when": "2026-10-16T06:30:00.000Z",
             "replies": [
               {
+                "id": "talk/board/b1/20261016T070200Z-ye.md",
                 "by": "ye",
                 "text": "好。我把复现差异的提案先交上来，周四一起看。",
                 "when": "2026-10-16T07:02:00.000Z",
-                "writtenAt": "2026-10-16T07:02:00.000Z",
-                "id": "talk/board/b1/20261016T070200Z-ye.md"
+                "writtenAt": "2026-10-16T07:02:00.000Z"
               }
             ]
           }
@@ -4145,25 +4244,25 @@
           ],
           "notes": [
             {
+              "id": "talk/0001/20261016T082000Z-bai.md",
               "by": "bai",
               "text": "十月配的油用的是新到的一批表面活性剂。",
               "when": "2026-10-16T08:20:00.000Z",
-              "writtenAt": "2026-10-16T08:20:00.000Z",
-              "id": "talk/0001/20261016T082000Z-bai.md"
+              "writtenAt": "2026-10-16T08:20:00.000Z"
             },
             {
+              "id": "talk/0001/20261017T120500Z-jiang.md",
               "by": "jiang",
               "text": "黏度高了两成，直径偏大说得通。下周用旧批次再做一次。",
               "when": "2026-10-17T12:05:00.000Z",
-              "writtenAt": "2026-10-17T12:05:00.000Z",
-              "id": "talk/0001/20261017T120500Z-jiang.md"
+              "writtenAt": "2026-10-17T12:05:00.000Z"
             },
             {
+              "id": "talk/0001/20261016T194000Z-ye.md",
               "by": "ye",
               "text": "（在火车上写的）三月记录里室温是 21 度，现在实验室只有 17 度，可能也有关系。",
               "when": "2026-10-17T12:06:00.000Z",
-              "writtenAt": "2026-10-16T19:40:00.000Z",
-              "id": "talk/0001/20261016T194000Z-ye.md"
+              "writtenAt": "2026-10-16T19:40:00.000Z"
             }
           ]
         },
@@ -4506,6 +4605,835 @@
               "act": "seat",
               "problem": "meta",
               "title": "让白杨入座"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "house": {
+        "id": "xiaobei",
+        "name": "小北街",
+        "signboard": "春节回凉州，带塞巴斯蒂安走一天。五个地方，几样吃的，一张纸写清楚。",
+        "founded": "2026-10-02T09:00:00Z",
+        "capacity": 15,
+        "me": "ma",
+        "members": [
+          {
+            "id": "ma",
+            "name": "马晓",
+            "role": "host",
+            "joined": "2026-10-02T09:00:00Z"
+          },
+          {
+            "id": "li",
+            "name": "李步云",
+            "role": "steward",
+            "joined": "2026-10-02T09:00:00Z"
+          },
+          {
+            "id": "zhou",
+            "name": "周晓钟",
+            "role": "guest",
+            "joined": "2026-10-02T09:00:00Z"
+          },
+          {
+            "id": "wang",
+            "name": "王婧",
+            "role": "guest",
+            "joined": "2026-10-03T09:00:00Z"
+          },
+          {
+            "id": "chen",
+            "name": "陈默",
+            "role": "guest",
+            "joined": "2026-10-03T09:00:00Z"
+          },
+          {
+            "id": "seb",
+            "name": "塞巴斯蒂安",
+            "role": "guest",
+            "joined": "2026-10-09T09:00:00Z"
+          }
+        ],
+        "problems": [
+          {
+            "id": "0001",
+            "title": "带塞巴斯蒂安逛一天：五个地方怎么走",
+            "summary": "雷台、鸠摩罗什寺、大云寺、海藏寺、核桃园，只有一天。先去哪，在哪吃饭，哪里可以不去。",
+            "status": "active",
+            "by": "ma",
+            "owner": "li",
+            "opened": "2026-10-03T09:00:00Z",
+            "updated": "2026-10-18T17:40:00.000Z",
+            "workCount": 4,
+            "pendingProposals": 1
+          },
+          {
+            "id": "0002",
+            "title": "面皮子哪家最地道",
+            "summary": "每个人心里都有一家。投个票，选两家带塞巴斯蒂安去，辣子另放。",
+            "status": "open",
+            "by": "chen",
+            "opened": "2026-10-05T09:00:00Z",
+            "updated": "2026-10-15T09:00:00Z",
+            "workCount": 1,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0003",
+            "title": "三炮台：冰糖放多少",
+            "summary": "碗、盖、托三件。冰糖、桂圆、红枣、枸杞都放进去，一泡续好几次水。外地朋友第一口会不会太甜？",
+            "status": "open",
+            "by": "wang",
+            "opened": "2026-10-10T09:00:00Z",
+            "updated": "2026-10-14T09:00:00Z",
+            "workCount": 0,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0004",
+            "title": "核桃园冬天开不开门",
+            "summary": "塞巴斯蒂安听说城里有个植物园，想去看看。冬天去值不值，开不开门，还没人问过。",
+            "status": "open",
+            "by": "seb",
+            "opened": "2026-10-11T09:00:00Z",
+            "updated": "2026-10-11T09:00:00Z",
+            "workCount": 0,
+            "pendingProposals": 0
+          },
+          {
+            "id": "0005",
+            "title": "凉面的醋：自己调还是买现成的",
+            "summary": "定了：自己调，蒜水多放。周晓钟负责。",
+            "status": "solved",
+            "by": "zhou",
+            "opened": "2026-10-06T09:00:00Z",
+            "updated": "2026-10-09T09:00:00Z",
+            "workCount": 1,
+            "pendingProposals": 0
+          }
+        ],
+        "recent": [
+          {
+            "by": "li",
+            "when": "2026-10-18T17:40:00.000Z",
+            "problem": "0001",
+            "act": "update-work",
+            "title": "更新了《凉州一日路线》"
+          },
+          {
+            "by": "zhou",
+            "when": "2026-10-17T05:10:00.000Z",
+            "problem": "0001",
+            "act": "propose",
+            "title": "发起提案《路线：大云寺挪到上午，去听晓钟》"
+          },
+          {
+            "by": "zhou",
+            "when": "2026-10-16T19:15:00.000Z",
+            "problem": "0001",
+            "act": "add-work",
+            "title": "添加了成果《五处牌匾》"
+          },
+          {
+            "by": "chen",
+            "when": "2026-10-15T10:30:00.000Z",
+            "problem": "0002",
+            "act": "add-work",
+            "title": "添加了成果《面皮子投票》"
+          }
+        ],
+        "proposals": [
+          {
+            "id": "p1",
+            "title": "路线：大云寺挪到上午，去听晓钟",
+            "by": "zhou",
+            "problem": "0001",
+            "when": "2026-10-17T05:10:00.000Z",
+            "reason": "大云晓钟，晓是早上。下午去只能看钟，听不到。雷台挪到下午，台上的“步云”下午看也一样。",
+            "files": [
+              {
+                "path": "works/0001/one-day-in-liangzhou.md",
+                "title": "凉州一日路线",
+                "kind": "plan",
+                "change": "modify",
+                "lines": [
+                  {
+                    "kind": "del",
+                    "text": "上午 · 雷台"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "上午 · 大云寺"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "早点到，听晓钟。听不到也站在钟下看看。"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "中午 · 小北街"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "面皮子、凉面。饭后一碗三炮台。"
+                  },
+                  {
+                    "kind": "same",
+                    "text": "下午 · 鸠摩罗什寺"
+                  },
+                  {
+                    "kind": "del",
+                    "text": "下午 · 大云寺"
+                  },
+                  {
+                    "kind": "add",
+                    "text": "下午 · 雷台，抬头看“步云”"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "decided": [
+          {
+            "id": "d0",
+            "title": "凉面的醋自己调",
+            "by": "zhou",
+            "result": "adopted",
+            "when": "2026-10-09T09:00:00Z"
+          }
+        ],
+        "board": [
+          {
+            "id": "b1",
+            "by": "ma",
+            "title": "初三早上九点，雷台门口集合",
+            "text": "按路线走，路线以 0001 的最新一稿为准。穿厚一点，台上风大。塞巴斯蒂安一行三个人坐陈默的车。",
+            "when": "2026-10-18T18:00:00.000Z",
+            "replies": [
+              {
+                "id": "talk/board/b1/20261018T180600Z-seb.md",
+                "by": "seb",
+                "text": "收到！我们会准时到。",
+                "when": "2026-10-18T18:06:00.000Z",
+                "writtenAt": "2026-10-18T18:06:00.000Z"
+              },
+              {
+                "id": "talk/board/b1/20261018T180800Z-chen.md",
+                "by": "chen",
+                "text": "车能坐五个，八点半去火车站接他们。",
+                "when": "2026-10-18T18:08:00.000Z",
+                "writtenAt": "2026-10-18T18:08:00.000Z"
+              }
+            ]
+          },
+          {
+            "id": "b2",
+            "by": "li",
+            "title": "牌匾还差三块",
+            "text": "大云寺、海藏寺、核桃园的牌匾还没抄回来。谁路过拍一张，填进 0001 的《五处牌匾》。",
+            "when": "2026-10-16T19:30:00.000Z",
+            "replies": []
+          }
+        ],
+        "sync": {
+          "state": "synced",
+          "unpushed": 0,
+          "lastSync": "2026-10-18T18:10:00.000Z"
+        }
+      },
+      "problems": [
+        {
+          "id": "0001",
+          "title": "带塞巴斯蒂安逛一天：五个地方怎么走",
+          "summary": "雷台、鸠摩罗什寺、大云寺、海藏寺、核桃园，只有一天。先去哪，在哪吃饭，哪里可以不去。",
+          "status": "active",
+          "by": "ma",
+          "owner": "li",
+          "opened": "2026-10-03T09:00:00Z",
+          "updated": "2026-10-18T17:40:00.000Z",
+          "workCount": 4,
+          "pendingProposals": 1,
+          "body": [
+            {
+              "heading": "现状",
+              "text": "春节初三，塞巴斯蒂安和他的两个朋友从兰州坐车过来，晚上就走。我们五个都在，陈默有车。"
+            },
+            {
+              "heading": "目标",
+              "text": "一张纸：先去哪、每处看什么、中午吃什么。让第一次来的人走完这一天，记得住凉州。"
+            },
+            {
+              "heading": "约束",
+              "text": "冬天冷，台上风大；一天最多走五处，走不完就删，不赶。"
+            }
+          ],
+          "works": [
+            {
+              "id": "works/0001/x1-one-day-in-liangzhou.md",
+              "kind": "plan",
+              "title": "凉州一日路线",
+              "by": "li",
+              "when": "2026-10-18T17:40:00.000Z",
+              "size": 460,
+              "text": "上午 · 雷台\n看铜奔马出土的汉墓，再上台。抬头看牌匾：“步云”。\n中午 · 小北街\n面皮子、凉面。饭后一碗三炮台。\n下午 · 鸠摩罗什寺\n看罗什塔。出门时回头，看出口的牌匾：“人间净土”。\n下午 · 大云寺\n看钟楼和那口大钟。\n天色还早 · 海藏寺\n核桃园留给下一次：冬天树都秃着，春天再来。",
+              "note": "第二稿：按上午、中午、下午排"
+            },
+            {
+              "id": "works/0001/x2-five-plaques.csv",
+              "kind": "table",
+              "title": "五处牌匾",
+              "by": "zhou",
+              "when": "2026-10-16T19:15:00.000Z",
+              "size": 277,
+              "text": "地方,牌匾,在哪,抄回来了吗\n雷台,步云,台上,抄了\n鸠摩罗什寺,人间净土,出口,抄了\n大云寺,—,—,还没有\n海藏寺,—,—,还没有\n核桃园,—,—,还没有",
+              "note": "路过就抄一块，抄回来填上"
+            },
+            {
+              "id": "works/0001/x3-one-page-for-sebastian.md",
+              "kind": "doc",
+              "title": "给塞巴斯蒂安的一页介绍",
+              "by": "wang",
+              "when": "2026-10-12T20:30:00.000Z",
+              "size": 450,
+              "text": "Wuwei was called Liangzhou, a city on the Hexi Corridor, the old road to the west.\nKumarajiva lived here for many years before he went to Chang’an and became the great translator of Buddhist texts.\nThe Western Xia stele has Tangut on one side and Chinese on the other; it helped people read Tangut again.\nThe bronze galloping horse was found in the Han tomb at Leitai.",
+              "note": "用英文写，塞巴斯蒂安也能自己看"
+            },
+            {
+              "id": "works/0001/x4-leitai-bu-yun.png.ref.md",
+              "kind": "image",
+              "title": "雷台的“步云”",
+              "by": "chen",
+              "when": "2026-10-08T14:05:00.000Z",
+              "size": 150499,
+              "blob": {
+                "hash": "sha256:fake-x4",
+                "type": "image/png",
+                "cached": true
+              }
+            }
+          ],
+          "events": [
+            {
+              "by": "ma",
+              "when": "2026-10-03T19:00:00.000Z",
+              "problem": "0001",
+              "act": "open-problem",
+              "title": "提出了这个问题"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-04T07:00:00.000Z",
+              "problem": "0001",
+              "act": "set-status",
+              "status": "active",
+              "title": "把问题标为进行中"
+            },
+            {
+              "by": "chen",
+              "when": "2026-10-08T14:05:00.000Z",
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《雷台的“步云”》"
+            },
+            {
+              "by": "wang",
+              "when": "2026-10-12T20:30:00.000Z",
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《给塞巴斯蒂安的一页介绍》"
+            },
+            {
+              "by": "zhou",
+              "when": "2026-10-16T19:15:00.000Z",
+              "problem": "0001",
+              "act": "add-work",
+              "title": "添加了成果《五处牌匾》"
+            },
+            {
+              "by": "zhou",
+              "when": "2026-10-17T05:10:00.000Z",
+              "problem": "0001",
+              "act": "propose",
+              "title": "发起提案《路线：大云寺挪到上午，去听晓钟》"
+            },
+            {
+              "by": "li",
+              "when": "2026-10-18T17:40:00.000Z",
+              "problem": "0001",
+              "act": "update-work",
+              "title": "更新了《凉州一日路线》"
+            }
+          ],
+          "notes": [
+            {
+              "id": "talk/0001/20261012T210500Z-seb.md",
+              "by": "seb",
+              "text": "我最想看那块一面西夏文、一面汉文的碑。",
+              "when": "2026-10-12T21:05:00.000Z",
+              "writtenAt": "2026-10-12T21:05:00.000Z"
+            },
+            {
+              "id": "talk/0001/20261012T212000Z-ma.md",
+              "by": "ma",
+              "text": "西夏碑在博物馆里。我查一下初三开不开门，开就加一站。",
+              "when": "2026-10-12T21:20:00.000Z",
+              "writtenAt": "2026-10-12T21:20:00.000Z"
+            },
+            {
+              "id": "talk/0001/20261017T051500Z-zhou.md",
+              "by": "zhou",
+              "text": "大云寺下午去，只能看钟，听不到。我交了个提案，挪到上午试试。",
+              "when": "2026-10-17T05:15:00.000Z",
+              "writtenAt": "2026-10-17T05:15:00.000Z"
+            }
+          ]
+        },
+        {
+          "id": "0002",
+          "title": "面皮子哪家最地道",
+          "summary": "每个人心里都有一家。投个票，选两家带塞巴斯蒂安去，辣子另放。",
+          "status": "open",
+          "by": "chen",
+          "opened": "2026-10-05T09:00:00Z",
+          "updated": "2026-10-15T09:00:00Z",
+          "workCount": 1,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0003",
+          "title": "三炮台：冰糖放多少",
+          "summary": "碗、盖、托三件。冰糖、桂圆、红枣、枸杞都放进去，一泡续好几次水。外地朋友第一口会不会太甜？",
+          "status": "open",
+          "by": "wang",
+          "opened": "2026-10-10T09:00:00Z",
+          "updated": "2026-10-14T09:00:00Z",
+          "workCount": 0,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0004",
+          "title": "核桃园冬天开不开门",
+          "summary": "塞巴斯蒂安听说城里有个植物园，想去看看。冬天去值不值，开不开门，还没人问过。",
+          "status": "open",
+          "by": "seb",
+          "opened": "2026-10-11T09:00:00Z",
+          "updated": "2026-10-11T09:00:00Z",
+          "workCount": 0,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        },
+        {
+          "id": "0005",
+          "title": "凉面的醋：自己调还是买现成的",
+          "summary": "定了：自己调，蒜水多放。周晓钟负责。",
+          "status": "solved",
+          "by": "zhou",
+          "opened": "2026-10-06T09:00:00Z",
+          "updated": "2026-10-09T09:00:00Z",
+          "workCount": 1,
+          "pendingProposals": 0,
+          "body": [],
+          "works": [],
+          "events": [],
+          "notes": []
+        }
+      ],
+      "files": [
+        {
+          "path": "problems/0001-one-day-with-sebastian-how-to-fit-in-five-places.md",
+          "kind": "problem",
+          "problem": "0001",
+          "text": "---\ntitle: 带塞巴斯蒂安逛一天：五个地方怎么走\nstatus: active\n---\n雷台、鸠摩罗什寺、大云寺、海藏寺、核桃园，只有一天。先去哪，在哪吃饭，哪里可以不去。\n\n## 现状\n春节初三，塞巴斯蒂安和他的两个朋友从兰州坐车过来，晚上就走。我们五个都在，陈默有车。\n\n## 目标\n一张纸：先去哪、每处看什么、中午吃什么。让第一次来的人走完这一天，记得住凉州。\n\n## 约束\n冬天冷，台上风大；一天最多走五处，走不完就删，不赶。",
+          "history": [
+            {
+              "by": "ma",
+              "when": "2026-10-04T07:00:00.000Z",
+              "act": "set-status",
+              "problem": "0001",
+              "title": "把问题标为进行中",
+              "status": "active"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-03T19:00:00.000Z",
+              "act": "open-problem",
+              "problem": "0001",
+              "title": "提出了这个问题"
+            }
+          ]
+        },
+        {
+          "path": "problems/0002-whose-mianpizi-is-the-real-thing.md",
+          "kind": "problem",
+          "problem": "0002",
+          "text": "---\ntitle: 面皮子哪家最地道\nstatus: open\n---\n每个人心里都有一家。投个票，选两家带塞巴斯蒂安去，辣子另放。",
+          "history": [
+            {
+              "by": "chen",
+              "when": "2026-10-05T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0002",
+              "title": "提出了这个问题"
+            }
+          ]
+        },
+        {
+          "path": "problems/0003-sanpaotai-tea-how-much-rock-sugar.md",
+          "kind": "problem",
+          "problem": "0003",
+          "text": "---\ntitle: 三炮台：冰糖放多少\nstatus: open\n---\n碗、盖、托三件。冰糖、桂圆、红枣、枸杞都放进去，一泡续好几次水。外地朋友第一口会不会太甜？",
+          "history": [
+            {
+              "by": "wang",
+              "when": "2026-10-10T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0003",
+              "title": "提出了这个问题"
+            }
+          ]
+        },
+        {
+          "path": "problems/0004-is-the-walnut-garden-open-in-winter.md",
+          "kind": "problem",
+          "problem": "0004",
+          "text": "---\ntitle: 核桃园冬天开不开门\nstatus: open\n---\n塞巴斯蒂安听说城里有个植物园，想去看看。冬天去值不值，开不开门，还没人问过。",
+          "history": [
+            {
+              "by": "seb",
+              "when": "2026-10-11T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0004",
+              "title": "提出了这个问题"
+            }
+          ]
+        },
+        {
+          "path": "problems/0005-vinegar-for-the-cold-noodles-mix-our-own-or-buy-it-ready.md",
+          "kind": "problem",
+          "problem": "0005",
+          "text": "---\ntitle: 凉面的醋：自己调还是买现成的\nstatus: solved\n---\n定了：自己调，蒜水多放。周晓钟负责。",
+          "history": [
+            {
+              "by": "zhou",
+              "when": "2026-10-06T09:00:00Z",
+              "act": "open-problem",
+              "problem": "0005",
+              "title": "提出了这个问题"
+            }
+          ]
+        },
+        {
+          "path": "works/0001/x1-one-day-in-liangzhou.md",
+          "kind": "plan",
+          "problem": "0001",
+          "text": "---\ntitle: 凉州一日路线\nkind: plan\nnote: 第二稿：按上午、中午、下午排\n---\n上午 · 雷台\n看铜奔马出土的汉墓，再上台。抬头看牌匾：“步云”。\n中午 · 小北街\n面皮子、凉面。饭后一碗三炮台。\n下午 · 鸠摩罗什寺\n看罗什塔。出门时回头，看出口的牌匾：“人间净土”。\n下午 · 大云寺\n看钟楼和那口大钟。\n天色还早 · 海藏寺\n核桃园留给下一次：冬天树都秃着，春天再来。",
+          "history": [
+            {
+              "by": "li",
+              "when": "2026-10-18T17:40:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "新建了它",
+              "diff": [
+                {
+                  "kind": "add",
+                  "text": "上午 · 雷台"
+                },
+                {
+                  "kind": "add",
+                  "text": "看铜奔马出土的汉墓，再上台。抬头看牌匾：“步云”。"
+                },
+                {
+                  "kind": "add",
+                  "text": "中午 · 小北街"
+                },
+                {
+                  "kind": "add",
+                  "text": "面皮子、凉面。饭后一碗三炮台。"
+                },
+                {
+                  "kind": "add",
+                  "text": "下午 · 鸠摩罗什寺"
+                },
+                {
+                  "kind": "add",
+                  "text": "看罗什塔。出门时回头，看出口的牌匾：“人间净土”。"
+                },
+                {
+                  "kind": "add",
+                  "text": "下午 · 大云寺"
+                },
+                {
+                  "kind": "add",
+                  "text": "看钟楼和那口大钟。"
+                },
+                {
+                  "kind": "add",
+                  "text": "天色还早 · 海藏寺"
+                },
+                {
+                  "kind": "add",
+                  "text": "核桃园留给下一次：冬天树都秃着，春天再来。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "works/0001/x2-five-plaques.csv",
+          "kind": "table",
+          "problem": "0001",
+          "text": "地方,牌匾,在哪,抄回来了吗\n雷台,步云,台上,抄了\n鸠摩罗什寺,人间净土,出口,抄了\n大云寺,—,—,还没有\n海藏寺,—,—,还没有\n核桃园,—,—,还没有",
+          "history": [
+            {
+              "by": "zhou",
+              "when": "2026-10-16T19:15:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "新建了它",
+              "diff": [
+                {
+                  "kind": "add",
+                  "text": "地方　牌匾　在哪　抄回来了吗"
+                },
+                {
+                  "kind": "add",
+                  "text": "雷台　步云　台上　抄了"
+                },
+                {
+                  "kind": "add",
+                  "text": "鸠摩罗什寺　人间净土　出口　抄了"
+                },
+                {
+                  "kind": "add",
+                  "text": "大云寺　—　—　还没有"
+                },
+                {
+                  "kind": "add",
+                  "text": "海藏寺　—　—　还没有"
+                },
+                {
+                  "kind": "add",
+                  "text": "核桃园　—　—　还没有"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "works/0001/x3-one-page-for-sebastian.md",
+          "kind": "doc",
+          "problem": "0001",
+          "text": "---\ntitle: 给塞巴斯蒂安的一页介绍\nnote: 用英文写，塞巴斯蒂安也能自己看\n---\nWuwei was called Liangzhou, a city on the Hexi Corridor, the old road to the west.\nKumarajiva lived here for many years before he went to Chang’an and became the great translator of Buddhist texts.\nThe Western Xia stele has Tangut on one side and Chinese on the other; it helped people read Tangut again.\nThe bronze galloping horse was found in the Han tomb at Leitai.",
+          "history": [
+            {
+              "by": "wang",
+              "when": "2026-10-12T20:30:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "新建了它",
+              "diff": [
+                {
+                  "kind": "add",
+                  "text": "Wuwei was called Liangzhou, a city on the Hexi Corridor, the old road to the west."
+                },
+                {
+                  "kind": "add",
+                  "text": "Kumarajiva lived here for many years before he went to Chang’an and became the great translator of Buddhist texts."
+                },
+                {
+                  "kind": "add",
+                  "text": "The Western Xia stele has Tangut on one side and Chinese on the other; it helped people read Tangut again."
+                },
+                {
+                  "kind": "add",
+                  "text": "The bronze galloping horse was found in the Han tomb at Leitai."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "works/0001/x4-leitai-bu-yun.png.ref.md",
+          "kind": "image",
+          "problem": "0001",
+          "text": "---\ntitle: 雷台的“步云”\nblob: sha256:fake-x4\nsize: 150499\ntype: image/png\n---",
+          "history": [
+            {
+              "by": "chen",
+              "when": "2026-10-08T14:05:00.000Z",
+              "act": "add-work",
+              "problem": "0001",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
+          "path": "board/b1.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 初三早上九点，雷台门口集合\n---\n按路线走，路线以 0001 的最新一稿为准。穿厚一点，台上风大。塞巴斯蒂安一行三个人坐陈默的车。",
+          "history": [
+            {
+              "by": "ma",
+              "when": "2026-10-18T18:00:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
+          "path": "board/b2.md",
+          "kind": "notice",
+          "problem": "board",
+          "text": "---\ntitle: 牌匾还差三块\n---\n大云寺、海藏寺、核桃园的牌匾还没抄回来。谁路过拍一张，填进 0001 的《五处牌匾》。",
+          "history": [
+            {
+              "by": "li",
+              "when": "2026-10-16T19:30:00.000Z",
+              "act": "notice",
+              "problem": "board",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261012T230500Z-seb.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "我最想看那块一面西夏文、一面汉文的碑。",
+          "history": [
+            {
+              "by": "seb",
+              "when": "2026-10-12T21:05:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261012T232000Z-ma.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "西夏碑在博物馆里。我查一下初三开不开门，开就加一站。",
+          "history": [
+            {
+              "by": "ma",
+              "when": "2026-10-12T21:20:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
+          "path": "talk/0001/20261017T071500Z-zhou.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "大云寺下午去，只能看钟，听不到。我交了个提案，挪到上午试试。",
+          "history": [
+            {
+              "by": "zhou",
+              "when": "2026-10-17T05:15:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b1/20261018T200600Z-seb.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "收到！我们会准时到。",
+          "history": [
+            {
+              "by": "seb",
+              "when": "2026-10-18T18:06:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
+          "path": "talk/board/b1/20261018T200800Z-chen.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "车能坐五个，八点半去火车站接他们。",
+          "history": [
+            {
+              "by": "chen",
+              "when": "2026-10-18T18:08:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
+          "path": ".teahouse/members.toml",
+          "kind": "members",
+          "problem": "meta",
+          "text": "[[member]]\nid = \"ma\"\nname = \"马晓\"\nrole = \"host\"\njoined = 2026-10-02\n\n[[member]]\nid = \"li\"\nname = \"李步云\"\nrole = \"steward\"\njoined = 2026-10-02\n\n[[member]]\nid = \"zhou\"\nname = \"周晓钟\"\nrole = \"guest\"\njoined = 2026-10-02\n\n[[member]]\nid = \"wang\"\nname = \"王婧\"\nrole = \"guest\"\njoined = 2026-10-03\n\n[[member]]\nid = \"chen\"\nname = \"陈默\"\nrole = \"guest\"\njoined = 2026-10-03\n\n[[member]]\nid = \"seb\"\nname = \"塞巴斯蒂安\"\nrole = \"guest\"\njoined = 2026-10-09",
+          "history": [
+            {
+              "by": "ma",
+              "when": "2026-10-02T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让马晓入座"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-02T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让李步云入座"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-02T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让周晓钟入座"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-03T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让王婧入座"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-03T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让陈默入座"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-09T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让塞巴斯蒂安入座"
             }
           ]
         }
