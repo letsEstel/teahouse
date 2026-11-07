@@ -26,8 +26,12 @@
 //! `visibilitychange`); turning active also syncs at once (start-up, back
 //! from the background). When a sync brings anything new, the shell emits
 //! `teahouse://changed` with the teahouse ids and the interface reloads.
-//! Commands and syncs take turns behind one lock, so a sync never runs under
-//! a write.
+//! Writes and syncs take turns behind one lock, so a sync never runs under
+//! a write. Reads do not wait for that lock (0024, 0034): a sync talks to the
+//! relay for seconds, and the interface must not stand blank meanwhile. A
+//! read sees the copy before or after a ref moves, never half of it (git
+//! writes objects first and swaps refs atomically). The background sync takes
+//! the lock one teahouse at a time, so a write waits for one sync at most.
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -38,11 +42,16 @@ use tauri::ipc::InvokeBody;
 use tauri::{AppHandle, Emitter, Manager};
 use teahouse_client::Client;
 
+mod turn;
+use turn::{turn, Turn};
+
 /// `<app data>/teahouse` (CLIENT-API.md §2): houses/, blobs/, drafts/, device.
 struct Root(PathBuf);
 
-/// One engine command or background sync at a time (git work on one copy).
+/// One write or background sync at a time (git work on one copy).
 struct EngineLock(Arc<Mutex<()>>);
+/// One attachment download at a time (they share a temporary file name).
+struct BlobLock(Arc<Mutex<()>>);
 
 const SYNC_EVERY: Duration = Duration::from_secs(60);
 const MAX_BACKOFF: Duration = Duration::from_secs(10 * 60);
@@ -68,6 +77,7 @@ pub fn run() {
             spawn_sync_loop(app.handle().clone(), root.clone(), lock.clone(), syncer.clone());
             app.manage(Root(root));
             app.manage(EngineLock(lock));
+            app.manage(BlobLock(Arc::new(Mutex::new(()))));
             app.manage(Syncer(syncer));
             Ok(())
         })
@@ -112,8 +122,12 @@ pub fn run() {
                 return true;
             }
             let root = invoke.message.webview().state::<Root>().0.clone();
-            let lock = invoke.message.webview().state::<EngineLock>().0.clone();
             let command = invoke.message.command().to_string();
+            let lock = match turn(&command) {
+                Turn::Free => None,
+                Turn::Blob => Some(invoke.message.webview().state::<BlobLock>().0.clone()),
+                Turn::Engine => Some(invoke.message.webview().state::<EngineLock>().0.clone()),
+            };
             let mut args = match invoke.message.payload() {
                 InvokeBody::Json(v) => v.clone(),
                 InvokeBody::Raw(_) => serde_json::Value::Null,
@@ -125,7 +139,7 @@ pub fn run() {
             }
             let resolver = invoke.resolver;
             std::thread::spawn(move || {
-                let _turn = lock.lock().unwrap_or_else(|p| p.into_inner());
+                let _turn = lock.as_ref().map(|l| l.lock().unwrap_or_else(|p| p.into_inner()));
                 resolver.resolve(Client::new(root).call(&command, args));
             });
             true
@@ -232,10 +246,7 @@ fn spawn_sync_loop(app: AppHandle, root: PathBuf, lock: Arc<Mutex<()>>, syncer: 
                 }
                 s.kick = false;
             }
-            let (ok, changed) = {
-                let _turn = lock.lock().unwrap_or_else(|p| p.into_inner());
-                sync_all(&Client::new(root.clone()))
-            };
+            let (ok, changed) = sync_all(&Client::new(root.clone()), &lock);
             if !changed.is_empty() {
                 let _ = app.emit("teahouse://changed", &changed);
             }
@@ -247,11 +258,13 @@ fn spawn_sync_loop(app: AppHandle, root: PathBuf, lock: Arc<Mutex<()>>, syncer: 
 /// Syncs every teahouse; returns whether all went through and which changed.
 /// "Changed" compares what the interface reads (the teahouse and the list of
 /// teahouses) before and after, so a new seat, note or proposal all count.
-fn sync_all(c: &Client) -> (bool, Vec<String>) {
+fn sync_all(c: &Client, lock: &Mutex<()>) -> (bool, Vec<String>) {
     let ids = c.house_ids().unwrap_or_default();
     let mut ok = true;
     let mut changed = Vec::new();
     for h in &ids {
+        // One teahouse at a time: a write in between waits for one sync, not all.
+        let _turn = lock.lock().unwrap_or_else(|p| p.into_inner());
         let before = fingerprint(c, h);
         let s = c.call("sync", serde_json::json!({ "house": h }));
         let state = s.pointer("/data/state").and_then(|v| v.as_str()).unwrap_or("error");
@@ -282,3 +295,4 @@ fn fingerprint(c: &Client, house: &str) -> u64 {
     list.to_string().hash(&mut hasher);
     hasher.finish()
 }
+

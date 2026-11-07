@@ -10,6 +10,7 @@ const store: FHouse[] = structuredClone(seed)
 // 演示用的状态（截图和预览）：?fake=unsynced | offline | unseated | refuse
 //   unsynced：有 2 处修改还没送出；offline：连不上 Relay；unseated：本机钥匙不在座位表上（已离座）；
 //   refuse：之后的写入都被 Relay 拒绝；slow：写入要 3 秒才回来（服务器慢），并记下送出了几次（window.__fakeWrites）
+//   loading：茶馆读不回来（打开时的样子，0024）；loadpage：问题页读不回来；loadfail：问题页读不到
 const demo = typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('fake') ?? ''
 const lastSync = new Date(NOW.getTime() - 25 * 60_000).toISOString()
 let synced: A.SyncState =
@@ -395,6 +396,8 @@ export const fakeBackend = {
       ;(w.__fakeWrites ??= []).push(cmd)
       await new Promise((r) => setTimeout(r, 3000))
     }
+    if ((demo === 'loading' && cmd === 'houses') || (demo === 'loadpage' && cmd === 'problem')) return new Promise(() => {})
+    if (demo === 'loadfail' && cmd === 'problem') return fail('internal', 'engine: connection refused (127.0.0.1:7377)')
     if (unseated && writes.includes(cmd)) return fail('not_a_member', 'this device has no seat in the teahouse')
     return (handlers[cmd] as (a: A.Args<C>) => A.Result<A.Returns<C>>)(args)
   },
