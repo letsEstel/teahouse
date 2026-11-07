@@ -10,11 +10,12 @@
   import Archive from './views/Archive.svelte'
   import Join from './views/Join.svelte'
   import Devices from './views/Devices.svelte'
+  import Design from './views/Design.svelte'
   import ErrorBar from './lib/ErrorBar.svelte'
   import { startAutoSync } from './api/autosync'
   import Sending from './lib/Sending.svelte'
   import StatusBar from './lib/StatusBar.svelte'
-  import { api, BackendError } from './api/backend'
+  import { api, backend, BackendError } from './api/backend'
   import { errorText } from './api/errors.svelte'
   import { t } from './i18n/index.svelte'
   import type { ApiError, House as HouseData, HouseSummary } from './api/types'
@@ -94,6 +95,9 @@
         <Board {house} {refresh} />
       {:else if route.page === 'devices'}
         <Devices {house} />
+      {:else if route.page === 'design' && (import.meta.env.DEV || backend.kind === 'fake')}
+        <!-- 设计陈列页，只在开发和假数据里（docs/DESIGN.md） -->
+        <Design {house} />
       {:else if route.page === 'archive'}
         <Archive {house} id={route.arg || undefined} />
       {:else if route.page === 'propose'}
