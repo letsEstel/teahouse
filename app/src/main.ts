@@ -9,6 +9,7 @@ import '@fontsource/noto-sans-sc/700.css'
 import '@fontsource/noto-sans-sc/900.css'
 import './styles/base.css'
 import './lib/theme.svelte'
+import './lib/fullscreen'
 import { mount } from 'svelte'
 import App from './App.svelte'
 
