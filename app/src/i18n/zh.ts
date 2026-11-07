@@ -472,4 +472,8 @@ export default {
   // 提案：Markdown 文件看成品或看改动
   'prop.viewRead': '看成品',
   'prop.viewDiff': '看改动',
+
+  // 茶客提出的新问题（提案）：编号采纳后才定
+  'prop.newProblem': '提出一个新问题 · 采纳后编号',
+  'prop.newShort': '新问题',
 }
