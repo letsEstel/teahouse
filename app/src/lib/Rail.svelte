@@ -274,7 +274,10 @@
     .dev-glyph { display: block; }
     .self { gap: 8px; }
     .self-name { font-size: 14px; }
-    .switches { flex-wrap: nowrap; }
+    /* 长名字（0033）：名字那一块可以收窄、换行，语言和外观开关不被挤出屏幕 */
+    .self { min-width: 0; flex: 1 1 auto; }
+    .self-name { overflow-wrap: anywhere; }
+    .switches { flex-wrap: nowrap; flex: none; }
   }
   /* 手机：三行，不吸顶（屏幕太矮）。第一行标志 + 茶馆切换，第二行你是谁 + 语言/外观，第三行四个栏目 */
   @media (max-width: 639.98px) {

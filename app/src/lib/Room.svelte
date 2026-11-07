@@ -41,13 +41,14 @@
         class="seat"
         class:empty={!s.m}
         class:me={s.m?.id === house.me}
+        class:row-top={s.r === 0}
+        class:row-bottom={s.r === 4}
         style:left="{s.c * 20}%"
         style:top="{s.r * 20}%"
         style:animation-delay="{120 + s.i * 45}ms"
       >
         <span class="glyph"><Shape role={s.m?.role ?? null} size={20} /></span>
-        <span class="name">{s.m ? s.m.name : t('role.empty')}{#if s.m}<MachineMark m={s.m} />{/if}</span>
-        {#if s.m?.id === house.me}<span class="you label">{t('room.you')}</span>{/if}
+        <span class="name">{#if s.m?.id === house.me}<b class="you" title={t('room.you')}>{s.m.name}<span class="sr">（{t('room.you')}）</span></b>{:else}{s.m ? s.m.name : t('role.empty')}{/if}{#if s.m}<MachineMark m={s.m} />{/if}</span>
       </div>
     {/each}
   </div>
@@ -95,6 +96,9 @@
     gap: 1.8cqi;
     animation: sit 520ms var(--ease) both;
   }
+  /* 名字长了会换行：上排往房间里长，下排往上长，都不顶到墙上（0033）。一行时位置和居中一样 */
+  .seat.row-top { justify-content: flex-start; padding-top: 4.2cqi; }
+  .seat.row-bottom { justify-content: flex-end; padding-bottom: 4.2cqi; }
   .glyph :global(svg) { width: 6.8cqi; height: 6.8cqi; transition: transform 240ms var(--ease); }
   .empty .glyph :global(svg) { width: 4.2cqi; height: 4.2cqi; }
   .name {
@@ -104,11 +108,13 @@
     text-align: center;
     max-width: 100%;
     hyphens: none;
+    overflow-wrap: anywhere;
   }
   .empty .name { color: var(--ink-3); font-weight: 400; }
-  /* 你的座位：细墨框 + "你"，不用新颜色 */
-  .me::before { content: ''; position: absolute; inset: 13%; border: 1.5px solid var(--ink); }
-  .you { position: absolute; top: 13%; left: 13%; transform: translateY(-50%); background: var(--paper); padding: 0 4px; margin-left: 6px; font-size: 10px; color: var(--ink); line-height: 1.2; }
+  /* 你的座位：名字反白成一块墨底小标签（和待办数字同一种做法，不用新颜色）。
+     以前是一个固定大小的框，名字一长就顶出框外（0033）；现在标签跟着名字走，长了就换行 */
+  .you { display: inline; padding: 0.08em 0.35em; background: var(--ink); color: var(--paper); font-weight: 700; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .seat:not(.empty):hover :global(svg) { transform: scale(1.12); }
 
   /* 入座：从无到有，只动一次 */
