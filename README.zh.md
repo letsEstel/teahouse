@@ -3,13 +3,15 @@
 *Architecture No. 1 in Rust, Op. 1*
 
 <p align="center">
-  <img src="docs/screenshots/0-desktop-overview.jpg" alt="电脑版，德文，深色：一间邻里茶馆（示例数据）" width="49%">
-  <img src="docs/screenshots/0-desktop-notices.jpg" alt="电脑版，英文，浅色：公告板和回复（示例数据）" width="49%">
+  <img src="docs/screenshots/zh/1-seats.jpg" alt="座位：梧桐里三号院，一间邻里茶馆（示例数据）" width="49%">
+  <img src="docs/screenshots/zh/2-notices.jpg" alt="公告板和回应（示例数据）" width="49%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/1-seats.jpg" alt="座位：人和机器" width="24%">
-  <img src="docs/screenshots/2-problems.jpg" alt="问题" width="24%">
-  <img src="docs/screenshots/4-files.jpg" alt="每个文件，以及你能对它做什么" width="24%">
+  <img src="docs/screenshots/zh/3-proposal.jpg" alt="提案：看清改动，再决定是否采纳（夜间模式）" width="98%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/zh/4-phone-band.jpg" alt="手机：旧鞋带乐队的座位" width="32%">
+  <img src="docs/screenshots/zh/5-phone-lab.jpg" alt="手机：液滴论文小组的一个问题" width="32%">
 </p>
 
 v0.1 · *Anji*（安吉白茶）

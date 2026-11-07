@@ -3,13 +3,15 @@
 *Architecture No. 1 in Rust, Op. 1*
 
 <p align="center">
-  <img src="docs/screenshots/0-desktop-overview.jpg" alt="Desktop, Deutsch, dunkel: ein Nachbarschafts-Teehaus (Beispieldaten)" width="49%">
-  <img src="docs/screenshots/0-desktop-notices.jpg" alt="Desktop, Englisch, hell: Aushänge mit Antworten (Beispieldaten)" width="49%">
+  <img src="docs/screenshots/de/1-seats.jpg" alt="Plätze: Wutong-Gasse Nr. 3, ein Nachbarschafts-Teehaus (Beispieldaten)" width="49%">
+  <img src="docs/screenshots/de/2-notices.jpg" alt="Schwarzes Brett mit Antworten (Beispieldaten)" width="49%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/1-seats.jpg" alt="Plätze: Menschen und Maschinen" width="24%">
-  <img src="docs/screenshots/2-problems.jpg" alt="Probleme" width="24%">
-  <img src="docs/screenshots/4-files.jpg" alt="Jede Datei, und was du damit tun darfst" width="24%">
+  <img src="docs/screenshots/de/3-proposal.jpg" alt="Ein Vorschlag: genau sehen, was sich ändert, dann übernehmen oder nicht (dunkel)" width="98%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/de/4-phone-band.jpg" alt="Handy: die Plätze der Band The Old Laces" width="32%">
+  <img src="docs/screenshots/de/5-phone-lab.jpg" alt="Handy: ein Problem der Tröpfchen-Schreibgruppe" width="32%">
 </p>
 
 v0.1 · *Anji* (安吉白茶)
