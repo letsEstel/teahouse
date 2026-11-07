@@ -207,7 +207,8 @@ def check_outputs(entry):
 
 
 def present(text):
-    """给运行结果和真实代码加上小标题。"""
+    """给运行结果和真实代码加上小标题；docs/ 里的文章开头有切换语言的链接，书里用不着。"""
+    text = re.sub(r"^\[English\].*\n\n", "", text, flags=re.M)
     text = re.sub(
         r"```rust,ignore\n// (\S+)\n",
         lambda m: f'<p class="from">摘自 <code>{m.group(1)}</code></p>\n\n```rust\n',
@@ -278,7 +279,7 @@ def reader():
             n, j = n + 1, j + 1
             text = (BOOK / "src" / f"{n:02}.md").read_text(encoding="utf8")
             sections.append({
-                "id": f"s{p}-{j}" if p else re.sub(r"^\d+-", "", Path(line).stem),
+                "id": f"s{p}-{j}" if p else re.sub(r"^\d+-", "", Path(line).stem).split(".")[0].lower(),
                 "num": f"{p}.{j}" if p else "",
                 "part": p,
                 "title": re.search(r"^# (.+)$", text, re.M).group(1),

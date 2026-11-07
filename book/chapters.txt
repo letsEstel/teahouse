@@ -2,7 +2,7 @@
 # 以 ## 开头的是一个部分（标题 | 写给谁）；其余每行是一节。
 # .md 是文字和代码写在一起的一节，.rs 是写在真实代码文件里的一节（书的文字以 //| 开头）。
 book/sections/how-to-read.md
-book/sections/0-overview/1-big-picture.md
+docs/OVERVIEW.zh.md
 book/sections/glossary.md
 ## 第一部分 从零开始 | 给从没写过程序的人
 book/sections/1-start/1-terminal.md

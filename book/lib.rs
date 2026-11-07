@@ -3,7 +3,7 @@
 
 #[doc = include_str!("sections/how-to-read.md")]
 pub mod how_to_read {}
-#[doc = include_str!("sections/0-overview/1-big-picture.md")]
+#[doc = include_str!("../docs/OVERVIEW.zh.md")]
 pub mod s0 {}
 #[doc = include_str!("sections/glossary.md")]
 pub mod glossary {}
