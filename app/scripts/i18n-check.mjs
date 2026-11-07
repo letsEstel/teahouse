@@ -1,3 +1,4 @@
+// 西夏碑（docs/NAMES.zh.md）：翻译键检查。
 // 三种语言的翻译键要一样多（0038 时发现德文漏了 86 个，界面上直接冒出英文，没有任何报错）。
 // npm run check 会跑它；缺了或多了都算失败。
 import { readFileSync } from 'node:fs'

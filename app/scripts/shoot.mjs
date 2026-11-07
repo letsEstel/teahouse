@@ -92,7 +92,7 @@ async function fillProposal(p, lang) {
 
 // 每个界面：名字、路由、可选操作 act(page, lang)、只在哪些宽度跑（widths）、theme、
 // save（本轮要保存的图）。所有界面都参加溢出检查，只有 save 的才存图。
-const houses = ['wutong', 'kant', 'family', 'startup', 'band', 'lab']
+const houses = ['wutong', 'kant', 'family', 'startup', 'band', 'lab', 'xiaobei']
 const screens = []
 for (const h of houses) {
   screens.push(
@@ -250,6 +250,17 @@ screens.push(
   { name: 'loading-problem', hash: '#/wutong/problem/0001', query: '&fake=loadpage', save: true },
   { name: 'loading-problem-failed', hash: '#/wutong/problem/0001', query: '&fake=loadfail', save: true },
   { name: 'loading-problem-dark', hash: '#/wutong/problem/0001', query: '&fake=loadpage', theme: 'dark', only1366: true, save: true },
+)
+
+// 第 27 轮：核桃园里的第七个茶摊子，小北街（docs/NAMES.zh.md）
+screens.push(
+  { name: 'xiaobei-house-shot', hash: '#/xiaobei/house', widths: [1366, 390], save: true },
+  { name: 'xiaobei-house-shot-phone', hash: '#/xiaobei/house', widths: [390], save: true, saveAt: 390 },
+  { name: 'xiaobei-problem-shot', hash: '#/xiaobei/problem/0001', save: true, saveDe: true },
+  { name: 'xiaobei-proposal-shot', hash: '#/xiaobei/proposal/p1', save: true },
+  { name: 'xiaobei-board-shot', hash: '#/xiaobei/board', save: true },
+  { name: 'xiaobei-archive-plaques', hash: '#/xiaobei/archive/' + encodeURIComponent('works/0001/x2-five-plaques.csv'), save: true, saveDe: true },
+  { name: 'xiaobei-join-demo-dark', hash: '#/xiaobei/house', theme: 'dark', only1366: true, save: true },
 )
 
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
