@@ -331,6 +331,8 @@ export default {
   'demo.tryHint': 'Sechs Beispiel-Teehäuser mit erfundenen Daten: Nichts wird synchronisiert, nichts verlässt dieses Gerät.',
   'demo.on': 'Beispiele · erfundene Daten',
   'demo.exit': 'Beispiele verlassen',
+  'demo.noJoin': 'Du siehst gerade die Beispiele. Die Beispiel-Teehäuser sind erfunden, ein Platz dort bewirkt nichts. Um einem echten Teehaus beizutreten, verlasse zuerst die Beispiele.',
+  'demo.exitToJoin': 'Beispiele verlassen und beitreten',
   'ev.markOpen': 'hat das Problem wieder auf „Unvergeben“ gesetzt',
   'ev.updateProblem': 'hat das Problem bearbeitet',
   'problem.owner': 'Zuständig: {name}',

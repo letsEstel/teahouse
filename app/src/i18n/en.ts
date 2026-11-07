@@ -418,6 +418,8 @@ export default {
   'demo.tryHint': 'Six example teahouses with made-up data: nothing syncs and nothing leaves this device.',
   'demo.on': 'Examples · made-up data',
   'demo.exit': 'Leave the examples',
+  'demo.noJoin': 'You’re looking at the examples. The example teahouses are made up, and taking a seat there does nothing. To join a real teahouse, leave the examples first.',
+  'demo.exitToJoin': 'Leave the examples and join',
   'ev.markOpen': 'moved this problem back to unclaimed',
   'ev.updateProblem': 'edited the problem',
   'problem.owner': 'Owner: {name}',

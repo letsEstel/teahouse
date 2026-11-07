@@ -31,8 +31,12 @@
   let found = $derived(parse(pasted))
   let pairing = $derived(pairingChoice ?? /配对码|pairing code|Kopplungscode/i.test(pasted))
   // 配对码时替用户猜一个设备名（手机 / 电脑），可以改
+  // 只猜一次：人把它删空了，就是想自己写，不再填回去（0038：电脑上删不掉设备名）
+  let guessed = false
   $effect(() => {
-    if (pairing && !name.trim()) name = t(/Android|iPhone|iPad/i.test(navigator.userAgent) ? 'join.guessPhone' : 'join.guessComputer')
+    if (!pairing || name.trim() || guessed || nameTouched) return
+    guessed = true
+    name = t(/Android|iPhone|iPad/i.test(navigator.userAgent) ? 'join.guessPhone' : 'join.guessComputer')
   })
   // 老板写的名字只是预填（法则第 21 条）：名字框先填好，本人可以改，以本人确认的为准。
   // 一张邀请只问一次；手填地址要等填完才问，因为猜错的次数算进 Relay 的限速。
@@ -75,6 +79,13 @@
     <p class="lede">{t('join.lede')}</p>
   </header>
 
+  {#if demoMode}
+  <!-- 示例里不能入座（0038）：示例茶馆是假的，坐进去什么也不会发生，只会让人以为入座了。先退出示例 -->
+  <section class="in-demo">
+    <p>{t('demo.noJoin')}</p>
+    <button type="button" class="primary" onclick={() => setDemo(false, '#/join')}><i>→</i><span>{t('demo.exitToJoin')}</span></button>
+  </section>
+  {:else}
   <form onsubmit={join}>
     <section class="step">
       <div class="sn num">01</div>
@@ -111,14 +122,6 @@
       </div>
     </section>
 
-    {#if inApp && !demoMode}
-      <!-- 还没拿到邀请时，先用假数据看看（只在打包好的应用里出现） -->
-      <div class="demo">
-        <button type="button" class="secondary" onclick={() => setDemo(true)}>{t('demo.try')}</button>
-        <p class="hint">{t('demo.tryHint')}</p>
-      </div>
-    {/if}
-
     <div class="submit">
       <div>
         <p class="consequence">{t('join.consequence')}</p>
@@ -129,6 +132,15 @@
       </button>
     </div>
   </form>
+
+  {#if inApp}
+    <!-- 还没拿到邀请时，先用假数据看看（只在打包好的应用里出现）。放在入座表单外面，免得当成入座的一步 -->
+    <div class="demo">
+      <button type="button" class="secondary" onclick={() => setDemo(true)}>{t('demo.try')}</button>
+      <p class="hint">{t('demo.tryHint')}</p>
+    </div>
+  {/if}
+  {/if}
 </div>
 
 <style>
@@ -158,7 +170,9 @@
   .tick { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
   .tick input { width: 18px; height: 18px; padding: 0; accent-color: var(--ink); flex: none; }
 
-  .demo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 24px 0; border-bottom: 1px solid var(--ink); }
+  .demo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--rule); }
+  .in-demo { display: grid; gap: 24px; justify-items: start; padding: 32px 0; }
+  .in-demo p { font-size: 17px; line-height: 1.7; max-width: 32em; }
   .submit { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px 32px; padding-top: 28px; }
   .submit > div { flex: 1 1 20em; }
   .missing { margin-top: 6px; font-size: 13px; font-weight: 700; }
