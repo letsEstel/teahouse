@@ -228,6 +228,14 @@ screens.push(
   { name: 'design-dark', hash: '#/wutong/design', theme: 'dark', only1366: true, save: true },
 )
 
+// 第 21 轮：座位图上“你”的标记（0033）：名字反白成标签，长名字换行，不再顶出框
+const longName = async (p) => { await p.click('.rename-open button'); await p.fill('.rename input', 'Christopher Alexander'); await p.click('.rename .primary'); await p.waitForSelector('.rename .done'); await p.click('.rename .close') }
+screens.push(
+  { name: 'wutong-seat-longname', hash: '#/wutong/house', act: longName, widths: [1366, 390], save: true },
+  { name: 'wutong-seat-longname-phone', hash: '#/wutong/house', act: longName, widths: [390], save: true, saveAt: 390 },
+  { name: 'wutong-seat-longname-dark', hash: '#/wutong/house', act: longName, theme: 'dark', widths: [390], save: true, saveAt: 390 },
+)
+
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
 function audit() {
   const vw = document.documentElement.clientWidth
