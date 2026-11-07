@@ -252,6 +252,14 @@ screens.push(
   { name: 'loading-problem-dark', hash: '#/wutong/problem/0001', query: '&fake=loadpage', theme: 'dark', only1366: true, save: true },
 )
 
+// 第 24 轮：附件不再显示成裂开的图片，大小是附件本身的（0036）
+const attachment = '#/wutong/archive/' + encodeURIComponent('works/0001/w11-owners-assembly-rules-2019-edition.pdf.ref.md')
+screens.push(
+  { name: 'wutong-archive-attachment', hash: attachment, widths: [1366, 390], save: true },
+  { name: 'wutong-archive-attachment-phone', hash: attachment, widths: [390], save: true, saveAt: 390 },
+  { name: 'wutong-archive-attachment-dark', hash: attachment, theme: 'dark', only1366: true, save: true },
+)
+
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
 function audit() {
   const vw = document.documentElement.clientWidth

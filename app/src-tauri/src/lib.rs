@@ -7,12 +7,14 @@
 //! `{ok: false, error}`); the shell passes it through unchanged. Git work can
 //! take a while, so each call runs on its own thread instead of the UI loop.
 //!
-//! One command belongs to the shell itself: `stageFile`. A picked file arrives
+//! Two commands belong to the shell itself. `stageFile`: A picked file arrives
 //! as bytes, but the engine attaches files by path (`fromPath`); the shell
 //! saves the bytes under the app's cache directory and answers
 //! `{ok, data: {path}}`. On desktop the bytes come as the raw invoke body
 //! (name in `x-file-name`); Android's IPC turns every body into JSON, so there
-//! the page sends `{name, data}` with the bytes in base64.
+//! the page sends `{name, data}` with the bytes in base64. `saveFile {from,
+//! name}` goes the other way: it copies an attachment out of `blobs/` into the
+//! same folder as `export`, so another app can open it (src/save.rs).
 //!
 //! `export` without a `to` ("take the whole teahouse away") goes to the
 //! Downloads folder, under `Teahouse/`: the interface cannot pick a folder on
@@ -42,6 +44,7 @@ use tauri::ipc::InvokeBody;
 use tauri::{AppHandle, Emitter, Manager};
 use teahouse_client::Client;
 
+mod save;
 mod turn;
 use turn::{turn, Turn};
 
@@ -103,6 +106,26 @@ pub fn run() {
                     }
                 });
                 invoke.resolver.resolve(match staged {
+                    Ok(path) => serde_json::json!({ "ok": true, "data": { "path": path } }),
+                    Err(message) => serde_json::json!({ "ok": false, "error": { "code": "internal", "message": message } }),
+                });
+                return true;
+            }
+            if invoke.message.command() == "saveFile" {
+                // An attachment, copied where the person can open it in another app (0036).
+                let webview = invoke.message.webview();
+                let saved = match invoke.message.payload() {
+                    InvokeBody::Json(v) => {
+                        let from = v.get("from").and_then(|f| f.as_str()).unwrap_or_default();
+                        let name = v.get("name").and_then(|n| n.as_str()).unwrap_or_default();
+                        let blobs = webview.state::<Root>().0.join("blobs");
+                        export_dir(webview.app_handle())
+                            .ok_or_else(|| "no download folder on this device".to_string())
+                            .and_then(|dir| save::save_copy(&blobs, from, &dir, name))
+                    }
+                    InvokeBody::Raw(_) => Err("saveFile expects { from, name }".into()),
+                };
+                invoke.resolver.resolve(match saved {
                     Ok(path) => serde_json::json!({ "ok": true, "data": { "path": path } }),
                     Err(message) => serde_json::json!({ "ok": false, "error": { "code": "internal", "message": message } }),
                 });
