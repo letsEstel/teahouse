@@ -418,6 +418,8 @@ export default {
   'demo.tryHint': '六间示例茶馆，全是假数据：不会同步，也不会离开这台设备。',
   'demo.on': '示例 · 假数据',
   'demo.exit': '退出示例',
+  'demo.noJoin': '你现在看的是示例。示例茶馆都是假数据，坐进去什么也不会发生。要坐进真的茶馆，先退出示例。',
+  'demo.exitToJoin': '退出示例，去入座',
   'ev.markOpen': '把问题标回待认领',
   'ev.updateProblem': '修改了问题的说明',
   'problem.owner': '负责人：{name}',

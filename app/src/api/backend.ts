@@ -33,12 +33,13 @@ export const inApp = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in w
 export const demoMode = inApp && (() => {
   try { return localStorage.getItem('teahouse.demo') === '1' } catch { return false }
 })()
-export function setDemo(on: boolean) {
+/** 打开或关掉示例；关掉时可以直接去某一页（比如入座页，示例里不能入座） */
+export function setDemo(on: boolean, then = '') {
   try {
     if (on) localStorage.setItem('teahouse.demo', '1')
     else localStorage.removeItem('teahouse.demo')
   } catch {}
-  location.hash = ''
+  location.hash = then
   location.reload()
 }
 
