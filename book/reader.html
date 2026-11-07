@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>茶馆之书</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Source+Code+Pro:wght@400;700&display=swap">
+<style>
+/* 茶馆的设计语言：米白和墨黑，不用圆角和阴影，几何形状本身就是装饰。
+   版式：左边是全书目录，中间一栏正文，宽屏时右边是本节目录。 */
+:root {
+  --paper: #f1ece2; --deep: #e6dfd1; --ink: #141414; --ink-2: #46423c; --ink-3: #5f5a52; --rule: #c9c1b2;
+  --body: 'Noto Sans SC', sans-serif;
+  --mono: 'Source Code Pro', ui-monospace, Menlo, Consolas, 'Noto Sans SC', monospace;
+  --rail: 292px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #161514; --deep: #24221f; --ink: #f1ece2; --ink-2: #cfc8bb; --ink-3: #a8a196; --rule: #3a3733; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --paper: #161514; --deep: #24221f; --ink: #f1ece2; --ink-2: #cfc8bb; --ink-3: #a8a196; --rule: #3a3733; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 17px/1.85 var(--body); }
+button, input { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.layout { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); min-height: 100%; }
+
+/* 全书目录 */
+.rail { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: var(--deep); border-right: 2px solid var(--ink); }
+.brand { display: block; padding: 22px 22px 14px; text-decoration: none; }
+.brand b { display: block; font-size: 32px; font-weight: 900; line-height: 1.1; }
+.brand span { font-size: 13px; color: var(--ink-2); }
+.find { padding: 0 22px 12px; }
+.find input { width: 100%; padding: 7px 10px; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 0; font-size: 15px; }
+.tree { flex: 1; overflow-y: auto; padding: 0 0 18px; }
+.front { display: block; }
+.part { margin-top: 16px; padding: 12px 22px 6px; border-top: 1px solid var(--rule); }
+.part b { display: block; font-size: 15px; font-weight: 900; line-height: 1.4; }
+.part span { display: block; font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+.item { display: grid; grid-template-columns: 2.4em minmax(0, 1fr) 12px; gap: 0 4px; align-items: baseline; width: 100%; padding: 5px 22px; font-size: 15px; line-height: 1.5; text-decoration: none; }
+.item:hover { background: var(--paper); }
+.item .n { color: var(--ink-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+.item.front-item { grid-template-columns: minmax(0, 1fr) 12px; }
+.item.on { background: var(--ink); color: var(--paper); font-weight: 700; }
+.item.on .n { color: var(--paper); }
+.item.skip:not(.on) { color: var(--ink-3); }
+.done-mark { width: 9px; height: 9px; background: currentColor; align-self: center; }
+.start-here { display: block; padding: 8px 22px 2px; font-size: 12.5px; font-weight: 700; }
+.start-here::before { content: "▼ "; font-size: 10px; }
+.subs { list-style: none; margin: 2px 0 6px; padding: 0 22px 0 calc(22px + 2.4em + 4px); }
+.front-item + .subs { padding-left: 34px; }
+.subs button { display: block; width: 100%; padding: 2px 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.subs button:hover { color: var(--ink); text-decoration: underline; }
+.progress { padding: 12px 22px; border-top: 2px solid var(--ink); font-size: 13px; }
+.bar { display: flex; gap: 3px; margin-top: 6px; }
+.bar i { flex: 1; height: 8px; border: 1px solid var(--ink); }
+.bar i.full { background: var(--ink); }
+
+/* 手机和窄窗口：目录收进抽屉 */
+.top { display: none; }
+@media (max-width: 1023px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .top { display: flex; position: sticky; top: 0; z-index: 3; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; background: var(--paper); border-bottom: 2px solid var(--ink); }
+  .top button { font-weight: 700; }
+  .top span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; color: var(--ink-2); }
+  .rail { position: fixed; z-index: 5; inset: 0 auto 0 0; width: min(320px, 86vw); transform: translateX(-102%); transition: transform .18s ease; }
+  .rail.open { transform: none; }
+  .scrim { position: fixed; z-index: 4; inset: 0; background: rgba(0, 0, 0, .4); }
+}
+@media (prefers-reduced-motion: reduce) { .rail { transition: none; } }
+
+/* 正文 */
+.stage { display: grid; grid-template-columns: minmax(0, 46rem) 210px; gap: 56px; justify-content: center; padding: clamp(28px, 4vw, 56px) 16px 72px; }
+@media (max-width: 1279px) { .stage { grid-template-columns: minmax(0, 46rem); } .here { display: none; } }
+.eyebrow { display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 14px; color: var(--ink-2); }
+.eyebrow b { color: var(--ink); }
+article h1 { font-size: clamp(32px, 5vw, 48px); font-weight: 900; line-height: 1.2; margin: .3em 0 .8em; text-wrap: balance; }
+article h2 { font-size: 25px; font-weight: 900; line-height: 1.3; margin: 2.3em 0 .7em; padding-top: .7em; border-top: 2px solid var(--ink); text-wrap: balance; scroll-margin-top: 70px; }
+article h3 { font-size: 19px; font-weight: 700; margin: 2em 0 .4em; }
+article img { max-width: 100%; height: auto; }
+article code { font-family: var(--mono); font-size: .86em; overflow-wrap: anywhere; }
+article pre { margin: 1.1em 0 1.5em; padding: .1em 0 .1em 1.1em; border-left: 1px solid var(--ink-3); overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+article pre code { font-size: inherit; background: none; padding: 0; overflow-wrap: normal; }
+.hljs { background: none; color: var(--ink); padding: 0; }
+.hljs-keyword, .hljs-built_in, .hljs-type, .hljs-title { font-weight: 700; }
+.hljs-string, .hljs-comment, .hljs-meta { color: var(--ink-3); }
+.out, .wont, .from { margin: 1.4em 0 -.7em; font-size: 14px; font-weight: 700; }
+.from { font-weight: 400; color: var(--ink-2); }
+.out + pre { border-left: 0; background: var(--deep); padding: .8em 1.1em; }
+.wont + pre { border-left: 6px solid var(--ink); }
+.from + pre { border-left: 3px solid var(--ink); }
+table { border-collapse: collapse; margin: 1.2em 0; width: 100%; display: block; overflow-x: auto; }
+th, td { text-align: left; padding: .35em 1.4em .35em 0; border-bottom: 1px solid var(--ink-3); }
+th { border-bottom: 2px solid var(--ink); }
+details { margin: 1.2em 0; border-top: 1px solid var(--ink-3); border-bottom: 1px solid var(--ink-3); padding: .6em 0; }
+summary { cursor: pointer; font-weight: 700; }
+blockquote { margin: 1.4em 0; padding: .3em 1.1em; background: var(--deep); border-left: 6px solid var(--ink); }
+
+/* 读完 + 翻页 */
+.finish { margin-top: 56px; }
+.finish button { padding: 8px 16px; border: 1.5px solid var(--ink); font-weight: 700; }
+.finish button.yes { background: var(--ink); color: var(--paper); }
+.pager { display: grid; grid-template-columns: 1fr 1fr; margin-top: 28px; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+.pager a { display: block; padding: 14px 16px; text-decoration: none; min-width: 0; }
+.pager a:hover { background: var(--deep); }
+.pager a + a, .pager .next { text-align: right; }
+.pager .next { grid-column: 2; border-left: 2px solid var(--ink); }
+.pager span { display: block; font-size: 13px; color: var(--ink-2); }
+.pager b { display: block; line-height: 1.45; overflow-wrap: anywhere; }
+
+/* 本节目录 */
+.here { position: sticky; top: 56px; align-self: start; font-size: 14px; line-height: 1.5; }
+.here b { display: block; margin-bottom: 8px; font-size: 13px; }
+.here button { display: block; width: 100%; padding: 4px 0 4px 12px; border-left: 2px solid var(--rule); color: var(--ink-2); }
+.here button.on { border-left-color: var(--ink); color: var(--ink); font-weight: 700; }
+
+/* 封面：三种读者 */
+.cover h1 { font-size: clamp(56px, 11vw, 112px); line-height: 1; margin: 0 0 .2em; }
+.cover .lead { font-size: 19px; max-width: 32em; margin: 0 0 40px; }
+.paths { display: grid; border-top: 2px solid var(--ink); }
+.path { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 20px 0; border-bottom: 2px solid var(--ink); text-decoration: none; }
+.path:hover { background: var(--deep); }
+.path svg { width: 40px; height: 40px; margin-left: 8px; fill: var(--ink); }
+.path b { display: block; font-size: 20px; font-weight: 900; line-height: 1.4; }
+.path span { display: block; font-size: 15px; color: var(--ink-2); line-height: 1.6; }
+.path em { font-style: normal; font-weight: 700; white-space: nowrap; padding-right: 8px; }
+@media (max-width: 520px) { .path { grid-template-columns: 44px minmax(0, 1fr); } .path em { grid-column: 2; } }
+.path.mine { background: var(--deep); }
+.first { margin: 0 0 18px; font-weight: 700; }
+.also { margin-top: 28px; font-size: 15px; color: var(--ink-2); }
+
+/* 搜索结果 */
+.hits { padding: 0 22px; font-size: 14px; line-height: 1.5; }
+.hits a { display: block; padding: 8px 0; border-bottom: 1px solid var(--rule); text-decoration: none; }
+.hits b { display: block; }
+.hits span { display: block; color: var(--ink-2); font-size: 13px; overflow-wrap: anywhere; }
+.hits p { margin: 0; padding: 8px 0; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <header class="top">
+    <button id="open-toc" aria-label="打开目录">☰ 目录</button>
+    <span id="top-title"></span>
+  </header>
+  <aside class="rail" id="rail" aria-label="全书目录">
+    <a class="brand" href="#start"><b>茶馆</b><span>一本可以运行的书</span></a>
+    <div class="find"><input id="find" type="search" placeholder="搜索全书" aria-label="搜索全书"></div>
+    <nav class="tree" id="tree"></nav>
+    <div class="progress" id="progress"></div>
+  </aside>
+  <div id="scrim" class="scrim" hidden></div>
+  <div class="stage">
+    <main id="page"></main>
+    <aside class="here" id="here" aria-label="本节目录"></aside>
+  </div>
+</div>
+<script type="application/json" id="book">__BOOK__</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+const book = JSON.parse(document.getElementById('book').textContent)
+const sections = book.sections
+const byId = Object.fromEntries(sections.map((s) => [s.id, s]))
+const $ = (id) => document.getElementById(id)
+
+// 只在这台设备上记住：我是哪种读者、读完了哪几节。读不到也照常工作
+function load(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback } catch { return fallback } }
+function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value)) } catch {} }
+let reader = load('reader', null)
+let done = new Set(load('done', []))
+
+const shape = {
+  circle: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19"/></svg>',
+  triangle: '<svg viewBox="0 0 40 40" aria-hidden="true"><polygon points="20,2 39,38 1,38"/></svg>',
+  square: '<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36"/></svg>',
+}
+const paths = [
+  { key: 'new', part: 1, shape: 'circle', title: '我从没写过程序', text: '从打开终端开始，一小节一小节走。' },
+  { key: 'rust', part: 2, shape: 'triangle', title: '我写过程序，第一次学 Rust', text: '跳过基础，直接讲 Rust 不一样的地方。' },
+  { key: 'pro', part: 3, shape: 'square', title: '我熟悉 Rust，要维护这个项目', text: '直接看茶馆是怎么运转的。' },
+]
+const firstOf = (part) => sections.find((s) => s.part === part)
+const startPart = () => paths.find((p) => p.key === reader)?.part ?? 1
+const esc = (t) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+const plain = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent }
+const texts = Object.fromEntries(sections.map((s) => [s.id, plain(s.html)]))
+
+function item(s, current) {
+  const skip = reader && s.part && s.part < startPart()
+  const front = !s.num
+  return `<a class="item${front ? ' front-item' : ''}${s.id === current ? ' on' : ''}${skip ? ' skip' : ''}" href="#${s.id}"${s.id === current ? ' aria-current="page"' : ''}>`
+    + (front ? '' : `<span class="n">${s.num}</span>`)
+    + `<span>${esc(s.title)}</span>${done.has(s.id) ? '<i class="done-mark" title="读完了"></i>' : '<i></i>'}</a>`
+}
+
+function headings(id) {
+  const d = document.createElement('div')
+  d.innerHTML = byId[id].html
+  return [...d.querySelectorAll('h2')].map((h) => h.textContent)
+}
+
+function drawTree(current) {
+  const withSubs = (s) => item(s, current) + (s.id === current
+    ? '<ul class="subs">' + headings(s.id).map((h, j) => `<li><button data-h="${j}">${esc(h)}</button></li>`).join('') + '</ul>'
+    : '')
+  let html = sections.filter((s) => !s.num).map(withSubs).join('')
+  book.parts.forEach((p, i) => {
+    html += `<div class="part"><b>${esc(p.title)}</b><span>${esc(p.who)}</span></div>`
+    if (reader && i + 1 === startPart()) html += '<span class="start-here">你从这里开始</span>'
+    html += sections.filter((x) => x.part === i + 1).map(withSubs).join('')
+  })
+  $('tree').innerHTML = html
+  const counted = sections.filter((s) => s.num)
+  const read = counted.filter((s) => done.has(s.id)).length
+  $('progress').innerHTML = `读完 ${read} / ${counted.length} 节<div class="bar">${counted.map((s) => `<i class="${done.has(s.id) ? 'full' : ''}"></i>`).join('')}</div>`
+  $('tree').querySelector('.on')?.scrollIntoView({ block: 'nearest' })
+}
+
+function cover() {
+  document.title = '茶馆之书'
+  $('top-title').textContent = ''
+  $('here').innerHTML = ''
+  $('page').innerHTML = `<article class="cover"><h1>茶馆</h1>
+    <p class="lead">一本可以运行的书。读完以后，你能写 Rust，能维护这个项目，也能自己做 hook 这样的设计。</p>
+    <p class="first">无论你是哪一种读者，都先读<a href="#overview">全景：从一个问题到三万行代码</a>。然后选一条路：</p>
+    <div class="paths">${paths.map((p) => `<a class="path${reader === p.key ? ' mine' : ''}" href="#${firstOf(p.part).id}" data-path="${p.key}">
+      ${shape[p.shape]}<div><b>${esc(p.title)}</b><span>${esc(p.text)}</span></div><em>从 ${firstOf(p.part).num} 开始 →</em></a>`).join('')}</div>
+    <p class="also">也可以先读<a href="#preface">前言</a>和<a href="#how-to-read">怎么读这本书</a>。</p></article>`
+}
+
+function chapter(s) {
+  const i = sections.indexOf(s)
+  const prev = sections[i - 1], next = sections[i + 1]
+  const part = s.part ? book.parts[s.part - 1] : null
+  document.title = `${s.title} · 茶馆之书`
+  $('top-title').textContent = (s.num ? s.num + ' ' : '') + s.title
+  const link = (x, cls, label) => x ? `<a class="${cls}" href="#${x.id}"><span>${label}</span><b>${x.num ? x.num + ' ' : ''}${esc(x.title)}</b></a>` : ''
+  $('page').innerHTML = `<div class="eyebrow">${part ? `<b>${esc(part.title)}</b><span>${esc(part.who)}</span>` : ''}</div>
+    <article>${s.html}</article>
+    <div class="finish"><button id="mark" class="${done.has(s.id) ? 'yes' : ''}">${done.has(s.id) ? '■ 读完了' : '□ 标记为读完'}</button></div>
+    <nav class="pager" aria-label="翻页">${link(prev, 'prev', '← 上一节')}${link(next, 'next', '下一节 →')}</nav>`
+  $('mark').onclick = () => {
+    done.has(s.id) ? done.delete(s.id) : done.add(s.id)
+    save('done', [...done])
+    route()
+  }
+  const hs = [...$('page').querySelectorAll('article h2')]
+  $('here').innerHTML = hs.length ? '<b>本节目录</b>' + hs.map((h, j) => `<button data-h="${j}">${esc(h.textContent)}</button>`).join('') : ''
+  if (window.hljs) $('page').querySelectorAll('pre code').forEach((c) => {
+    if (c.classList.contains('language-rust')) hljs.highlightElement(c)
+  })
+  markHere()
+}
+
+// 本节目录：高亮最后一个滚过窗口上方三成的标题
+function markHere() {
+  const hs = [...$('page').querySelectorAll('article h2')]
+  let at = -1
+  hs.forEach((h, j) => { if (h.getBoundingClientRect().top < innerHeight * 0.3) at = j })
+  $('here').querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === at))
+}
+addEventListener('scroll', markHere, { passive: true })
+
+function jump(j) {
+  $('page').querySelectorAll('article h2')[j]?.scrollIntoView({ block: 'start' })
+  closeToc()
+}
+document.addEventListener('click', (e) => {
+  const h = e.target.closest('[data-h]')
+  if (h) jump(Number(h.dataset.h))
+  const p = e.target.closest('[data-path]')
+  if (p) { reader = p.dataset.path; save('reader', reader) }
+})
+
+function route() {
+  const id = location.hash.slice(1)
+  const s = byId[id]
+  drawTree(s?.id)
+  if (s) chapter(s); else cover()
+}
+addEventListener('hashchange', () => { $('find').value = ''; route(); scrollTo(0, 0); closeToc() })
+
+// 搜索：在全书里找一段文字，目录的位置换成结果
+$('find').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase()
+  if (!q) return route()
+  const hits = sections.flatMap((s) => {
+    const at = texts[s.id].toLowerCase().indexOf(q)
+    if (at < 0 && !s.title.toLowerCase().includes(q)) return []
+    const from = Math.max(0, at - 16)
+    return [`<a href="#${s.id}"><b>${s.num ? s.num + ' ' : ''}${esc(s.title)}</b><span>${esc(texts[s.id].slice(from, from + 60).replace(/\s+/g, ' '))}</span></a>`]
+  })
+  $('tree').innerHTML = `<div class="hits">${hits.join('') || '<p>没有找到。换个词试试。</p>'}</div>`
+})
+
+// 窄窗口的目录抽屉
+function closeToc() { $('rail').classList.remove('open'); $('scrim').hidden = true }
+$('open-toc').onclick = () => { $('rail').classList.add('open'); $('scrim').hidden = false }
+$('scrim').onclick = closeToc
+
+// 左右方向键翻页
+addEventListener('keydown', (e) => {
+  if (e.target.matches('input') || e.metaKey || e.ctrlKey || e.altKey) return
+  const i = sections.findIndex((s) => s.id === location.hash.slice(1))
+  if (e.key === 'ArrowRight' && sections[i + 1]) location.hash = sections[i + 1].id
+  if (e.key === 'ArrowLeft' && i > 0) location.hash = sections[i - 1].id
+  if (e.key === 'Escape') closeToc()
+})
+
+route()
+</script>
+</body>
+</html>

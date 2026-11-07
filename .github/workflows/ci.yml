@@ -42,6 +42,10 @@ jobs:
       - name: Tests
         run: cargo test
 
+      # 书里的每一段代码都要能编译、能运行
+      - name: Book
+        run: cargo test --manifest-path book/Cargo.toml
+
       - name: Install sshd
         # The test runs sshd as the unprivileged runner user; installing the
         # package is the only step that needs root.
