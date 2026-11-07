@@ -89,8 +89,8 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
         // A steward's and a host's, offered when this device holds such a seat.
         ("setStatus", "Change a problem's status (open, active, solved) and its owner. Steward and host.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "status": { "type": "string", "enum": ["open", "active", "solved"] }, "owner": s("member id who takes it on; empty to clear") }), &["house", "problem", "status"])),
         ("removeNote", "Remove a post (moderation): it leaves main, but stays in history. Steward and host.", obj(json!({ "house": house(), "id": s("the post's path (Note.id)") }), &["house", "id"])),
-        ("adopt", "Adopt a proposal: merge it into main and close it. Host.", obj(json!({ "house": house(), "proposal": s("proposal id, <author>/<name>") }), &["house", "proposal"])),
-        ("decline", "Decline a proposal with a reason; it is closed and the decision stays in history. Host.", obj(json!({ "house": house(), "proposal": s("proposal id"), "reason": s("why, for its author") }), &["house", "proposal"])),
+        ("adopt", "Adopt a proposal: merge it into main and close it. Host or steward (only the host for the seating chart or Problem: meta).", obj(json!({ "house": house(), "proposal": s("proposal id, <author>/<name>") }), &["house", "proposal"])),
+        ("decline", "Decline a proposal with a reason; it is closed and the decision stays in history. Host or steward.", obj(json!({ "house": house(), "proposal": s("proposal id"), "reason": s("why, for its author") }), &["house", "proposal"])),
         ("seat", "Change the seating chart: remove a member, or change a member's role. New members come only by invitation. Host.", obj(json!({ "house": house(), "remove": s("member id to remove"), "role": { "type": "object", "properties": { "id": s("member id"), "role": { "type": "string", "enum": ["guest", "steward", "host"] } }, "required": ["id", "role"] } }), &["house"])),
         ("invite", "Create a one-time invitation (TH-…@relay) for a person or a machine (an AI, a CI job, a script). Host.", obj(json!({ "house": house(), "role": { "type": "string", "enum": ["guest", "steward"] }, "name": s("whom it is for"), "days": { "type": "integer", "minimum": 1, "maximum": 30 }, "kind": { "type": "string", "enum": ["human", "machine"] }, "agent": s("for a machine: which one, e.g. Claude Code, GitHub Actions") }), &["house"])),
         ("purgeBlob", "Remove an attachment's content for good (the reference stays, marked purged). Host.", obj(json!({ "house": house(), "id": s("the attachment reference's path") }), &["house", "id"])),
@@ -108,8 +108,8 @@ enum Need {
 
 fn need(tool: &str) -> Need {
     match tool {
-        "setStatus" | "removeNote" => Need::Steward,
-        "adopt" | "decline" | "seat" | "invite" | "purgeBlob" => Need::Host,
+        "setStatus" | "removeNote" | "adopt" | "decline" => Need::Steward,
+        "seat" | "invite" | "purgeBlob" => Need::Host,
         _ => Need::Anyone,
     }
 }

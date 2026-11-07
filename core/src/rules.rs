@@ -298,9 +298,10 @@ pub fn decide_ref(role: Role, member_id: &str, kind: &RefKind<'_>, op: Op) -> Re
             (Op::Update, _) => Allow,
         },
         RefKind::Proposal { owner, .. } => {
-            // Your own namespace is yours; the host may also clear others'
-            // proposals after deciding on them.
-            if *owner == member_id || (op == Op::Delete && role == Role::Host) {
+            // Your own namespace is yours; the host and the steward may also
+            // clear others' proposals after deciding on them (the steward
+            // adopts and declines too: 法则第 5 条, 2026-11-07).
+            if *owner == member_id || (op == Op::Delete && role != Role::Guest) {
                 Allow
             } else {
                 Deny(format!(
@@ -481,8 +482,12 @@ mod tests {
             decide_ref(Role::Guest, "li", &p, Op::Create),
             RefDecision::Deny(_)
         ));
-        assert!(matches!(
+        assert_eq!(
             decide_ref(Role::Steward, "zhou", &p, Op::Delete),
+            RefDecision::Allow
+        );
+        assert!(matches!(
+            decide_ref(Role::Steward, "zhou", &p, Op::Update),
             RefDecision::Deny(_)
         ));
         assert_eq!(

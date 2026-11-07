@@ -29,10 +29,12 @@
   })
 
   let route = $derived.by(() => {
-    const [, h, page, arg] = hash.split('/')
+    // 参数可以带斜杠：提案的 id 是 <成员>/<提案名>（#/dev/proposal/zhao/p-1）
+    const [, h, page, ...rest] = hash.split('/')
+    const arg = rest.length ? decodeURIComponent(rest.join('/')) : undefined
     // #/join 是入座页，不属于任何一间茶馆
     if (h === 'join') return { houseId: '', page: 'join', arg: undefined }
-    return { houseId: h, page: page || 'house', arg: arg ? decodeURIComponent(arg) : arg }
+    return { houseId: h, page: page || 'house', arg }
   })
 
   // 数据只经过 api()（src/api/backend.ts）。写入之后调用 refresh() 重新读取。

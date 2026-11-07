@@ -5,6 +5,7 @@
   import Diff from '../lib/Diff.svelte'
   import Markdown from '../lib/Markdown.svelte'
   import { bodyLines, isMarkdown, stripFront } from '../lib/markdown'
+  import { fileAct, proposalAct, isNewProblem, hostOnly, stewardCannotDecline } from '../lib/proposals'
   import { member, self, host, type House, type Proposal } from '../api/view'
   import { write } from '../api/backend'
   import { fit } from '../lib/fit'
@@ -12,15 +13,21 @@
 
   // id 为空时是"提案列表"：宽屏显示列表 + 第一份提案，窄屏只显示列表（两级页面）。
   let { house, id, refresh }: { house: House; id?: string; refresh?: () => void } = $props()
-  let p = $derived(house.proposals.find((x) => x.id === id) ?? house.proposals[0])
-  let author = $derived(p && member(house, p.by))
+  // 地址里点名的提案找不到（已经处理过，或者地址错了）时，不能悄悄换成另一份：老板会以为在看这一份
+  let p = $derived(id === undefined ? house.proposals[0] : house.proposals.find((x) => x.id === id))
+  let author = $derived(member(house, p?.by ?? ''))
   // 茶客提出的新问题也是提案：它的编号是在茶客自己的副本里取的，正本上可能还没有这个问题，
   // 也可能已经被别人用掉（采纳时引擎会改号，Renumbered:）。所以这种提案不链接到同号的问题
-  const newProblem = (q: Proposal) => q.files.some((f) => f.change === 'add' && f.path.startsWith(`problems/${q.problem}-`))
+  const newProblem = isNewProblem
   let isNew = $derived(!!p && newProblem(p))
   let problem = $derived(p && !isNew ? house.problems.find((x) => x.id === p.problem) : undefined)
   let me = $derived(self(house))
   let owner = $derived(host(house))
+  let kind = $derived(p ? proposalAct(p) : null)
+  const actLabel = (q: Proposal) => { const k = proposalAct(q); return t(`prop.act.${k.act}`) + (k.more ? t('prop.actMore', { n: k.more }) : '') }
+  // 伙计当管理员（2026-11-07）：采纳、不采纳；改座位表或茶馆设置的只归老板
+  let decider = $derived(me.role === 'host' || (me.role === 'steward' && !!p && !hostOnly(p)))
+  let canDecline = $derived(me.role === 'host' || (!!p && !stewardCannotDecline(p, p.problem === 'board' || house.problems.some((x) => x.id === p.problem))))
   let outcome = $state<'pending' | 'merged' | 'rejected'>('pending')
   // 撤回自己的提案：先点"撤回"，再点"确定撤回"
   let withdrawing = $state(false)
@@ -62,7 +69,7 @@
         {@const m = member(house, q.by)}
         <li class:on={q.id === p?.id}>
           <a href="#/{house.id}/proposal/{q.id}">
-            <span class="q-no num">{newProblem(q) ? t('prop.newShort') : q.problem}{#if q.by === me.id}<span class="mine">{t('prop.yours')}</span>{/if}</span>
+            <span class="q-no num">{#if !newProblem(q)}{q.problem} · {/if}<span class="q-act">{actLabel(q)}</span>{#if q.by === me.id}<span class="mine">{t('prop.yours')}</span>{/if}</span>
             <span class="q-t hyphenate">{q.title}</span>
             <span class="q-by"><Shape role={m.role} size={9} />{m.name}<MachineMark {m} /> · {when(q.when)}</span>
           </a>
@@ -87,6 +94,7 @@
     <section class="review" class:merged={outcome === 'merged'} class:rejected={outcome === 'rejected'}>
       <a class="back label" href="#/{house.id}/proposals">← {t('prop.back')}</a>
       <div class="crumb label">
+        <span class="act">{kind ? actLabel(p) : ''}</span>
         {#if isNew}{t('prop.newProblem')}
         {:else if problem}{t('prop.forProblem')} <a href="#/{house.id}/problem/{problem.id}"><span class="num">{problem.id}</span> {problem.title}</a>
         {:else}{t('prop.forProblem')} <span class="num">{p.problem}</span>{/if}
@@ -109,7 +117,7 @@
         <div class="file">
           <div class="file-head">
             <WorkGlyph kind={f.kind} size={24} />
-            <span class="kind label">{t(`kind.${f.kind}`)}</span>
+            <span class="kind label">{t(`prop.file.${fileAct(f)}`)} · {t(`kind.${f.kind}`)}</span>
             <span class="ft">{f.title}</span>
             <span class="tally">{outcome === 'merged' ? t('prop.mergedText') : t('prop.tally', tl)}</span>
           </div>
@@ -137,13 +145,13 @@
       {/each}
 
       <div class="actions" data-write>
-        {#if me.role === 'host'}
+        {#if decider}
           {#if outcome === 'pending'}
             <p class="consequence">{t('prop.adoptHint')}</p>
             <div class="buttons">
               <div class="opt">
-                <button class="secondary reject" onclick={() => decide(false)}>{t('prop.reject')}</button>
-                <small>{t('prop.rejectNote', { name: author.name })}</small>
+                <button class="secondary reject" disabled={!canDecline} onclick={() => decide(false)}>{t('prop.reject')}</button>
+                <small>{canDecline ? t('prop.rejectNote', { name: author.name }) : t('prop.declineHostOnly', { name: owner.name })}</small>
               </div>
               <button class="primary adopt" onclick={() => decide(true)}><i><b></b></i><span>{t('prop.adopt')}</span></button>
             </div>
@@ -160,13 +168,10 @@
           {/if}
         {:else}
           <p class="consequence wait">
-            {p.by === me.id ? t('prop.ownWaiting', { name: owner.name }) : t('prop.waiting', { name: owner.name })}
+            {me.role === 'steward' ? t('prop.hostOnly', { name: owner.name }) : p.by === me.id ? t('prop.ownWaiting') : t('prop.waiting')}
           </p>
           <div class="buttons">
-            {#if me.role === 'steward' && problem}
-              <div class="opt"><small>{t('prop.editDirectHint')}</small></div>
-              <a class="primary" href="#/{house.id}/problem/{problem.id}"><i>→</i><span>{t('prop.editDirect')}</span></a>
-            {:else}
+            {#if me.role !== 'steward'}
               {#if p.by === me.id}
                 {#if withdrawing}
                   <button class="secondary sure" data-write onclick={withdraw}>{t('prop.withdrawSure')}</button>
@@ -180,6 +185,11 @@
           </div>
         {/if}
       </div>
+    </section>
+  {:else if id !== undefined}
+    <section class="review gone">
+      <a class="back label" href="#/{house.id}/proposals">← {t('prop.back')}</a>
+      <p class="consequence">{t('prop.gone')}</p>
     </section>
   {/if}
 </div>
@@ -241,6 +251,9 @@
 
   .doc { padding: 14px 0 6px; animation: settle 520ms var(--ease) both; }
   .doc.muted { color: var(--ink-3); }
+  .act { display: inline-block; margin-right: 10px; padding: 1px 7px; background: var(--ink); color: var(--paper); font-weight: 700; }
+  .q-act { font-family: var(--sans); letter-spacing: 0; }
+  .reject:disabled { color: var(--ink-3); border-color: var(--ink-3); cursor: default; }
   .view { display: flex; gap: 0; margin-top: 10px; }
   .view button { padding: 4px 12px; background: transparent; border: 1px solid var(--ink); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
   .view button + button { border-left: 0; }

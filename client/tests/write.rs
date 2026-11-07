@@ -387,6 +387,100 @@ fn the_whole_flow_reaches_the_relay_signed() {
     }
 }
 
+/// 伙计当管理员（用户 2026-11-07 定）：采纳、不采纳茶客的提案；
+/// 座位表和 meta 只归老板，引擎先说清楚，不等 Relay 拒绝。
+#[test]
+fn the_steward_adopts_and_declines() {
+    let w = World::new("steward-adopts");
+    let (wang, li, zhao) = w.wutong();
+    li.ok(
+        "openProblem",
+        json!({ "house": "wutong", "title": "停车位不好找" }),
+    );
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    let take =
+        |p: &Person, cmd: &str, args: Value| p.ok(cmd, args)["id"].as_str().unwrap().to_string();
+
+    // A work: the steward adopts it.
+    let work = take(
+        &zhao,
+        "addWork",
+        json!({ "house": "wutong", "problem": "0001", "kind": "doc", "title": "数车位", "text": "一共 42 个。\n" }),
+    );
+    li.ok("sync", json!({ "house": "wutong" }));
+    assert_eq!(
+        li.ok("adopt", json!({ "house": "wutong", "proposal": work }))["commit"],
+        "pushed"
+    );
+
+    // Another: the steward declines it, with a reason.
+    let other = take(
+        &zhao,
+        "addWork",
+        json!({ "house": "wutong", "problem": "0001", "kind": "doc", "title": "重复的", "text": "同上。\n" }),
+    );
+    li.ok("sync", json!({ "house": "wutong" }));
+    assert_eq!(
+        li.ok(
+            "decline",
+            json!({ "house": "wutong", "proposal": other, "reason": "和上一份重复" })
+        )["commit"],
+        "pushed"
+    );
+
+    // A new problem: the steward adopts it, but cannot decline one yet: its
+    // record faces Problem: meta, which only the host may use (法则第 8 条).
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    let p1 = take(
+        &zhao,
+        "openProblem",
+        json!({ "house": "wutong", "title": "楼道灯" }),
+    );
+    let p2 = take(
+        &zhao,
+        "openProblem",
+        json!({ "house": "wutong", "title": "垃圾桶" }),
+    );
+    li.ok("sync", json!({ "house": "wutong" }));
+    let e = li.err("decline", json!({ "house": "wutong", "proposal": p2 }));
+    assert_eq!(e["code"], "forbidden", "{e:#}");
+    wang.ok("sync", json!({ "house": "wutong" }));
+    assert_eq!(
+        wang.ok("decline", json!({ "house": "wutong", "proposal": p2 }))["commit"],
+        "pushed"
+    );
+    li.ok("sync", json!({ "house": "wutong" }));
+    assert_eq!(
+        li.ok("adopt", json!({ "house": "wutong", "proposal": p1 }))["commit"],
+        "pushed"
+    );
+
+    // Everyone sees the same decisions.
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let h = wang.house();
+    assert!(
+        h["proposals"].as_array().unwrap().is_empty(),
+        "{:#}",
+        h["proposals"]
+    );
+    let titles: Vec<&str> = h["problems"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p["title"].as_str().unwrap())
+        .collect();
+    assert!(
+        titles.contains(&"楼道灯") && !titles.contains(&"垃圾桶"),
+        "{titles:?}"
+    );
+    let works =
+        wang.ok("problem", json!({ "house": "wutong", "problem": "0001" }))["works"].clone();
+    assert!(
+        works.to_string().contains("数车位") && !works.to_string().contains("重复的"),
+        "{works}"
+    );
+}
+
 #[test]
 fn preflight_refuses_before_writing() {
     let w = World::new("preflight");
@@ -1835,10 +1929,17 @@ fn an_ai_gets_the_tools_of_its_seat() {
     // The seat changed what it may do: the client is told, and the list grows.
     let names = m.tool_names();
     assert_eq!(m.notes, ["notifications/tools/list_changed"]);
-    for t in ["setStatus", "removeNote", "note", "propose"] {
+    for t in [
+        "setStatus",
+        "removeNote",
+        "note",
+        "propose",
+        "adopt",
+        "decline",
+    ] {
         assert!(names.contains(&t.to_string()), "{t}: {names:?}");
     }
-    for t in ["adopt", "seat", "invite"] {
+    for t in ["seat", "invite"] {
         assert!(!names.contains(&t.to_string()), "{t}: {names:?}");
     }
     // A steward writes main directly, and manages status.
@@ -1857,7 +1958,7 @@ fn an_ai_gets_the_tools_of_its_seat() {
     );
     assert!(!err, "{r:#}");
     // Host-only decisions: the engine says no, not the server.
-    let (err, r) = m.tool("adopt", json!({ "house": "wutong", "proposal": "x/y" }));
+    let (err, r) = m.tool("seat", json!({ "house": "wutong", "remove": "x" }));
     assert!(err);
     assert_eq!(r["code"], "forbidden", "{r:#}");
     drop(m);
