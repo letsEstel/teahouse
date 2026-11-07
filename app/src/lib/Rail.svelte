@@ -63,7 +63,7 @@
           </li>
         {/if}
       {/each}
-      <li class="join"><a href="#/join" onclick={() => (open = false)}>+ {t('rail.join')}</a></li>
+      <li class="join"><a href="#/join" onclick={(e) => { open = false; if (demoMode) { e.preventDefault(); setDemo(false, '#/join') } }}>+ {t('rail.join')}</a></li>
     </ul>
     {#if many}
       <button class="more" aria-expanded={expanded} onclick={() => (expanded = !expanded)}>
