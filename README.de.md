@@ -64,6 +64,8 @@ Automatisch aus dem neuesten Code gebaut:
 
 ## Dokumentation
 
+- [Das Gesamtbild](docs/OVERVIEW.de.md): vom Problem über die Entscheidungen zum Code
+
 Die folgenden Dokumente sind derzeit auf Chinesisch.
 
 - [Benutzerhandbuch](docs/USER-GUIDE.md): ein Teehaus benutzen, und Antworten auf häufige Fragen
