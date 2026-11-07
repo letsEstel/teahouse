@@ -3,7 +3,7 @@
 // path 是仓库里的真实路径，只给程序用，界面上一律不显示。
 import type { DiffLine, House, Note, Notice, Problem, Work } from './types'
 
-export type FileKind = 'problem' | 'doc' | 'table' | 'plan' | 'image' | 'notice' | 'note' | 'members' | 'link'
+export type FileKind = 'problem' | 'doc' | 'table' | 'plan' | 'image' | 'file' | 'notice' | 'note' | 'members' | 'link'
 
 /** "来历"里的一条：谁、什么时候、为了哪个问题、做了什么。problem 是问题编号、'board' 或 'meta' */
 export interface HistEntry {
@@ -33,7 +33,7 @@ const bytes = (...xs: (string | undefined)[]) => new TextEncoder().encode(xs.fil
 const fakeSize = (id: string) => 140_000 + ([...id].reduce((n, c) => n * 31 + c.charCodeAt(0), 7) % 700_000)
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x'
 const stamp = (iso: string) => iso.replace(/[-:]/g, '').slice(0, 13) + '00Z'
-const ext = (k: Work['kind']) => (k === 'image' ? 'png' : k === 'table' ? 'csv' : 'md')
+const ext = (k: Work['kind']) => (k === 'image' ? 'png' : k === 'file' ? 'pdf' : k === 'table' ? 'csv' : 'md')
 
 function workHistory(p: Problem, w: Work): HistEntry[] {
   if (w.history) return w.history.map((h) => ({ ...h, problem: p.id }))
