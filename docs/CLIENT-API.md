@@ -99,8 +99,8 @@ Act: add-work
 | `add-work` / `update-work` | 添加或更新成果 | 新增或修改 `works/` 下的文件 |
 | `note` | 留言 | 新增 `talk/` 下的文件 |
 | `notice` | 张贴公告 | 新增 `board/*.md` |
-| `adopt` | 采纳提案（合并提交，另写 `Proposal: <成员id>/<提案名>`） | 老板 |
-| `decline` | 不采纳提案（空提交，另写 `Proposal: …`，正文写理由） | 老板 |
+| `adopt` | 采纳提案（合并提交，另写 `Proposal: <成员id>/<提案名>`） | 老板、伙计（改座位表或 `Problem: meta` 的只有老板） |
+| `decline` | 不采纳提案（空提交，另写 `Proposal: …`，正文写理由） | 老板、伙计（记录要写 `Problem: meta` 的，也就是新问题和茶馆设置的提案，暂时只有老板） |
 | `remove-note` | 删除留言 | 老板、伙计 |
 
 采纳和不采纳的提交同样必须带 `Problem:`：取提案所针对的问题；提案改的是公告时写 `board`。

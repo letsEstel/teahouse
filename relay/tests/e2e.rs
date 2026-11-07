@@ -588,12 +588,19 @@ fn guests_write_only_their_own_proposals() {
     w.push_ok(&wang, &["-f", "HEAD:refs/proposals/wang/idea"]);
     w.push_ok(&wang, &[":refs/proposals/wang/idea"]);
 
-    // Others cannot delete someone's proposal — except the host.
+    // Others cannot delete someone's proposal, except the host and the
+    // steward, who decide on proposals; nobody but the owner reworks one.
     w.push_ok(&wang, &["HEAD:refs/proposals/wang/again"]);
     let li = w.clone("li", "wutong");
     w.push_denied(&li, &[":refs/proposals/wang/again"], "belongs to wang");
     let zhou = w.clone("zhou", "wutong");
-    w.push_denied(&zhou, &[":refs/proposals/wang/again"], "belongs to wang");
+    w.push_denied(
+        &zhou,
+        &["-f", "HEAD~1:refs/proposals/wang/again"],
+        "belongs to wang",
+    );
+    w.push_ok(&zhou, &[":refs/proposals/wang/again"]);
+    w.push_ok(&wang, &["HEAD:refs/proposals/wang/again"]);
     let host = w.clone("chenli", "wutong");
     w.push_ok(&host, &[":refs/proposals/wang/again"]);
 }

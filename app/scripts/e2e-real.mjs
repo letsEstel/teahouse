@@ -14,6 +14,8 @@ import { join } from 'node:path'
 
 const HOST = Number(process.env.HOST_PORT ?? 7377)
 const GUEST = process.env.GUEST_PORT ? Number(process.env.GUEST_PORT) : null
+// 可选：伙计（周小满）的引擎，测伙计采纳提案
+const STEWARD = process.env.STEWARD_PORT ? Number(process.env.STEWARD_PORT) : null
 const shots = process.argv[2]
 if (shots) mkdirSync(shots, { recursive: true })
 const house = 'wutong'
@@ -509,6 +511,40 @@ if (GUEST) {
     if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`)
     await h.close()
   })
+  await step('提案写清楚是干什么的；待采纳的新问题出现在问题列表里', async () => {
+    await engine(GUEST, 'addWork', { house, problem: '0001', kind: 'doc', title: `茶客的成果 ${stamp}`, text: '一段。' })
+    await engine(GUEST, 'openProblem', { house, title: `待采纳的问题 ${stamp}`, body: [{ heading: '', text: '还没采纳。' }] })
+    await engine(HOST, 'sync', { house })
+    let p = await open(host.url, 'proposals')
+    const rows = await p.$$eval('.queue li a', (xs) => xs.map((x) => x.textContent.replace(/\s+/g, ' ')))
+    const work = rows.find((r) => r.includes(`茶客的成果 ${stamp}`)), prob = rows.find((r) => r.includes(`待采纳的问题 ${stamp}`))
+    if (!work?.includes('加成果')) throw new Error(`work row: ${work}`)
+    if (!prob?.includes('提出新问题') || !prob.includes('新问题')) throw new Error(`problem row: ${prob}`)
+    ok('提案列表：每一份写着“加成果”“提出新问题”')
+    await shot(p, 'proposal-kinds')
+    await p.close()
+    p = await open(host.url, 'problems')
+    await p.waitForSelector(`li.waiting:has-text("待采纳的问题 ${stamp}")`)
+    if (!(await p.$eval(`li.waiting:has-text("待采纳的问题 ${stamp}")`, (e) => e.textContent.includes('待采纳')))) throw new Error('no 待采纳 tag')
+    await p.click(`li.waiting:has-text("待采纳的问题 ${stamp}") a`)
+    await p.waitForSelector('.crumb:has-text("提出一个新问题")')
+    if (!(await p.$eval('.review h2', (e) => e.textContent)).includes(`待采纳的问题 ${stamp}`)) throw new Error('clicked one proposal, got another')
+    ok('问题列表：茶客的新问题标“待采纳”，点进去正是这一份提案')
+    // 从提案列表点每一份，打开的都是点的那一份（提案 id 带斜杠，路由曾经只取到成员名）
+    await p.goto(`${host.url}?lang=zh&tour=off#/${house}/proposals`)
+    await p.reload()
+    await p.waitForSelector('.queue li a')
+    const links = await p.$$eval('.queue li a', (xs) => xs.map((x) => [x.getAttribute('href'), x.querySelector('.q-t').textContent.trim()]))
+    for (const [href, title] of links) {
+      await p.evaluate((h) => { location.hash = h.slice(1) }, href)
+      await p.waitForFunction((t) => document.querySelector('.review h2')?.textContent.includes(t), title, { timeout: 5000 }).catch(() => { throw new Error(`${href} shows a different proposal`) })
+    }
+    await p.evaluate(() => { location.hash = location.hash.split('/proposal/')[0] + '/proposal/nobody/gone' })
+    await p.waitForSelector('.review.gone')
+    ok(`提案列表：${links.length} 份逐一点开，打开的都是点的那一份；不存在的提案明说，不换成别的`)
+    await shot(p, 'problems-waiting')
+    await p.close()
+  })
   await step('提案里的 Markdown：看成品、看改动、不执行别人写的 HTML', async () => {
     const text = '## 第一节\n\n这是**加粗**和 `代码`，[链接](https://example.org/a)，[坏链接](javascript:alert(1))。\n\n- 第一条\n- 第二条\n\n<img src=x onerror="window.__xss=1">\n\n| 甲 | 乙 |\n|---|---|\n| 1 | 2 |\n'
     await engine(GUEST, 'propose', { house, problem: '0001', title: `Markdown 提案 ${stamp}`, changes: [{ kind: 'doc', title: `写法样例 ${stamp}`, text }] })
@@ -578,6 +614,33 @@ if (GUEST) {
     await p.close()
   })
   await guest.close()
+}
+
+// ---------------- 伙计 ----------------
+if (STEWARD && GUEST) {
+  const steward = await serve(STEWARD, 'dist-e2e-steward', 4403)
+  await step('伙计当管理员：采纳茶客的成果；新问题暂时不能“不采纳”，按钮上写明原因', async () => {
+    await engine(GUEST, 'sync', { house })
+    const work = await engine(GUEST, 'addWork', { house, problem: '0001', kind: 'doc', title: `给伙计采纳的 ${stamp}`, text: '一段。' })
+    const prob = await engine(GUEST, 'openProblem', { house, title: `给伙计看的新问题 ${stamp}`, body: [{ heading: '', text: '还没采纳。' }] })
+    await engine(STEWARD, 'sync', { house })
+    const p = await open(steward.url, `proposal/${encodeURIComponent(work.id)}`)
+    await p.click('button.adopt')
+    await p.waitForSelector('.review.merged')
+    await engine(HOST, 'sync', { house })
+    const got = (await engine(HOST, 'problem', { house, problem: '0001' })).works.find((w) => w.title === `给伙计采纳的 ${stamp}`)
+    if (!got) throw new Error('adopted work is not on main')
+    ok('伙计点“采纳”：成果写进茶馆，老板那边同步后看得到')
+    await p.goto(`${steward.url}?lang=zh&tour=off#/${house}/proposal/${encodeURIComponent(prob.id)}`)
+    await p.waitForSelector('.crumb:has-text("提出一个新问题")')
+    if (!(await p.$eval('button.reject', (b) => b.disabled))) throw new Error('steward can press decline on a new problem')
+    if (!(await p.$('button.adopt'))) throw new Error('steward has no adopt button')
+    await p.waitForSelector('small:has-text("暂时只有老板")')
+    ok('新问题的提案：伙计能采纳，“不采纳”是灰的，写着暂时只有老板能不采纳')
+    await shot(p, 'steward-new-problem')
+    await p.close()
+  })
+  await steward.close()
 }
 
 await host.close()

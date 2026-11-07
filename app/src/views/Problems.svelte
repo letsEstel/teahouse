@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { isNewProblem } from '../lib/proposals'
+  import type { Proposal } from '../api/types'
   import Shape from '../lib/Shape.svelte'
   import MachineMark from '../lib/MachineMark.svelte'
   import StatusMark from '../lib/StatusMark.svelte'
@@ -26,7 +28,11 @@
   let filter = $state<'all' | Status>('all')
   const tabs: ('all' | Status)[] = ['all', 'active', 'open', 'solved']
   let list = $derived(filter === 'all' ? house.problems : house.problems.filter((p) => p.status === filter))
-  const pending = (id: string) => house.proposals.filter((p) => p.problem === id).length
+  // 新问题的提案不算在同号的问题上：它的编号采纳时可能会改（0028）
+  const pending = (id: string) => house.proposals.filter((p) => p.problem === id && !isNewProblem(p)).length
+  // 茶客提出、还没采纳的新问题：显示在列表里，标“待采纳”，点进去是提案
+  let waiting = $derived(house.proposals.filter(isNewProblem))
+  const newTitle = (q: Proposal) => q.title.replace(/^提出问题：|^Open problem: /, '')
   const n = (s: 'all' | Status) => (s === 'all' ? house.problems.length : house.problems.filter((p) => p.status === s).length)
 
   // 茶客不能直接写问题，只能提议
@@ -137,6 +143,16 @@
             <StatusMark status={c} /><span class="num">{items.length}</span><i class="tri" class:open={!shut}></i>
           </button>
           {#if !shut}
+          {#if c === 'open'}
+            {#each waiting as q (q.id)}
+              {@const m = member(house, q.by)}
+              <a class="card waiting" href="#/{house.id}/proposal/{q.id}">
+                <span class="num cno">{t('prop.newShort')} · {t('problems.waiting')}</span>
+                <span class="ct">{newTitle(q)}</span>
+                <span class="cmeta"><span class="by"><Shape role={m.role} size={9} />{m.name}<MachineMark {m} /></span></span>
+              </a>
+            {/each}
+          {/if}
           {#each items as p (p.id)}
             {@const m = member(house, p.by)}
             {@const pr = pending(p.id)}
@@ -159,6 +175,25 @@
   {:else}
   <div class="list">
     <ol>
+      {#if filter === 'all' || filter === 'open'}
+        {#each waiting as q (q.id)}
+          {@const m = member(house, q.by)}
+          <li class="waiting">
+            <a href="#/{house.id}/proposal/{q.id}">
+              <span class="no num">{t('prop.newShort')}</span>
+              <span class="body">
+                <span class="title">{newTitle(q)}</span>
+                <span class="summary">{t('problems.waitingNote', { name: m.name })}</span>
+              </span>
+              <span class="meta">
+                <span class="st"><em class="tag">{t('problems.waiting')}</em></span>
+                <span class="by"><Shape role={m.role} size={10} />{m.name}<MachineMark {m} /></span>
+                <span class="when num">{when(q.when)}</span>
+              </span>
+            </a>
+          </li>
+        {/each}
+      {/if}
       {#each list as p (p.id)}
         {@const m = member(house, p.by)}
         {@const pr = pending(p.id)}
@@ -185,6 +220,9 @@
 </div>
 
 <style>
+  /* 待采纳的新问题：虚线框，还不是正式的问题 */
+  .waiting > a, a.card.waiting { outline: 1.5px dashed var(--ink-3); outline-offset: -4px; }
+  .tag { font-style: normal; font-size: 12px; font-weight: 700; padding: 1px 6px; border: 1px solid var(--ink); white-space: nowrap; }
   .compose { display: grid; gap: 10px; max-width: 52rem; margin: 0 0 clamp(28px, 4vw, 44px); padding: clamp(16px, 2.5vw, 24px); border: 2px solid var(--ink); }
   .title-in { border: 1.5px solid var(--ink); background: var(--paper); padding: 10px 14px; font: inherit; font-size: 20px; font-weight: 700; color: var(--ink); }
   .compose .save { display: flex; flex-wrap: wrap; gap: 10px; }

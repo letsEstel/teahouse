@@ -75,7 +75,7 @@ A new teahouse is prepared under `tmp/` and moved into `houses/` with one
 | 2 | Only `refs/heads/main` and `refs/proposals/<member-id>/<name>` exist. Tags and other branches are refused. | all |
 | 3 | `main` is never created, deleted or rewritten through a push (fast-forward only, even for the host). | all |
 | 4 | Guests (茶客) land on `main` only by **adding** their own discussion posts (`talk/…/<stamp>-<their-id>.md`): no edits, no deletions, no merges, nothing else. Everything else they push as a proposal to their own namespace. | guest |
-| 5 | Anyone may create, rework (force) or delete proposals in **their own** namespace; only the host may delete someone else's. | all |
+| 5 | Anyone may create, rework (force) or delete proposals in **their own** namespace; only the host and the steward, who decide on proposals, may delete someone else's. | all |
 | 6 | The steward (伙计) may change only `problems/`, `works/`, `board/` and `talk/` (moderation) on `main`. Checked **per commit**, including what a merge resolution itself introduces (`git diff-tree -c`). | steward |
 | 7 | Every commit carries exactly one `Problem:` trailer: a 4-digit id whose file `problems/<id>-*.md` exists in that commit, `board` (may touch only `board/` and `talk/board/`), or `meta`. A post must sit under the topic its commit faces, and that problem (`problems/<id>-*.md`) or notice (`board/<notice>.md`) must exist in the same commit. | all |
 | 8 | `Problem: meta` may land on `main` only from the host. | steward |

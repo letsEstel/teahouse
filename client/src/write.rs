@@ -1152,7 +1152,8 @@ impl<'c> Writer<'c> {
     }
 
     pub fn adopt(self, id: &str, args: &Value) -> Result<WriteResult> {
-        self.require(&[Role::Host], "adopt")?;
+        // 伙计也能采纳（用户 2026-11-07 定：伙计当管理员）
+        self.require(&[Role::Host, Role::Steward], "adopt")?;
         let (refname, tip, p) = self.find_proposal(id)?;
         let repo = self.repo();
         let head = self.head()?;
@@ -1174,6 +1175,24 @@ impl<'c> Writer<'c> {
         let base_tree = repo.find_commit(base)?.tree()?;
         let theirs_tree = theirs.tree()?;
         let diff = repo.diff_tree_to_tree(Some(&base_tree), Some(&theirs_tree), None)?;
+        // 座位表和茶馆设置只归老板（法则第 8、9 条）：伙计采纳这样的提案，Relay 会拒绝，这里先说清楚
+        if self.role() == Role::Steward
+            && (p.problem == "meta"
+                || diff.deltas().any(|d| {
+                    d.new_file()
+                        .path()
+                        .is_some_and(|x| x.starts_with(".teahouse"))
+                        || d.old_file()
+                            .path()
+                            .is_some_and(|x| x.starts_with(".teahouse"))
+                }))
+        {
+            return Err(Error::new(
+                Code::Forbidden,
+                "only the host can adopt a proposal that changes the teahouse itself (the seating chart, Problem: meta) / 改座位表或茶馆设置的提案只有老板能采纳",
+            )
+            .with("proposal", id));
+        }
         let head_tree = head.tree()?;
         let on_main = sync::problem_ids(repo, &head_tree)?;
         let mut ids = on_main.clone();
@@ -1247,13 +1266,21 @@ impl<'c> Writer<'c> {
     }
 
     pub fn decline(self, id: &str, reason: Option<&str>, args: &Value) -> Result<WriteResult> {
-        self.require(&[Role::Host], "decline")?;
+        self.require(&[Role::Host, Role::Steward], "decline")?;
         let (refname, tip, p) = self.find_proposal(id)?;
         let problem = if p.problem == "board" || self.problem_exists(&p.problem) {
             p.problem.clone()
         } else {
             "meta".into()
         };
+        // 新问题的提案还没有问题可面向，这条记录只能写 Problem: meta，而 meta 只有老板能用（法则第 8 条）
+        if problem == "meta" && self.role() == Role::Steward {
+            return Err(Error::new(
+                Code::Forbidden,
+                "only the host can decline this proposal for now: its record faces Problem: meta, which only the host may use / 这份提案（新问题或茶馆设置）暂时只有老板能不采纳",
+            )
+            .with("proposal", id));
+        }
         let c = self.commit_main(
             &[],
             &format!("不采纳提案：{}", p.title),
