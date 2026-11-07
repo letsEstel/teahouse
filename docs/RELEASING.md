@@ -80,5 +80,5 @@
 ## 6. 应用图标
 
 - 源文件：`app/src-tauri/icons/source.svg`（1024×1024）。界面里的标志 `app/src/lib/Mark.svelte` 是同一份几何，颜色用 `--ink` / `--paper`，夜间模式自动反色。
-- 改了 `source.svg` 以后，先渲染出 1024×1024 的 `source.png`，再在 `app/` 里运行 `npx tauri icon src-tauri/icons/source.png`，重新生成各平台的图标；安卓生成在 `src-tauri/gen/android/` 里，再复制到 `src-tauri/icons/android/`。
+- 改了 `source.svg` 以后，先渲染出 1024×1024 的 `source.png`，再在 `app/` 里运行 `npx tauri icon src-tauri/icons/source.png`，重新生成桌面和 iOS 的图标；安卓的图标另外运行 `node scripts/android-icons.mjs` 生成到 `src-tauri/icons/android/`。设计上的理由见 `docs/DESIGN.md` 第 9 节。
 - 安卓图标是满版的：自适应图标底色是墨色 `#141414`，前景只有米白的叶子；旧式图标是撑满的墨色圆。这样任何启动器裁剪都不会露出白边（0021）。这几张图由 `app/scripts/android-icons.mjs` 从 `source.svg` 渲染到 `src-tauri/icons/android/`，`app/scripts/android-patch.sh` 打包时把它们和墨色底色放进去。

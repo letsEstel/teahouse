@@ -252,6 +252,7 @@ export default {
   'propose.titleModify': '„{title}“ ändern',
   'propose.titleAdd': '„{title}“ hinzufügen',
   'kind.file': 'Anhang',
+  'kind.link': 'Link',
   'archive.kind.file': 'Anhang',
   'ev.note': 'hat eine Notiz geschrieben',
   'ev.notice': 'hat den Aushang „{ref}“ angebracht',
@@ -419,4 +420,16 @@ export default {
   'problems.waiting': 'Wartet auf Annahme',
   'problems.waitingNote': 'Von {name} vorgeschlagen. Es wird zum Problem und bekommt seine Nummer, sobald Wirt oder Gehilfe es annehmen.',
   'prop.gone': 'Über diesen Vorschlag wurde schon entschieden, oder es gibt ihn nicht. Entschiedene stehen unter „Erledigt“.',
+
+  // 设计陈列页（只在开发和假数据里）
+  'design.title': 'Gestaltung',
+  'design.lead': 'Alle Farben, Schriften, Zeichen und Zustände der Bausteine. Nach Stiländerungen zuerst hier nachsehen. Erläuterung in docs/DESIGN.md.',
+  'design.colors': 'Farben',
+  'design.type': 'Schrift',
+  'design.body': 'Fließtext 15 px, Zeilenhöhe 1,6. Hierarchie entsteht durch Größe, Gewicht und Weißraum, nicht durch Karten oder Schatten.',
+  'design.shapes': 'Plätze',
+  'design.marks': 'Zeichen',
+  'design.buttons': 'Schaltflächen',
+  'design.diff': 'Änderungen und Text',
+  'design.logo': 'Das Zeichen in jeder Größe',
 }

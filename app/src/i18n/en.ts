@@ -339,6 +339,7 @@ export default {
   'propose.titleModify': 'Change “{title}”',
   'propose.titleAdd': 'Add “{title}”',
   'kind.file': 'Attachment',
+  'kind.link': 'Link',
   'archive.kind.file': 'Attachment',
   'ev.note': 'wrote a note',
   'ev.notice': 'posted the notice “{ref}”',
@@ -506,4 +507,16 @@ export default {
   'problems.waiting': 'Awaiting adoption',
   'problems.waitingNote': 'Proposed by {name}. It becomes a problem, and gets its number, once the host or the steward adopts it.',
   'prop.gone': 'This proposal has been decided already, or does not exist. Decided ones are listed under “Decided”.',
+
+  // 设计陈列页（只在开发和假数据里）
+  'design.title': 'Design gallery',
+  'design.lead': 'Every colour, typeface, mark and component state. Look here first after changing styles. Notes in docs/DESIGN.md.',
+  'design.colors': 'Colour',
+  'design.type': 'Type',
+  'design.body': 'Body text is 15 px with a line height of 1.6. Hierarchy comes from size, weight and space, not cards or shadows.',
+  'design.shapes': 'Seats',
+  'design.marks': 'Marks',
+  'design.buttons': 'Buttons',
+  'design.diff': 'Changes and text',
+  'design.logo': 'The logo at each size',
 }

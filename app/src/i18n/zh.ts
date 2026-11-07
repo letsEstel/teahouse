@@ -339,6 +339,7 @@ export default {
   'propose.titleModify': '修改《{title}》',
   'propose.titleAdd': '添加《{title}》',
   'kind.file': '附件',
+  'kind.link': '链接',
   'archive.kind.file': '附件',
   'ev.note': '写了一条留言',
   'ev.notice': '张贴了公告《{ref}》',
@@ -506,4 +507,16 @@ export default {
   'problems.waiting': '待采纳',
   'problems.waitingNote': '{name}提出的，老板或伙计采纳后才成为正式问题，编号到时候再定。',
   'prop.gone': '这份提案已经处理过，或者不存在。处理过的在左边“已处理”里。',
+
+  // 设计陈列页（只在开发和假数据里）
+  'design.title': '设计陈列',
+  'design.lead': '所有颜色、字体、符号和组件的各种状态。改了样式，先看这一页。说明在 docs/DESIGN.md。',
+  'design.colors': '颜色',
+  'design.type': '字体和排版',
+  'design.body': '正文 15 号，行高 1.6。层级靠字号、字重和留白来分，不靠卡片和阴影。',
+  'design.shapes': '座位',
+  'design.marks': '符号',
+  'design.buttons': '按钮',
+  'design.diff': '差异和正文',
+  'design.logo': '标志的各个尺寸',
 }

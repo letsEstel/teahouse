@@ -222,6 +222,12 @@ screens.push(
   { name: 'wutong-rename-host-dark', hash: '#/wutong/house', act: openRename, theme: 'dark', only1366: true, save: true },
 )
 
+// 第 20 轮：设计陈列页（docs/DESIGN.md），改样式后先看这一页
+screens.push(
+  { name: 'design', hash: '#/wutong/design', widths: [1366, 390], save: true },
+  { name: 'design-dark', hash: '#/wutong/design', theme: 'dark', only1366: true, save: true },
+)
+
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
 function audit() {
   const vw = document.documentElement.clientWidth
