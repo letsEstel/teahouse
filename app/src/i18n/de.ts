@@ -385,4 +385,8 @@ export default {
   // 提案：Markdown 文件看成品或看改动
   'prop.viewRead': 'Lesen',
   'prop.viewDiff': 'Änderungen',
+
+  // 茶客提出的新问题（提案）：编号采纳后才定
+  'prop.newProblem': 'Ein neues Problem · Nummer bei Annahme',
+  'prop.newShort': 'Neu',
 }

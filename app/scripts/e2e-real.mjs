@@ -474,6 +474,41 @@ if (GUEST) {
       await p.close()
     })
   }
+  await step('茶客提出新问题（0027、0028）：问题还不在正本上、编号又被老板先用掉，页面都不崩', async () => {
+    const r = await engine(GUEST, 'openProblem', { house, title: `茶客的新问题 ${stamp}`, body: [{ heading: '', text: '茶客提出的。' }] })
+    if (!r.becameProposal) throw new Error('a guest problem should become a proposal')
+    await engine(HOST, 'sync', { house })
+    let prop = (await engine(HOST, 'house', { house })).proposals.find((x) => x.title.includes(`茶客的新问题 ${stamp}`))
+    if (!prop) throw new Error('host does not see the proposal')
+    const errors = []
+    const h = await open(host.url, `proposal/${encodeURIComponent(prop.id)}`)
+    h.on('pageerror', (e) => errors.push(e.message))
+    await h.waitForSelector('.crumb:has-text("提出一个新问题")')
+    for (const tab of ['档案', '提案', '问题', '提案', '公告', '提案']) {
+      await h.locator('nav a', { hasText: tab }).first().click()
+      await h.waitForFunction((t) => document.querySelector('main, .wrap')?.textContent.includes(t === '公告' ? '公告板' : t), tab)
+    }
+    await h.waitForSelector(`.queue a:has-text("茶客的新问题 ${stamp}")`)
+    if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`)
+    ok('问题还不存在时：提案页写“提出一个新问题”，来回切标签，内容都跟着换')
+    // 老板这时也提出一个问题，用掉了同一个编号
+    await engine(HOST, 'openProblem', { house, title: `老板抢先的问题 ${stamp}`, body: [{ heading: '', text: '同一个编号。' }] })
+    const taken = (await engine(HOST, 'house', { house })).problems.find((x) => x.title === `老板抢先的问题 ${stamp}`)
+    if (taken.id !== prop.problem) throw new Error(`numbers did not collide (${taken.id} vs ${prop.problem}); the test is not testing the bug`)
+    await h.goto(`${host.url}?lang=zh&tour=off#/${house}/proposal/${encodeURIComponent(prop.id)}`)
+    await h.waitForSelector('.crumb:has-text("提出一个新问题")')
+    if (await h.$(`.crumb a:has-text("老板抢先的问题")`)) throw new Error('the proposal links to the host\'s problem with the same number')
+    ok(`编号撞上 ${taken.id}：提案页写“提出一个新问题”，不链接到老板的问题`)
+    await shot(h, 'proposal-new-problem')
+    await h.click('button.adopt')
+    await h.waitForSelector('.review.merged')
+    const after = (await engine(HOST, 'house', { house })).problems.filter((x) => x.title.includes(stamp) && /茶客的新问题|老板抢先/.test(x.title))
+    const guestOne = after.find((x) => x.title.includes('茶客的新问题'))
+    if (!guestOne || guestOne.id === taken.id) throw new Error(`after adoption: ${JSON.stringify(after.map((x) => [x.id, x.title]))}`)
+    ok(`采纳以后：茶客的问题改成了 ${guestOne.id}，老板的 ${taken.id} 不受影响`)
+    if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`)
+    await h.close()
+  })
   await step('提案里的 Markdown：看成品、看改动、不执行别人写的 HTML', async () => {
     const text = '## 第一节\n\n这是**加粗**和 `代码`，[链接](https://example.org/a)，[坏链接](javascript:alert(1))。\n\n- 第一条\n- 第二条\n\n<img src=x onerror="window.__xss=1">\n\n| 甲 | 乙 |\n|---|---|\n| 1 | 2 |\n'
     await engine(GUEST, 'propose', { house, problem: '0001', title: `Markdown 提案 ${stamp}`, changes: [{ kind: 'doc', title: `写法样例 ${stamp}`, text }] })

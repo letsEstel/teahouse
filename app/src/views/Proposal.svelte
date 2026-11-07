@@ -14,7 +14,11 @@
   let { house, id, refresh }: { house: House; id?: string; refresh?: () => void } = $props()
   let p = $derived(house.proposals.find((x) => x.id === id) ?? house.proposals[0])
   let author = $derived(p && member(house, p.by))
-  let problem = $derived(p && house.problems.find((x) => x.id === p.problem)!)
+  // 茶客提出的新问题也是提案：它的编号是在茶客自己的副本里取的，正本上可能还没有这个问题，
+  // 也可能已经被别人用掉（采纳时引擎会改号，Renumbered:）。所以这种提案不链接到同号的问题
+  const newProblem = (q: Proposal) => q.files.some((f) => f.change === 'add' && f.path.startsWith(`problems/${q.problem}-`))
+  let isNew = $derived(!!p && newProblem(p))
+  let problem = $derived(p && !isNew ? house.problems.find((x) => x.id === p.problem) : undefined)
   let me = $derived(self(house))
   let owner = $derived(host(house))
   let outcome = $state<'pending' | 'merged' | 'rejected'>('pending')
@@ -58,7 +62,7 @@
         {@const m = member(house, q.by)}
         <li class:on={q.id === p?.id}>
           <a href="#/{house.id}/proposal/{q.id}">
-            <span class="q-no num">{q.problem}{#if q.by === me.id}<span class="mine">{t('prop.yours')}</span>{/if}</span>
+            <span class="q-no num">{newProblem(q) ? t('prop.newShort') : q.problem}{#if q.by === me.id}<span class="mine">{t('prop.yours')}</span>{/if}</span>
             <span class="q-t hyphenate">{q.title}</span>
             <span class="q-by"><Shape role={m.role} size={9} />{m.name}<MachineMark {m} /> · {when(q.when)}</span>
           </a>
@@ -83,7 +87,9 @@
     <section class="review" class:merged={outcome === 'merged'} class:rejected={outcome === 'rejected'}>
       <a class="back label" href="#/{house.id}/proposals">← {t('prop.back')}</a>
       <div class="crumb label">
-        {t('prop.forProblem')} <a href="#/{house.id}/problem/{problem.id}"><span class="num">{problem.id}</span> {problem.title}</a>
+        {#if isNew}{t('prop.newProblem')}
+        {:else if problem}{t('prop.forProblem')} <a href="#/{house.id}/problem/{problem.id}"><span class="num">{problem.id}</span> {problem.title}</a>
+        {:else}{t('prop.forProblem')} <span class="num">{p.problem}</span>{/if}
       </div>
 
       <h2>{p.title}</h2>
@@ -157,7 +163,7 @@
             {p.by === me.id ? t('prop.ownWaiting', { name: owner.name }) : t('prop.waiting', { name: owner.name })}
           </p>
           <div class="buttons">
-            {#if me.role === 'steward'}
+            {#if me.role === 'steward' && problem}
               <div class="opt"><small>{t('prop.editDirectHint')}</small></div>
               <a class="primary" href="#/{house.id}/problem/{problem.id}"><i>→</i><span>{t('prop.editDirect')}</span></a>
             {:else}
