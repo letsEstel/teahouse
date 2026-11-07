@@ -236,6 +236,14 @@ screens.push(
   { name: 'wutong-seat-longname-dark', hash: '#/wutong/house', act: longName, theme: 'dark', widths: [390], save: true, saveAt: 390 },
 )
 
+// 第 22 轮：“你”的方框在三种角色上（0033）：老板是方、伙计是三角、茶客是圆，框都是方的；框不把图形往下推，角上的长名字不压下一格
+for (const [h, role] of [['wutong', 'host'], ['family', 'steward'], ['kant', 'guest']]) {
+  screens.push(
+    { name: `${h}-seat-you-${role}`, hash: `#/${h}/house`, widths: [1366, 390], save: true },
+    { name: `${h}-seat-you-${role}-long`, hash: `#/${h}/house`, act: longName, widths: [390], save: true, saveAt: 390 },
+  )
+}
+
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
 function audit() {
   const vw = document.documentElement.clientWidth

@@ -43,12 +43,14 @@
         class:me={s.m?.id === house.me}
         class:row-top={s.r === 0}
         class:row-bottom={s.r === 4}
+        class:col-left={s.c === 0}
+        class:col-right={s.c === 4}
         style:left="{s.c * 20}%"
         style:top="{s.r * 20}%"
         style:animation-delay="{120 + s.i * 45}ms"
       >
         <span class="glyph"><Shape role={s.m?.role ?? null} size={20} />{#if s.m?.id === house.me}<span class="you label">{t('room.you')}</span>{/if}</span>
-        <span class="name">{s.m ? s.m.name : t('role.empty')}{#if s.m}<MachineMark m={s.m} />{/if}</span>
+        <span class="name" title={s.m?.name}>{s.m ? s.m.name : t('role.empty')}{#if s.m}<MachineMark m={s.m} />{/if}</span>
       </div>
     {/each}
   </div>
@@ -99,6 +101,9 @@
   /* 名字长了会换行：上排往房间里长，下排往上长，都不顶到墙上（0033）。一行时位置和居中一样 */
   .seat.row-top { justify-content: flex-start; padding-top: 5.6cqi; }
   .seat.row-bottom { justify-content: flex-end; padding-bottom: 4.2cqi; }
+  /* 两侧的格子有一边压在墙上：那一边让出墙厚，长名字不贴墙 */
+  .seat.col-left { padding-left: calc(var(--wall) + 3px); }
+  .seat.col-right { padding-right: calc(var(--wall) + 3px); }
   .glyph :global(svg) { width: 6.8cqi; height: 6.8cqi; transition: transform 240ms var(--ease); }
   .empty .glyph :global(svg) { width: 4.2cqi; height: 4.2cqi; }
   .name {
@@ -109,12 +114,21 @@
     max-width: 100%;
     hyphens: none;
     overflow-wrap: anywhere;
+    flex-shrink: 0;
+    /* 座位上最多两行，再长就省略；全名在“改我的名字”和成员列表里 */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
   }
   .empty .name { color: var(--ink-3); font-weight: 400; }
   /* 你的座位：细墨框加"你"，只框住图形，不框名字（0033）。以前的框按格子大小画死，
      名字一长就顶出框外；现在框跟着图形走，名字在框下面自由换行 */
   .glyph { position: relative; display: grid; place-items: center; }
-  .me .glyph { padding: 1.6cqi; border: 1.5px solid var(--ink); }
+  /* 框往上长，不把图形往下推：你的图形和同排邻座在一条线上，名字也少占一截，
+     角上的座位名字换两行也不压到下一格 */
+  .me .glyph { padding: 1.6cqi; border: 1.5px solid var(--ink); margin-top: calc(-1.6cqi - 1.5px); }
   .you { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); background: var(--paper); padding: 0 4px; font-size: 10px; color: var(--ink); line-height: 1.2; letter-spacing: 0.1em; white-space: nowrap; }
   .seat:not(.empty):hover :global(svg) { transform: scale(1.12); }
 
