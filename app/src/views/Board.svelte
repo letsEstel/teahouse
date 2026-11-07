@@ -32,6 +32,16 @@
     replying = null
     refresh()
   }
+  // 回应的收纳（0032）：默认只看最近 3 条，其余收起；最新在上还是在下，每台设备记住
+  const SHOWN = 3
+  let expanded = $state(new Set<string>())
+  const expand = (id: string) => (expanded = new Set([...expanded, id]))
+  const collapse = (id: string) => (expanded = new Set([...expanded].filter((x) => x !== id)))
+  let newestFirst = $state((() => { try { return localStorage.getItem('teahouse.replyOrder') !== 'oldest' } catch { return true } })())
+  function setOrder(newest: boolean) {
+    newestFirst = newest
+    try { localStorage.setItem('teahouse.replyOrder', newest ? 'newest' : 'oldest') } catch {}
+  }
 </script>
 
 <div class="wrap">
@@ -75,7 +85,21 @@
 
           <div class="replies">
             <div class="label rh">{t('board.replies', { n: n.replies.length })}</div>
-            {#if n.replies.length}<Notes {house} notes={n.replies} ondelete={canPost ? (note) => remove(n, note) : undefined} />{/if}
+            {#if n.replies.length > 1}
+              <div class="order" role="group" aria-label={t('board.order')}>
+                <button class:on={newestFirst} aria-pressed={newestFirst} onclick={() => setOrder(true)}>{t('board.newest')}</button>
+                <button class:on={!newestFirst} aria-pressed={!newestFirst} onclick={() => setOrder(false)}>{t('board.oldest')}</button>
+              </div>
+            {/if}
+            {#if n.replies.length}
+              {@const all = newestFirst ? [...n.replies].reverse() : n.replies}
+              {@const open = expanded.has(n.id) || all.length <= SHOWN}
+              {@const shown = open ? all : newestFirst ? all.slice(0, SHOWN) : all.slice(-SHOWN)}
+              {#if !open && !newestFirst}<button class="more" onclick={() => expand(n.id)}>{t('board.more', { n: all.length - SHOWN })}</button>{/if}
+              <Notes {house} notes={shown} ondelete={canPost ? (note) => remove(n, note) : undefined} />
+              {#if !open && newestFirst}<button class="more" onclick={() => expand(n.id)}>{t('board.more', { n: all.length - SHOWN })}</button>{/if}
+              {#if open && all.length > SHOWN}<button class="more" onclick={() => collapse(n.id)}>{t('board.less')}</button>{/if}
+            {/if}
             {#if replying === n.id}
               <Write placeholder={t('board.replyPh')} rows={2} hint={writeHint} onsubmit={(text) => reply(n, text)} />
             {:else}
@@ -91,6 +115,11 @@
 </div>
 
 <style>
+  .order { display: flex; }
+  .order button { padding: 3px 10px; border: 1px solid var(--ink); font-size: 12px; }
+  .order button + button { border-left: 0; }
+  .order button.on { background: var(--ink); color: var(--paper); }
+  .more { align-self: flex-start; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
   .wrap {
     display: grid;
     grid-template-columns: clamp(260px, 26vw, 400px) minmax(0, 1fr);

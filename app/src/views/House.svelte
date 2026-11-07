@@ -10,6 +10,16 @@
   import { t, when, date, i18n } from '../i18n/index.svelte'
 
   let { house, refresh }: { house: House; refresh: () => void } = $props()
+  // 最近（0031）：每一条写清“谁 + 做了什么 + 对象”，整条点进去就是那个问题、公告或提案
+  const verb = (e: (typeof house.recent)[number]) =>
+    t(`recent.${e.act === 'set-status' ? `status-${e.status ?? 'active'}` : e.act}`)
+  const target = (e: (typeof house.recent)[number]) => {
+    if (e.act === 'propose') return `#/${house.id}/proposals`
+    // 公告和公告下的回应：引擎不给 problem（它是 board）
+    if (e.problem === 'board' || (!e.problem && (e.act === 'note' || e.act === 'notice'))) return `#/${house.id}/board`
+    if (e.problem && house.problems.some((p) => p.id === e.problem)) return `#/${house.id}/problem/${e.problem}`
+    return undefined
+  }
   let me = $derived(self(house))
   let owner = $derived(host(house))
   let works = $derived(house.problems.reduce((n, p) => n + p.workCount, 0))
@@ -107,11 +117,14 @@
       <ul>
         {#each house.recent as e}
           {@const m = member(house, e.by)}
+          {@const link = target(e)}
           <li>
-            <Shape role={m.role} size={10} />
-            <span class="who">{m.name}<MachineMark {m} /></span>
-            <span class="what">{eventText(e)}</span>
-            <span class="when">{when(e.when)}</span>
+            <svelte:element this={link ? 'a' : 'div'} class="ev" href={link}>
+              <Shape role={m.role} size={10} />
+              <span class="who">{m.name}<MachineMark {m} /> <span class="verb">{verb(e)}</span></span>
+              <span class="when">{when(e.when)}</span>
+              <span class="what">{#if e.problem && /^\d{4}$/.test(e.problem)}<span class="num ref">{e.problem}</span> {/if}{eventText(e)}</span>
+            </svelte:element>
           </li>
         {/each}
       </ul>
@@ -199,18 +212,17 @@
   .head { padding-bottom: 10px; border-bottom: 1px solid var(--ink); }
   ul { list-style: none; }
   li {
-    display: grid;
-    grid-template-columns: 10px auto minmax(0, 1fr) auto;
-    gap: 12px;
-    align-items: baseline;
-    padding: 10px 0;
     border-bottom: 1px solid var(--rule);
     font-size: 14px;
     line-height: 1.45;
   }
-  li :global(svg) { align-self: center; }
-  .who { font-weight: 700; white-space: nowrap; }
-  .what { color: var(--ink-2); }
+  .ev { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline; padding: 10px 0; }
+  a.ev:hover .what { text-decoration: underline; text-underline-offset: 3px; }
+  .ev :global(svg) { align-self: center; }
+  .who { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+  .verb { font-weight: 400; color: var(--ink-2); }
+  .what { grid-column: 2 / 4; color: var(--ink); overflow-wrap: anywhere; }
+  .ref { color: var(--ink-3); margin-right: 4px; }
   .when { font-family: var(--latin); font-size: 12px; color: var(--ink-3); white-space: nowrap; text-align: right; }
 
   .seats { display: flex; flex-direction: column; padding-top: 8px; min-width: 0; }
