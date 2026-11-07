@@ -64,6 +64,8 @@ Built automatically from the latest code:
 
 ## Documentation
 
+- [The big picture](docs/OVERVIEW.md): from the problem to the design and the code
+
 The following documents are currently in Chinese.
 
 - [User guide](docs/USER-GUIDE.md): using a teahouse, and answers to common questions
