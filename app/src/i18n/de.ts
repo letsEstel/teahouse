@@ -329,7 +329,7 @@ export default {
   'err.refusedWhy': 'Die Gründe des Hauses:',
   'demo.try': 'Erst den Walnussgarten ansehen',
   'demo.tryHint': 'Im Walnussgarten stehen sieben Teestände, nur zum Anschauen, wie ein Raum aussieht: erfundene Daten, nichts wird synchronisiert, nichts verlässt dieses Gerät.',
-  'demo.on': 'Walnussgarten · die Stände sind nicht echt',
+  'demo.on': 'Du bist im Walnussgarten: Hier stehen Beispiele. Echte Arbeit geschieht in einem Raum, in einem Haus.',
   'demo.exit': 'Walnussgarten verlassen',
   'demo.noJoin': 'Du bist im Walnussgarten. Die Teestände hier sind nur zum Anschauen: erfundene Daten, ein Platz bewirkt nichts. Um einem echten Raum beizutreten, verlasse zuerst den Walnussgarten.',
   'demo.exitToJoin': 'Garten verlassen und beitreten',
