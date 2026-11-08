@@ -202,7 +202,7 @@ pub fn create_house(
     if let Some(s) = h.signboard {
         readme.push_str(&format!("> {s}\n\n"));
     }
-    readme.push_str("这是一间茶馆。问题写在 `problems/`，成果放在 `works/`，公告贴在 `board/`。\n");
+    readme.push_str("这是一间包厢。问题写在 `problems/`，成果放在 `works/`，公告贴在 `board/`。\n");
     readme.push_str(
         "This is a teahouse: problems in `problems/`, results in `works/`, notices in `board/`.\n",
     );
@@ -305,7 +305,7 @@ pub fn adopt(root: &Root, id: &str, from: &Path, rev: Option<&str>, key_arg: &st
     };
     if me.role != Role::Steward {
         bail!(
-            "only the steward (伙计) can re-open a teahouse; {} is {}",
+            "only the steward (伙计) can re-open a room; {} is {}",
             me.id,
             me.role
         );
@@ -320,7 +320,7 @@ pub fn adopt(root: &Root, id: &str, from: &Path, rev: Option<&str>, key_arg: &st
         git.run(&["fetch", "--quiet", "--no-tags", &src_dir, &refspec])?;
         git.run(&["fsck", "--no-progress", "--no-dangling"])?;
         let message = format!(
-            "继承：{} 接管茶馆\n\n{} ({}) re-opened this teahouse from their copy at {}.\nThe previous host {} keeps a guest seat.\n\nProblem: meta\nSuccession-From: {}\n",
+            "继承：{} 接管包厢\n\n{} ({}) re-opened this room from their copy at {}.\nThe previous host {} keeps a guest seat.\n\nProblem: meta\nSuccession-From: {}\n",
             me.name, me.name, me.id, &tip[..10], old_host, old_host
         );
         let commit = commit_files(

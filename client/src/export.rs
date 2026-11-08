@@ -19,7 +19,7 @@ use git2::{ObjectType, Oid, TreeWalkMode, TreeWalkResult};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const README: &str = "这是一间茶馆的完整导出。This is a complete export of a teahouse.
+const README: &str = "这是一间包厢的完整导出。This is a complete export of a room.
 
 <house>.bundle  完整的 git 历史（main 和未处理的提案）。用 `git clone <house>.bundle` 打开。
                 The full git history (main and open proposals). Open it with `git clone`.

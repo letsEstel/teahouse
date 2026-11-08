@@ -68,13 +68,13 @@ pub fn parse_request(cmd: &str) -> Result<(Service, String)> {
     let path = path.strip_suffix('/').unwrap_or(path);
     let id = path.strip_suffix(".git").unwrap_or(path);
     if !valid_house_id(id) {
-        bail!("no such teahouse / 没有这间茶馆");
+        bail!("no such room / 没有这间包厢");
     }
     Ok((verb, id.to_string()))
 }
 
 const NOT_FOUND: &str =
-    "teahouse not found, or you have no seat in it / 茶馆不存在，或者你在这里没有座位";
+    "room not found, or you have no seat in it / 包厢不存在，或者你在这里没有座位";
 
 /// Splits a command line into words: spaces separate, single quotes
 /// quote (POSIX: `'it'\''s'`). Nothing is expanded.
@@ -176,7 +176,7 @@ fn seated(root: &Root, id: &str, key: &PublicKey) -> Result<(crate::root::House,
 fn host_only(member: &Member, what: &str) -> Result<()> {
     if member.role != Role::Host {
         bail!(
-            "only the host can {what} / 只有老板能{}",
+            "only the host can {what} / 只有东家能{}",
             if what == "purge attachments" {
                 "删除附件"
             } else {
@@ -504,7 +504,7 @@ fn info(root: &Root, key: &PublicKey) -> Result<()> {
     if seats.is_empty() {
         println!("你在这个 relay 上还没有座位。 You have no seat on this relay yet.");
     } else {
-        println!("你的茶馆 · Your teahouses:");
+        println!("你的包厢 · Your rooms:");
         for s in seats {
             println!("{s}");
         }

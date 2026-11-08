@@ -37,7 +37,7 @@ OPERATOR COMMANDS:
     init [--binary PATH] [--authorized-keys FILE]
                          create or repair the relay directory and hooks
     open <id> --name NAME --host-id ID --host-name NAME --host-key KEY|@FILE [--signboard TEXT]
-                         open a new teahouse with its host (老板)
+                         open a new teahouse with its host (东家)
     found <id> --name NAME [--signboard TEXT] [--days 1-30] [--address HOST[:PORT]]
           [--kind machine [--agent A]]
                          a one-time invitation that opens teahouse <id> with

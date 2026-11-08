@@ -211,7 +211,7 @@ pub fn create(
 ) -> Result<String> {
     let (role, name) = (seat.role, seat.name);
     if role == Role::Host {
-        bail!("an invitation can seat a guest or the steward, not a host / 邀请只能是茶客或伙计");
+        bail!("an invitation can seat a guest or the steward, not a host / 邀请只能是客人或伙计");
     }
     // 法则第 17 条: `kind = machine` marks a machine, in any role; `agent`
     // names which.
@@ -292,7 +292,7 @@ pub fn create_founding(
         bail!("teahouse id {house:?} must be lowercase letters, digits and '-' (max 63)");
     }
     if root.house(house).is_ok() {
-        bail!("teahouse {house:?} already exists / 茶馆 {house} 已经开张了");
+        bail!("room {house:?} already exists / 包厢 {house} 已经开张了");
     }
     let days = days.unwrap_or(DEFAULT_DAYS);
     if !(1..=MAX_DAYS).contains(&days) {
@@ -426,13 +426,13 @@ pub fn rename(
     let (id, old, by) = edit_chart(root, house, "teahouse: member renamed", |members| {
         let me = members.by_key(key).ok_or_else(|| {
             Error(
-                "teahouse not found, or you have no seat in it / 茶馆不存在，或者你在这里没有座位"
+                "room not found, or you have no seat in it / 包厢不存在，或者你在这里没有座位"
                     .into(),
             )
         })?;
         let id = member.unwrap_or(&me.id);
         if id != me.id && me.role != Role::Host {
-            bail!("only the host can rename someone else / 只有老板能改别人的名字");
+            bail!("only the host can rename someone else / 只有东家能改别人的名字");
         }
         let Some(target) = members.by_id(id) else {
             bail!("no member {id:?} / 没有这位成员");
@@ -689,7 +689,7 @@ fn found(
 ) -> Result<Seated> {
     if root.house(house_id).is_ok() {
         fs::remove_file(file)?;
-        bail!("teahouse {house_id} is already open; this invitation is spent / 茶馆已经开张，这个邀请已失效");
+        bail!("room {house_id} is already open; this invitation is spent / 包厢已经开张，这个邀请已失效");
     }
     let id = new_member_id(name, inv.kind, &[]);
     let house_name = inv
@@ -747,7 +747,7 @@ fn redeem_locked(
         .ok_or_else(|| Error(NOT_VALID.into()))?;
     if now() > inv.expires {
         fs::remove_file(&file)?;
-        bail!("this invitation has expired; ask the host for a new one / 邀请已过期，请向老板要一个新的");
+        bail!("this invitation has expired; ask the host for a new one / 邀请已过期，请向东家要一个新的");
     }
     // The name is the newcomer's; what the host wrote is only a suggestion,
     // used when they give none (a machine, say).
@@ -773,15 +773,13 @@ fn redeem_locked(
         "teahouse: invitation redeemed",
         |members| {
             if members.by_key(key).is_some() {
-                bail!(
-                    "this device already has a seat in this teahouse / 这台设备已经在这间茶馆里了"
-                );
+                bail!("this device already has a seat in this room / 这台设备已经在这间包厢里了");
             }
             if members.members.len() >= MAX_MEMBERS {
-                bail!("the teahouse is full ({MAX_MEMBERS} seats) / 茶馆满座了");
+                bail!("the room is full ({MAX_MEMBERS} seats) / 包厢满座了");
             }
             if inv.role == Role::Steward && members.steward().is_some() {
-                bail!("the teahouse already has a steward / 茶馆已经有伙计了");
+                bail!("the room already has a steward / 包厢已经有伙计了");
             }
             check_name_free(members, name, None)?;
             let taken: Vec<&str> = members.members.iter().map(|m| m.id.as_str()).collect();
@@ -902,7 +900,7 @@ pub(crate) fn edit_chart<T>(
         }
         return Ok(edit.value);
     }
-    bail!("the teahouse kept changing; try again / 茶馆正在变动，请再试一次")
+    bail!("the room kept changing; try again / 包厢正在变动，请再试一次")
 }
 
 /// The relay's signing key, made by `init` when missing.

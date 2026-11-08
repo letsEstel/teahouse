@@ -120,7 +120,7 @@ impl Client {
         let dir = self.houses_dir().join(house);
         if !valid_house_id(house) || !is_repository(&dir) {
             return Err(Error::not_found(format!(
-                "no teahouse {house:?} on this device / 本机没有这间茶馆"
+                "no room {house:?} on this device / 本机没有这间包厢"
             ))
             .with("house", house));
         }
@@ -185,7 +185,7 @@ impl Client {
         let dir = self.houses_dir().join(house);
         if dir.exists() {
             return Err(Error::invalid(format!(
-                "teahouse {house} is already on this device / 本机已经有这间茶馆"
+                "room {house} is already on this device / 本机已经有这间包厢"
             ))
             .with("house", house));
         }
@@ -214,7 +214,7 @@ impl Client {
             .git
             .repo()
             .find_remote("origin")
-            .map_err(|_| Error::invalid("this teahouse has no relay / 这间茶馆没有 Relay"))?;
+            .map_err(|_| Error::invalid("this room has no relay / 这间包厢没有 Relay"))?;
         let url = remote.url().unwrap_or_default().to_string();
         let house = sync::house_of_url(&url).unwrap_or_else(|| snap.id.clone());
         Ok((remote::Endpoint::of_house_url(&url)?, house))
@@ -239,7 +239,7 @@ impl Client {
         let snap = self.snapshot(house)?;
         if snap.me.as_ref().map(|m| m.role) != Some(teahouse_core::Role::Host) {
             return Err(
-                Error::new(Code::Forbidden, "only the host invites / 只有老板能邀请")
+                Error::new(Code::Forbidden, "only the host invites / 只有东家能邀请")
                     .with("action", "invite"),
             );
         }
@@ -429,7 +429,7 @@ impl Client {
         if member.is_some() && me.role != teahouse_core::Role::Host {
             return Err(Error::new(
                 Code::Forbidden,
-                "only the host can rename someone else / 只有老板能改别人的名字",
+                "only the host can rename someone else / 只有东家能改别人的名字",
             )
             .with("action", "rename"));
         }
