@@ -58,9 +58,9 @@ impl Role {
 
     pub fn zh(self) -> &'static str {
         match self {
-            Role::Host => "老板",
+            Role::Host => "东家",
             Role::Steward => "伙计",
-            Role::Guest => "茶客",
+            Role::Guest => "客人",
         }
     }
 }
@@ -365,11 +365,11 @@ impl Members {
         }
         let n = self.members.len();
         if n == 0 {
-            return e("a teahouse needs at least one member (the host)");
+            return e("a room needs at least one member (the host)");
         }
         if n > MAX_MEMBERS {
             return e(format!(
-                "{n} members; a teahouse has at most {MAX_MEMBERS} seats"
+                "{n} members; a room has at most {MAX_MEMBERS} seats"
             ));
         }
         let hosts = self.members.iter().filter(|m| m.role == Role::Host).count();
@@ -466,7 +466,7 @@ impl Members {
         self.validate()?;
         let q = toml::quote;
         let mut s = String::new();
-        s.push_str("# 茶馆成员表 · Teahouse members\n");
+        s.push_str("# 包厢成员表 · Room members\n");
         s.push_str("# Only the host may change this file. The relay enforces it.\n");
         let has_devices = self.members.iter().any(|m| !m.devices.is_empty());
         let version = if has_devices {
@@ -508,7 +508,7 @@ impl Members {
     /// 继承: the steward becomes host; the previous host keeps a guest seat.
     pub fn succeed(&self) -> Result<Members, MembersError> {
         let Some(steward) = self.steward() else {
-            return e("this teahouse has no steward, so there is no heir");
+            return e("this room has no steward, so there is no heir");
         };
         let steward_id = steward.id.clone();
         let mut next = self.clone();
@@ -726,7 +726,7 @@ mod tests {
         let mut plain = m.clone();
         plain.members[0].devices.clear();
         assert!(
-            plain.to_toml().unwrap().starts_with("# 茶馆成员表")
+            plain.to_toml().unwrap().starts_with("# 包厢成员表")
                 && plain.to_toml().unwrap().contains("version = 1")
         );
 

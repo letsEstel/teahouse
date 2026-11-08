@@ -20,14 +20,14 @@ use std::io::{BufRead, Write};
 const VERSIONS: &[&str] = &["2025-06-18", "2025-03-26", "2024-11-05"];
 
 const INSTRUCTIONS: &str = "\
-你坐在一间茶馆里（Teahouse）：不超过 15 人的小团体在这里把事情办成。你是 AI，在座位表上算作机器（kind = machine，老的座位表写作 kind = ai）。
-You sit in a teahouse: a small group (at most 15) getting things done. You are an AI: on the seating chart a machine (kind = machine; older charts say kind = ai).
+你坐在茶馆（Teahouse）的一间包厢里：不超过 15 人的小团体在这里把事情办成。你是 AI，在座位表上算作机器（kind = machine，老的座位表写作 kind = ai）。
+You sit in a room of Teahouse: a small group (at most 15) getting things done. You are an AI: on the seating chart a machine (kind = machine; older charts say kind = ai).
 
 规矩 · The rules:
 1. 每个提交都面向一个问题。先用 house 看有哪些问题，用 problem 读全文，再动手。
    Everything you write faces a problem. Read `house`, then `problem`, before writing.
 2. 留言写下后不能修改，也不能删除；想改口就再写一条。Posts are never edited; write a new one.
-3. 你能做什么，看你的座位（houses 里的 myRole），和人一样：茶客写的成果、新问题、公告会变成提案，由老板决定是否采纳（返回 becameProposal: true）；伙计直接写，也管状态和删留言；老板还管采纳、座位和邀请。
+3. 你能做什么，看你的座位（houses 里的 myRole），和人一样：客人写的成果、新问题、公告会变成提案，由东家决定是否采纳（返回 becameProposal: true）；伙计直接写，也管状态和删留言；东家还管采纳、座位和邀请。
    What you may do follows your seat (myRole in `houses`), as for people: a guest's works, problems and notices become proposals; a steward writes directly and moderates; a host also adopts, seats and invites.
 4. 不要假装是人。你的名字旁边会显示“机器”，你的每个提交都用你自己的钥匙签名。
    Never pretend to be a person: you are shown as a machine and sign everything with your own key.
@@ -44,7 +44,7 @@ fn s(desc: &str) -> Value {
     json!({ "type": "string", "description": desc })
 }
 
-const HOUSE: &str = "teahouse id (from `houses`)";
+const HOUSE: &str = "room id (from `houses`)";
 
 /// The tools: name, description, input schema.
 fn tools() -> Vec<(&'static str, &'static str, Value)> {
@@ -56,10 +56,10 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
     });
     let kind = json!({ "type": "string", "enum": ["doc", "plan", "table", "image", "file", "link"], "description": "doc/plan: markdown text; table: CSV text; image/file: fromPath; link: url" });
     vec![
-        ("houses", "The teahouses this device sits in, with your member id, role and sync state. Start here.", obj(json!({}), &[])),
+        ("houses", "The rooms this device sits in, with your member id, role and sync state. Start here.", obj(json!({}), &[])),
         ("house", "One teahouse: members (kind machine marks machines: AIs, CI jobs, scripts), problems, recent events, open proposals, decisions, notices.", obj(json!({ "house": house() }), &["house"])),
         ("problem", "One problem in full: summary, sections, works (results), events, and the discussion in the order it happened. Read this before writing about a problem.", obj(json!({ "house": house(), "problem": s("4-digit problem id, e.g. 0001") }), &["house", "problem"])),
-        ("archive", "The teahouse's files as a tree, by directory or by problem.", obj(json!({ "house": house(), "view": { "type": "string", "enum": ["dirs", "problems"] } }), &["house", "view"])),
+        ("archive", "The room's files as a tree, by directory or by problem.", obj(json!({ "house": house(), "view": { "type": "string", "enum": ["dirs", "problems"] } }), &["house", "view"])),
         ("file", "One file by its path (the `id` from archive or works): its text and its history with diffs.", obj(json!({ "house": house(), "id": s("repository path") }), &["house", "id"])),
         ("note", "Post a message under a problem (or reply to a notice). Posts are permanent: they are never edited or removed by you. Give exactly one of problem or notice.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "notice": s("notice id, to reply to a notice"), "text": s("plain text, at most 32 KiB") }), &["house", "text"])),
         ("propose", "Propose changes to a problem's works for the host to adopt or decline. Changes: new files (kind, title, text) or edits/deletions of existing ones (id + text, or id + delete). The title says what the proposal does; the reason says why.", obj(json!({
@@ -81,9 +81,9 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
         ("addWork", "Add a result (work) to a problem: a document, plan, table, attachment, or a link to a document kept elsewhere (Tencent Docs, Google Docs…). As a guest this becomes a proposal.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "kind": kind, "title": s("title"), "text": s("content for doc/plan/table; for a link, an optional description"), "fromPath": s("local file for image/file"), "url": s("for a link: its http(s) address"), "note": s("one line shown under the title") }), &["house", "problem", "kind", "title"])),
         ("updateWork", "Change an existing work's content (by its id); a link's url, title and note too. As a guest this becomes a proposal.", obj(json!({ "house": house(), "id": s("the work's path"), "text": s("the new content"), "fromPath": s("a local file, for attachments"), "url": s("a link's new http(s) address"), "title": s("a link's new title"), "note": s("a link's new note (empty removes it)") }), &["house", "id"])),
         ("updateProblem", "Change a problem's title and/or its text (the Markdown after the frontmatter: summary and ## sections); status and owner stay. As a guest this becomes a proposal.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "title": s("the new title"), "text": s("the new text") }), &["house", "problem"])),
-        ("sync", "Fetch what others wrote and push what you wrote. Without house: every teahouse.", obj(json!({ "house": house() }), &[])),
-        ("rename", "Change your own name in a teahouse (your id stays). Names are unique within a teahouse. The host may give member to rename someone else.", obj(json!({ "house": house(), "name": s("the new name"), "member": s("host only: the member's id") }), &["house", "name"])),
-        ("pair", "Make a pairing code (TH-…@relay, 10 minutes, once) so another device of yours (or another machine you run on) joins as the same member, in every teahouse you sit in there.", obj(json!({ "house": s("any teahouse you sit in at that relay (default: the first)"), "name": s("a name for the new device, e.g. 手机") }), &[])),
+        ("sync", "Fetch what others wrote and push what you wrote. Without house: every room.", obj(json!({ "house": house() }), &[])),
+        ("rename", "Change your own name in a room (your id stays). Names are unique within a room. The host may give member to rename someone else.", obj(json!({ "house": house(), "name": s("the new name"), "member": s("host only: the member's id") }), &["house", "name"])),
+        ("pair", "Make a pairing code (TH-…@relay, 10 minutes, once) so another device of yours (or another machine you run on) joins as the same member, in every room you sit in there.", obj(json!({ "house": s("any room you sit in at that relay (default: the first)"), "name": s("a name for the new device, e.g. 手机") }), &[])),
         ("devices", "Your devices in a teahouse: name, SHA256 fingerprint, when added, and which one this is.", obj(json!({ "house": house() }), &["house"])),
         ("unpair", "Remove another of your own devices (e.g. a lost one), by name or SHA256 fingerprint; without house, everywhere you have it. Not the device in use, never the last one.", obj(json!({ "house": house(), "device": s("device name or SHA256:… fingerprint") }), &["device"])),
         // A steward's and a host's, offered when this device holds such a seat.
@@ -94,7 +94,7 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
         ("seat", "Change the seating chart: remove a member, or change a member's role. New members come only by invitation. Host.", obj(json!({ "house": house(), "remove": s("member id to remove"), "role": { "type": "object", "properties": { "id": s("member id"), "role": { "type": "string", "enum": ["guest", "steward", "host"] } }, "required": ["id", "role"] } }), &["house"])),
         ("invite", "Create a one-time invitation (TH-…@relay) for a person or a machine (an AI, a CI job, a script). Host.", obj(json!({ "house": house(), "role": { "type": "string", "enum": ["guest", "steward"] }, "name": s("whom it is for"), "days": { "type": "integer", "minimum": 1, "maximum": 30 }, "kind": { "type": "string", "enum": ["human", "machine"] }, "agent": s("for a machine: which one, e.g. Claude Code, GitHub Actions") }), &["house"])),
         ("purgeBlob", "Remove an attachment's content for good (the reference stays, marked purged). Host.", obj(json!({ "house": house(), "id": s("the attachment reference's path") }), &["house", "id"])),
-        ("redeem", "Take a seat with an invitation (TH-XXXX-XXXX-XXXX-XXXX@relay) from the host, then clone the teahouse. Give your name as people should see it; agent names what you are (e.g. Claude Code).", obj(json!({ "code": s("the whole invitation as pasted"), "name": s("your name in this teahouse; without it, the name the host wrote in the invitation"), "agent": s("what machine you are, e.g. Claude Code"), "relay": s("relay address, only if the invitation has none") }), &["code"])),
+        ("redeem", "Take a seat with an invitation (TH-XXXX-XXXX-XXXX-XXXX@relay) from the host, then clone the room. Give your name as people should see it; agent names what you are (e.g. Claude Code).", obj(json!({ "code": s("the whole invitation as pasted"), "name": s("your name in this room; without it, the name the host wrote in the invitation"), "agent": s("what machine you are, e.g. Claude Code"), "relay": s("relay address, only if the invitation has none") }), &["code"])),
     ]
 }
 

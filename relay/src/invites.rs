@@ -63,10 +63,14 @@ pub fn display(code: &str) -> String {
 pub fn normalize(input: &str) -> Option<String> {
     let s = input.trim();
     let s = s.split('@').next().unwrap_or(s);
-    let s = s.to_ascii_uppercase();
-    let s = s.strip_prefix("TH").unwrap_or(&s);
+    of_length(&clean(s)?, CODE_LEN)
+}
+
+/// The code's characters: upper case, without `-` and spaces, `O`/`I`/`L`
+/// read as `0`/`1`.
+fn clean(s: &str) -> Option<String> {
     let mut out = String::new();
-    for c in s.chars() {
+    for c in s.to_ascii_uppercase().chars() {
         match c {
             '-' | ' ' => {}
             'O' => out.push('0'),
@@ -75,7 +79,24 @@ pub fn normalize(input: &str) -> Option<String> {
             _ => return None,
         }
     }
-    (out.len() == CODE_LEN).then_some(out)
+    Some(out)
+}
+
+/// The first four characters of a code, as the host types them to revoke
+/// it (`7KQ2`, `TH-7KQ2`).
+fn code_prefix(input: &str) -> Option<String> {
+    of_length(&clean(input.trim())?, 4)
+}
+
+/// `n` characters of a code, with or without the `TH` it is shown with. The
+/// `TH` is taken off only when it is extra: a code may itself start with
+/// `T` and `H` (0035).
+fn of_length(s: &str, n: usize) -> Option<String> {
+    match s.len() {
+        l if l == n => Some(s.to_string()),
+        l if l == n + 2 && s.starts_with("TH") => Some(s[2..].to_string()),
+        _ => None,
+    }
 }
 
 pub(crate) fn random_code() -> Result<String> {
@@ -211,7 +232,7 @@ pub fn create(
 ) -> Result<String> {
     let (role, name) = (seat.role, seat.name);
     if role == Role::Host {
-        bail!("an invitation can seat a guest or the steward, not a host / 邀请只能是茶客或伙计");
+        bail!("an invitation can seat a guest or the steward, not a host / 邀请只能是客人或伙计");
     }
     // 法则第 17 条: `kind = machine` marks a machine, in any role; `agent`
     // names which.
@@ -292,7 +313,7 @@ pub fn create_founding(
         bail!("teahouse id {house:?} must be lowercase letters, digits and '-' (max 63)");
     }
     if root.house(house).is_ok() {
-        bail!("teahouse {house:?} already exists / 茶馆 {house} 已经开张了");
+        bail!("room {house:?} already exists / 包厢 {house} 已经开张了");
     }
     let days = days.unwrap_or(DEFAULT_DAYS);
     if !(1..=MAX_DAYS).contains(&days) {
@@ -349,11 +370,9 @@ pub fn create_founding(
 
 /// Revokes the pending invitation whose code starts with `prefix`.
 pub fn revoke(root: &Root, house: &str, host: &Member, prefix: &str) -> Result<()> {
-    let prefix = normalize(&format!("{prefix}000000000000"))
-        .map(|c| c[..4].to_string())
-        .ok_or_else(|| {
-            Error("give the first four characters of the code / 请给出邀请码的前四位".into())
-        })?;
+    let prefix = code_prefix(prefix).ok_or_else(|| {
+        Error("give the first four characters of the code / 请给出邀请码的前四位".into())
+    })?;
     let _lock = Lock::take(root)?;
     let dir = root.invites_dir(house);
     let mut found = Vec::new();
@@ -426,13 +445,13 @@ pub fn rename(
     let (id, old, by) = edit_chart(root, house, "teahouse: member renamed", |members| {
         let me = members.by_key(key).ok_or_else(|| {
             Error(
-                "teahouse not found, or you have no seat in it / 茶馆不存在，或者你在这里没有座位"
+                "room not found, or you have no seat in it / 包厢不存在，或者你在这里没有座位"
                     .into(),
             )
         })?;
         let id = member.unwrap_or(&me.id);
         if id != me.id && me.role != Role::Host {
-            bail!("only the host can rename someone else / 只有老板能改别人的名字");
+            bail!("only the host can rename someone else / 只有东家能改别人的名字");
         }
         let Some(target) = members.by_id(id) else {
             bail!("no member {id:?} / 没有这位成员");
@@ -689,7 +708,7 @@ fn found(
 ) -> Result<Seated> {
     if root.house(house_id).is_ok() {
         fs::remove_file(file)?;
-        bail!("teahouse {house_id} is already open; this invitation is spent / 茶馆已经开张，这个邀请已失效");
+        bail!("room {house_id} is already open; this invitation is spent / 包厢已经开张，这个邀请已失效");
     }
     let id = new_member_id(name, inv.kind, &[]);
     let house_name = inv
@@ -747,7 +766,7 @@ fn redeem_locked(
         .ok_or_else(|| Error(NOT_VALID.into()))?;
     if now() > inv.expires {
         fs::remove_file(&file)?;
-        bail!("this invitation has expired; ask the host for a new one / 邀请已过期，请向老板要一个新的");
+        bail!("this invitation has expired; ask the host for a new one / 邀请已过期，请向东家要一个新的");
     }
     // The name is the newcomer's; what the host wrote is only a suggestion,
     // used when they give none (a machine, say).
@@ -773,15 +792,13 @@ fn redeem_locked(
         "teahouse: invitation redeemed",
         |members| {
             if members.by_key(key).is_some() {
-                bail!(
-                    "this device already has a seat in this teahouse / 这台设备已经在这间茶馆里了"
-                );
+                bail!("this device already has a seat in this room / 这台设备已经在这间包厢里了");
             }
             if members.members.len() >= MAX_MEMBERS {
-                bail!("the teahouse is full ({MAX_MEMBERS} seats) / 茶馆满座了");
+                bail!("the room is full ({MAX_MEMBERS} seats) / 包厢满座了");
             }
             if inv.role == Role::Steward && members.steward().is_some() {
-                bail!("the teahouse already has a steward / 茶馆已经有伙计了");
+                bail!("the room already has a steward / 包厢已经有伙计了");
             }
             check_name_free(members, name, None)?;
             let taken: Vec<&str> = members.members.iter().map(|m| m.id.as_str()).collect();
@@ -902,7 +919,7 @@ pub(crate) fn edit_chart<T>(
         }
         return Ok(edit.value);
     }
-    bail!("the teahouse kept changing; try again / 茶馆正在变动，请再试一次")
+    bail!("the room kept changing; try again / 包厢正在变动，请再试一次")
 }
 
 /// The relay's signing key, made by `init` when missing.
@@ -964,6 +981,19 @@ mod tests {
             "U is not Crockford"
         );
         assert_ne!(code_hash("A"), code_hash("B"));
+        // 0035: a code may itself start with TH.
+        let th = "THAB-CDEF-GHJK-MNPQ";
+        assert_eq!(
+            normalize(&format!("TH-{th}")).as_deref(),
+            Some("THABCDEFGHJKMNPQ")
+        );
+        assert_eq!(normalize(th).as_deref(), Some("THABCDEFGHJKMNPQ"));
+        assert_eq!(code_prefix("THAB").as_deref(), Some("THAB"));
+        assert_eq!(code_prefix("th-thab").as_deref(), Some("THAB"));
+        assert_eq!(code_prefix("TH-7KQ2").as_deref(), Some("7KQ2"));
+        assert_eq!(code_prefix(" 7kq2 ").as_deref(), Some("7KQ2"));
+        assert_eq!(code_prefix("7KQ"), None);
+        assert_eq!(code_prefix("7KQ2M"), None);
     }
 
     #[test]

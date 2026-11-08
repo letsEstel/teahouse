@@ -57,7 +57,7 @@
 | 什么时候 | 每次合并到 `main`，CI 自动构建 | 产品负责人决定发版时，打标签 |
 | 在哪里 | GitHub 的 `nightly` 预发布页，每次覆盖 | GitHub 的发布页，一个版本一页，不覆盖 |
 | 标题 | `v0.1 Anji · 最新测试版 · 日期 · 提交` | `v0.1.0 Anji` |
-| 文件名 | **固定不变**：`teahouse-android-arm64.apk`、`teahouse-windows-x64-setup.exe`、`teahouse-client-windows-x64.exe`（README 里的下载链接指向它们，换版本时不能失效） | 带版本和代号：`teahouse-0.1.0-anji-arm64.apk`、`teahouse-0.1.0-anji-x64-setup.exe` |
+| 文件名 | **固定不变**：`teahouse-android-arm64.apk`、`teahouse-windows-x64-setup.exe`、`teahouse-engine-cli-windows-x64.exe`（给 AI 和开发者的命令行引擎；2026-11-08 起由 `teahouse-client-windows-x64.exe` 改名，以免被当成第二个安装包）。README 里的下载链接指向它们，换版本时不能失效 | 带版本和代号：`teahouse-0.1.0-anji-arm64.apk`、`teahouse-0.1.0-anji-x64-setup.exe` |
 
 - **git 标签只用版本号**：`v0.1.0`，不带代号。
 - 本机给用户打的测试包（放进共享文件夹 `安装包/` 的）和正式发布一样，带版本和代号：`teahouse-0.1.0-anji-arm64.apk`。

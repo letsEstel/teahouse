@@ -310,7 +310,7 @@ pub fn decide_ref(role: Role, member_id: &str, kind: &RefKind<'_>, op: Op) -> Re
             }
         }
         RefKind::Other => Deny(
-            "only refs/heads/main and refs/proposals/<id>/<name> exist in a teahouse / 茶馆只有 main 和提案分支".into(),
+            "only refs/heads/main and refs/proposals/<id>/<name> exist in a room / 包厢只有 main 和提案分支".into(),
         ),
     }
 }
