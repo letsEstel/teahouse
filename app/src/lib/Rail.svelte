@@ -43,7 +43,8 @@
   </a>
 
   <div class="houses">
-    <div class="label head">{t('rail.houses')}</div>
+    <!-- 核桃园（示例）里的是茶摊子，不叫茶馆（0039） -->
+    <div class="label head">{t(demoMode ? 'demo.houses' : 'rail.houses')}</div>
     <button class="switch" aria-expanded={open} aria-label={t('rail.switch')} onclick={() => (open = !open)}>
       <span>{house.name}</span><i class:up={open}></i>
     </button>
@@ -63,11 +64,11 @@
           </li>
         {/if}
       {/each}
-      <li class="join"><a href="#/join" onclick={(e) => { open = false; if (demoMode) { e.preventDefault(); setDemo(false, '#/join') } }}>+ {t('rail.join')}</a></li>
+      <li class="join"><a href="#/join" onclick={(e) => { open = false; if (demoMode) { e.preventDefault(); setDemo(false, '#/join') } }}>{demoMode ? t('demo.join') : `+ ${t('rail.join')}`}</a></li>
     </ul>
     {#if many}
       <button class="more" aria-expanded={expanded} onclick={() => (expanded = !expanded)}>
-        {expanded ? t('rail.collapse') : t('rail.showAll', { n: houses.length })}<i class:up={expanded}></i>
+        {expanded ? t('rail.collapse') : t(demoMode ? 'demo.showAll' : 'rail.showAll', { n: houses.length })}<i class:up={expanded}></i>
       </button>
     {/if}
   </div>
@@ -251,12 +252,13 @@
     .switch i.up { transform: rotate(180deg); }
     ul {
       display: none;
-      position: absolute; top: 100%; left: -1px; min-width: 280px;
+      /* 不比所在的那一栏宽：手机上那一栏只有两百多像素，定死 280 会伸出屏幕（0039） */
+      position: absolute; top: 100%; left: -1px; right: 0; min-width: min(280px, calc(100% + 1px));
       background: var(--paper); border: 2px solid var(--ink); padding: 10px var(--in); z-index: 6;
     }
     ul.open { display: block; max-height: min(60vh, 420px); overflow-y: auto; }
-    /* 窄屏下拉里总是列出全部茶馆 */
-    ul.folded li:not(.current) { display: list-item; }
+    /* 窄屏下拉里总是列出全部茶馆。选择器要和上面宽屏折叠那条一样具体，否则压不过它，下拉里只剩一间（0039） */
+    ul.folded li:not(.current):not(.join) { display: list-item; }
     ul.scroll { border-bottom: 2px solid var(--ink); }
     .more { display: none; }
     .join a { border-top: 1px solid var(--rule); margin-top: 4px; padding-top: 10px; }
@@ -298,6 +300,6 @@
     .ct { display: none; }
     nav a .badge { justify-self: center; font-size: 11px; }
     .nm { font-size: 14px; letter-spacing: 0; }
-    ul { min-width: min(280px, calc(100vw - 32px)); }
+    /* 下拉不比所在的那一栏宽（见上面窄屏那条） */
   }
 </style>

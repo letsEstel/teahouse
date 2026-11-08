@@ -1,11 +1,11 @@
-// 小北街：核桃园里的第七个茶摊子（docs/NAMES.zh.md）。几个老同学春节回家，带朋友 Sebastian 走一天：
-// 五个地方、几样吃的，一张纸写清楚。当前用户是老板（马晓）。
-// 《五处牌匾》只填已知的两块，其余三块写“还没抄回来”，不编。
+// 小北街：核桃园里的第七个茶摊子（docs/NAMES.zh.md）。春节，五个外国朋友（德国、美国、缅甸、阿根廷、
+// 新西兰）来凉州，六个本地人带路：一天、五个地方、几样吃的，一张纸写清楚。当前用户是老板（马晓）。
+// 《五处牌匾》只填已知的两块，其余写“还没抄回来”，不编。核桃园没有门，也就没有门匾。
 import type { House } from './types'
 
 const route = { zh: '凉州一日路线', en: 'One day in Liangzhou', de: 'Ein Tag in Liangzhou' }
 const plaques = { zh: '五处牌匾', en: 'Five plaques', de: 'Fünf Tafeln' }
-const forSeb = { zh: '给塞巴斯蒂安的一页介绍', en: 'One page for Sebastian', de: 'Eine Seite für Sebastian' }
+const forGuests = { zh: '给五位朋友的一页介绍', en: 'One page for our five guests', de: 'Eine Seite für unsere fünf Gäste' }
 const buyun = { zh: '雷台的“步云”', en: 'Leitai: “Bu Yun”', de: 'Leitai: „Bu Yun“' }
 const morningBell = { zh: '路线：大云寺挪到上午，去听晓钟', en: 'Route: move Dayun Temple to the morning, for the dawn bell', de: 'Route: Dayun-Tempel auf den Morgen legen, wegen der Morgenglocke' }
 const votes = { zh: '面皮子投票', en: 'Mianpizi vote', de: 'Abstimmung: Mianpizi' }
@@ -15,9 +15,9 @@ export const xiaobei: House = {
   name: { zh: '小北街', en: 'Xiaobei Street', de: 'Xiaobei-Straße' },
   nameLines: { zh: ['小北街'], en: ['Xiaobei', 'Street'], de: ['Xiaobei-', 'Straße'] },
   sign: {
-    zh: '春节回凉州，带塞巴斯蒂安走一天。五个地方，几样吃的，一张纸写清楚。',
-    en: 'Home to Liangzhou for Spring Festival, one day to show Sebastian around. Five places, a few things to eat, all on one sheet of paper.',
-    de: 'Zum Frühlingsfest zurück nach Liangzhou, ein Tag, um Sebastian alles zu zeigen. Fünf Orte, ein paar Gerichte, alles auf einem Blatt.',
+    zh: '春节，五个外国朋友来凉州，六个本地人带路。一天，五个地方，几样吃的，一张纸写清楚。',
+    en: 'Spring Festival: five friends from abroad come to Liangzhou, six locals show them round. One day, five places, a few things to eat, all on one sheet of paper.',
+    de: 'Frühlingsfest: Fünf Freunde aus dem Ausland kommen nach Liangzhou, sechs Einheimische führen sie herum. Ein Tag, fünf Orte, ein paar Gerichte, alles auf einem Blatt.',
   },
   founded: '2026-10-02',
   capacity: 15,
@@ -28,12 +28,17 @@ export const xiaobei: House = {
     { id: 'zhou', name: { zh: '周晓钟', en: 'Zhou Xiaozhong', de: 'Zhou Xiaozhong' }, role: 'guest', joined: '2026-10-02' },
     { id: 'wang', name: { zh: '王婧', en: 'Wang Jing', de: 'Wang Jing' }, role: 'guest', joined: '2026-10-03' },
     { id: 'chen', name: { zh: '陈默', en: 'Chen Mo', de: 'Chen Mo' }, role: 'guest', joined: '2026-10-03' },
-    { id: 'seb', name: { zh: '塞巴斯蒂安', en: 'Sebastian', de: 'Sebastian' }, role: 'guest', joined: '2026-10-09' },
+    { id: 'zhao', name: { zh: '赵海宁', en: 'Zhao Haining', de: 'Zhao Haining' }, role: 'guest', joined: '2026-10-04' },
+    { id: 'seb', name: { zh: 'Sebastian', en: 'Sebastian', de: 'Sebastian' }, role: 'guest', joined: '2026-10-09' },
+    { id: 'mike', name: { zh: 'Michael', en: 'Michael', de: 'Michael' }, role: 'guest', joined: '2026-10-09' },
+    { id: 'aung', name: { zh: 'Aung Ko', en: 'Aung Ko', de: 'Aung Ko' }, role: 'guest', joined: '2026-10-10' },
+    { id: 'lucia', name: { zh: 'Lucía', en: 'Lucía', de: 'Lucía' }, role: 'guest', joined: '2026-10-10' },
+    { id: 'liam', name: { zh: 'Liam', en: 'Liam', de: 'Liam' }, role: 'guest', joined: '2026-10-11' },
   ],
   problems: [
     {
       id: '0001',
-      title: { zh: '带塞巴斯蒂安逛一天：五个地方怎么走', en: 'One day with Sebastian: how to fit in five places', de: 'Ein Tag mit Sebastian: wie wir fünf Orte schaffen' },
+      title: { zh: '一天逛五个地方：怎么走', en: 'Five places in one day: in what order', de: 'Fünf Orte an einem Tag: in welcher Reihenfolge' },
       summary: {
         zh: '雷台、鸠摩罗什寺、大云寺、海藏寺、核桃园，只有一天。先去哪，在哪吃饭，哪里可以不去。',
         en: 'Leitai, Kumarajiva Temple, Dayun Temple, Haizang Temple, the Walnut Garden, and only one day. What first, where to eat, what to skip.',
@@ -48,9 +53,9 @@ export const xiaobei: House = {
         {
           heading: { zh: '现状', en: 'Now', de: 'Stand' },
           text: {
-            zh: '春节初三，塞巴斯蒂安和他的两个朋友从兰州坐车过来，晚上就走。我们五个都在，陈默有车。',
-            en: 'On the third day of Spring Festival, Sebastian and two friends come over from Lanzhou and leave that evening. All five of us are home, and Chen Mo has a car.',
-            de: 'Am dritten Tag des Frühlingsfests kommen Sebastian und zwei Freunde aus Lanzhou und fahren abends zurück. Wir fünf sind alle da, Chen Mo hat ein Auto.',
+            zh: '春节初三，五个朋友从德国、美国、缅甸、阿根廷、新西兰来，在兰州会合，坐早上的火车过来，晚上就走。我们六个本地人都在，陈默和赵海宁有车。',
+            en: 'On the third day of Spring Festival, five friends from Germany, the US, Myanmar, Argentina and New Zealand meet in Lanzhou, take the morning train over and leave that evening. All six of us locals are home; Chen Mo and Zhao Haining have cars.',
+            de: 'Am dritten Tag des Frühlingsfests treffen sich fünf Freunde aus Deutschland, den USA, Myanmar, Argentinien und Neuseeland in Lanzhou, nehmen den Morgenzug und fahren abends zurück. Wir sechs Einheimischen sind alle da; Chen Mo und Zhao Haining haben ein Auto.',
           },
         },
         {
@@ -96,12 +101,12 @@ export const xiaobei: House = {
             { zh: '鸠摩罗什寺　人间净土　出口　抄了', en: 'Kumarajiva Temple  A Pure Land on Earth  over the exit  yes', de: 'Kumarajiva-Tempel  Reines Land auf Erden  über dem Ausgang  ja' },
             { zh: '大云寺　—　—　还没有', en: 'Dayun Temple  —  —  not yet', de: 'Dayun-Tempel  —  —  noch nicht' },
             { zh: '海藏寺　—　—　还没有', en: 'Haizang Temple  —  —  not yet', de: 'Haizang-Tempel  —  —  noch nicht' },
-            { zh: '核桃园　—　—　还没有', en: 'Walnut Garden  —  —  not yet', de: 'Walnussgarten  —  —  noch nicht' },
+            { zh: '核桃园　没有门，也就没有门匾　—　不用抄', en: 'Walnut Garden  no gate, so no gate plaque  —  nothing to copy', de: 'Walnussgarten  kein Tor, also keine Tortafel  —  nichts abzuschreiben' },
           ],
         },
         {
-          id: 'x3', kind: 'doc', by: 'wang', when: '2026-10-12T22:30', title: forSeb,
-          note: { zh: '用英文写，塞巴斯蒂安也能自己看', en: 'Written in English so Sebastian can read it himself', de: 'Auf Englisch, damit Sebastian es selbst lesen kann' },
+          id: 'x3', kind: 'doc', by: 'wang', when: '2026-10-12T22:30', title: forGuests,
+          note: { zh: '用英文写，五个人都能自己看', en: 'Written in English so all five can read it themselves', de: 'Auf Englisch, damit alle fünf es selbst lesen können' },
           lines: [
             { zh: 'Wuwei was called Liangzhou, a city on the Hexi Corridor, the old road to the west.', en: 'Wuwei was called Liangzhou, a city on the Hexi Corridor, the old road to the west.', de: 'Wuwei was called Liangzhou, a city on the Hexi Corridor, the old road to the west.' },
             { zh: 'Kumarajiva lived here for many years before he went to Chang’an and became the great translator of Buddhist texts.', en: 'Kumarajiva lived here for many years before he went to Chang’an and became the great translator of Buddhist texts.', de: 'Kumarajiva lived here for many years before he went to Chang’an and became the great translator of Buddhist texts.' },
@@ -115,7 +120,7 @@ export const xiaobei: House = {
         { by: 'li', act: 'update', ref: route, when: '2026-10-18T19:40' },
         { by: 'zhou', act: 'propose', ref: morningBell, when: '2026-10-17T07:10' },
         { by: 'zhou', act: 'addWork', ref: plaques, when: '2026-10-16T21:15' },
-        { by: 'wang', act: 'addWork', ref: forSeb, when: '2026-10-12T22:30' },
+        { by: 'wang', act: 'addWork', ref: forGuests, when: '2026-10-12T22:30' },
         { by: 'chen', act: 'addWork', ref: buyun, when: '2026-10-08T16:05' },
         { by: 'ma', act: 'markActive', when: '2026-10-04T09:00' },
         { by: 'ma', act: 'open', when: '2026-10-03T21:00' },
@@ -123,6 +128,7 @@ export const xiaobei: House = {
       notes: [
         { by: 'seb', when: '2026-10-12T23:05', text: { zh: '我最想看那块一面西夏文、一面汉文的碑。', en: 'What I most want to see is the stele with Tangut on one side and Chinese on the other.', de: 'Am meisten möchte ich die Stele sehen, mit Tangutisch auf der einen und Chinesisch auf der anderen Seite.' } },
         { by: 'ma', when: '2026-10-12T23:20', text: { zh: '西夏碑在博物馆里。我查一下初三开不开门，开就加一站。', en: 'The stele is in the museum. I’ll check whether it’s open on the third day; if it is, we add a stop.', de: 'Die Stele steht im Museum. Ich schaue, ob es am dritten Tag offen hat; wenn ja, kommt ein Halt dazu.' } },
+        { by: 'aung', when: '2026-10-13T08:40', text: { zh: '罗什寺我想多待一会儿。在缅甸，我每个星期都去寺里，想看看这里的寺是什么样子。', en: 'I’d like to stay a little longer at the Kumarajiva Temple. At home in Myanmar I go to the temple every week; I want to see what one looks like here.', de: 'Im Kumarajiva-Tempel würde ich gern etwas länger bleiben. Zu Hause in Myanmar gehe ich jede Woche in den Tempel; ich möchte sehen, wie einer hier aussieht.' } },
         { by: 'zhou', when: '2026-10-17T07:15', text: { zh: '大云寺下午去，只能看钟，听不到。我交了个提案，挪到上午试试。', en: 'If we go to Dayun Temple in the afternoon we only see the bell, we don’t hear it. I’ve put in a proposal to move it to the morning.', de: 'Nachmittags sehen wir am Dayun-Tempel nur die Glocke, hören sie aber nicht. Ich habe vorgeschlagen, ihn auf den Morgen zu legen.' } },
       ],
     },
@@ -130,44 +136,44 @@ export const xiaobei: House = {
       id: '0002',
       title: { zh: '面皮子哪家最地道', en: 'Whose mianpizi is the real thing?', de: 'Wo gibt es die echten Mianpizi?' },
       summary: {
-        zh: '每个人心里都有一家。投个票，选两家带塞巴斯蒂安去，辣子另放。',
-        en: 'Everyone has their own place. We vote, pick two to take Sebastian to, and ask for the chilli on the side.',
-        de: 'Jeder hat seinen eigenen Laden. Wir stimmen ab, nehmen zwei für Sebastian und lassen das Chili extra geben.',
+        zh: '每个人心里都有一家。投个票，选两家带朋友们去，辣子另放。',
+        en: 'Everyone has their own place. We vote, pick two to take our friends to, and ask for the chilli on the side.',
+        de: 'Jeder hat seinen eigenen Laden. Wir stimmen ab, nehmen zwei für unsere Freunde und lassen das Chili extra geben.',
       },
       status: 'open', by: 'chen', opened: '2026-10-05', updated: '2026-10-15',
       body: [], works: [], workCount: 1, events: [],
     },
     {
       id: '0003',
-      title: { zh: '三炮台：冰糖放多少', en: 'Sanpaotai tea: how much rock sugar?', de: 'Sanpaotai-Tee: wie viel Kandiszucker?' },
+      title: { zh: '三炮台去哪里喝', en: 'Where do we drink sanpaotai tea?', de: 'Wo trinken wir Sanpaotai-Tee?' },
       summary: {
-        zh: '碗、盖、托三件。冰糖、桂圆、红枣、枸杞都放进去，一泡续好几次水。外地朋友第一口会不会太甜？',
-        en: 'Bowl, lid and saucer. Rock sugar, longan, red dates and goji go in, and you top up the water again and again. Will the first sip be too sweet for visitors?',
-        de: 'Schale, Deckel, Untertasse. Kandiszucker, Longan, rote Datteln und Goji kommen hinein, und man gießt immer wieder Wasser nach. Ist der erste Schluck für Gäste zu süß?',
+        zh: '盖碗茶，碗、盖、托三件，要坐下来慢慢喝。找一家能坐下十一个人、下午不赶人的茶屋。',
+        en: 'Tea in a lidded bowl, three pieces: bowl, lid, saucer. You have to sit down and take your time. We need a tea house with room for eleven that won’t rush us in the afternoon.',
+        de: 'Tee in der Deckelschale, drei Teile: Schale, Deckel, Untertasse. Man muss sich setzen und Zeit lassen. Wir brauchen eine Teestube mit Platz für elf, die uns am Nachmittag nicht hinausdrängt.',
       },
-      status: 'open', by: 'wang', opened: '2026-10-10', updated: '2026-10-14',
-      body: [], works: [], workCount: 0, events: [],
+      status: 'active', owner: 'wang', by: 'wang', opened: '2026-10-10', updated: '2026-10-16',
+      body: [], works: [], workCount: 1, events: [],
     },
     {
       id: '0004',
-      title: { zh: '核桃园冬天开不开门', en: 'Is the Walnut Garden open in winter?', de: 'Hat der Walnussgarten im Winter offen?' },
+      title: { zh: '大盘鸡去哪里吃', en: 'Where do we eat dapanji?', de: 'Wo essen wir Dapanji?' },
       summary: {
-        zh: '塞巴斯蒂安听说城里有个植物园，想去看看。冬天去值不值，开不开门，还没人问过。',
-        en: 'Sebastian heard there’s a botanical garden in town and wants to go. Nobody has asked yet whether it’s open, or worth it, in winter.',
-        de: 'Sebastian hat von einem botanischen Garten in der Stadt gehört und will hin. Ob er im Winter offen hat und sich lohnt, hat noch niemand gefragt.',
+        zh: '晚饭吃大盘鸡，最后下皮带面。十一个人要两大盘。Lucía 和 Liam 不太能吃辣，一盘少放辣子。',
+        en: 'Dapanji for dinner, with the wide belt noodles at the end. Eleven people need two big plates. Lucía and Liam can’t take much chilli, so one plate goes easy on it.',
+        de: 'Zum Abendessen Dapanji, zum Schluss die breiten Gürtelnudeln. Elf Leute brauchen zwei große Platten. Lucía und Liam vertragen wenig Chili, also eine Platte mild.',
       },
-      status: 'open', by: 'seb', opened: '2026-10-11', updated: '2026-10-11',
+      status: 'open', by: 'zhao', opened: '2026-10-12', updated: '2026-10-17',
       body: [], works: [], workCount: 0, events: [],
     },
     {
       id: '0005',
-      title: { zh: '凉面的醋：自己调还是买现成的', en: 'Vinegar for the cold noodles: mix our own or buy it ready?', de: 'Essig für die kalten Nudeln: selbst mischen oder fertig kaufen?' },
+      title: { zh: '从兰州怎么过来：火车还是包车', en: 'Getting here from Lanzhou: train or a hired car?', de: 'Von Lanzhou hierher: Zug oder Mietwagen?' },
       summary: {
-        zh: '定了：自己调，蒜水多放。周晓钟负责。',
-        en: 'Decided: we mix our own, with plenty of garlic water. Zhou Xiaozhong is in charge.',
-        de: 'Entschieden: selbst gemischt, mit viel Knoblauchwasser. Zhou Xiaozhong kümmert sich darum.',
+        zh: '定了：坐早上的火车，五个人一起走；陈默和赵海宁开车去车站接。',
+        en: 'Decided: the morning train, all five together; Chen Mo and Zhao Haining drive to the station to pick them up.',
+        de: 'Entschieden: der Morgenzug, alle fünf zusammen; Chen Mo und Zhao Haining holen sie mit dem Auto am Bahnhof ab.',
       },
-      status: 'solved', by: 'zhou', opened: '2026-10-06', updated: '2026-10-09',
+      status: 'solved', by: 'mike', opened: '2026-10-09', updated: '2026-10-11',
       body: [], works: [], workCount: 1, events: [],
     },
   ],
@@ -208,29 +214,30 @@ export const xiaobei: House = {
     },
   ],
   decided: [
-    { title: { zh: '凉面的醋自己调', en: 'We mix the noodle vinegar ourselves', de: 'Den Nudelessig mischen wir selbst' }, by: 'zhou', result: 'merged', when: '2026-10-09' },
+    { title: { zh: '坐早上的火车过来', en: 'Coming by the morning train', de: 'Anreise mit dem Morgenzug' }, by: 'mike', result: 'merged', when: '2026-10-11' },
   ],
   board: [
     {
       id: 'b1', by: 'ma', when: '2026-10-18T20:00',
       title: { zh: '初三早上九点，雷台门口集合', en: 'Third day, 9 am, meet at the Leitai gate', de: 'Dritter Tag, 9 Uhr, Treffpunkt am Tor von Leitai' },
       text: {
-        zh: '按路线走，路线以 0001 的最新一稿为准。穿厚一点，台上风大。塞巴斯蒂安一行三个人坐陈默的车。',
-        en: 'We follow the route; the latest draft under 0001 is the one that counts. Dress warmly, it’s windy on the terrace. Sebastian and his two friends ride with Chen Mo.',
-        de: 'Wir folgen der Route; es gilt der neueste Entwurf unter 0001. Zieht euch warm an, oben auf der Terrasse ist es windig. Sebastian und seine zwei Freunde fahren bei Chen Mo mit.',
+        zh: '按路线走，路线以 0001 的最新一稿为准。穿厚一点，台上风大。五个朋友坐陈默和赵海宁的车。',
+        en: 'We follow the route; the latest draft under 0001 is the one that counts. Dress warmly, it’s windy on the terrace. Our five friends ride with Chen Mo and Zhao Haining.',
+        de: 'Wir folgen der Route; es gilt der neueste Entwurf unter 0001. Zieht euch warm an, oben auf der Terrasse ist es windig. Unsere fünf Freunde fahren bei Chen Mo und Zhao Haining mit.',
       },
       replies: [
         { by: 'seb', when: '2026-10-18T20:06', text: { zh: '收到！我们会准时到。', en: 'Got it! We’ll be on time.', de: 'Alles klar! Wir sind pünktlich.' } },
-        { by: 'chen', when: '2026-10-18T20:08', text: { zh: '车能坐五个，八点半去火车站接他们。', en: 'The car seats five. I’ll pick them up at the station at half past eight.', de: 'Das Auto hat fünf Plätze. Ich hole sie um halb neun am Bahnhof ab.' } },
+        { by: 'liam', when: '2026-10-18T20:07', text: { zh: '新西兰现在是夏天。我得借一件厚外套。', en: 'It’s summer in New Zealand right now. I’ll have to borrow a thick coat.', de: 'In Neuseeland ist gerade Sommer. Ich muss mir einen dicken Mantel leihen.' } },
+        { by: 'chen', when: '2026-10-18T20:08', text: { zh: '两辆车，八点半去火车站接。外套我家有。', en: 'Two cars, at the station by half past eight. I have a coat you can borrow.', de: 'Zwei Autos, um halb neun am Bahnhof. Einen Mantel habe ich für dich.' } },
       ],
     },
     {
       id: 'b2', by: 'li', when: '2026-10-16T21:30',
-      title: { zh: '牌匾还差三块', en: 'Three plaques still missing', de: 'Drei Tafeln fehlen noch' },
+      title: { zh: '牌匾还差两块', en: 'Two plaques still missing', de: 'Zwei Tafeln fehlen noch' },
       text: {
-        zh: '大云寺、海藏寺、核桃园的牌匾还没抄回来。谁路过拍一张，填进 0001 的《五处牌匾》。',
-        en: 'We still haven’t copied the plaques at Dayun Temple, Haizang Temple and the Walnut Garden. Whoever passes by, take a photo and fill it into “Five plaques” under 0001.',
-        de: 'Die Tafeln am Dayun-Tempel, am Haizang-Tempel und im Walnussgarten fehlen noch. Wer vorbeikommt, macht ein Foto und trägt sie in „Fünf Tafeln“ unter 0001 ein.',
+        zh: '大云寺、海藏寺的牌匾还没抄回来。谁路过拍一张，填进 0001 的《五处牌匾》。核桃园没有门，不用找了。',
+        en: 'We still haven’t copied the plaques at Dayun Temple and Haizang Temple. Whoever passes by, take a photo and fill it into “Five plaques” under 0001. The Walnut Garden has no gate, so don’t look for one there.',
+        de: 'Die Tafeln am Dayun-Tempel und am Haizang-Tempel fehlen noch. Wer vorbeikommt, macht ein Foto und trägt sie in „Fünf Tafeln“ unter 0001 ein. Der Walnussgarten hat kein Tor, dort braucht ihr nicht zu suchen.',
       },
       replies: [],
     },
