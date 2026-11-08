@@ -71,6 +71,8 @@
   })
   // 已离座：引擎给的 me 在座位表里找不到（CLIENT-API 第 2 节）→ 整间茶馆只读
   let seated = $derived(!!house && house.members.some((m) => m.id === house!.me))
+  // 历史被改了、还没选（或选了留在旧版本）：写不进去，写入口先收起来，免得点了才报错（0020）
+  let frozen = $derived(!!house?.sync.historyChanged)
   let section = $derived(
     route.page === 'problems' || route.page === 'problem' ? 'problems'
     : route.page === 'proposals' || route.page === 'proposal' || route.page === 'propose' ? 'proposals'
@@ -85,7 +87,7 @@
   </main>
 {:else if house}
 <Rail {house} {houses} {section} {seated} />
-<main class:readonly={!seated}>
+<main class:readonly={!seated || frozen}>
   <ErrorBar />
   <StatusBar {house} {seated} {refresh} />
   {#key hash + i18n.lang + house.id}

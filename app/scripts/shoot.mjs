@@ -276,6 +276,14 @@ screens.push(
   { name: 'rooms-proposal-guest', hash: '#/kant/proposals', save: true, full: false },
 )
 
+// 第 31 轮：茶屋上的历史被改过（0020，引擎 #113）：常驻提示，两个选择
+screens.push(
+  { name: 'history-changed', hash: '#/wutong/problem/0001', query: '&fake=history', widths: [1366, 390], save: true, full: false },
+  { name: 'history-changed-phone', hash: '#/wutong/house', query: '&fake=history', widths: [390], save: true, saveAt: 390 },
+  { name: 'history-kept', hash: '#/wutong/house', query: '&fake=history', act: async (p) => { await p.click('.history .secondary'); await p.waitForSelector('.history.kept') }, save: true, saveDe: true, full: false },
+  { name: 'history-changed-dark', hash: '#/wutong/house', query: '&fake=history', theme: 'dark', only1366: true, save: true, full: false },
+)
+
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
 function audit() {
   const vw = document.documentElement.clientWidth
