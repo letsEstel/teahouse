@@ -286,6 +286,15 @@ impl<'c> Writer<'c> {
             )
             .with("house", house)
         })?;
+        // 0020: while the relay's history differs from this copy, nothing is
+        // written until the member has chosen.
+        if crate::sync::Record::load(snap.git.dir()).history.is_some() {
+            return Err(Error::new(
+                Code::HistoryChanged,
+                "the room's history was changed at the relay; choose first whether to accept it / 包厢的历史在服务器上被改了，请先选择接受还是留在旧版本",
+            )
+            .with("house", house));
+        }
         Ok(Writer {
             client,
             house: house.to_string(),

@@ -16,6 +16,9 @@ pub enum Code {
     RelayRefused,
     TooLarge,
     Internal,
+    /// The relay's `main` is no longer a continuation of what this device
+    /// last synced: its history was changed there (0020).
+    HistoryChanged,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

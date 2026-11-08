@@ -93,6 +93,25 @@ pub struct SyncState {
     pub last_sync: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    /// Set while the relay's history differs from what this device last
+    /// synced; the member chooses: `acceptHistory` or `keepHistory`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub history_changed: Option<HistoryChange>,
+}
+
+/// What changed when the relay's history was changed (0020).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryChange {
+    /// Steps this device had synced that the relay's `main` no longer has.
+    pub dropped: usize,
+    /// Steps on the relay's `main` that are new to this device.
+    pub added: usize,
+    /// Files that differ between the two versions (at most 50).
+    pub files: Vec<String>,
+    /// The member chose to stay on the old version (read only).
+    #[serde(default)]
+    pub kept: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

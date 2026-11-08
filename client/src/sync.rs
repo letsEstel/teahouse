@@ -19,6 +19,7 @@ use crate::commit;
 use crate::error::{Code, Error, Result};
 use crate::format;
 use crate::identity::Identity;
+use crate::model::HistoryChange;
 use crate::transport::{self, Report};
 use git2::{
     build::TreeUpdateBuilder, Delta, FetchOptions, FetchPrune, Oid, PushOptions, Repository,
@@ -35,6 +36,12 @@ pub const PROPOSALS: &str = "refs/proposals/";
 pub const TRACKING_PROPOSALS: &str = "refs/remotes/origin/proposals/";
 const RECORD: &str = "teahouse-sync.json";
 
+/// What this device last synced of the relay's `main`. The remote-tracking
+/// ref cannot say: every fetch overwrites it.
+pub const SYNCED_MAIN: &str = "refs/teahouse/synced-main";
+/// Where the local `main` is kept when a changed history is accepted.
+pub const BEFORE_REWRITE: &str = "refs/teahouse/before-rewrite/";
+
 /// What the last sync attempt left behind, kept in the git directory.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -44,6 +51,10 @@ pub struct Record {
     /// `offline` or `error` when the last attempt failed.
     pub failed: Option<String>,
     pub message: Option<String>,
+    /// The relay's history was changed and the member has not accepted it
+    /// yet (0020). While it is set, nothing is replayed or pushed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub history: Option<HistoryChange>,
 }
 
 impl Record {
@@ -54,7 +65,7 @@ impl Record {
             .unwrap_or_default()
     }
 
-    fn save(&self, git_dir: &Path) {
+    pub fn save(&self, git_dir: &Path) {
         if let Ok(b) = serde_json::to_vec(self) {
             let _ = std::fs::write(git_dir.join(RECORD), b);
         }
@@ -121,9 +132,11 @@ const TRIES: usize = 3;
 enum Retry {
     /// Someone pushed between our fetch and our push.
     Again,
+    /// The relay's history was changed (0020).
+    Changed(HistoryChange),
     Stop(Error),
 }
-use Retry::{Again, Stop};
+use Retry::{Again, Changed, Stop};
 
 impl From<Error> for Retry {
     fn from(e: Error) -> Retry {
@@ -242,6 +255,17 @@ impl Link<'_> {
             }
         }
         let result = result.map_err(|e| match e {
+            Changed(c) => {
+                let e = Error::new(
+                    Code::HistoryChanged,
+                    "the room's history was changed at the relay; choose whether to accept it / 包厢的历史在服务器上被改了，请选择接受还是留在旧版本",
+                )
+                .with("dropped", c.dropped.to_string())
+                .with("added", c.added.to_string());
+                let kept = record.history.as_ref().is_some_and(|h| h.kept);
+                record.history = Some(HistoryChange { kept, ..c });
+                e
+            }
             Again => Error::new(
                 Code::RelayRefused,
                 "others kept writing at the same time; try again / 别人也在同时写入，请再试一次",
@@ -253,6 +277,7 @@ impl Link<'_> {
                 record.last_ok = Some(now());
                 record.failed = None;
                 record.message = None;
+                record.history = None;
             }
             Err(e) => {
                 record.failed = Some(
@@ -280,6 +305,15 @@ impl Link<'_> {
         let old_props = refs_under(repo, TRACKING_PROPOSALS)?;
         self.fetch()?;
         let new_main = repo.refname_to_id(TRACKING_MAIN).ok();
+        // 0020: the relay's main must go on from what we last synced. If it
+        // does not, its history was changed there: stop, replay nothing,
+        // push nothing, and let the member choose.
+        let synced = repo.refname_to_id(SYNCED_MAIN).ok().or(old_main);
+        if let (Some(was), Some(now)) = (synced, new_main) {
+            if was != now && !repo.graph_descendant_of(now, was)? {
+                return Err(Changed(history_change(repo, was, now)?));
+            }
+        }
         let new_props = refs_under(repo, TRACKING_PROPOSALS)?;
         let local_props = refs_under(repo, PROPOSALS)?;
 
@@ -321,7 +355,6 @@ impl Link<'_> {
         }
 
         let local_main = repo.refname_to_id(MAIN).ok();
-        let _ = old_main;
         match (local_main, new_main) {
             (_, None) => {
                 return Err(Error::internal("the relay has no main for this teahouse").into());
@@ -364,8 +397,71 @@ impl Link<'_> {
         for (name, to) in after {
             set_ref(repo, &name, to)?;
         }
+        set_ref(repo, SYNCED_MAIN, repo.refname_to_id(TRACKING_MAIN).ok())?;
         self.run_pending_purges()?;
         Ok(Outcome::Synced)
+    }
+
+    /// The member accepts the relay's changed history (0020): the local
+    /// `main` is kept under `refs/teahouse/before-rewrite/<time>`, what this
+    /// device wrote since the last sync is replayed on the relay's `main`,
+    /// and the sync goes on as usual.
+    pub fn accept_history(&self) -> Result<Outcome> {
+        let repo = self.repo;
+        let git_dir = self.repo.path().to_path_buf();
+        let mut record = Record::load(&git_dir);
+        if record.history.is_none() {
+            return Err(Error::invalid(
+                "the room's history has not changed / 包厢的历史没有被改",
+            ));
+        }
+        self.fetch()?;
+        let now_main = repo
+            .refname_to_id(TRACKING_MAIN)
+            .map_err(|_| Error::internal("the relay has no main for this room"))?;
+        let was = repo.refname_to_id(SYNCED_MAIN).ok();
+        if let Ok(local) = repo.refname_to_id(MAIN) {
+            set_ref(repo, &format!("{BEFORE_REWRITE}{}", now()), Some(local))?;
+            // Ours: what this device wrote after the last sync.
+            let base = match was {
+                Some(w) if local == w || repo.graph_descendant_of(local, w)? => Some(w),
+                Some(w) => repo.merge_base(local, w).ok(),
+                None => None,
+            };
+            let ours = match base {
+                Some(b) => first_parent_since(repo, local, b)?,
+                None => Vec::new(),
+            };
+            let (tip, _) = replay(repo, self.identity, &ours, now_main, |_| true)?;
+            commit::move_ref(
+                repo,
+                MAIN,
+                Some(local),
+                Some(tip),
+                "teahouse: history accepted",
+            )?;
+        } else {
+            set_ref(repo, MAIN, Some(now_main))?;
+        }
+        set_ref(repo, SYNCED_MAIN, Some(now_main))?;
+        record.history = None;
+        record.save(&git_dir);
+        self.sync()
+    }
+
+    /// The member stays on the old version for now (read only); they may
+    /// accept later.
+    pub fn keep_history(&self) -> Result<()> {
+        let git_dir = self.repo.path().to_path_buf();
+        let mut record = Record::load(&git_dir);
+        let Some(h) = record.history.as_mut() else {
+            return Err(Error::invalid(
+                "the room's history has not changed / 包厢的历史没有被改",
+            ));
+        };
+        h.kept = true;
+        record.save(&git_dir);
+        Ok(())
     }
 
     fn endpoint(&self) -> Result<(crate::remote::Endpoint, String)> {
@@ -485,6 +581,37 @@ fn refused(r: &Report) -> Error {
     );
     e.reasons = reasons;
     e
+}
+
+/// How the relay's `now` differs from what this device last synced.
+fn history_change(repo: &Repository, was: Oid, now: Oid) -> Result<HistoryChange> {
+    let count = |from: Oid, hide: Oid| -> Result<usize> {
+        let mut walk = repo.revwalk()?;
+        walk.push(from)?;
+        walk.hide(hide)?;
+        Ok(walk.count())
+    };
+    let (a, b) = (
+        repo.find_commit(was)?.tree()?,
+        repo.find_commit(now)?.tree()?,
+    );
+    let diff = repo.diff_tree_to_tree(Some(&a), Some(&b), None)?;
+    let files = diff
+        .deltas()
+        .filter_map(|d| {
+            d.new_file()
+                .path()
+                .or_else(|| d.old_file().path())
+                .map(|p| p.to_string_lossy().into_owned())
+        })
+        .take(50)
+        .collect();
+    Ok(HistoryChange {
+        dropped: count(was, now)?,
+        added: count(now, was)?,
+        files,
+        kept: false,
+    })
 }
 
 /// The first-parent commits after `base` up to `tip`, oldest first.

@@ -349,6 +349,7 @@ impl Snapshot {
             unpushed,
             last_sync,
             message: record.message,
+            history_changed: record.history,
         })
     }
 

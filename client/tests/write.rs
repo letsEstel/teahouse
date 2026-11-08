@@ -1260,6 +1260,108 @@ fn a_name_is_suggested_by_the_host_and_kept_by_the_member() {
 }
 
 #[test]
+fn a_history_changed_at_the_relay_stops_the_sync_until_the_member_chooses() {
+    let w = World::new("rewrite");
+    let (_wang, li, zhao) = w.wutong();
+    parking(&li);
+    li.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "这条之后被删掉了。" }),
+    );
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    // zhao writes offline: it is still on this device when the relay changes.
+    let url = zhao.go_offline();
+    zhao.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "小赵离线写的。" }),
+    );
+    zhao.go_online(&url);
+
+    // At the relay, someone drops the last step and puts another in its place.
+    let parent = w.relay_git(&["rev-parse", "main~1"]).trim().to_string();
+    let tree = w
+        .relay_git(&["rev-parse", "main~1^{tree}"])
+        .trim()
+        .to_string();
+    let other = w
+        .relay_git(&[
+            // No user name or email in CI's git configuration.
+            "-c",
+            "user.name=someone at the relay",
+            "-c",
+            "user.email=x@relay",
+            "commit-tree",
+            &tree,
+            "-p",
+            &parent,
+            "-m",
+            "改写\n\nProblem: meta",
+        ])
+        .trim()
+        .to_string();
+    w.relay_git(&["update-ref", "refs/heads/main", &other]);
+
+    // The sync stops: nothing replayed, nothing pushed, and it says why.
+    let s = zhao.ok("sync", json!({ "house": "wutong" }));
+    assert_eq!(s["state"], "error", "{s:#}");
+    assert_eq!(
+        (
+            &s["historyChanged"]["dropped"],
+            &s["historyChanged"]["added"]
+        ),
+        (&json!(1), &json!(1)),
+        "{s:#}"
+    );
+    assert!(
+        s["historyChanged"]["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|f| f.as_str().unwrap().starts_with("talk/0001/")),
+        "{s:#}"
+    );
+    assert_eq!(
+        w.relay_git(&["rev-parse", "main"]).trim(),
+        other,
+        "nothing pushed"
+    );
+    let e = zhao.err(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "x" }),
+    );
+    assert_eq!(e["code"], "history_changed", "{e:#}");
+
+    // Staying on the old version: still read only, still told.
+    let s = zhao.ok("keepHistory", json!({ "house": "wutong" }));
+    assert_eq!(s["historyChanged"]["kept"], true, "{s:#}");
+    let s = zhao.ok("sync", json!({ "house": "wutong" }));
+    assert_eq!(s["historyChanged"]["kept"], true, "{s:#}");
+
+    // Accepting: the relay's version, with what zhao wrote offline on top,
+    // and the old version kept on this device.
+    let s = zhao.ok("acceptHistory", json!({ "house": "wutong" }));
+    assert_eq!(s["state"], "synced", "{s:#}");
+    assert!(s.get("historyChanged").is_none(), "{s:#}");
+    assert_eq!(w.relay_git(&["rev-parse", "main~1"]).trim(), other);
+    assert_eq!(
+        w.relay_git(&["log", "-1", "--format=%s", "main"]).trim(),
+        "小赵离线写的。"
+    );
+    let kept = zhao
+        .repo()
+        .references_glob("refs/teahouse/before-rewrite/*")
+        .unwrap()
+        .count();
+    assert_eq!(kept, 1);
+    zhao.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "又能写了。" }),
+    );
+    let e = zhao.err("acceptHistory", json!({ "house": "wutong" }));
+    assert_eq!(e["code"], "invalid", "{e:#}");
+}
+
+#[test]
 fn attachments_go_to_the_cache_and_into_git_as_references() {
     let w = World::new("blobs");
     let (_wang, li, _zhao) = w.wutong();

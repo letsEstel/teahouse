@@ -175,6 +175,25 @@ impl Client {
         self.snapshot(house)?.summary_sync()
     }
 
+    /// The member's choice when the relay's history was changed (0020):
+    /// accept it, or stay on the old version (read only) for now.
+    pub fn choose_history(&self, house: &str, accept: bool) -> Result<model::SyncState> {
+        let snap = self.snapshot(house)?;
+        let identity = self.identity()?;
+        let link = sync::Link {
+            repo: snap.git.repo(),
+            identity: &identity,
+            known_hosts: &self.known_hosts(),
+            blobs: &self.root.join("blobs"),
+        };
+        if accept {
+            link.accept_history()?;
+        } else {
+            link.keep_history()?;
+        }
+        self.snapshot(house)?.summary_sync()
+    }
+
     /// Clones a teahouse from a relay with this device's key.
     pub fn join(&self, relay: &str, house: &str) -> Result<model::HouseSummary> {
         if !valid_house_id(house) {
@@ -848,6 +867,10 @@ impl Client {
             "purgeBlob" => {
                 let p: IdArg = parse(command, a)?;
                 to_value(Writer::open(self, &p.house)?.purge_blob(&p.id, a)?)
+            }
+            "acceptHistory" | "keepHistory" => {
+                let p: HouseArg = parse(command, a)?;
+                to_value(self.choose_history(&p.house, command == "acceptHistory")?)
             }
             "sync" => {
                 let a: MaybeHouse = parse(command, a)?;
