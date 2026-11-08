@@ -23,6 +23,6 @@ cpSync(dist, target, { recursive: true })
 writeFileSync(
   join(target, '说明.txt'),
   `茶馆界面预览（M0，假数据）。用浏览器打开 index.html。\n生成于 ${new Date().toISOString()}。\n` +
-    `入口：index.html#/wutong/house（老板视角）、#/kant/house（茶客视角）、#/family/house（伙计视角）。\n`,
+    `入口：index.html#/wutong/house（东家视角）、#/kant/house（客人视角）、#/family/house（伙计视角）。\n`,
 )
 console.log(`预览已更新：${target}（${readdirSync(target).length} 项）`)

@@ -210,7 +210,7 @@ screens.push(
 )
 
 // 第 17 轮：名字归本人（法则第 21 条）——入座预填、自己改名、老板改任何人的名字
-const prefill = async (p) => { await p.fill('#invite', '邀请你坐进茶馆。TH-7KQ2-M9XF-3RDP-WC5L@relay.teahouse.example'); await p.waitForSelector('.seen:has-text("老板"), .seen:has-text("host"), .seen:has-text("Wirt")') }
+const prefill = async (p) => { await p.fill('#invite', '邀请你坐进茶馆。TH-7KQ2-M9XF-3RDP-WC5L@relay.teahouse.example'); await p.waitForSelector('.seen:has-text("东家"), .seen:has-text("host"), .seen:has-text("Gastgeber")') }
 const openRename = async (p) => { await p.click('.rename-open button'); await p.waitForSelector('.rename') }
 const renameTaken = async (p) => { await openRename(p); await p.fill('.rename input', '周小满') }
 screens.push(
@@ -266,6 +266,14 @@ screens.push(
 // 第 28 轮：窄屏下拉列出全部（0039）；核桃园里的说法是茶摊子；小北街改成国际旅行
 screens.push(
   { name: 'dropdown-all', hash: '#/wutong/house', act: async (p) => { await p.click('button.switch'); await p.waitForTimeout(300) }, widths: [930, 390], save: true, saveAt: 390, full: false },
+)
+
+// 第 29 轮：新说法（茶馆是软件，茶屋是 Relay，包厢是一群人；东家、伙计、客人）
+screens.push(
+  { name: 'rooms-tour', hash: '#/wutong/house', tour: 1, full: false, only1366: true, save: true },
+  { name: 'rooms-house-de', hash: '#/wutong/house', save: true, saveDe: true, full: false },
+  { name: 'rooms-join-en', hash: '#/join', save: true, full: false },
+  { name: 'rooms-proposal-guest', hash: '#/kant/proposals', save: true, full: false },
 )
 
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字

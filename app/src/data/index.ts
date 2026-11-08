@@ -1,5 +1,5 @@
 // 核桃园：示例数据（docs/NAMES.zh.md）。七个茶摊子，给还没拿到邀请的人看看茶馆长什么样，也用来检验
-// 同一套界面是否适合不同的小团体（社区、读书、家庭、创业、艺术、科研、老同学）。茶摊子是假的，真的才叫茶馆。
+// 同一套界面是否适合不同的小团体（社区、读书、家庭、创业、艺术、科研、老同学）。茶摊子是假的，真的叫包厢。
 import type { House, Member, Problem } from './types'
 import { wutong } from './wutong'
 import { kant } from './kant'
