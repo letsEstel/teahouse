@@ -63,10 +63,14 @@ pub fn display(code: &str) -> String {
 pub fn normalize(input: &str) -> Option<String> {
     let s = input.trim();
     let s = s.split('@').next().unwrap_or(s);
-    let s = s.to_ascii_uppercase();
-    let s = s.strip_prefix("TH").unwrap_or(&s);
+    of_length(&clean(s)?, CODE_LEN)
+}
+
+/// The code's characters: upper case, without `-` and spaces, `O`/`I`/`L`
+/// read as `0`/`1`.
+fn clean(s: &str) -> Option<String> {
     let mut out = String::new();
-    for c in s.chars() {
+    for c in s.to_ascii_uppercase().chars() {
         match c {
             '-' | ' ' => {}
             'O' => out.push('0'),
@@ -75,7 +79,24 @@ pub fn normalize(input: &str) -> Option<String> {
             _ => return None,
         }
     }
-    (out.len() == CODE_LEN).then_some(out)
+    Some(out)
+}
+
+/// The first four characters of a code, as the host types them to revoke
+/// it (`7KQ2`, `TH-7KQ2`).
+fn code_prefix(input: &str) -> Option<String> {
+    of_length(&clean(input.trim())?, 4)
+}
+
+/// `n` characters of a code, with or without the `TH` it is shown with. The
+/// `TH` is taken off only when it is extra: a code may itself start with
+/// `T` and `H` (0035).
+fn of_length(s: &str, n: usize) -> Option<String> {
+    match s.len() {
+        l if l == n => Some(s.to_string()),
+        l if l == n + 2 && s.starts_with("TH") => Some(s[2..].to_string()),
+        _ => None,
+    }
 }
 
 pub(crate) fn random_code() -> Result<String> {
@@ -349,11 +370,9 @@ pub fn create_founding(
 
 /// Revokes the pending invitation whose code starts with `prefix`.
 pub fn revoke(root: &Root, house: &str, host: &Member, prefix: &str) -> Result<()> {
-    let prefix = normalize(&format!("{prefix}000000000000"))
-        .map(|c| c[..4].to_string())
-        .ok_or_else(|| {
-            Error("give the first four characters of the code / 请给出邀请码的前四位".into())
-        })?;
+    let prefix = code_prefix(prefix).ok_or_else(|| {
+        Error("give the first four characters of the code / 请给出邀请码的前四位".into())
+    })?;
     let _lock = Lock::take(root)?;
     let dir = root.invites_dir(house);
     let mut found = Vec::new();
@@ -964,6 +983,19 @@ mod tests {
             "U is not Crockford"
         );
         assert_ne!(code_hash("A"), code_hash("B"));
+        // 0035: a code may itself start with TH.
+        let th = "THAB-CDEF-GHJK-MNPQ";
+        assert_eq!(
+            normalize(&format!("TH-{th}")).as_deref(),
+            Some("THABCDEFGHJKMNPQ")
+        );
+        assert_eq!(normalize(th).as_deref(), Some("THABCDEFGHJKMNPQ"));
+        assert_eq!(code_prefix("THAB").as_deref(), Some("THAB"));
+        assert_eq!(code_prefix("th-thab").as_deref(), Some("THAB"));
+        assert_eq!(code_prefix("TH-7KQ2").as_deref(), Some("7KQ2"));
+        assert_eq!(code_prefix(" 7kq2 ").as_deref(), Some("7KQ2"));
+        assert_eq!(code_prefix("7KQ"), None);
+        assert_eq!(code_prefix("7KQ2M"), None);
     }
 
     #[test]
