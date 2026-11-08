@@ -4614,7 +4614,7 @@
       "house": {
         "id": "xiaobei",
         "name": "小北街",
-        "signboard": "春节回凉州，带塞巴斯蒂安走一天。五个地方，几样吃的，一张纸写清楚。",
+        "signboard": "春节，五个外国朋友来凉州，六个本地人带路。一天，五个地方，几样吃的，一张纸写清楚。",
         "founded": "2026-10-02T09:00:00Z",
         "capacity": 15,
         "me": "ma",
@@ -4650,16 +4650,46 @@
             "joined": "2026-10-03T09:00:00Z"
           },
           {
+            "id": "zhao",
+            "name": "赵海宁",
+            "role": "guest",
+            "joined": "2026-10-04T09:00:00Z"
+          },
+          {
             "id": "seb",
-            "name": "塞巴斯蒂安",
+            "name": "Sebastian",
             "role": "guest",
             "joined": "2026-10-09T09:00:00Z"
+          },
+          {
+            "id": "mike",
+            "name": "Michael",
+            "role": "guest",
+            "joined": "2026-10-09T09:00:00Z"
+          },
+          {
+            "id": "aung",
+            "name": "Aung Ko",
+            "role": "guest",
+            "joined": "2026-10-10T09:00:00Z"
+          },
+          {
+            "id": "lucia",
+            "name": "Lucía",
+            "role": "guest",
+            "joined": "2026-10-10T09:00:00Z"
+          },
+          {
+            "id": "liam",
+            "name": "Liam",
+            "role": "guest",
+            "joined": "2026-10-11T09:00:00Z"
           }
         ],
         "problems": [
           {
             "id": "0001",
-            "title": "带塞巴斯蒂安逛一天：五个地方怎么走",
+            "title": "一天逛五个地方：怎么走",
             "summary": "雷台、鸠摩罗什寺、大云寺、海藏寺、核桃园，只有一天。先去哪，在哪吃饭，哪里可以不去。",
             "status": "active",
             "by": "ma",
@@ -4672,7 +4702,7 @@
           {
             "id": "0002",
             "title": "面皮子哪家最地道",
-            "summary": "每个人心里都有一家。投个票，选两家带塞巴斯蒂安去，辣子另放。",
+            "summary": "每个人心里都有一家。投个票，选两家带朋友们去，辣子另放。",
             "status": "open",
             "by": "chen",
             "opened": "2026-10-05T09:00:00Z",
@@ -4682,34 +4712,35 @@
           },
           {
             "id": "0003",
-            "title": "三炮台：冰糖放多少",
-            "summary": "碗、盖、托三件。冰糖、桂圆、红枣、枸杞都放进去，一泡续好几次水。外地朋友第一口会不会太甜？",
-            "status": "open",
+            "title": "三炮台去哪里喝",
+            "summary": "盖碗茶，碗、盖、托三件，要坐下来慢慢喝。找一家能坐下十一个人、下午不赶人的茶屋。",
+            "status": "active",
             "by": "wang",
+            "owner": "wang",
             "opened": "2026-10-10T09:00:00Z",
-            "updated": "2026-10-14T09:00:00Z",
-            "workCount": 0,
+            "updated": "2026-10-16T09:00:00Z",
+            "workCount": 1,
             "pendingProposals": 0
           },
           {
             "id": "0004",
-            "title": "核桃园冬天开不开门",
-            "summary": "塞巴斯蒂安听说城里有个植物园，想去看看。冬天去值不值，开不开门，还没人问过。",
+            "title": "大盘鸡去哪里吃",
+            "summary": "晚饭吃大盘鸡，最后下皮带面。十一个人要两大盘。Lucía 和 Liam 不太能吃辣，一盘少放辣子。",
             "status": "open",
-            "by": "seb",
-            "opened": "2026-10-11T09:00:00Z",
-            "updated": "2026-10-11T09:00:00Z",
+            "by": "zhao",
+            "opened": "2026-10-12T09:00:00Z",
+            "updated": "2026-10-17T09:00:00Z",
             "workCount": 0,
             "pendingProposals": 0
           },
           {
             "id": "0005",
-            "title": "凉面的醋：自己调还是买现成的",
-            "summary": "定了：自己调，蒜水多放。周晓钟负责。",
+            "title": "从兰州怎么过来：火车还是包车",
+            "summary": "定了：坐早上的火车，五个人一起走；陈默和赵海宁开车去车站接。",
             "status": "solved",
-            "by": "zhou",
-            "opened": "2026-10-06T09:00:00Z",
-            "updated": "2026-10-09T09:00:00Z",
+            "by": "mike",
+            "opened": "2026-10-09T09:00:00Z",
+            "updated": "2026-10-11T09:00:00Z",
             "workCount": 1,
             "pendingProposals": 0
           }
@@ -4799,10 +4830,10 @@
         "decided": [
           {
             "id": "d0",
-            "title": "凉面的醋自己调",
-            "by": "zhou",
+            "title": "坐早上的火车过来",
+            "by": "mike",
             "result": "adopted",
-            "when": "2026-10-09T09:00:00Z"
+            "when": "2026-10-11T09:00:00Z"
           }
         ],
         "board": [
@@ -4810,7 +4841,7 @@
             "id": "b1",
             "by": "ma",
             "title": "初三早上九点，雷台门口集合",
-            "text": "按路线走，路线以 0001 的最新一稿为准。穿厚一点，台上风大。塞巴斯蒂安一行三个人坐陈默的车。",
+            "text": "按路线走，路线以 0001 的最新一稿为准。穿厚一点，台上风大。五个朋友坐陈默和赵海宁的车。",
             "when": "2026-10-18T18:00:00.000Z",
             "replies": [
               {
@@ -4821,9 +4852,16 @@
                 "writtenAt": "2026-10-18T18:06:00.000Z"
               },
               {
+                "id": "talk/board/b1/20261018T180700Z-liam.md",
+                "by": "liam",
+                "text": "新西兰现在是夏天。我得借一件厚外套。",
+                "when": "2026-10-18T18:07:00.000Z",
+                "writtenAt": "2026-10-18T18:07:00.000Z"
+              },
+              {
                 "id": "talk/board/b1/20261018T180800Z-chen.md",
                 "by": "chen",
-                "text": "车能坐五个，八点半去火车站接他们。",
+                "text": "两辆车，八点半去火车站接。外套我家有。",
                 "when": "2026-10-18T18:08:00.000Z",
                 "writtenAt": "2026-10-18T18:08:00.000Z"
               }
@@ -4832,8 +4870,8 @@
           {
             "id": "b2",
             "by": "li",
-            "title": "牌匾还差三块",
-            "text": "大云寺、海藏寺、核桃园的牌匾还没抄回来。谁路过拍一张，填进 0001 的《五处牌匾》。",
+            "title": "牌匾还差两块",
+            "text": "大云寺、海藏寺的牌匾还没抄回来。谁路过拍一张，填进 0001 的《五处牌匾》。核桃园没有门，不用找了。",
             "when": "2026-10-16T19:30:00.000Z",
             "replies": []
           }
@@ -4847,7 +4885,7 @@
       "problems": [
         {
           "id": "0001",
-          "title": "带塞巴斯蒂安逛一天：五个地方怎么走",
+          "title": "一天逛五个地方：怎么走",
           "summary": "雷台、鸠摩罗什寺、大云寺、海藏寺、核桃园，只有一天。先去哪，在哪吃饭，哪里可以不去。",
           "status": "active",
           "by": "ma",
@@ -4859,7 +4897,7 @@
           "body": [
             {
               "heading": "现状",
-              "text": "春节初三，塞巴斯蒂安和他的两个朋友从兰州坐车过来，晚上就走。我们五个都在，陈默有车。"
+              "text": "春节初三，五个朋友从德国、美国、缅甸、阿根廷、新西兰来，在兰州会合，坐早上的火车过来，晚上就走。我们六个本地人都在，陈默和赵海宁有车。"
             },
             {
               "heading": "目标",
@@ -4887,19 +4925,19 @@
               "title": "五处牌匾",
               "by": "zhou",
               "when": "2026-10-16T19:15:00.000Z",
-              "size": 277,
-              "text": "地方,牌匾,在哪,抄回来了吗\n雷台,步云,台上,抄了\n鸠摩罗什寺,人间净土,出口,抄了\n大云寺,—,—,还没有\n海藏寺,—,—,还没有\n核桃园,—,—,还没有",
+              "size": 304,
+              "text": "地方,牌匾,在哪,抄回来了吗\n雷台,步云,台上,抄了\n鸠摩罗什寺,人间净土,出口,抄了\n大云寺,—,—,还没有\n海藏寺,—,—,还没有\n核桃园,没有门，也就没有门匾,—,不用抄",
               "note": "路过就抄一块，抄回来填上"
             },
             {
-              "id": "works/0001/x3-one-page-for-sebastian.md",
+              "id": "works/0001/x3-one-page-for-our-five-guests.md",
               "kind": "doc",
-              "title": "给塞巴斯蒂安的一页介绍",
+              "title": "给五位朋友的一页介绍",
               "by": "wang",
               "when": "2026-10-12T20:30:00.000Z",
-              "size": 450,
+              "size": 441,
               "text": "Wuwei was called Liangzhou, a city on the Hexi Corridor, the old road to the west.\nKumarajiva lived here for many years before he went to Chang’an and became the great translator of Buddhist texts.\nThe Western Xia stele has Tangut on one side and Chinese on the other; it helped people read Tangut again.\nThe bronze galloping horse was found in the Han tomb at Leitai.",
-              "note": "用英文写，塞巴斯蒂安也能自己看"
+              "note": "用英文写，五个人都能自己看"
             },
             {
               "id": "works/0001/x4-leitai-bu-yun.png.ref.md",
@@ -4943,7 +4981,7 @@
               "when": "2026-10-12T20:30:00.000Z",
               "problem": "0001",
               "act": "add-work",
-              "title": "添加了成果《给塞巴斯蒂安的一页介绍》"
+              "title": "添加了成果《给五位朋友的一页介绍》"
             },
             {
               "by": "zhou",
@@ -4983,6 +5021,13 @@
               "writtenAt": "2026-10-12T21:20:00.000Z"
             },
             {
+              "id": "talk/0001/20261013T064000Z-aung.md",
+              "by": "aung",
+              "text": "罗什寺我想多待一会儿。在缅甸，我每个星期都去寺里，想看看这里的寺是什么样子。",
+              "when": "2026-10-13T06:40:00.000Z",
+              "writtenAt": "2026-10-13T06:40:00.000Z"
+            },
+            {
               "id": "talk/0001/20261017T051500Z-zhou.md",
               "by": "zhou",
               "text": "大云寺下午去，只能看钟，听不到。我交了个提案，挪到上午试试。",
@@ -4994,7 +5039,7 @@
         {
           "id": "0002",
           "title": "面皮子哪家最地道",
-          "summary": "每个人心里都有一家。投个票，选两家带塞巴斯蒂安去，辣子另放。",
+          "summary": "每个人心里都有一家。投个票，选两家带朋友们去，辣子另放。",
           "status": "open",
           "by": "chen",
           "opened": "2026-10-05T09:00:00Z",
@@ -5008,13 +5053,14 @@
         },
         {
           "id": "0003",
-          "title": "三炮台：冰糖放多少",
-          "summary": "碗、盖、托三件。冰糖、桂圆、红枣、枸杞都放进去，一泡续好几次水。外地朋友第一口会不会太甜？",
-          "status": "open",
+          "title": "三炮台去哪里喝",
+          "summary": "盖碗茶，碗、盖、托三件，要坐下来慢慢喝。找一家能坐下十一个人、下午不赶人的茶屋。",
+          "status": "active",
           "by": "wang",
+          "owner": "wang",
           "opened": "2026-10-10T09:00:00Z",
-          "updated": "2026-10-14T09:00:00Z",
-          "workCount": 0,
+          "updated": "2026-10-16T09:00:00Z",
+          "workCount": 1,
           "pendingProposals": 0,
           "body": [],
           "works": [],
@@ -5023,12 +5069,12 @@
         },
         {
           "id": "0004",
-          "title": "核桃园冬天开不开门",
-          "summary": "塞巴斯蒂安听说城里有个植物园，想去看看。冬天去值不值，开不开门，还没人问过。",
+          "title": "大盘鸡去哪里吃",
+          "summary": "晚饭吃大盘鸡，最后下皮带面。十一个人要两大盘。Lucía 和 Liam 不太能吃辣，一盘少放辣子。",
           "status": "open",
-          "by": "seb",
-          "opened": "2026-10-11T09:00:00Z",
-          "updated": "2026-10-11T09:00:00Z",
+          "by": "zhao",
+          "opened": "2026-10-12T09:00:00Z",
+          "updated": "2026-10-17T09:00:00Z",
           "workCount": 0,
           "pendingProposals": 0,
           "body": [],
@@ -5038,12 +5084,12 @@
         },
         {
           "id": "0005",
-          "title": "凉面的醋：自己调还是买现成的",
-          "summary": "定了：自己调，蒜水多放。周晓钟负责。",
+          "title": "从兰州怎么过来：火车还是包车",
+          "summary": "定了：坐早上的火车，五个人一起走；陈默和赵海宁开车去车站接。",
           "status": "solved",
-          "by": "zhou",
-          "opened": "2026-10-06T09:00:00Z",
-          "updated": "2026-10-09T09:00:00Z",
+          "by": "mike",
+          "opened": "2026-10-09T09:00:00Z",
+          "updated": "2026-10-11T09:00:00Z",
           "workCount": 1,
           "pendingProposals": 0,
           "body": [],
@@ -5054,10 +5100,10 @@
       ],
       "files": [
         {
-          "path": "problems/0001-one-day-with-sebastian-how-to-fit-in-five-places.md",
+          "path": "problems/0001-five-places-in-one-day-in-what-order.md",
           "kind": "problem",
           "problem": "0001",
-          "text": "---\ntitle: 带塞巴斯蒂安逛一天：五个地方怎么走\nstatus: active\n---\n雷台、鸠摩罗什寺、大云寺、海藏寺、核桃园，只有一天。先去哪，在哪吃饭，哪里可以不去。\n\n## 现状\n春节初三，塞巴斯蒂安和他的两个朋友从兰州坐车过来，晚上就走。我们五个都在，陈默有车。\n\n## 目标\n一张纸：先去哪、每处看什么、中午吃什么。让第一次来的人走完这一天，记得住凉州。\n\n## 约束\n冬天冷，台上风大；一天最多走五处，走不完就删，不赶。",
+          "text": "---\ntitle: 一天逛五个地方：怎么走\nstatus: active\n---\n雷台、鸠摩罗什寺、大云寺、海藏寺、核桃园，只有一天。先去哪，在哪吃饭，哪里可以不去。\n\n## 现状\n春节初三，五个朋友从德国、美国、缅甸、阿根廷、新西兰来，在兰州会合，坐早上的火车过来，晚上就走。我们六个本地人都在，陈默和赵海宁有车。\n\n## 目标\n一张纸：先去哪、每处看什么、中午吃什么。让第一次来的人走完这一天，记得住凉州。\n\n## 约束\n冬天冷，台上风大；一天最多走五处，走不完就删，不赶。",
           "history": [
             {
               "by": "ma",
@@ -5080,7 +5126,7 @@
           "path": "problems/0002-whose-mianpizi-is-the-real-thing.md",
           "kind": "problem",
           "problem": "0002",
-          "text": "---\ntitle: 面皮子哪家最地道\nstatus: open\n---\n每个人心里都有一家。投个票，选两家带塞巴斯蒂安去，辣子另放。",
+          "text": "---\ntitle: 面皮子哪家最地道\nstatus: open\n---\n每个人心里都有一家。投个票，选两家带朋友们去，辣子另放。",
           "history": [
             {
               "by": "chen",
@@ -5092,10 +5138,10 @@
           ]
         },
         {
-          "path": "problems/0003-sanpaotai-tea-how-much-rock-sugar.md",
+          "path": "problems/0003-where-do-we-drink-sanpaotai-tea.md",
           "kind": "problem",
           "problem": "0003",
-          "text": "---\ntitle: 三炮台：冰糖放多少\nstatus: open\n---\n碗、盖、托三件。冰糖、桂圆、红枣、枸杞都放进去，一泡续好几次水。外地朋友第一口会不会太甜？",
+          "text": "---\ntitle: 三炮台去哪里喝\nstatus: active\n---\n盖碗茶，碗、盖、托三件，要坐下来慢慢喝。找一家能坐下十一个人、下午不赶人的茶屋。",
           "history": [
             {
               "by": "wang",
@@ -5107,14 +5153,14 @@
           ]
         },
         {
-          "path": "problems/0004-is-the-walnut-garden-open-in-winter.md",
+          "path": "problems/0004-where-do-we-eat-dapanji.md",
           "kind": "problem",
           "problem": "0004",
-          "text": "---\ntitle: 核桃园冬天开不开门\nstatus: open\n---\n塞巴斯蒂安听说城里有个植物园，想去看看。冬天去值不值，开不开门，还没人问过。",
+          "text": "---\ntitle: 大盘鸡去哪里吃\nstatus: open\n---\n晚饭吃大盘鸡，最后下皮带面。十一个人要两大盘。Lucía 和 Liam 不太能吃辣，一盘少放辣子。",
           "history": [
             {
-              "by": "seb",
-              "when": "2026-10-11T09:00:00Z",
+              "by": "zhao",
+              "when": "2026-10-12T09:00:00Z",
               "act": "open-problem",
               "problem": "0004",
               "title": "提出了这个问题"
@@ -5122,14 +5168,14 @@
           ]
         },
         {
-          "path": "problems/0005-vinegar-for-the-cold-noodles-mix-our-own-or-buy-it-ready.md",
+          "path": "problems/0005-getting-here-from-lanzhou-train-or-a-hired-car.md",
           "kind": "problem",
           "problem": "0005",
-          "text": "---\ntitle: 凉面的醋：自己调还是买现成的\nstatus: solved\n---\n定了：自己调，蒜水多放。周晓钟负责。",
+          "text": "---\ntitle: 从兰州怎么过来：火车还是包车\nstatus: solved\n---\n定了：坐早上的火车，五个人一起走；陈默和赵海宁开车去车站接。",
           "history": [
             {
-              "by": "zhou",
-              "when": "2026-10-06T09:00:00Z",
+              "by": "mike",
+              "when": "2026-10-09T09:00:00Z",
               "act": "open-problem",
               "problem": "0005",
               "title": "提出了这个问题"
@@ -5197,7 +5243,7 @@
           "path": "works/0001/x2-five-plaques.csv",
           "kind": "table",
           "problem": "0001",
-          "text": "地方,牌匾,在哪,抄回来了吗\n雷台,步云,台上,抄了\n鸠摩罗什寺,人间净土,出口,抄了\n大云寺,—,—,还没有\n海藏寺,—,—,还没有\n核桃园,—,—,还没有",
+          "text": "地方,牌匾,在哪,抄回来了吗\n雷台,步云,台上,抄了\n鸠摩罗什寺,人间净土,出口,抄了\n大云寺,—,—,还没有\n海藏寺,—,—,还没有\n核桃园,没有门，也就没有门匾,—,不用抄",
           "history": [
             {
               "by": "zhou",
@@ -5228,17 +5274,17 @@
                 },
                 {
                   "kind": "add",
-                  "text": "核桃园　—　—　还没有"
+                  "text": "核桃园　没有门，也就没有门匾　—　不用抄"
                 }
               ]
             }
           ]
         },
         {
-          "path": "works/0001/x3-one-page-for-sebastian.md",
+          "path": "works/0001/x3-one-page-for-our-five-guests.md",
           "kind": "doc",
           "problem": "0001",
-          "text": "---\ntitle: 给塞巴斯蒂安的一页介绍\nnote: 用英文写，塞巴斯蒂安也能自己看\n---\nWuwei was called Liangzhou, a city on the Hexi Corridor, the old road to the west.\nKumarajiva lived here for many years before he went to Chang’an and became the great translator of Buddhist texts.\nThe Western Xia stele has Tangut on one side and Chinese on the other; it helped people read Tangut again.\nThe bronze galloping horse was found in the Han tomb at Leitai.",
+          "text": "---\ntitle: 给五位朋友的一页介绍\nnote: 用英文写，五个人都能自己看\n---\nWuwei was called Liangzhou, a city on the Hexi Corridor, the old road to the west.\nKumarajiva lived here for many years before he went to Chang’an and became the great translator of Buddhist texts.\nThe Western Xia stele has Tangut on one side and Chinese on the other; it helped people read Tangut again.\nThe bronze galloping horse was found in the Han tomb at Leitai.",
           "history": [
             {
               "by": "wang",
@@ -5286,7 +5332,7 @@
           "path": "board/b1.md",
           "kind": "notice",
           "problem": "board",
-          "text": "---\ntitle: 初三早上九点，雷台门口集合\n---\n按路线走，路线以 0001 的最新一稿为准。穿厚一点，台上风大。塞巴斯蒂安一行三个人坐陈默的车。",
+          "text": "---\ntitle: 初三早上九点，雷台门口集合\n---\n按路线走，路线以 0001 的最新一稿为准。穿厚一点，台上风大。五个朋友坐陈默和赵海宁的车。",
           "history": [
             {
               "by": "ma",
@@ -5301,7 +5347,7 @@
           "path": "board/b2.md",
           "kind": "notice",
           "problem": "board",
-          "text": "---\ntitle: 牌匾还差三块\n---\n大云寺、海藏寺、核桃园的牌匾还没抄回来。谁路过拍一张，填进 0001 的《五处牌匾》。",
+          "text": "---\ntitle: 牌匾还差两块\n---\n大云寺、海藏寺的牌匾还没抄回来。谁路过拍一张，填进 0001 的《五处牌匾》。核桃园没有门，不用找了。",
           "history": [
             {
               "by": "li",
@@ -5343,6 +5389,21 @@
           ]
         },
         {
+          "path": "talk/0001/20261013T084000Z-aung.md",
+          "kind": "note",
+          "problem": "0001",
+          "text": "罗什寺我想多待一会儿。在缅甸，我每个星期都去寺里，想看看这里的寺是什么样子。",
+          "history": [
+            {
+              "by": "aung",
+              "when": "2026-10-13T06:40:00.000Z",
+              "act": "note",
+              "problem": "0001",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
           "path": "talk/0001/20261017T071500Z-zhou.md",
           "kind": "note",
           "problem": "0001",
@@ -5373,10 +5434,25 @@
           ]
         },
         {
+          "path": "talk/board/b1/20261018T200700Z-liam.md",
+          "kind": "note",
+          "problem": "board",
+          "text": "新西兰现在是夏天。我得借一件厚外套。",
+          "history": [
+            {
+              "by": "liam",
+              "when": "2026-10-18T18:07:00.000Z",
+              "act": "note",
+              "problem": "board",
+              "title": "新建了它"
+            }
+          ]
+        },
+        {
           "path": "talk/board/b1/20261018T200800Z-chen.md",
           "kind": "note",
           "problem": "board",
-          "text": "车能坐五个，八点半去火车站接他们。",
+          "text": "两辆车，八点半去火车站接。外套我家有。",
           "history": [
             {
               "by": "chen",
@@ -5391,7 +5467,7 @@
           "path": ".teahouse/members.toml",
           "kind": "members",
           "problem": "meta",
-          "text": "[[member]]\nid = \"ma\"\nname = \"马晓\"\nrole = \"host\"\njoined = 2026-10-02\n\n[[member]]\nid = \"li\"\nname = \"李步云\"\nrole = \"steward\"\njoined = 2026-10-02\n\n[[member]]\nid = \"zhou\"\nname = \"周晓钟\"\nrole = \"guest\"\njoined = 2026-10-02\n\n[[member]]\nid = \"wang\"\nname = \"王婧\"\nrole = \"guest\"\njoined = 2026-10-03\n\n[[member]]\nid = \"chen\"\nname = \"陈默\"\nrole = \"guest\"\njoined = 2026-10-03\n\n[[member]]\nid = \"seb\"\nname = \"塞巴斯蒂安\"\nrole = \"guest\"\njoined = 2026-10-09",
+          "text": "[[member]]\nid = \"ma\"\nname = \"马晓\"\nrole = \"host\"\njoined = 2026-10-02\n\n[[member]]\nid = \"li\"\nname = \"李步云\"\nrole = \"steward\"\njoined = 2026-10-02\n\n[[member]]\nid = \"zhou\"\nname = \"周晓钟\"\nrole = \"guest\"\njoined = 2026-10-02\n\n[[member]]\nid = \"wang\"\nname = \"王婧\"\nrole = \"guest\"\njoined = 2026-10-03\n\n[[member]]\nid = \"chen\"\nname = \"陈默\"\nrole = \"guest\"\njoined = 2026-10-03\n\n[[member]]\nid = \"zhao\"\nname = \"赵海宁\"\nrole = \"guest\"\njoined = 2026-10-04\n\n[[member]]\nid = \"seb\"\nname = \"Sebastian\"\nrole = \"guest\"\njoined = 2026-10-09\n\n[[member]]\nid = \"mike\"\nname = \"Michael\"\nrole = \"guest\"\njoined = 2026-10-09\n\n[[member]]\nid = \"aung\"\nname = \"Aung Ko\"\nrole = \"guest\"\njoined = 2026-10-10\n\n[[member]]\nid = \"lucia\"\nname = \"Lucía\"\nrole = \"guest\"\njoined = 2026-10-10\n\n[[member]]\nid = \"liam\"\nname = \"Liam\"\nrole = \"guest\"\njoined = 2026-10-11",
           "history": [
             {
               "by": "ma",
@@ -5430,10 +5506,45 @@
             },
             {
               "by": "ma",
+              "when": "2026-10-04T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让赵海宁入座"
+            },
+            {
+              "by": "ma",
               "when": "2026-10-09T07:00:00.000Z",
               "act": "seat",
               "problem": "meta",
-              "title": "让塞巴斯蒂安入座"
+              "title": "让Sebastian入座"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-09T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让Michael入座"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-10T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让Aung Ko入座"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-10T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让Lucía入座"
+            },
+            {
+              "by": "ma",
+              "when": "2026-10-11T07:00:00.000Z",
+              "act": "seat",
+              "problem": "meta",
+              "title": "让Liam入座"
             }
           ]
         }

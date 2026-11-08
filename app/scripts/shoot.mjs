@@ -263,6 +263,11 @@ screens.push(
   { name: 'xiaobei-join-demo-dark', hash: '#/xiaobei/house', theme: 'dark', only1366: true, save: true },
 )
 
+// 第 28 轮：窄屏下拉列出全部（0039）；核桃园里的说法是茶摊子；小北街改成国际旅行
+screens.push(
+  { name: 'dropdown-all', hash: '#/wutong/house', act: async (p) => { await p.click('button.switch'); await p.waitForTimeout(300) }, widths: [930, 390], save: true, saveAt: 390, full: false },
+)
+
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
 function audit() {
   const vw = document.documentElement.clientWidth
