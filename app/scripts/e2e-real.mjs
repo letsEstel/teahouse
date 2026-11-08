@@ -1,8 +1,8 @@
 // 端到端：界面接真引擎（scripts/dev-stack.sh 起的 teahouse-client serve），把每一个写入按钮点一遍，
 // 然后直接问引擎，确认真的写进去了——不只看界面。
 //
-//   NO_UI=1 scripts/dev-stack.sh --fresh          # 另一个终端：引擎（陈立，梧桐里的老板）在 :7377
-//   GUEST_PORT=7378 …                              # 可选：茶客（赵一鸣）的引擎，测提案和撤回
+//   NO_UI=1 scripts/dev-stack.sh --fresh          # 另一个终端：引擎（陈立，梧桐里的东家）在 :7377
+//   GUEST_PORT=7378 …                              # 可选：客人（赵一鸣）的引擎，测提案和撤回
 //   node scripts/e2e-real.mjs [截图目录]
 //
 // 每一步打印 ok / FAIL；有 FAIL 时退出码 1。
@@ -64,7 +64,7 @@ async function open(base, hash) {
 const shot = async (page, name) => { if (shots) await page.screenshot({ path: join(shots, `${name}.png`), fullPage: true }) }
 const stamp = Date.now().toString(36)
 
-// ---------------- 老板 ----------------
+// ---------------- 东家 ----------------
 const host = await serve(HOST, 'dist-e2e-host', 4401)
 let problemId = null
 
@@ -228,7 +228,7 @@ await step('邀请（invite）', async () => {
   await p.close()
 })
 
-await step('老板写的名字只是预填（inviteInfo）', async () => {
+await step('东家写的名字只是预填（inviteInfo）', async () => {
   const full = await engine(HOST, 'invite', { house, name: `小满${stamp}` })
   const at = full.indexOf('@')   // INVITE.md：按第一个 @ 切开
   const [code, relay] = [full.slice(0, at), full.slice(at + 1)]
@@ -236,10 +236,10 @@ await step('老板写的名字只是预填（inviteInfo）', async () => {
   if (info.name !== `小满${stamp}`) throw new Error(`engine says ${JSON.stringify(info)}`)
   const again = await engine(HOST, 'inviteInfo', { relay, code })
   if (again.name !== info.name) throw new Error('inviteInfo used the invitation up')
-  ok('引擎查得到老板写的名字，查两次都在（没有用掉邀请）')
+  ok('引擎查得到东家写的名字，查两次都在（没有用掉邀请）')
 })
 
-await step('改名（rename）：老板改自己、改别人，重名被拒绝', async () => {
+await step('改名（rename）：东家改自己、改别人，重名被拒绝', async () => {
   const before = await engine(HOST, 'house', { house })
   const me = before.members.find((m) => m.id === before.me)
   const other = before.members.find((m) => m.id !== before.me && m.role === 'guest')
@@ -263,7 +263,7 @@ await step('改名（rename）：老板改自己、改别人，重名被拒绝',
   await p.waitForSelector('.rename .done')
   now = await engine(HOST, 'house', { house })
   if (now.members.find((m) => m.id === other.id).name !== `${other.name}${stamp}`) throw new Error('host could not rename a member')
-  ok('老板改别人的名字：引擎确认')
+  ok('东家改别人的名字：引擎确认')
   let refused = null
   await engine(HOST, 'rename', { house, name: `${me.name}${stamp}`, member: other.id }).catch((e) => { refused = e.message })
   if (!refused?.includes('relay_refused')) throw new Error(`relay accepted a duplicate: ${refused}`)
@@ -436,17 +436,17 @@ await step('每个页面都能在真数据上打开', async () => {
 })
 
 if (GUEST) {
-  // ---------------- 茶客：提案、撤回；老板：采纳 ----------------
+  // ---------------- 客人：提案、撤回；东家：采纳 ----------------
   const guest = await serve(GUEST, 'dist-e2e-guest', 4402)
   const proposalOf = async (title) => (await engine(HOST, 'house', { house })).proposals.find((x) => x.title.includes(title))
   for (const [what, keep] of [['撤回（withdraw）', false], ['采纳（adopt）', true]]) {
-    await step(`茶客发起提案 → ${what}`, async () => {
+    await step(`客人发起提案 → ${what}`, async () => {
       await engine(GUEST, 'sync', { house })
       const p = await open(guest.url, 'propose')
       await p.click(`[data-problem="${problemId}"]`)
       await p.click('.seg button:nth-child(2)')                     // 新增一份成果
       await p.fill('.field input', `${keep ? '采纳' : '撤回'}用 ${stamp}`)
-      await p.fill('textarea[name=body]', '茶客写的成果。')
+      await p.fill('textarea[name=body]', '客人写的成果。')
       await p.fill('textarea[name=reason]', '测试')
       await p.click('button.send')
       await p.waitForTimeout(2500)
@@ -454,7 +454,7 @@ if (GUEST) {
       await engine(HOST, 'sync', { house })
       const prop = await proposalOf(`${keep ? '采纳' : '撤回'}用 ${stamp}`)
       if (!prop) throw new Error('proposal not on the relay')
-      ok(`茶客发起提案：老板那边看到了（${prop.id}）`)
+      ok(`客人发起提案：东家那边看到了（${prop.id}）`)
       if (!keep) {
         const g = await open(guest.url, `proposal/${encodeURIComponent(prop.id)}`)
         await g.click('.buttons button.secondary')
@@ -462,7 +462,7 @@ if (GUEST) {
         await g.waitForURL(/#\/wutong\/proposals$/)
         await engine(HOST, 'sync', { house })
         if (await proposalOf(`撤回用 ${stamp}`)) throw new Error('still there after withdraw')
-        ok('撤回：老板那边没有了')
+        ok('撤回：东家那边没有了')
         await g.close()
       } else {
         const h = await open(host.url, `proposal/${encodeURIComponent(prop.id)}`)
@@ -476,11 +476,11 @@ if (GUEST) {
       await p.close()
     })
   }
-  await step('茶客提出新问题（0027、0028）：问题还不在正本上、编号又被老板先用掉，页面都不崩', async () => {
-    const r = await engine(GUEST, 'openProblem', { house, title: `茶客的新问题 ${stamp}`, body: [{ heading: '', text: '茶客提出的。' }] })
+  await step('客人提出新问题（0027、0028）：问题还不在正本上、编号又被东家先用掉，页面都不崩', async () => {
+    const r = await engine(GUEST, 'openProblem', { house, title: `客人的新问题 ${stamp}`, body: [{ heading: '', text: '客人提出的。' }] })
     if (!r.becameProposal) throw new Error('a guest problem should become a proposal')
     await engine(HOST, 'sync', { house })
-    let prop = (await engine(HOST, 'house', { house })).proposals.find((x) => x.title.includes(`茶客的新问题 ${stamp}`))
+    let prop = (await engine(HOST, 'house', { house })).proposals.find((x) => x.title.includes(`客人的新问题 ${stamp}`))
     if (!prop) throw new Error('host does not see the proposal')
     const errors = []
     const h = await open(host.url, `proposal/${encodeURIComponent(prop.id)}`)
@@ -490,34 +490,34 @@ if (GUEST) {
       await h.locator('nav a', { hasText: tab }).first().click()
       await h.waitForFunction((t) => document.querySelector('main, .wrap')?.textContent.includes(t === '公告' ? '公告板' : t), tab)
     }
-    await h.waitForSelector(`.queue a:has-text("茶客的新问题 ${stamp}")`)
+    await h.waitForSelector(`.queue a:has-text("客人的新问题 ${stamp}")`)
     if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`)
     ok('问题还不存在时：提案页写“提出一个新问题”，来回切标签，内容都跟着换')
-    // 老板这时也提出一个问题，用掉了同一个编号
-    await engine(HOST, 'openProblem', { house, title: `老板抢先的问题 ${stamp}`, body: [{ heading: '', text: '同一个编号。' }] })
-    const taken = (await engine(HOST, 'house', { house })).problems.find((x) => x.title === `老板抢先的问题 ${stamp}`)
+    // 东家这时也提出一个问题，用掉了同一个编号
+    await engine(HOST, 'openProblem', { house, title: `东家抢先的问题 ${stamp}`, body: [{ heading: '', text: '同一个编号。' }] })
+    const taken = (await engine(HOST, 'house', { house })).problems.find((x) => x.title === `东家抢先的问题 ${stamp}`)
     if (taken.id !== prop.problem) throw new Error(`numbers did not collide (${taken.id} vs ${prop.problem}); the test is not testing the bug`)
     await h.goto(`${host.url}?lang=zh&tour=off#/${house}/proposal/${encodeURIComponent(prop.id)}`)
     await h.waitForSelector('.crumb:has-text("提出一个新问题")')
-    if (await h.$(`.crumb a:has-text("老板抢先的问题")`)) throw new Error('the proposal links to the host\'s problem with the same number')
-    ok(`编号撞上 ${taken.id}：提案页写“提出一个新问题”，不链接到老板的问题`)
+    if (await h.$(`.crumb a:has-text("东家抢先的问题")`)) throw new Error('the proposal links to the host\'s problem with the same number')
+    ok(`编号撞上 ${taken.id}：提案页写“提出一个新问题”，不链接到东家的问题`)
     await shot(h, 'proposal-new-problem')
     await h.click('button.adopt')
     await h.waitForSelector('.review.merged')
-    const after = (await engine(HOST, 'house', { house })).problems.filter((x) => x.title.includes(stamp) && /茶客的新问题|老板抢先/.test(x.title))
-    const guestOne = after.find((x) => x.title.includes('茶客的新问题'))
+    const after = (await engine(HOST, 'house', { house })).problems.filter((x) => x.title.includes(stamp) && /客人的新问题|东家抢先/.test(x.title))
+    const guestOne = after.find((x) => x.title.includes('客人的新问题'))
     if (!guestOne || guestOne.id === taken.id) throw new Error(`after adoption: ${JSON.stringify(after.map((x) => [x.id, x.title]))}`)
-    ok(`采纳以后：茶客的问题改成了 ${guestOne.id}，老板的 ${taken.id} 不受影响`)
+    ok(`采纳以后：客人的问题改成了 ${guestOne.id}，东家的 ${taken.id} 不受影响`)
     if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`)
     await h.close()
   })
   await step('提案写清楚是干什么的；待采纳的新问题出现在问题列表里', async () => {
-    await engine(GUEST, 'addWork', { house, problem: '0001', kind: 'doc', title: `茶客的成果 ${stamp}`, text: '一段。' })
+    await engine(GUEST, 'addWork', { house, problem: '0001', kind: 'doc', title: `客人的成果 ${stamp}`, text: '一段。' })
     await engine(GUEST, 'openProblem', { house, title: `待采纳的问题 ${stamp}`, body: [{ heading: '', text: '还没采纳。' }] })
     await engine(HOST, 'sync', { house })
     let p = await open(host.url, 'proposals')
     const rows = await p.$$eval('.queue li a', (xs) => xs.map((x) => x.textContent.replace(/\s+/g, ' ')))
-    const work = rows.find((r) => r.includes(`茶客的成果 ${stamp}`)), prob = rows.find((r) => r.includes(`待采纳的问题 ${stamp}`))
+    const work = rows.find((r) => r.includes(`客人的成果 ${stamp}`)), prob = rows.find((r) => r.includes(`待采纳的问题 ${stamp}`))
     if (!work?.includes('加成果')) throw new Error(`work row: ${work}`)
     if (!prob?.includes('提出新问题') || !prob.includes('新问题')) throw new Error(`problem row: ${prob}`)
     ok('提案列表：每一份写着“加成果”“提出新问题”')
@@ -529,7 +529,7 @@ if (GUEST) {
     await p.click(`li.waiting:has-text("待采纳的问题 ${stamp}") a`)
     await p.waitForSelector('.crumb:has-text("提出一个新问题")')
     if (!(await p.$eval('.review h2', (e) => e.textContent)).includes(`待采纳的问题 ${stamp}`)) throw new Error('clicked one proposal, got another')
-    ok('问题列表：茶客的新问题标“待采纳”，点进去正是这一份提案')
+    ok('问题列表：客人的新问题标“待采纳”，点进去正是这一份提案')
     // 从提案列表点每一份，打开的都是点的那一份（提案 id 带斜杠，路由曾经只取到成员名）
     await p.goto(`${host.url}?lang=zh&tour=off#/${house}/proposals`)
     await p.reload()
@@ -580,7 +580,7 @@ if (GUEST) {
     await shot(a, 'archive-markdown')
     await a.close()
   })
-  await step('茶客改自己的名字（rename）', async () => {
+  await step('客人改自己的名字（rename）', async () => {
     const before = await engine(GUEST, 'house', { house })
     const me = before.members.find((m) => m.id === before.me)
     const p = await open(guest.url, 'house')
@@ -592,25 +592,25 @@ if (GUEST) {
     await engine(HOST, 'sync', { house })
     const seen = (await engine(HOST, 'house', { house })).members.find((m) => m.id === me.id).name
     if (seen !== `${me.name}${stamp}`) throw new Error(`host sees ${seen}`)
-    ok('茶客只能改自己，老板那边同步后看到新名字')
+    ok('客人只能改自己，东家那边同步后看到新名字')
     await engine(GUEST, 'rename', { house, name: me.name })
     await p.close()
   })
-  await step('茶客：看不到改状态；修改问题变成提案（updateProblem）', async () => {
+  await step('客人：看不到改状态；修改问题变成提案（updateProblem）', async () => {
     await engine(GUEST, 'sync', { house })
     const p = await open(guest.url, `problem/${problemId}`)
     if (await p.$('.manage')) throw new Error('guest sees the status controls')
     await p.click('header button.edit:has-text("提议修改")')
-    await p.fill('#pedit-title', `茶客改的标题 ${stamp}`)
+    await p.fill('#pedit-title', `客人改的标题 ${stamp}`)
     await p.click('.pedit button[type=submit]')
     await p.waitForSelector('.wrap > .saved:has-text("提案")')
     await engine(GUEST, 'sync', { house })
     await engine(HOST, 'sync', { house })
     const got = await engine(HOST, 'problem', { house, problem: problemId })
-    if (got.title.startsWith('茶客改的标题')) throw new Error('written directly, not proposed')
+    if (got.title.startsWith('客人改的标题')) throw new Error('written directly, not proposed')
     const prop = (await engine(HOST, 'house', { house })).proposals.find((x) => x.files.some((f) => f.path.startsWith('problems/')) && x.problem === problemId)
     if (!prop) throw new Error('no proposal on the host side')
-    ok(`茶客修改问题：没有直接写进去，老板那边有提案（${prop.id}）`)
+    ok(`客人修改问题：没有直接写进去，东家那边有提案（${prop.id}）`)
     await p.close()
   })
   await guest.close()
@@ -619,7 +619,7 @@ if (GUEST) {
 // ---------------- 伙计 ----------------
 if (STEWARD && GUEST) {
   const steward = await serve(STEWARD, 'dist-e2e-steward', 4403)
-  await step('伙计当管理员：采纳茶客的成果；新问题暂时不能“不采纳”，按钮上写明原因', async () => {
+  await step('伙计当管理员：采纳客人的成果；新问题暂时不能“不采纳”，按钮上写明原因', async () => {
     await engine(GUEST, 'sync', { house })
     const work = await engine(GUEST, 'addWork', { house, problem: '0001', kind: 'doc', title: `给伙计采纳的 ${stamp}`, text: '一段。' })
     const prob = await engine(GUEST, 'openProblem', { house, title: `给伙计看的新问题 ${stamp}`, body: [{ heading: '', text: '还没采纳。' }] })
@@ -630,13 +630,13 @@ if (STEWARD && GUEST) {
     await engine(HOST, 'sync', { house })
     const got = (await engine(HOST, 'problem', { house, problem: '0001' })).works.find((w) => w.title === `给伙计采纳的 ${stamp}`)
     if (!got) throw new Error('adopted work is not on main')
-    ok('伙计点“采纳”：成果写进茶馆，老板那边同步后看得到')
+    ok('伙计点“采纳”：成果写进包厢，东家那边同步后看得到')
     await p.goto(`${steward.url}?lang=zh&tour=off#/${house}/proposal/${encodeURIComponent(prob.id)}`)
     await p.waitForSelector('.crumb:has-text("提出一个新问题")')
     if (!(await p.$eval('button.reject', (b) => b.disabled))) throw new Error('steward can press decline on a new problem')
     if (!(await p.$('button.adopt'))) throw new Error('steward has no adopt button')
-    await p.waitForSelector('small:has-text("暂时只有老板")')
-    ok('新问题的提案：伙计能采纳，“不采纳”是灰的，写着暂时只有老板能不采纳')
+    await p.waitForSelector('small:has-text("暂时只有东家")')
+    ok('新问题的提案：伙计能采纳，“不采纳”是灰的，写着暂时只有东家能不采纳')
     await shot(p, 'steward-new-problem')
     await p.close()
   })
