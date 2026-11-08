@@ -12,7 +12,7 @@ export function dismiss(i: number) {
   errors.list = errors.list.filter((_, j) => j !== i)
 }
 
-const known = ['not_found', 'not_a_member', 'forbidden', 'invalid', 'conflict', 'offline', 'relay_refused', 'too_large', 'internal']
+const known = ['not_found', 'not_a_member', 'forbidden', 'invalid', 'conflict', 'offline', 'relay_refused', 'too_large', 'internal', 'history_changed']
 
 /** 一句话说明发生了什么 */
 export function errorText(e: ApiError): string {

@@ -10,6 +10,7 @@ const store: FHouse[] = structuredClone(seed)
 // 演示用的状态（截图和预览）：?fake=unsynced | offline | unseated | refuse
 //   unsynced：有 2 处修改还没送出；offline：连不上 Relay；unseated：本机钥匙不在座位表上（已离座）；
 //   refuse：之后的写入都被 Relay 拒绝；slow：写入要 3 秒才回来（服务器慢），并记下送出了几次（window.__fakeWrites）
+//   history：茶屋上的历史被改过（0020）；historykept：成员选了留在旧版本
 //   loading：茶馆读不回来（打开时的样子，0024）；loadpage：问题页读不回来；loadfail：问题页读不到
 const demo = typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('fake') ?? ''
 const lastSync = new Date(NOW.getTime() - 25 * 60_000).toISOString()
@@ -17,6 +18,9 @@ let synced: A.SyncState =
   demo === 'unsynced' ? { state: 'ahead', unpushed: 2, lastSync }
   : demo === 'offline' ? { state: 'offline', unpushed: 1, lastSync, message: 'ssh: connect to host relay.example.org port 22: Network is unreachable' }
   : { state: 'synced', unpushed: 0, lastSync: NOW.toISOString() }
+if (demo === 'history' || demo === 'historykept') {
+  synced = { ...synced, historyChanged: { dropped: 2, added: 1, files: ['works/0001/w7-photos-of-outside-cars.png.ref.md', 'talk/0001/20261017T221400Z-zhao.md', 'problems/0001-hard-to-find-a-parking-space.md'], kept: demo === 'historykept' } }
+}
 const unseated = demo === 'unseated'
 /** 已离座时，引擎给的 me 是空字符串 */
 const meOf = (h: FHouse) => (unseated ? '' : h.me)
@@ -335,12 +339,15 @@ const handlers: Handlers = {
   // 入座：假数据里让你作为茶客坐进梧桐里
   // 假数据：老板在这张邀请里替对方写了名字
   inviteInfo: ({ code }) => ok(code.toUpperCase() === 'TH-7KQ2-M9XF-3RDP-WC5L' ? { name: L({ zh: '林小满', en: 'Lin Xiaoman', de: 'Lin Xiaoman' }) } : {}),
+  // 历史被改时的两个选择（0020）：接受就清掉提示；留在旧版本就标上 kept，提示换一种说法
+  acceptHistory: () => { const { historyChanged: _, ...rest } = synced; synced = rest; return ok(synced) },
+  keepHistory: () => { if (synced.historyChanged) synced = { ...synced, historyChanged: { ...synced.historyChanged, kept: true } }; return ok(synced) },
   rename: ({ house, name, member }) => {
     const h = find(house)
     const m = h?.members.find((x) => x.id === (member ?? h.me))
     if (!h || !m) return fail('not_found', 'no such member')
     if (h.members.some((x) => x !== m && L(x.name).toLowerCase() === name.toLowerCase())) {
-      return { ok: false, error: { code: 'relay_refused', message: 'name taken', reasons: ['that name is taken in this teahouse / 这间茶馆里已经有人叫这个名字了'] } }
+      return { ok: false, error: { code: 'relay_refused', message: 'name taken', reasons: ['someone here already has that name / 这个名字已经有人用了'] } }
     }
     m.name = text(name)
     return ok(m.id)
@@ -354,7 +361,7 @@ const handlers: Handlers = {
       return ok({ id: h.id, name: L(h.name), me: meOf(h), myRole: h.members.find((m) => m.id === h.me)!.role, seats: h.members.length, pendingProposals: h.proposals.length, sync: synced })
     }
     const h = find('wutong')!
-    if (h.members.length >= 15) return { ok: false, error: { code: 'relay_refused', message: 'no free seat', reasons: ['no free seat in this teahouse / 这间茶馆已经坐满了'] } }
+    if (h.members.length >= 15) return { ok: false, error: { code: 'relay_refused', message: 'no free seat', reasons: ['the room is full (15 seats) / 包厢满座了'] } }
     const id = `new${h.members.length + 1}`
     h.members.push({ id, name: text(name), role: 'guest', joined: NOW.toISOString() })
     h.me = id
@@ -398,6 +405,7 @@ export const fakeBackend = {
     }
     if ((demo === 'loading' && cmd === 'houses') || (demo === 'loadpage' && cmd === 'problem')) return new Promise(() => {})
     if (demo === 'loadfail' && cmd === 'problem') return fail('internal', 'engine: connection refused (127.0.0.1:7377)')
+    if (synced.historyChanged && writes.includes(cmd)) return fail('history_changed', 'the relay history changed; choose acceptHistory or keepHistory first')
     if (unseated && writes.includes(cmd)) return fail('not_a_member', 'this device has no seat in the teahouse')
     return (handlers[cmd] as (a: A.Args<C>) => A.Result<A.Returns<C>>)(args)
   },

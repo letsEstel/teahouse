@@ -12,6 +12,17 @@
   let s = $derived(house.sync)
   let busy = $state(false)
 
+  // 历史被改了（0020）：一直显示，直到茶屋改回去或者成员选择接受。留在旧版本时换一种说法，“接受”按钮还在
+  let h = $derived(s.historyChanged)
+  let choosing = $state<'' | 'accept' | 'keep'>('')
+  async function choose(accept: boolean) {
+    choosing = accept ? 'accept' : 'keep'
+    await api(accept ? 'acceptHistory' : 'keepHistory', { house: house.id }).catch((e) => report(e instanceof BackendError ? e.error : { code: 'internal', message: String(e) }))
+    choosing = ''
+    refresh()
+  }
+  const shown = 5
+
   async function sync() {
     busy = true
     // 同步不是"送出"，不走 write() 的送出锁；出错照样报告
@@ -29,6 +40,25 @@
       <p class="more">{t('seat.leftMore')}</p>
     </div>
     <a class="act" href="#/{house.id}/archive">{t('seat.takeAway')}</a>
+  </div>
+{/if}
+
+{#if h}
+  <div class="bar history" class:kept={h.kept} role="alert">
+    <i class="glyph"></i>
+    <div class="text">
+      <p class="what">{t(h.kept ? 'history.keptTitle' : 'history.title')}</p>
+      <p class="more">{t(h.kept ? 'history.keptMore' : 'history.more', { dropped: h.dropped, added: h.added, files: h.files.length })}</p>
+      {#if h.files.length}
+        <p class="files">{h.files.slice(0, shown).map((f) => f.split('/').pop()?.replace(/\.ref\.md$/, '')).join(' · ')}{#if h.files.length > shown} · {t('history.moreFiles', { n: h.files.length - shown })}{/if}</p>
+      {/if}
+      {#if !h.kept}<p class="more">{t('history.why')}</p>{/if}
+      <div class="choices">
+        <button class="primary small" disabled={!!choosing} aria-busy={choosing === 'accept' || undefined} onclick={() => choose(true)}><i>→</i><span>{t('history.accept')}</span></button>
+        {#if !h.kept}<button class="secondary small" disabled={!!choosing} aria-busy={choosing === 'keep' || undefined} onclick={() => choose(false)}>{t('history.keep')}</button>{/if}
+      </div>
+      <p class="more">{t(h.kept ? 'history.acceptLater' : 'history.consequence')}</p>
+    </div>
   </div>
 {/if}
 
@@ -70,4 +100,12 @@
   .behind .glyph::before { right: 0; }
   .error .glyph { border-radius: 0; background: var(--ink); }
   .unseated { border-style: double; border-width: 4px; }
+  /* 历史被改：方块里一道横线（两个版本对不上）。比别的提示多一个层次：双线框，和离座一样是“要你决定”的事 */
+  .history { border-style: double; border-width: 4px; }
+  .history .glyph::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: var(--ink); }
+  .history.kept { border-style: solid; border-width: 2px; }
+  .files { margin-top: 8px; font-family: var(--latin); font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+  .choices { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 6px; }
+  .small { min-height: 40px; font-size: 13px; padding: 6px 16px; }
+  .primary.small > i { width: 38px; font-size: 18px; }
 </style>

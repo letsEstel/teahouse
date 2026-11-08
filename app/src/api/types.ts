@@ -14,7 +14,12 @@ export interface SyncState {
   unpushed: number
   lastSync?: string
   message?: string
+  /** 茶屋上的历史和这台设备上次同步的不一样了（0020，#113）：有值就一直提示，由成员选择 */
+  historyChanged?: HistoryChange
 }
+
+/** 历史被改了多少：少了几步、多了几步、哪些文件不一样（最多 50 个）；kept 表示成员选了留在旧版本 */
+export interface HistoryChange { dropped: number; added: number; files: string[]; kept: boolean }
 
 export interface HouseSummary {
   id: string; name: string; me: string; myRole: Role
@@ -85,7 +90,7 @@ export interface HistoryEntry { by: string; when: string; act: Act; problem: str
 
 export interface ApiError {
   code: 'not_found' | 'not_a_member' | 'forbidden' | 'invalid' | 'conflict'
-      | 'offline' | 'relay_refused' | 'too_large' | 'internal'
+      | 'offline' | 'relay_refused' | 'too_large' | 'internal' | 'history_changed'
   /** 例如 { path: 'members' }，界面据此拼出本地化的句子 */
   params?: Record<string, string>
   /** 后备：界面不认识这个 code 时才显示 */
@@ -110,6 +115,9 @@ export interface Commands {
   export: [HouseArg & { to: string }, string]
 
   sync: [{ house?: string }, SyncState]
+  /** 历史被改时的两个选择（0020）：接受茶屋上的新版本，或者留在旧版本（只读） */
+  acceptHistory: [HouseArg, SyncState]
+  keepHistory: [HouseArg, SyncState]
   join: [{ relay: string; house: string }, HouseSummary]
 
   openProblem: [HouseArg & { title: string; body: { heading: string; text: string }[] }, WriteResult]
