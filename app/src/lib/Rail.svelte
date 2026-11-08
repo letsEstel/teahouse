@@ -64,7 +64,8 @@
           </li>
         {/if}
       {/each}
-      <li class="join"><a href="#/join" onclick={(e) => { open = false; if (demoMode) { e.preventDefault(); setDemo(false, '#/join') } }}>{demoMode ? t('demo.join') : `+ ${t('rail.join')}`}</a></li>
+      <!-- 核桃园里不放“加入”：茶摊子加不进去，出口在“离开核桃园”那里（0039） -->
+      {#if !demoMode}<li class="join"><a href="#/join" onclick={() => (open = false)}>+ {t('rail.join')}</a></li>{/if}
     </ul>
     {#if many}
       <button class="more" aria-expanded={expanded} onclick={() => (expanded = !expanded)}>
