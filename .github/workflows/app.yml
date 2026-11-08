@@ -242,12 +242,15 @@ jobs:
           set -eu
           cp dist/teahouse-android/teahouse-arm64.apk teahouse-android-arm64.apk
           cp dist/teahouse-windows/*.exe teahouse-windows-x64-setup.exe
-          cp dist/teahouse-client-windows/teahouse-client.exe teahouse-client-windows-x64.exe
+          # 给 AI 和开发者的命令行引擎，不是给人装的：名字要一眼看得出来
+          cp dist/teahouse-client-windows/teahouse-client.exe teahouse-engine-cli-windows-x64.exe
           gh release view nightly >/dev/null 2>&1 || \
             gh release create nightly --prerelease --target "$GITHUB_SHA" \
               --title "最新测试版 · Nightly" --notes "每次 main 更新后自动构建。Built automatically from main." || true  # another run may have just created it
           gh release upload nightly teahouse-android-arm64.apk teahouse-windows-x64-setup.exe \
-            teahouse-client-windows-x64.exe --clobber
+            teahouse-engine-cli-windows-x64.exe --clobber
+          # 旧名字容易被当成第二个安装包，从发布页上撤掉
+          gh release delete-asset nightly teahouse-client-windows-x64.exe --yes 2>/dev/null || true
           # 版本号和代号写在 app/package.json（docs/RELEASING.md 第 3 节）
           pkg=$(gh api "repos/$GITHUB_REPOSITORY/contents/app/package.json?ref=$GITHUB_SHA" -H 'Accept: application/vnd.github.raw')
           release="v$(echo "$pkg" | jq -r '.version' | cut -d. -f1,2) $(echo "$pkg" | jq -r '.codename')"
