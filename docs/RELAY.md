@@ -1,7 +1,7 @@
 # 茶馆 Relay · Teahouse Relay
 
-The relay is the only way into a teahouse. It hosts the root git repository
-of every teahouse and enforces the seating chart: who may read, who may write
+The relay is the only way into a room. It hosts the root git repository
+of every room and enforces the seating chart: who may read, who may write
 what, and which history is legitimate. This document is the reference for how
 it works, why it is built this way, and how to run it.
 
@@ -64,17 +64,17 @@ restart, nothing listening on a new port.
   tmp/                  scratch (staging new houses, private index files)
 ```
 
-A new teahouse is prepared under `tmp/` and moved into `houses/` with one
-`rename`, so a teahouse is either absent or complete.
+A new room is prepared under `tmp/` and moved into `houses/` with one
+`rename`, so a room is either absent or complete.
 
-## 3. 茶馆的法则 · The laws the relay enforces
+## 3. 包厢的法则 · The laws the relay enforces
 
 | # | Law | Applies to |
 |---|-----|-----------|
-| 1 | Only seated keys can connect to a teahouse; unknown teahouses and teahouses without your seat look identical. | read, write |
+| 1 | Only seated keys can connect to a room; unknown rooms and rooms without your seat look identical. | read, write |
 | 2 | Only `refs/heads/main` and `refs/proposals/<member-id>/<name>` exist. Tags and other branches are refused. | all |
 | 3 | `main` is never created, deleted or rewritten through a push (fast-forward only, even for the host). | all |
-| 4 | Guests (茶客) land on `main` only by **adding** their own discussion posts (`talk/…/<stamp>-<their-id>.md`): no edits, no deletions, no merges, nothing else. Everything else they push as a proposal to their own namespace. | guest |
+| 4 | Guests (客人) land on `main` only by **adding** their own discussion posts (`talk/…/<stamp>-<their-id>.md`): no edits, no deletions, no merges, nothing else. Everything else they push as a proposal to their own namespace. | guest |
 | 5 | Anyone may create, rework (force) or delete proposals in **their own** namespace; only the host and the steward, who decide on proposals, may delete someone else's. | all |
 | 6 | The steward (伙计) may change only `problems/`, `works/`, `board/` and `talk/` (moderation) on `main`. Checked **per commit**, including what a merge resolution itself introduces (`git diff-tree -c`). | steward |
 | 7 | Every commit carries exactly one `Problem:` trailer: a 4-digit id whose file `problems/<id>-*.md` exists in that commit, `board` (may touch only `board/` and `talk/board/`), or `meta`. A post must sit under the topic its commit faces, and that problem (`problems/<id>-*.md`) or notice (`board/<notice>.md`) must exist in the same commit. | all |
@@ -89,7 +89,7 @@ A new teahouse is prepared under `tmp/` and moved into `houses/` with one
 | 16 | Invitations (`docs/INVITE.md` §2): only the host creates them; one-time, 1–30 days, stored hashed; redeeming needs a free seat (≤ 15), a free steward seat if the invitation is for a steward, and a key not yet in the house; rate-limited and audited. The relay writes the seat commit (author: the host). | host / anyone with a code |
 | 17 | `kind = "ai"` marks a member as an AI; it is a label, not a rank. Any role may be held by an AI — the founder decides whom to seat. `agent` may appear only on AI members. | all |
 | 18 | A member may have several devices: `key` plus the `[[device]]` tables naming them (`member`, optional `name`, `key`; `version = 2`), **at most 5** in all. Each `[[device]]` names an existing member; every key in the chart is unique; ed25519 only. A commit signed by any of them is that member's (law 13). (docs/DEVICES.md) | all |
-| 19 | Devices change by the host's own chart edits (law 8), or by the member: a pairing code made on one of their devices adds a device to their seat in every teahouse of the relay where that device sits; from any of their devices they may remove another of their devices. The relay writes these commits (author: the member; committer `Teahouse Relay`, signed with the relay's key; `Act: seat`, `Device: add\|remove …`) and checks them like a push. Never the device in use, never the last one. | member / anyone with a code |
+| 19 | Devices change by the host's own chart edits (law 8), or by the member: a pairing code made on one of their devices adds a device to their seat in every room of the relay where that device sits; from any of their devices they may remove another of their devices. The relay writes these commits (author: the member; committer `Teahouse Relay`, signed with the relay's key; `Act: seat`, `Device: add\|remove …`) and checks them like a push. Never the device in use, never the last one. | member / anyone with a code |
 | 21 | A member's name is their own: the host's name in an invitation is only a suggestion. A member may change their own name; the host may change anyone's (law 8). The relay writes these commits (author: whoever renamed; committer `Teahouse Relay`, signed with the relay's key; `Act: seat`, `Rename: <member>`) and checks them like a push. The id never changes. A new seat or a new name that another member already has (ignoring case) is refused; names that already repeat in a chart stay. (Law 20 is reserved for public viewing, #78.) | member / host |
 
 Laws 6–9 and 12 apply to every commit a push would add to `main` — including commits
@@ -124,7 +124,7 @@ changes, on `main` and on proposals alike:
 
 #### 显示顺序 · Display order
 
-**Posts are shown in the order they entered the teahouse's `main`, never
+**Posts are shown in the order they entered the room's `main`, never
 sorted by their stamp.** The stamp only names the file and keeps two posts
 apart, so changing it gains nothing. Every member's clone can compute this
 order from history alone:
@@ -155,7 +155,7 @@ until it is settled, this section describes them.
 
 * **Every pushed commit is signed by the member it names.** The author must
   be `<member-id>@teahouse`, and the commit must carry git's ssh signature
-  (`gpg.format=ssh`) made with a key on this teahouse's chart at the time of
+  (`gpg.format=ssh`) made with a key on this room's chart at the time of
   the push (any of the member's devices). git checks it (`%G?`/`%GS` with an
   allowed-signers file built from the chart on `main` as the push finds it,
   verified by ssh-keygen), for the commits the push brings that the relay
@@ -185,24 +185,24 @@ are words; single quotes quote (`--name '王阿姨'`); nothing is expanded.
 | Command | Who | What |
 |---|---|---|
 | `blob-has <id> <sha256>` | seated | prints `yes` / `no` |
-| `blob-put <id> <sha256> <size>` | seated | reads exactly `size` bytes, checks the hash, stores it (100 MiB each, `blob_quota_mib` per teahouse, default 2048) |
+| `blob-put <id> <sha256> <size>` | seated | reads exactly `size` bytes, checks the hash, stores it (100 MiB each, `blob_quota_mib` per room, default 2048) |
 | `blob-get <id> <sha256>` | seated | writes the attachment |
 | `blob-purge <id> <sha256>` | host | deletes it for good |
 | `invite <id> [--role guest\|steward] [--name N] [--days 1–30] [--kind machine [--agent A]]` | host | prints a one-time code `TH-XXXX-XXXX-XXXX-XXXX` (80 bits, default 7 days); `--kind machine` marks the seat as a machine's (an AI, a CI job, a script; any role); its id starts with `bot-`. `--kind ai` is still accepted (id `ai-`, written `kind = "ai"` as before) |
 | `uninvite <id> <first four>` | host | revokes it |
-| `redeem <code> [--name N] [--agent A]` | anyone, incl. a key with no seat | seats the key; prints `house <id>` and `member <id>`. N is the newcomer's name; without it, the name the host wrote in the invitation. `--agent` only for a machine's invitation. With a pairing code: adds the key as a device named N, one `house`/`member` pair per teahouse |
+| `redeem <code> [--name N] [--agent A]` | anyone, incl. a key with no seat | seats the key; prints `house <id>` and `member <id>`. N is the newcomer's name; without it, the name the host wrote in the invitation. `--agent` only for a machine's invitation. With a pairing code: adds the key as a device named N, one `house`/`member` pair per room |
 | `invite-info <code>` | anyone, incl. a key with no seat | prints `name <N>` when the invitation (or pairing code) suggests a name, nothing otherwise; uses nothing up; failed guesses count against the same limit as `redeem` |
 | `rename <id> --name N [--member M]` | a seated key; `--member` for someone else: host | changes the name, never the id; refused when another member already has it. Written by the relay (`Act: seat`, `Rename: <member>`), author: whoever renamed; prints the member id |
-| `pair [--name N] [--minutes 1–60]` | any seated key | prints a one-time pairing code (default 10 minutes) for another device of the same member, in every teahouse where this key sits (law 19) |
-| `unpair <id> <device name \| SHA256:fingerprint>` | the member | removes another of the member's own devices in that teahouse; never the device in use or the last one |
+| `pair [--name N] [--minutes 1–60]` | any seated key | prints a one-time pairing code (default 10 minutes) for another device of the same member, in every room where this key sits (law 19) |
+| `unpair <id> <device name \| SHA256:fingerprint>` | the member | removes another of the member's own devices in that room; never the device in use or the last one |
 
-**Founding invitations** open a teahouse instead of seating someone in one.
+**Founding invitations** open a room instead of seating someone in one.
 The operator runs `teahouse-relay found <id> --name N [--signboard S]
 [--days D] [--address HOST[:PORT]]` (as the relay's user; `install.sh
 --found` does it) and passes on the printed `TH-…@address`. Redeeming it
-creates teahouse `<id>` exactly as `open` would, with the redeemer's key and
+creates room `<id>` exactly as `open` would, with the redeemer's key and
 name as the host (the opening commit carries `Invite:`); until then nothing
-exists. It fails if the teahouse exists by then, and of two founding
+exists. It fails if the room exists by then, and of two founding
 invitations for one id only the first redeemed counts.
 
 **A key with no seat anywhere** gets, from `AuthorizedKeysCommand`, a line
@@ -212,7 +212,7 @@ way, unknown keys cannot connect at all, so invitations need
 `AuthorizedKeysCommand`.
 
 Redeeming is all or nothing: the invitation must be valid, unused and
-unexpired; the teahouse must have a free seat (15) and, for a steward
+unexpired; the room must have a free seat (15) and, for a steward
 invitation, no steward; the key must not sit there yet. The member id comes
 from the name's ASCII letters (`Wang Li` → `wang-li`) or is `m1`, `m2`, …
 The seat commit is checked by the same code as a push (with the host as the
@@ -222,7 +222,7 @@ failures per key per hour and 30 attempts per minute in all.
 
 ## 4. 继承 · Succession
 
-Every member holds the full history, so a teahouse outlives its relay.
+Every member holds the full history, so a room outlives its relay.
 The steward is the designated heir:
 
 ```sh
@@ -260,7 +260,7 @@ sudo -u teahouse teahouse-relay --root /var/lib/teahouse open wutong \
   --host-id chenli --host-name "陈立" --host-key "ssh-ed25519 AAAA… chenli@laptop"
 ```
 
-Members normally use the teahouse client. Plain git works too, with every
+Members normally use the room client. Plain git works too, with every
 commit signed by the member's own key:
 
 ```sh
@@ -295,8 +295,8 @@ binary under someone's home directory does not.
 
 | Task | Command |
 |------|---------|
-| List teahouses | `teahouse-relay list` |
-| Seats of one teahouse | `teahouse-relay members <id>` |
+| List rooms | `teahouse-relay list` |
+| Seats of one room | `teahouse-relay members <id>` |
 | Integrity check (fsck + charts + config) | `teahouse-relay check [<id>]` |
 | After moving the binary or root | `teahouse-relay init --binary <path>` (rewrites hooks, re-configures every house) |
 | Who did what | `log/audit.log` (see below) and sshd's log (`journalctl -u ssh`) |
@@ -313,7 +313,7 @@ binary under someone's home directory does not.
 | `shell.info` | A member logged in without a command (`ssh -T …`) | `key`, `houses` (comma-separated; empty if none) |
 | `shell.read` | Fetch or clone let through to `git upload-pack` | `house`, `member`, `key`, `role` |
 | `shell.write` | Push let through to `git receive-pack` (the hook judges it next) | `house`, `member`, `key`, `role` |
-| `shell.denied` | A git request for a teahouse that does not exist, or where the key has no seat | `house`, `key`, `reason` |
+| `shell.denied` | A git request for a room that does not exist, or where the key has no seat | `house`, `key`, `reason` |
 | `shell.refused` | Anything that is not a git request: `bash`, `scp`, a malformed path… **Watch this one.** | `key`, `command`, `reason` |
 | `push.allowed` | pre-receive accepted every ref update | `house`, `member`, `key`, `role`, `refs` |
 | `push.denied` | pre-receive refused the push (all of it), or the pusher's seat was removed meanwhile | `house`, `member`, `key`, `role`, `refs`, `reasons` / `reason` |
@@ -328,7 +328,7 @@ binary under someone's home directory does not.
 | `invite.failed` | A redemption failed (bad code, expired, full, rate limited…) | `key`, `reason` |
 | `invite.revoked` | The host revoked an invitation | `house`, `member`, `invite` |
 | `pair.created` | A seated key made a pairing code | `key`, `pair` (first four), `minutes` |
-| `pair.redeemed` | A pairing code added a device (one line per teahouse) | `house`, `member`, `key` (the new device), `pair` |
+| `pair.redeemed` | A pairing code added a device (one line per room) | `house`, `member`, `key` (the new device), `pair` |
 | `device.removed` | A member removed one of their devices | `house`, `member`, `key` (the removed one), `device` |
 | `blob.put` | An attachment was uploaded | `house`, `member`, `blob`, `size` |
 | `blob.purged` | The host removed an attachment | `house`, `member`, `blob`, `existed` |
@@ -338,12 +338,12 @@ the relay ever runs. Those appear only in sshd's log:
 
 | Attempt | sshd log line |
 |---------|---------------|
-| A key with no seat on any teahouse (authorized_keys file only; with `AuthorizedKeysCommand` it reaches `redeem-shell`, and anything but `redeem` is logged as `shell.refused`) | `Failed publickey for teahouse from … ssh2: ED25519 SHA256:…` |
+| A key with no seat on any room (authorized_keys file only; with `AuthorizedKeysCommand` it reaches `redeem-shell`, and anything but `redeem` is logged as `shell.refused`) | `Failed publickey for teahouse from … ssh2: ED25519 SHA256:…` |
 | `-L` / `-W` port forwarding | `refused local port forward: originator …, target …` |
 | `-R` remote forwarding | nothing at `LogLevel VERBOSE`. The client sees `remote port forwarding failed`. |
 
 Set `LogLevel VERBOSE` in sshd for the key fingerprint on every accepted or
-failed login. A key seated in one teahouse but asking for another passes
+failed login. A key seated in one room but asking for another passes
 sshd and is logged by the relay as `shell.denied`.
 
 ## 7. 本地开发 · Local development
@@ -362,7 +362,7 @@ the exact forced command OpenSSH would. It proves nothing about identity:
 **never expose it on a real relay**. `scripts/demo.sh` uses it for a guided tour.
 Commits must still be signed (§5): the demo configures each clone.
 
-**The whole stack** (relay, the six example teahouses as real signed
+**The whole stack** (relay, the six example rooms as real signed
 history, the client engine and the interface): `scripts/dev-stack.sh`
 (`TEAHOUSE_DEV_ME=<member>` chooses who you are, `--fresh` rebuilds,
 `NO_UI=1` skips the interface). The engine reaches the relay through its

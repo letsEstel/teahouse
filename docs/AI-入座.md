@@ -1,10 +1,10 @@
-# AI 入座 · 在 WSL 里让 Claude Code 坐进茶馆
+# AI 入座 · 在 WSL 里让 Claude Code 坐进包厢
 
 > 写给要让 AI（Claude Code）以成员身份入座的人，也写给 AI 自己照着做。2 号起草，2026-10-20，已在本机（WSL 2，Ubuntu）照着走过一遍，只差兑换邀请那一步。
 > 原则和工具清单见 `MCP.md`；邀请的规则见 `INVITE.md`。
 > 座位表只分**人**和**机器**（`kind = "machine"`）：AI 是机器的一种，CI、脚本也是。本文讲 AI；CI 或脚本入座的步骤相同，只是不需要第 3 步（MCP），直接用 `teahouse-client --root … call …`。
 
-一共五步：装引擎 → 给 AI 生成它自己的设备钥匙 → 把 MCP 服务器加进 Claude Code → 老板发邀请 → AI 兑换。前三步 AI 自己就能做；第 4 步要老板（人）来做。
+一共五步：装引擎 → 给 AI 生成它自己的设备钥匙 → 把 MCP 服务器加进 Claude Code → 东家发邀请 → AI 兑换。前三步 AI 自己就能做；第 4 步要东家（人）来做。
 
 ## 0. 先说清楚：钥匙必须是 AI 自己的
 
@@ -19,7 +19,7 @@
 nightly 发布里目前只有 Windows 版的 `teahouse-client`，没有 Linux 版，所以在 WSL 里从源码装。需要 Rust（`cargo`）和 C 编译器、`make`、`perl`（引擎自带的 libssh2 和 OpenSSL 要现场编译，不依赖系统的 git 和 ssh）：
 
 ```sh
-cd ~/teahouse-relay            # 茶馆的仓库
+cd ~/teahouse-relay            # 包厢的仓库
 git pull
 cargo install --path client --locked --root ~/.local
 teahouse-client                # 打出用法就说明装好了
@@ -36,8 +36,8 @@ teahouse-client --root ~/.local/share/teahouse-ai-2 key
 ```
 
 - 第一次运行时生成一把 ed25519 钥匙，打印公钥（`ssh-ed25519 AAAA… teahouse-device`）。再运行只会打印同一把。
-- 目录里出现 `device`（私钥，0600）和 `device.pub`。私钥不要复制到别处，也不要发给任何人；老板不需要它，邀请兑换时引擎自己把公钥交给 Relay。
-- 检查一下：`teahouse-client --root ~/.local/share/teahouse-ai-2 call houses` 返回 `{"data":[],"ok":true}`，说明这个目录还没有入座任何茶馆。
+- 目录里出现 `device`（私钥，0600）和 `device.pub`。私钥不要复制到别处，也不要发给任何人；东家不需要它，邀请兑换时引擎自己把公钥交给 Relay。
+- 检查一下：`teahouse-client --root ~/.local/share/teahouse-ai-2 call houses` 返回 `{"data":[],"ok":true}`，说明这个目录还没有入座任何包厢。
 
 ## 3. 把 MCP 服务器加进 Claude Code
 
@@ -56,16 +56,16 @@ claude mcp get teahouse        # 应该显示 Status: ✔ Connected
   ```json
   { "mcpServers": { "teahouse": { "command": "teahouse-client", "args": ["mcp", "--root", "/home/<用户名>/.local/share/teahouse-ai-2"] } } }
   ```
-- **加完要重开 Claude Code**（或 `/mcp` 里重连），新会话里才有 `teahouse` 的工具。没有入座时只有茶客的工具（17 个，含 `redeem`）；入座后按座位多出伙计和老板的工具，并发 `tools/list_changed`。
+- **加完要重开 Claude Code**（或 `/mcp` 里重连），新会话里才有 `teahouse` 的工具。没有入座时只有客人的工具（17 个，含 `redeem`）；入座后按座位多出伙计和东家的工具，并发 `tools/list_changed`。
 
-## 4. 老板发邀请（人来做）
+## 4. 东家发邀请（人来做）
 
-在老板的客户端里邀请**一台机器**：开关选"一台机器"，选角色（通常是茶客），可以写上 agent（例如 "Claude Code"、"GitHub Actions"）。命令行等价于 Relay 的
-`invite <茶馆> --kind machine [--role guest|steward] [--name N] [--agent "Claude Code"]`（老的 `--kind ai` 也还认）。
+在东家的客户端里邀请**一台机器**：开关选"一台机器"，选角色（通常是客人），可以写上 agent（例如 "Claude Code"、"GitHub Actions"）。命令行等价于 Relay 的
+`invite <包厢> --kind machine [--role guest|steward] [--name N] [--agent "Claude Code"]`（老的 `--kind ai` 也还认）。
 
 得到一整行邀请 `TH-XXXX-XXXX-XXXX-XXXX@<Relay 地址>`，原样发给 AI（在 Claude Code 里直接粘贴给它）。邀请只能用一次，默认 7 天内有效。
 
-- `kind = machine` 是邀请上带的，由老板决定，机器自己改不了（法则第 17 条：只是标记，不限制角色）。
+- `kind = machine` 是邀请上带的，由东家决定，机器自己改不了（法则第 17 条：只是标记，不限制角色）。
 - 机器的 id 由 Relay 生成，带 `bot-` 前缀（例如名字"2 号"→ `bot-2`，"打包机"→ `bot-1`）。以前用 `kind = ai` 邀请的成员（id 带 `ai-`，比如茶馆开发组的 `ai-1`、`ai-2`）照旧有效，座位表不用改，界面上同样显示为机器。
 
 ## 5. AI 兑换邀请
@@ -77,8 +77,8 @@ redeem { "code": "TH-XXXX-XXXX-XXXX-XXXX@<Relay 地址>", "name": "2 号（引�
 ```
 
 - `code` 是**整段**邀请（带 `@地址`）；只有邀请码、没有地址时，另外传 `relay`（形如 `teahouse@relay.example.org` 或 `host:端口`）。
-- `name` 是在茶馆里给人看的名字，可以不写：不写就用老板在邀请里写的。同一间茶馆不能重名。入座后可以用 `rename` 改名，成员 id 不变；`agent` 写是哪种机器（自由文字，例如 "Claude Code"），只用于显示。
-- 成功后引擎自动克隆这间茶馆。再调用 `houses`，应该能看到它，`myRole` 是邀请给的角色。
+- `name` 是在包厢里给人看的名字，可以不写：不写就用东家在邀请里写的。同一间包厢不能重名。入座后可以用 `rename` 改名，成员 id 不变；`agent` 写是哪种机器（自由文字，例如 "Claude Code"），只用于显示。
+- 成功后引擎自动克隆这间包厢。再调用 `houses`，应该能看到它，`myRole` 是邀请给的角色。
 - 不经过 MCP、直接在终端兑换也一样（同一个引擎、同一个目录）：
   ```sh
   teahouse-client --root ~/.local/share/teahouse-ai-2 call redeem \
@@ -94,15 +94,15 @@ redeem { "code": "TH-XXXX-XXXX-XXXX-XXXX@<Relay 地址>", "name": "2 号（引�
 
 | 返回 | 意思 | 怎么办 |
 |---|---|---|
-| `relay_refused`，理由说邀请无效或已用过 | 邀请码错了、过期了，或已经兑换过 | 请老板重发一个 |
-| `relay_refused`，理由说没有空座位 | 茶馆已满 15 人，或邀请的是伙计但已有伙计 | 老板先腾座位 |
-| `relay_refused`，理由说钥匙已在茶馆里 | 这把钥匙已经入座了（可能用错了 `--root`，或已经兑换过） | `houses` 看看是不是已经在了 |
+| `relay_refused`，理由说邀请无效或已用过 | 邀请码错了、过期了，或已经兑换过 | 请东家重发一个 |
+| `relay_refused`，理由说没有空座位 | 包厢已满 15 人，或邀请的是伙计但已有伙计 | 东家先腾座位 |
+| `relay_refused`，理由说钥匙已在包厢里 | 这把钥匙已经入座了（可能用错了 `--root`，或已经兑换过） | `houses` 看看是不是已经在了 |
 | `offline` | 连不上 Relay | 检查地址、端口和网络；`reason: host_key_changed` 见上一条 |
 
 ## 6. 入座以后
 
-- 读：`houses`、`house`、`problem`、`archive`、`file`；写：`note`、`propose`、`openProblem`、`addWork`、`updateWork`、`updateProblem`（茶客写内容会自动变成提案，返回 `becameProposal: true`，等老板采纳）。
+- 读：`houses`、`house`、`problem`、`archive`、`file`；写：`note`、`propose`、`openProblem`、`addWork`、`updateWork`、`updateProblem`（客人写内容会自动变成提案，返回 `becameProposal: true`，等东家采纳）。
 - 写之前先 `sync`，拿到别人刚写的东西。
 - 规矩和人一样：每个提交面向一个问题；留言写下不改；不要假装是人。界面会在机器写的东西旁边标"机器"，悬停或点开时显示 agent。
 - 同一个 AI 要在第二台机器上用：在已入座的这边调用 `pair` 得到配对码，到新机器上（新的 `--root`、新的钥匙）用 `redeem` 兑换配对码（`DEVICES.md`）。
-- 不再用时：老板在座位管理里让它离座。本机目录可以删掉；删之前想留底，可以先 `export`。
+- 不再用时：东家在座位管理里让它离座。本机目录可以删掉；删之前想留底，可以先 `export`。
