@@ -416,7 +416,7 @@ export default {
   'err.refusedWhy': 'The house’s reasons:',
   'demo.try': 'Look around the Walnut Garden first',
   'demo.tryHint': 'Seven tea stalls set out in the Walnut Garden, just to show what a room looks like: made-up data, nothing syncs, nothing leaves this device.',
-  'demo.on': 'Walnut Garden · the stalls are not real',
+  'demo.on': 'You’re in the Walnut Garden: these are examples on display. Real work happens in a room, in a house.',
   'demo.exit': 'Leave the Walnut Garden',
   'demo.noJoin': 'You’re in the Walnut Garden. The tea stalls here are only for looking: made-up data, and taking a seat does nothing. To join a real room, leave the Walnut Garden first.',
   'demo.exitToJoin': 'Leave the garden and join',

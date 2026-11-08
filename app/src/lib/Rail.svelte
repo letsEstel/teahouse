@@ -84,10 +84,11 @@
     {/each}
   </nav>
 
+  {#if demoMode}
+    <!-- 核桃园的说明：宽屏在侧栏底部，窄屏单独占一整行（0040） -->
+    <div class="demo-wrap"><div class="demo"><span>{t('demo.on')}</span><button onclick={() => setDemo(false)}>{t('demo.exit')}</button></div></div>
+  {/if}
   <div class="foot">
-    {#if demoMode}
-      <div class="demo"><span>{t('demo.on')}</span><button onclick={() => setDemo(false)}>{t('demo.exit')}</button></div>
-    {/if}
     {#if seated}
       <!-- 点自己：我的设备（添加一台设备、移除丢了的设备） -->
       <a class="self" href="#/{house.id}/devices" title={t('self.devices')}>
@@ -192,6 +193,8 @@
   .on .badge { background: var(--paper); color: var(--ink); }
 
   .foot { margin-top: auto; padding: 28px var(--in) 0; display: flex; flex-direction: column; gap: 20px; }
+  .demo-wrap { margin-top: auto; padding: 28px var(--in) 0; }
+  .demo-wrap + .foot { margin-top: 0; padding-top: 20px; }
   .demo { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 12px; border: 1.5px dashed var(--ink); padding: 6px 8px; }
   .demo span { font-weight: 700; }
   .demo button { border-bottom: 1px solid var(--ink); }
@@ -232,7 +235,7 @@
       overflow: visible;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
-      grid-template-areas: 'mark houses foot' 'nav nav nav';
+      grid-template-areas: 'mark houses foot' 'demo demo demo' 'nav nav nav';
       align-items: center;
       --in: 20px;
     }
@@ -281,13 +284,17 @@
     .self { min-width: 0; flex: 1 1 auto; }
     .self-name { overflow-wrap: anywhere; }
     .switches { flex-wrap: nowrap; flex: none; }
+    /* 核桃园的说明单独占一整行，不和名字、开关挤在一起，也不挤掉中间的包厢名（0040） */
+    .demo-wrap { grid-area: demo; margin: 0; padding: 0; }
+    .demo { border-width: 1.5px 0 0; padding: 8px var(--in); }
+    .demo-wrap + .foot { padding-top: 0; }
   }
   /* 手机：三行，不吸顶（屏幕太矮）。第一行标志 + 茶馆切换，第二行你是谁 + 语言/外观，第三行四个栏目 */
   @media (max-width: 639.98px) {
     aside {
       position: static;
       grid-template-columns: auto minmax(0, 1fr);
-      grid-template-areas: 'mark houses' 'foot foot' 'nav nav';
+      grid-template-areas: 'mark houses' 'demo demo' 'foot foot' 'nav nav';
     }
     .word { white-space: nowrap; }
     .switch { padding: 8px 0; }
