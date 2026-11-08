@@ -59,7 +59,7 @@ pub fn put(
     let exists = dest.is_file();
     if !exists && usage(root, house) + size > quota {
         bail!(
-            "this teahouse's attachments would exceed {} MiB / 这间茶馆的附件总量超出上限",
+            "this room's attachments would exceed {} MiB / 这间包厢的附件总量超出上限",
             quota / (1024 * 1024)
         );
     }

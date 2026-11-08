@@ -62,7 +62,7 @@ impl Snapshot {
         let git = Git::open(dir)?;
         let Some(head) = git.resolve("refs/heads/main")? else {
             return Err(Error::not_found(format!(
-                "teahouse {id} has no main yet / 茶馆 {id} 还没有内容"
+                "room {id} has no main yet / 包厢 {id} 还没有内容"
             ))
             .with("house", id));
         };
@@ -1138,7 +1138,7 @@ impl Snapshot {
         })?;
         if r.purged {
             return Err(
-                Error::not_found("the host removed this attachment / 老板已删除这个附件")
+                Error::not_found("the host removed this attachment / 东家已删除这个附件")
                     .with("path", path)
                     .with("reason", "purged"),
             );

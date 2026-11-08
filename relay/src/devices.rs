@@ -272,7 +272,7 @@ pub fn unpair(root: &Root, key: &PublicKey, house: &str, which: &str) -> Result<
     let removed = edit_chart(root, house, "teahouse: device removed", |members| {
         let me = members.by_key(key).ok_or_else(|| {
             Error(
-                "teahouse not found, or you have no seat in it / 茶馆不存在，或者你在这里没有座位"
+                "room not found, or you have no seat in it / 包厢不存在，或者你在这里没有座位"
                     .into(),
             )
         })?;

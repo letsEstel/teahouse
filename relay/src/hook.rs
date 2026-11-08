@@ -331,7 +331,7 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
     };
     match &facing {
         Some(ProblemRef::Meta) if on_main && role != Role::Host => out.push(format!(
-            "commit {sc}: `Problem: meta` changes the teahouse itself; only the host may land it on main / 只有老板能提交 meta"
+            "commit {sc}: `Problem: meta` changes the room itself; only the host may land it on main / 只有东家能提交 meta"
         )),
         Some(ProblemRef::Id(id)) => {
             let files = cx.git.list_dir(c, "problems")?;
@@ -348,7 +348,7 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
     if on_main && role == Role::Guest {
         if cx.git.parents(c)?.len() >= 2 {
             out.push(format!(
-                "commit {sc}: guests cannot write main with a merge; push to refs/proposals/{me}/<name> instead / 茶客不能直接写入 main，请发起提案"
+                "commit {sc}: guests cannot write main with a merge; push to refs/proposals/{me}/<name> instead / 客人不能直接写入 main，请发起提案"
             ));
         } else {
             for (status, path) in cx.git.changes(c)? {
@@ -450,13 +450,13 @@ fn guest_change_refused(me: &str, status: char, path: &str) -> Option<String> {
             "{path} was already posted; posts are never edited, add a new post instead / 留言写下后不能修改，请另发一条"
         )),
         ('D', Some(_)) => Some(format!(
-            "{path}: guests cannot remove posts; ask the steward or host / 茶客不能删除留言，请找伙计或老板"
+            "{path}: guests cannot remove posts; ask the steward or host / 客人不能删除留言，请找伙计或东家"
         )),
         ('A', None) if path.starts_with(TALK_DIR) => Some(format!(
             "{path} is not a post path; use talk/<problem-id>/<YYYYMMDDTHHMMSSZ>-{me}.md or talk/board/<notice>/<YYYYMMDDTHHMMSSZ>-{me}.md with a real UTC time / 留言路径不对"
         )),
         _ => Some(format!(
-            "guests cannot write main except adding their own posts under talk/ (not {path}); push to refs/proposals/{me}/<name> instead / 茶客只能在 talk/ 下新增自己的留言，其余请发起提案"
+            "guests cannot write main except adding their own posts under talk/ (not {path}); push to refs/proposals/{me}/<name> instead / 客人只能在 talk/ 下新增自己的留言，其余请发起提案"
         )),
     }
 }
@@ -564,7 +564,7 @@ pub fn pre_receive(root: &Root) -> Result<()> {
                 .key(&key.short())
                 .field("reason", "seat removed"),
         );
-        bail!("you no longer have a seat in this teahouse / 你在这间茶馆已没有座位");
+        bail!("you no longer have a seat in this room / 你在这间包厢已没有座位");
     };
 
     let mut problems = Vec::new();
@@ -628,7 +628,7 @@ pub fn pre_receive(root: &Root) -> Result<()> {
     );
     eprintln!();
     eprintln!(
-        "茶馆拒绝了这次推送 · The teahouse refused this push ({} as {} / {}):",
+        "包厢拒绝了这次推送 · The room refused this push ({} as {} / {}):",
         pusher.id,
         pusher.role.zh(),
         pusher.role

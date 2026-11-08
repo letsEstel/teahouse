@@ -39,7 +39,7 @@ mkkey() { ssh-keygen -q -t ed25519 -N '' -C "$1@demo" -f "$keys/$1"; }
 for p in chenli zhou wang; do mkkey "$p"; done
 key() { cut -d' ' -f1,2 "$keys/$1.pub"; }
 
-step "1. 开一个 relay，开一间茶馆（老板：陈立）"
+step "1. 开一个 relay，开一间包厢（东家：陈立）"
 "$bin" --root "$root" init --binary "$bin" >/dev/null
 "$bin" --root "$root" open wutong --name "梧桐里三号院" --signboard "车位、垃圾、楼道灯，咱们自己管。" \
   --host-id chenli --host-name "陈立" --host-key "@$keys/chenli.pub"
@@ -53,7 +53,7 @@ clone() {
 }
 commit() { local d="$demo/$1"; shift; git -C "$d" add -A; git -C "$d" commit -q -m "$1"; }
 
-step "2. 老板请周小满做伙计、王阿姨做茶客，并提出问题 0001"
+step "2. 东家请周小满做伙计、王阿姨做客人，并提出问题 0001"
 clone chenli
 cat > "$demo/chenli/.teahouse/members.toml" <<EOF
 version = 1
@@ -82,7 +82,7 @@ key = "$(key wang)"
 EOF
 mkdir -p "$demo/chenli/problems"; echo "# 小区停车位不好找" > "$demo/chenli/problems/0001-停车位.md"
 commit chenli $'入座，提出问题 0001\n\nProblem: meta'
-git -C "$demo/chenli" push -q origin main && ok "老板推送成功"
+git -C "$demo/chenli" push -q origin main && ok "东家推送成功"
 "$bin" --root "$root" members wutong
 
 step "3. 伙计直接添加成果"
@@ -91,33 +91,33 @@ mkdir -p "$demo/zhou/works/0001"; echo "42 个车位" > "$demo/zhou/works/0001/�
 commit zhou $'添加成果：车位分布图\n\nProblem: 0001'
 git -C "$demo/zhou" push -q origin main && ok "伙计推送成功"
 
-step "4. 伙计想给自己升成老板"
+step "4. 伙计想给自己升成东家"
 sed -i 's/role = "steward"/role = "host"/; 0,/role = "host"/s//role = "guest"/' "$demo/zhou/.teahouse/members.toml"
-commit zhou $'我来当老板\n\nProblem: 0001'
+commit zhou $'我来当东家\n\nProblem: 0001'
 expect_refused git -C "$demo/zhou" push -q origin main
 git -C "$demo/zhou" reset -q --hard origin/main
 
-step "5. 茶客想直接写 main"
+step "5. 客人想直接写 main"
 clone wang
 echo "错峰共享" > "$demo/wang/works/0001/错峰共享.md"
 commit wang $'错峰共享方案\n\nProblem: 0001'
 expect_refused git -C "$demo/wang" push -q origin main
 
-step "6. 茶客改为发起提案"
+step "6. 客人改为发起提案"
 git -C "$demo/wang" push -q origin HEAD:refs/proposals/wang/night-share && ok "提案已提交：refs/proposals/wang/night-share"
 
-step "7. 老板采纳提案"
+step "7. 东家采纳提案"
 git -C "$demo/chenli" fetch -q origin main refs/proposals/wang/night-share:refs/remotes/origin/p
 git -C "$demo/chenli" reset -q --hard origin/main
 git -C "$demo/chenli" merge -q --no-ff origin/p -m $'采纳提案：错峰共享\n\nProblem: 0001'
-git -C "$demo/chenli" push -q origin main :refs/proposals/wang/night-share && ok "已合并入茶馆，提案分支已清理"
+git -C "$demo/chenli" push -q origin main :refs/proposals/wang/night-share && ok "已合并入包厢，提案分支已清理"
 
 step "8. 没有面向问题的提交"
 echo x > "$demo/chenli/works/0001/x.md"; commit chenli "随手改改"
 expect_refused git -C "$demo/chenli" push -q origin main
 git -C "$demo/chenli" reset -q --hard origin/main
 
-step "9. 连老板也不能改写历史"
+step "9. 连东家也不能改写历史"
 git -C "$demo/chenli" reset -q --hard HEAD~1
 echo y > "$demo/chenli/README.md"; commit chenli $'改写\n\nProblem: meta'
 expect_refused git -C "$demo/chenli" push -q -f origin main

@@ -228,7 +228,7 @@ run_method() {
   start_sshd "$conf" "$log"
 
   local c="$clones"
-  expect ok "T1 老板 clone" "" git_as chenli clone -q "$url" "$c/chenli" || return
+  expect ok "T1 东家 clone" "" git_as chenli clone -q "$url" "$c/chenli" || return
   as_member "$c/chenli" chenli
   cat >>"$c/chenli/.teahouse/members.toml" <<EOF
 
@@ -246,7 +246,7 @@ key = "$(pubkey wang)"
 EOF
   mkdir -p "$c/chenli/problems"; echo "# 停车位" >"$c/chenli/problems/0001-parking.md"
   commit "$c/chenli" $'入座，提出问题 0001\n\nProblem: meta'
-  expect ok "T2 老板推送（Problem: meta）" "main -> main" git_as chenli -C "$c/chenli" push origin main
+  expect ok "T2 东家推送（Problem: meta）" "main -> main" git_as chenli -C "$c/chenli" push origin main
   if [[ $method == B ]]; then
     expect ok "T2 post-receive 把新座位同步进 authorized_keys" "" \
       test "$(grep -c '^restrict,command=' "$ak")" -eq 3
@@ -258,10 +258,10 @@ EOF
   done
   mkdir -p "$c/wang/works/0001"; echo "错峰共享" >"$c/wang/works/0001/idea.md"
   commit "$c/wang" $'错峰共享\n\nProblem: 0001'
-  expect fail "T3 茶客推送 main 被拒" "guests cannot write main" git_as wang -C "$c/wang" push origin main
-  expect ok "T4 茶客推送 refs/proposals/wang/x" "refs/proposals/wang/x" \
+  expect fail "T3 客人推送 main 被拒" "guests cannot write main" git_as wang -C "$c/wang" push origin main
+  expect ok "T4 客人推送 refs/proposals/wang/x" "refs/proposals/wang/x" \
     git_as wang -C "$c/wang" push origin HEAD:refs/proposals/wang/x
-  expect fail "T4b 茶客写别人的提案命名空间被拒" "belongs to zhou" \
+  expect fail "T4b 客人写别人的提案命名空间被拒" "belongs to zhou" \
     git_as wang -C "$c/wang" push origin HEAD:refs/proposals/zhou/x
   git -C "$c/wang" reset -q --hard origin/main
 
@@ -271,22 +271,22 @@ EOF
 
   if [[ $method == A ]]; then
     # INVITE.md rule 6: a key with no seat gets in, but can only redeem.
-    expect fail "T5 茶馆外的密钥：只能兑换邀请" "can only redeem" ssh_as outsider "$user@localhost" "git-upload-pack 'wutong'"
+    expect fail "T5 包厢外的密钥：只能兑换邀请" "can only redeem" ssh_as outsider "$user@localhost" "git-upload-pack 'wutong'"
   else
-    expect fail "T5 茶馆外的密钥：ssh 被拒" "Permission denied" ssh_as outsider "$user@localhost"
+    expect fail "T5 包厢外的密钥：ssh 被拒" "Permission denied" ssh_as outsider "$user@localhost"
   fi
-  expect fail "T5 茶馆外的密钥：clone 失败" "" git_as outsider clone -q "$url" "$c/outsider"
+  expect fail "T5 包厢外的密钥：clone 失败" "" git_as outsider clone -q "$url" "$c/outsider"
 
-  expect ok "T6 直接登录：只打印你的茶馆" "你的茶馆" ssh_as chenli "$user@localhost" </dev/null
-  expect ok "T6 ssh -T 登录" "老板 (host)" ssh_as chenli -T "$user@localhost" </dev/null
+  expect ok "T6 直接登录：只打印你的包厢" "你的包厢" ssh_as chenli "$user@localhost" </dev/null
+  expect ok "T6 ssh -T 登录" "东家 (host)" ssh_as chenli -T "$user@localhost" </dev/null
   if command -v script >/dev/null; then
-    expect ok "T6′ 真实终端登录（script 提供 PTY）" "你的茶馆" \
+    expect ok "T6′ 真实终端登录（script 提供 PTY）" "你的包厢" \
       script -qec "ssh $(ssh_opts chenli) $user@localhost" /dev/null </dev/null
   else
     pass "T6′ 跳过（没有 script 命令）"
   fi
   expect fail "T7 ssh … bash 被拒" "only git fetch/clone/push" ssh_as chenli "$user@localhost" bash -c id
-  expect fail "T7b 路径穿越被拒" "no such teahouse" ssh_as chenli "$user@localhost" "git-upload-pack '/../etc'"
+  expect fail "T7b 路径穿越被拒" "no such room" ssh_as chenli "$user@localhost" "git-upload-pack '/../etc'"
 
   expect fail "T8 -L 端口转发不通" "carried nothing" probe_L chenli
   if grep -q "refused local port forward" "$log"; then pass "T8 sshd 日志" "refused local port forward"
@@ -302,7 +302,7 @@ EOF
   local post="talk/0001/$(stamp)-wang.md"
   mkdir -p "$c/wang/talk/0001"; echo "晚上可以错峰停车。" >"$c/wang/$post"
   commit "$c/wang" $'留言：错峰停车\n\nProblem: 0001'
-  expect ok "T12 茶客在 main 上新增自己的留言" "main -> main" git_as wang -C "$c/wang" push origin main
+  expect ok "T12 客人在 main 上新增自己的留言" "main -> main" git_as wang -C "$c/wang" push origin main
   echo "我同意。" >"$c/wang/talk/0001/$(stamp)-zhou.md"
   commit "$c/wang" $'冒名留言\n\nProblem: 0001'
   expect fail "T12b 冒名（伙计的名字）留言被拒" "is signed by zhou, not by you" git_as wang -C "$c/wang" push origin main
@@ -330,7 +330,7 @@ p = sys.argv[1]; s = open(p, encoding="utf-8").read()
 open(p, "w", encoding="utf-8").write(re.sub(r'\n\[\[member\]\]\nid = "wang"\n(?:[^\[\n][^\n]*\n?)*', "\n", s))
 PY
   commit "$c/chenli" $'请王阿姨离座\n\nProblem: meta'
-  expect ok "T9 老板移除茶客" "main -> main" git_as chenli -C "$c/chenli" push origin main
+  expect ok "T9 东家移除客人" "main -> main" git_as chenli -C "$c/chenli" push origin main
   expect fail "T9 被移除的密钥立即失效" "" git_as wang -C "$c/wang" fetch origin
   if [[ $method == B ]]; then
     expect ok "T9 authorized_keys 同步为 2 把，手写行仍在" "# hand-written line" \
@@ -349,13 +349,13 @@ PY
   expect ok "E2 引擎写入、签名、推送" '"commit":"pushed"' \
     "$client" --root "$eng" call openProblem '{"house":"kehu","title":"经真实 sshd 推送"}'
   expect ok "E2 Relay 上收到这次提交" "经真实 sshd 推送" git -C "$root/houses/kehu.git" log -1 --format=%s main
-  expect ok "E3 没有座位的茶馆进不去" '"code":"not_a_member"' \
+  expect ok "E3 没有座位的包厢进不去" '"code":"not_a_member"' \
     bash -c "'$client' --root '$eng' call join '{\"relay\":\"$user@127.0.0.1:$port\",\"house\":\"wutong\"}'; true"
   # E5: an invitation brings in a new device (method A: a key with no seat
   # reaches redeem-shell; method B cannot let unknown keys in at all).
   local inv eng2="$work/engine2-$method"
   inv="$("$client" --root "$eng" call invite '{"house":"kehu","name":"新设备"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"])')"
-  if [[ $inv == TH-*@* ]]; then pass "E5 老板创建邀请" "$inv"; else fail "E5 老板创建邀请" "$inv"; fi
+  if [[ $inv == TH-*@* ]]; then pass "E5 东家创建邀请" "$inv"; else fail "E5 东家创建邀请" "$inv"; fi
   if [[ $method == A ]]; then
     expect ok "E5 新设备凭邀请入座并克隆" '"myRole":"guest"' \
       "$client" --root "$eng2" call redeem "{\"code\":\"$inv\",\"name\":\"新设备\"}"
@@ -425,11 +425,11 @@ PY
   if [[ $method == A ]]; then
     local eng6="$work/engine6-$method" inv11
     inv11="$("$client" --root "$eng" call invite '{"house":"kehu","name":"老周"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"])')"
-    expect ok "E11 没有座位的钥匙能看到老板写的名字" '"name":"老周"' \
+    expect ok "E11 没有座位的钥匙能看到东家写的名字" '"name":"老周"' \
       "$client" --root "$eng6" call inviteInfo "{\"code\":\"$inv11\"}"
-    expect ok "E11 不写名字就用老板写的" '"ok":true' \
+    expect ok "E11 不写名字就用东家写的" '"ok":true' \
       "$client" --root "$eng6" call redeem "{\"code\":\"$inv11\"}"
-    expect ok "E11 茶客改自己的名字" '"ok":true' \
+    expect ok "E11 客人改自己的名字" '"ok":true' \
       "$client" --root "$eng6" call rename '{"house":"kehu","name":"周师傅"}'
     expect ok "E11 Relay 上的座位表改了" "周师傅" \
       git -C "$root/houses/kehu.git" show main:.teahouse/members.toml

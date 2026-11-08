@@ -282,7 +282,7 @@ impl<'c> Writer<'c> {
         let me = snap.me.clone().ok_or_else(|| {
             Error::new(
                 Code::NotAMember,
-                "this device has no seat in this teahouse / 这台设备在这间茶馆里没有座位",
+                "this device has no seat in this room / 这台设备在这间包厢里没有座位",
             )
             .with("house", house)
         })?;
@@ -1189,7 +1189,7 @@ impl<'c> Writer<'c> {
         {
             return Err(Error::new(
                 Code::Forbidden,
-                "only the host can adopt a proposal that changes the teahouse itself (the seating chart, Problem: meta) / 改座位表或茶馆设置的提案只有老板能采纳",
+                "only the host can adopt a proposal that changes the room itself (the seating chart, Problem: meta) / 改座位表或包厢设置的提案只有东家能采纳",
             )
             .with("proposal", id));
         }
@@ -1277,7 +1277,7 @@ impl<'c> Writer<'c> {
         if problem == "meta" && self.role() == Role::Steward {
             return Err(Error::new(
                 Code::Forbidden,
-                "only the host can decline this proposal for now: its record faces Problem: meta, which only the host may use / 这份提案（新问题或茶馆设置）暂时只有老板能不采纳",
+                "only the host can decline this proposal for now: its record faces Problem: meta, which only the host may use / 这份提案（新问题或包厢设置）暂时只有东家能不采纳",
             )
             .with("proposal", id));
         }
