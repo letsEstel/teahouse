@@ -6,7 +6,7 @@
   import Invite from '../lib/Invite.svelte'
   import Rename from '../lib/Rename.svelte'
   import { member, self, host, pad, eventText, nameLines, type House, type Role } from '../api/view'
-  import { api } from '../api/backend'
+  import { api, demoMode, setDemo } from '../api/backend'
   import { t, when, date, i18n } from '../i18n/index.svelte'
 
   let { house, refresh }: { house: House; refresh: () => void } = $props()
@@ -75,7 +75,13 @@
       {/if}
       <p class="consequence">{action.hint}</p>
     </div>
-    {#if inviting && me.role === 'host'}<Invite {house} onclose={() => (inviting = false)} />{/if}
+    {#if inviting && me.role === 'host' && demoMode}
+      <!-- 核桃园的茶摊子是摆出来看的，加不了人（0039）。说清楚，给一个出口，不假装发了邀请 -->
+      <div class="demo-note" role="status">
+        <p>{t('demo.noInvite')}</p>
+        <button class="secondary" onclick={() => setDemo(false)}>{t('demo.exit')}</button>
+      </div>
+    {:else if inviting && me.role === 'host'}<Invite {house} onclose={() => (inviting = false)} />{/if}
 
     <div class="stats">
       <a href="#/{house.id}/problems"><b class="num">{pad(house.problems.length)}</b><span>{t('stat.problems')}</span></a>
@@ -251,4 +257,6 @@
     .when { grid-column: 3; grid-row: 1; }
     .what { grid-column: 2 / -1; grid-row: 2; }
   }
+  .demo-note { display: grid; gap: 16px; justify-items: start; margin-top: 20px; padding: 20px 24px; border: 2px solid var(--ink); max-width: 36em; }
+  .demo-note p { font-size: 15px; line-height: 1.7; }
 </style>
