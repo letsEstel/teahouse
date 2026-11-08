@@ -1285,6 +1285,11 @@ fn a_history_changed_at_the_relay_stops_the_sync_until_the_member_chooses() {
         .to_string();
     let other = w
         .relay_git(&[
+            // No user name or email in CI's git configuration.
+            "-c",
+            "user.name=someone at the relay",
+            "-c",
+            "user.email=x@relay",
             "commit-tree",
             &tree,
             "-p",
