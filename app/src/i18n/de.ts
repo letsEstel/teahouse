@@ -148,6 +148,7 @@ export default {
   'write.attach': 'Bild oder Datei hinzufügen',
   'write.removeFile': '{name} entfernen',
   'write.imageKey': 'Bild{n}',
+  'write.mention': 'Jemanden erwähnen',
   'write.hint': 'Jeder Eintrag bleibt in der Geschichte und wird nach dem Schreiben nicht mehr geändert. Geschrieben, nicht geplaudert.',
   'write.hintGuest': 'Deine Notiz kommt direkt in den Raum, ohne Übernahme. Einmal geschrieben, wird sie nicht mehr geändert.',
   'note.delete': 'Löschen',

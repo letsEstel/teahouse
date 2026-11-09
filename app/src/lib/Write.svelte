@@ -1,6 +1,7 @@
 <script lang="ts">
   import { t } from '../i18n/index.svelte'
   import FileGlyph from './FileGlyph.svelte'
+  import Shape from './Shape.svelte'
   import { prepareFile } from './images'
   import type { NoteAttachment } from '../api/types'
   // 写字的地方：有输入框，但不是聊天。写完点"写进茶馆"，每一条都是一次提交。
@@ -11,6 +12,7 @@
     rows = 3,
     hint = '',
     attach = false,
+    people = [],
     onsubmit,
   }: {
     placeholder: string
@@ -20,6 +22,8 @@
     hint?: string
     /** 能不能插图片和文件（留言，引擎 #117） */
     attach?: boolean
+    /** 打 @ 时弹出的名单（这间包厢里除了我的人）；空就不弹 */
+    people?: { id: string; name: string; role: 'host' | 'steward' | 'guest' }[]
     /** 返回 false 表示没写进去（出错了），这时保留输入框里的内容 */
     onsubmit: (text: string, title: string, attachments: NoteAttachment[]) => void | boolean | Promise<void | boolean>
   } = $props()
@@ -33,6 +37,32 @@
   let picker = $state<HTMLInputElement>()
   let area = $state<HTMLTextAreaElement>()
   let adding = $state(false)
+  // ---- 打 @ 弹出名单：@ 在开头或空白后面，后面接着打的字用来筛选；上下键选，回车或 Tab 填进去 ----
+  let at = $state<{ from: number; q: string } | null>(null)
+  let pickIndex = $state(0)
+  let matches = $derived(at ? people.filter((p) => !at!.q || p.name.toLowerCase().includes(at!.q.toLowerCase()) || p.id.toLowerCase().includes(at!.q.toLowerCase())).slice(0, 6) : [])
+  function watchAt() {
+    const pos = area?.selectionStart ?? text.length
+    const m = /(^|[\s，。,.(（])@([^\s@]{0,20})$/.exec(text.slice(0, pos))
+    at = m && people.length ? { from: pos - m[2].length - 1, q: m[2] } : null
+    pickIndex = 0
+  }
+  function choose(p: { name: string }) {
+    if (!at) return
+    const pos = area?.selectionStart ?? text.length
+    const insert = `@${p.name} `
+    text = text.slice(0, at.from) + insert + text.slice(pos)
+    const caret = at.from + insert.length
+    at = null
+    queueMicrotask(() => { area?.focus(); area?.setSelectionRange(caret, caret) })
+  }
+  function keys(e: KeyboardEvent) {
+    if (!at || !matches.length) return
+    if (e.key === 'ArrowDown') { e.preventDefault(); pickIndex = (pickIndex + 1) % matches.length }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); pickIndex = (pickIndex - 1 + matches.length) % matches.length }
+    else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); choose(matches[pickIndex]) }
+    else if (e.key === 'Escape') { e.preventDefault(); at = null }
+  }
   let ready = $derived((text.trim().length > 0 || files.length > 0) && (!title || head.trim().length > 0))
   const line = (f: { label: string; key: string }) => `![${f.label}](${f.key})`
   async function pick(e: Event) {
@@ -80,7 +110,16 @@
   {#if title}
     <input class="head" bind:value={head} placeholder={titlePlaceholder} aria-label={titlePlaceholder} />
   {/if}
-  <textarea bind:this={area} bind:value={text} {placeholder} aria-label={placeholder} {rows}></textarea>
+  <div class="area">
+    <textarea bind:this={area} bind:value={text} {placeholder} aria-label={placeholder} {rows} oninput={watchAt} onkeydown={keys} onclick={watchAt} onblur={() => setTimeout(() => (at = null), 150)}></textarea>
+    {#if at && matches.length}
+      <ul class="people" role="listbox" aria-label={t('write.mention')}>
+        {#each matches as p, i}
+          <li role="option" aria-selected={i === pickIndex}><button type="button" class:on={i === pickIndex} onmousedown={(e) => { e.preventDefault(); choose(p) }}><Shape role={p.role} size={10} /><span>{p.name}</span></button></li>
+        {/each}
+      </ul>
+    {/if}
+  </div>
   {#if files.length}
     <ul class="files">
       {#each files as f}
@@ -114,6 +153,11 @@
   ::placeholder { color: var(--ink-3); opacity: 1; }
   .write:focus-within { outline: 3px solid var(--ink); outline-offset: 2px; }
   .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; border-top: 1px solid var(--ink); padding-left: 18px; }
+  .area { position: relative; }
+  .people { position: absolute; left: 18px; top: calc(100% - 6px); z-index: 4; list-style: none; min-width: 12em; max-width: calc(100% - 36px); background: var(--paper); border: 2px solid var(--ink); }
+  .people button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; font-size: 14px; text-align: left; }
+  .people button.on, .people button:hover { background: var(--ink); color: var(--paper); }
+  .people span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .foot .consequence { flex: 1 1 16em; padding: 8px 0; font-size: 12px; }
   .attach { font-size: 13px; font-weight: 700; border-bottom: 1.5px solid var(--ink); padding: 2px 0; white-space: nowrap; }
   .attach:disabled { color: var(--ink-3); border-color: var(--ink-3); }

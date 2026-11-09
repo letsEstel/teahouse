@@ -1,5 +1,6 @@
 <script lang="ts">
   import Markdown from './Markdown.svelte'
+  import { provideMentions, tokensOf } from './mentions'
   import MdImage from './MdImage.svelte'
   import FileGlyph from './FileGlyph.svelte'
   import Shape from './Shape.svelte'
@@ -12,6 +13,8 @@
   // 写下的时间早于前一条的（离线写、晚到的），用灰色小字注明"写于 …"。
   let { house, notes, ondelete }: { house: House; notes: Note[]; ondelete?: (n: Note) => void } = $props()
   let confirming = $state<Note | null>(null)
+  // @点名加亮：告诉里面的文字这间包厢有哪些名字、哪个是我
+  provideMentions(() => tokensOf(house.members, house.me))
   /** 正文里没插的附件，单独列在下面 */
   const loose = (n: Note) => (n.attachments ?? []).filter((a) => !n.text.includes(a.id))
 </script>
