@@ -277,7 +277,7 @@ fn mention_tokens(members: &teahouse_core::Members) -> Vec<(String, &str)> {
             }
         }
     }
-    out.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+    out.sort_by_key(|t| std::cmp::Reverse(t.0.len()));
     out
 }
 
