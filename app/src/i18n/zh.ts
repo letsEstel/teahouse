@@ -565,4 +565,7 @@ export default {
   'board.oldest': '最早在上',
   'board.more': '还有 {n} 条回应，展开',
   'board.less': '收起',
+  'board.readMore': '展开全文 ↓',
+  'board.readLess': '收起全文 ↑',
+  'board.showReplies': '看 {n} 条回应',
 }

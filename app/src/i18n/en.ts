@@ -565,4 +565,7 @@ export default {
   'board.oldest': 'Oldest first',
   'board.more': 'Show {n} more replies',
   'board.less': 'Show fewer',
+  'board.readMore': 'Read the whole notice ↓',
+  'board.readLess': 'Show less ↑',
+  'board.showReplies': 'See {n} replies',
 }

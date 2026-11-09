@@ -35,6 +35,14 @@
   }
   // 回应的收纳（0032）：默认只看最近 3 条，其余收起；最新在上还是在下，每台设备记住
   const SHOWN = 3
+  // 长公告（0019）：正文太长时只露出前几行，点“展开全文”再看全部。
+  // 旧公告（不是最新那条）的回应整个收起，只留一行“看 N 条回应”；最新那条照旧露出最近 3 条
+  const long = (text: string) => text.length > 280 || text.split('\n').length > 7
+  let unfolded = $state(new Set<string>())
+  const toggleBody = (id: string) => (unfolded = unfolded.has(id) ? new Set([...unfolded].filter((x) => x !== id)) : new Set([...unfolded, id]))
+  const folded = (text: string, id: string) => long(text) && !unfolded.has(id)
+  let repliesOpen = $state(new Set<string>())
+  const openReplies = (id: string) => (repliesOpen = new Set([...repliesOpen, id]))
   let expanded = $state(new Set<string>())
   const expand = (id: string) => (expanded = new Set([...expanded, id]))
   const collapse = (id: string) => (expanded = new Set([...expanded].filter((x) => x !== id)))
@@ -83,8 +91,19 @@
             <span class="when">{when(n.when)}</span>
           </div>
           <!-- 公告正文按 Markdown 显示（0037），和问题正文一样 -->
-          <div class="text"><Markdown text={n.text} house={house.id} /></div>
+          <div class="text" class:folded={folded(n.text, n.id)}><Markdown text={n.text} house={house.id} /></div>
+          {#if long(n.text)}
+            <button class="more body-more" aria-expanded={!folded(n.text, n.id)} onclick={() => toggleBody(n.id)}>{t(folded(n.text, n.id) ? 'board.readMore' : 'board.readLess')}</button>
+          {/if}
 
+          {#if i > 0 && n.replies.length && !repliesOpen.has(n.id)}
+            <button class="more replies-more" onclick={() => openReplies(n.id)}>{t('board.showReplies', { n: n.replies.length })}</button>
+            {#if replying === n.id}
+              <Write attach placeholder={t('board.replyPh')} rows={2} hint={writeHint} onsubmit={(text, _t, files) => reply(n, text, files)} />
+            {:else}
+              <button class="reply" data-write onclick={() => (replying = n.id)}>{t('board.reply')} →</button>
+            {/if}
+          {:else}
           <div class="replies">
             <div class="label rh">{t('board.replies', { n: n.replies.length })}</div>
             {#if n.replies.length > 1}
@@ -108,6 +127,7 @@
               <button class="reply" data-write onclick={() => (replying = n.id)}>{t('board.reply')} →</button>
             {/if}
           </div>
+          {/if}
         </div>
       </article>
     {:else}
@@ -144,7 +164,11 @@
   h2 { font-family: var(--display); font-weight: var(--heavy); font-size: clamp(22px, 2vw, 30px); line-height: 1.25; letter-spacing: var(--track); }
   .by { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 10px; font-size: 13px; color: var(--ink-2); }
   .by .when { font-family: var(--latin); color: var(--ink-3); }
-  .text { margin-top: 16px; font-size: 16px; line-height: 1.85; max-width: 38em; white-space: pre-line; }
+  .text { margin-top: 16px; font-size: 16px; line-height: 1.85; max-width: 38em; }
+  /* 收起时只露前 6 行，下面一道虚线表示“还有”，不用渐变 */
+  .text.folded { max-height: calc(1.85em * 6); overflow: hidden; border-bottom: 1.5px dashed var(--ink); }
+  .body-more { margin-top: 10px; }
+  .replies-more { display: block; margin-top: 20px; }
 
   .replies { margin-top: 26px; padding-left: clamp(16px, 2vw, 28px); border-left: 1px solid var(--ink); max-width: 44em; display: flex; flex-direction: column; gap: 10px; }
   .rh { padding-bottom: 4px; }
