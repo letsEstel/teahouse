@@ -124,7 +124,7 @@ impl Snapshot {
             },
             None => 0,
         };
-        let mentions = [format!("@{}", me.name), format!("@{}", me.id)];
+        let tokens = mention_tokens(&self.members);
         let mut out = Vec::new();
         for s in &self.steps[start..] {
             let by = self.by(s);
@@ -157,9 +157,8 @@ impl Snapshot {
                 .find_map(|(_, p)| {
                     let post = format::parse_post_path(p)?;
                     let text = self.text(p).ok()??;
-                    mentions
-                        .iter()
-                        .any(|m| text.contains(m.as_str()))
+                    mentioned_ids(&text, &tokens)
+                        .contains(&me.id.as_str())
                         .then(|| (p.clone(), post.topic))
                 });
             if let Some((post, topic)) = mentioned {
@@ -264,5 +263,91 @@ impl Snapshot {
         }
         out.sort_by(|a, b| b.when.cmp(&a.when));
         Ok(out)
+    }
+}
+
+/// `@<name>` and `@<id>` of every member, longest first, so `@陈立国` is not
+/// taken for `@陈立`.
+fn mention_tokens(members: &teahouse_core::Members) -> Vec<(String, &str)> {
+    let mut out: Vec<(String, &str)> = Vec::new();
+    for m in &members.members {
+        for s in [m.name.as_str(), m.id.as_str()] {
+            if !s.is_empty() && !out.iter().any(|(t, _)| t[1..] == *s) {
+                out.push((format!("@{s}"), m.id.as_str()));
+            }
+        }
+    }
+    out.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+    out
+}
+
+/// The members a text names, by the interface's rule (app/src/lib/mentions.ts,
+/// `splitMentions`), so that mail addresses and domains are not mentions:
+/// no letter, digit or `._%+-` right before the `@`; and a name ending in a
+/// letter or digit must not run on into a letter, digit, `_` or `.x` (a
+/// Chinese name may: `@陈立辛苦了`).
+fn mentioned_ids<'a>(text: &str, tokens: &[(String, &'a str)]) -> Vec<&'a str> {
+    let ends_word = |t: &str| t.chars().last().is_some_and(|c| c.is_ascii_alphanumeric());
+    let runs_on = |after: &str| {
+        let mut cs = after.chars();
+        match cs.next() {
+            Some(c) if c.is_ascii_alphanumeric() || c == '_' => true,
+            Some('.') => cs.next().is_some_and(|c| c.is_ascii_alphanumeric()),
+            _ => false,
+        }
+    };
+    let mut out = Vec::new();
+    let mut i = 0;
+    while let Some(off) = text[i..].find('@') {
+        let at = i + off;
+        let glued = text[..at]
+            .chars()
+            .last()
+            .is_some_and(|c| c.is_ascii_alphanumeric() || "._%+-".contains(c));
+        let hit = if glued {
+            None
+        } else {
+            tokens.iter().find(|(t, _)| {
+                text[at..].starts_with(t.as_str())
+                    && !(ends_word(t) && runs_on(&text[at + t.len()..]))
+            })
+        };
+        match hit {
+            Some((t, id)) => {
+                if !out.contains(id) {
+                    out.push(*id);
+                }
+                i = at + t.len();
+            }
+            None => i = at + 1,
+        }
+    }
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mentions_are_not_mail_addresses() {
+        let tokens: Vec<(String, &str)> = vec![
+            ("@陈立国".into(), "chen2"),
+            ("@陈立".into(), "chen"),
+            ("@li".into(), "li"),
+        ];
+        let ids = |t: &str| mentioned_ids(t, &tokens);
+        let none: Vec<&str> = Vec::new();
+        assert_eq!(ids("@li 你好"), ["li"]);
+        assert_eq!(ids("写信给 chen@li.com 吧"), none);
+        assert_eq!(ids("@li.com 是域名"), none);
+        assert_eq!(ids("@lisa 不是 li"), none);
+        assert_eq!(ids("@li_x"), none);
+        assert_eq!(ids("a+@li"), none);
+        assert_eq!(ids("好的@li。"), ["li"]);
+        assert_eq!(ids("找 @li."), ["li"]);
+        assert_eq!(ids("@陈立辛苦了"), ["chen"]);
+        assert_eq!(ids("@陈立国来了"), ["chen2"]);
+        assert_eq!(ids("@li @li @陈立"), ["li", "chen"]);
     }
 }

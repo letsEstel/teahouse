@@ -1627,6 +1627,22 @@ fn the_inbox_tells_each_member_what_is_new_for_them() {
         .is_empty());
     assert_eq!(zhao.ok("houses", Value::Null)[0]["unread"], 0);
 
+    // A mail address is not a mention; "@li 你好" is.
+    let latest = |p: &Person| {
+        p.ok("sync", json!({ "house": "wutong" }));
+        p.ok("inbox", json!({ "house": "wutong" }))[0]["kind"].clone()
+    };
+    zhao.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "写信给 chen@li.com 吧" }),
+    );
+    assert_eq!(latest(&li), "problem", "li raised 0001; not a mention");
+    zhao.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "@li 你好" }),
+    );
+    assert_eq!(latest(&li), "mention");
+
     // Someone new: what was there before is not news.
     let code = wang.ok("invite", json!({ "house": "wutong", "name": "老周" }));
     let zhou = w.person("zhou");
