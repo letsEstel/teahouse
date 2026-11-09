@@ -65,8 +65,8 @@ export interface Problem extends ProblemSummary {
 
 export interface DiffLine { kind: 'same' | 'add' | 'del'; text: string }
 export interface FileChange { path: string; title: string; kind: WorkKind; change: 'add' | 'modify' | 'delete'; lines?: DiffLine[] }
-export interface Proposal { id: string; title: string; by: string; problem: string; when: string; reason?: string; files: FileChange[] }
-export interface Decided { id: string; title: string; by: string; result: 'adopted' | 'declined'; when: string; reason?: string }
+export interface Proposal { id: string; title: string; by: string; problem: string; when: string; reason?: string; files: FileChange[]; notes?: Note[] }
+export interface Decided { id: string; title: string; by: string; result: 'adopted' | 'declined'; when: string; reason?: string; notes?: Note[] }
 
 export interface House {
   id: string; name: string; signboard?: string; founded: string; capacity: 15
@@ -127,7 +127,8 @@ export interface Commands {
   /** 链接成果：kind = link，带 url（http/https）和可选的 note；text 是说明 */
   addWork: [HouseArg & { problem: string; kind: WorkKind; title: string; text?: string; fromPath?: string; url?: string; note?: string }, WriteResult]
   updateWork: [HouseArg & { id: string; text?: string; fromPath?: string; url?: string; title?: string; note?: string }, WriteResult]
-  note: [HouseArg & { problem?: string; notice?: string; text: string }, WriteResult]
+  /** 留言：problem、notice、proposal 三选一（提案下的留言 0022，引擎 #115） */
+  note: [HouseArg & { problem?: string; notice?: string; proposal?: string; text: string }, WriteResult]
   removeNote: [HouseArg & { id: string }, WriteResult]
   postNotice: [HouseArg & { title: string; text: string }, WriteResult]
   /** notice = 公告名或路径；茶客的自动变成提案 */

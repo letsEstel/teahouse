@@ -64,6 +64,8 @@ export interface Proposal {
   when: string
   reason?: Text
   files: { title: Text; kind: WorkKind; lines: DiffLine[] }[]
+  /** 提案下的留言（0022），按进入的先后 */
+  notes?: Note[]
 }
 
 export interface Decided { title: Text; by: string; result: 'merged' | 'rejected'; when: string }

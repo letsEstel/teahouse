@@ -125,6 +125,7 @@ function toHouse(h: FHouse): A.House {
         title: L(f.title), kind: f.kind, change: 'modify' as const,
         lines: f.lines.map((l) => ({ kind: l.kind, text: L(l.text) })),
       })),
+      notes: toNotes(x.notes ?? [], `talk/proposals/${x.by}/${x.id}`),
     })),
     decided: h.decided.map((d, i) => ({ id: `d${i}`, title: L(d.title), by: d.by, result: d.result === 'merged' ? 'adopted' : 'declined', when: iso(d.when) })),
     board: h.board.map(toNotice),
@@ -271,18 +272,22 @@ const handlers: Handlers = {
     if (!h) return fail('not_found', house)
     const me = h.members.find((m) => m.id === h.me)
     if (!me || me.role === 'guest') return fail('forbidden', 'only the host and the steward can remove notes')
-    const lists = [...h.problems.map((p) => [p.notes ?? [], `talk/${p.id}`] as const), ...h.board.map((n) => [n.replies, `talk/board/${n.id}`] as const)]
+    const lists = [...h.problems.map((p) => [p.notes ?? [], `talk/${p.id}`] as const), ...h.board.map((n) => [n.replies, `talk/board/${n.id}`] as const), ...h.proposals.map((x) => [x.notes ?? [], `talk/proposals/${x.by}/${x.id}`] as const)]
     for (const [list, dir] of lists) {
       const i = toNotes(list, dir).findIndex((n) => n.id === id)
       if (i >= 0) { list.splice(i, 1); return written() }
     }
     return fail('not_found', id)
   },
-  note: ({ house, problem, notice, text: s }) => {
+  note: ({ house, problem, notice, proposal, text: s }) => {
     const h = find(house)
     if (!h) return fail('not_found', house)
     const n: FNote = { by: h.me, when: NOW.toISOString(), text: text(s) }
-    if (notice) h.board.find((x) => x.id === notice)?.replies.push(n)
+    if (proposal) {
+      const x = h.proposals.find((q) => q.id === proposal)
+      if (!x) return fail('not_found', proposal)
+      ;(x.notes ??= []).push(n)
+    } else if (notice) h.board.find((x) => x.id === notice)?.replies.push(n)
     else {
       const p = h.problems.find((x) => x.id === problem)
       if (!p) return fail('not_found', `${problem}`)

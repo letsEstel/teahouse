@@ -520,6 +520,8 @@ export default {
   'prop.file.seats': '座位表',
   'prop.file.other': '改动',
   'prop.waiting': '等东家或伙计决定。',
+  'prop.talkLede': '对这份提案有话说，写在这里。采纳或不采纳以后，留言照样留着。',
+  'prop.talkPlaceholder': '写下你对这份提案的看法……',
   'prop.ownWaiting': '这是你的提案，正在等东家或伙计决定。',
   'prop.hostOnly': '这份提案改的是座位表或包厢设置，只有东家{name}能决定。',
   'prop.declineHostOnly': '新问题的提案暂时只有东家{name}能不采纳。',

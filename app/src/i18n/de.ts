@@ -433,6 +433,8 @@ export default {
   'prop.file.seats': 'Sitzplan',
   'prop.file.other': 'Änderung',
   'prop.waiting': 'Wartet auf die Entscheidung des Gastgebers oder des Gehilfen.',
+  'prop.talkLede': 'Etwas zu diesem Vorschlag zu sagen? Schreib es hier. Die Beiträge bleiben, auch nachdem er übernommen oder abgelehnt wurde.',
+  'prop.talkPlaceholder': 'Was hältst du von diesem Vorschlag…',
   'prop.ownWaiting': 'Das ist dein Vorschlag. Er wartet auf die Entscheidung des Gastgebers oder des Gehilfen.',
   'prop.hostOnly': 'Dieser Vorschlag ändert den Sitzplan oder den Raum selbst; nur der Gastgeber, {name}, kann entscheiden.',
   'prop.declineHostOnly': 'Ein neues Problem kann vorerst nur der Gastgeber, {name}, ablehnen.',

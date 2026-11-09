@@ -167,6 +167,10 @@ export const wutong: House = {
   proposals: [
     {
       id: 'p1',
+      notes: [
+        { by: 'li', when: '2026-10-18T08:30', text: { zh: '夜班住户登记要谁来管？物业说他们不管登记。', en: 'Who keeps the night-shift register? The management says it won’t.', de: 'Wer führt die Liste der Nachtschicht-Anwohner? Die Verwaltung sagt, sie nicht.' } },
+        { by: 'zhao', when: '2026-10-18T09:05', text: { zh: '我来管，每月一号在群里收一次。写进方案第三节了。', en: 'I’ll do it, collecting once a month on the 1st in the group chat. It’s in section three of the plan.', de: 'Ich mache das, einmal im Monat am Ersten im Gruppenchat. Steht in Abschnitt drei des Plans.' } },
+      ],
       title: { zh: '把夜间临时停车改为错峰共享', en: 'Replace night-time parking with time-sharing', de: 'Nachtparken durch zeitversetzte Teilung ersetzen' },
       by: 'zhao',
       problem: '0001',

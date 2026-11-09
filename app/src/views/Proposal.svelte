@@ -8,6 +8,9 @@
   import { fileAct, proposalAct, isNewProblem, hostOnly, stewardCannotDecline } from '../lib/proposals'
   import { member, self, host, type House, type Proposal } from '../api/view'
   import { write } from '../api/backend'
+  import Notes from '../lib/Notes.svelte'
+  import Write from '../lib/Write.svelte'
+  import type { Note } from '../api/types'
   import { fit } from '../lib/fit'
   import { t, when, i18n } from '../i18n/index.svelte'
 
@@ -43,6 +46,15 @@
     if (!p) return
     const done = adopt ? await write('adopt', { house: house.id, proposal: p.id }) : await write('decline', { house: house.id, proposal: p.id })
     if (done) outcome = adopt ? 'merged' : 'rejected'
+  }
+
+  // 提案下的留言（0022）：谁都能写，写下不改；东家、伙计能删。决定之后照样能留言
+  async function note(text: string) {
+    if (!p || !(await write('note', { house: house.id, proposal: p.id, text }))) return false
+    refresh?.()
+  }
+  async function removeNote(n: Note) {
+    if (await write('removeNote', { house: house.id, id: n.id })) refresh?.()
   }
 
   type File = Proposal['files'][number]
@@ -185,6 +197,19 @@
           </div>
         {/if}
       </div>
+
+      <section class="talk">
+        <div class="talk-head">
+          <h2>{t('talk.title')}</h2>
+          <p class="consequence">{t('prop.talkLede')}</p>
+        </div>
+        {#if p.notes?.length}
+          <Notes {house} notes={p.notes} ondelete={me.role !== 'guest' ? removeNote : undefined} />
+        {:else}
+          <p class="quiet none">{t('talk.none')}</p>
+        {/if}
+        <div class="talk-write" data-write><Write placeholder={t('prop.talkPlaceholder')} hint={me.role === 'guest' ? t('write.hintGuest') : ''} onsubmit={note} /></div>
+      </section>
     </section>
   {:else if id !== undefined}
     <section class="review gone">
@@ -296,4 +321,9 @@
     .back { display: inline-block; }
     .review { padding-left: var(--pad-x); }
   }
+  .talk { margin-top: 56px; max-width: 48em; }
+  .talk-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 24px; padding-bottom: 14px; border-bottom: 2px solid var(--ink); margin-bottom: 12px; }
+  .talk-head h2 { font-family: var(--display); font-weight: var(--heavy); font-size: clamp(22px, 2.2vw, 30px); letter-spacing: var(--track); }
+  .talk .none { padding: 12px 0; color: var(--ink-3); font-size: 14px; }
+  .talk-write { margin-top: 20px; }
 </style>
