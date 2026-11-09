@@ -497,6 +497,26 @@ if (GUEST) {
       await p.close()
     })
   }
+  await step('@点名：伙计在界面里打 @ 选东家，东家收件箱里多一条“提到了你”，留言里加亮', async () => {
+    const st = await serve(STEWARD, 'dist-e2e-steward-at', 4406)
+    const p = await open(st.url, `problem/${problemId}`)
+    const hostName = (await engine(HOST, 'house', { house })).members.find((m) => m.role === 'host').name
+    await p.click('.talk-write textarea')
+    await p.keyboard.type(`点名测试 ${stamp} @${hostName.slice(0, 1)}`)
+    await p.waitForSelector('.people button')
+    await p.keyboard.press('Enter')
+    const typed = await p.inputValue('.talk-write textarea')
+    if (!typed.includes(`@${hostName} `)) throw new Error(`picker did not fill the name: ${typed}`)
+    await p.click('.talk-write button.submit')
+    await p.waitForSelector(`.talk .at:text("@${hostName}")`)
+    ok(`伙计打 @ 选中了 ${hostName}，留言里加亮了`)
+    await p.close()
+    await engine(STEWARD, 'sync', { house })
+    await engine(HOST, 'sync', { house })
+    const hit = (await engine(HOST, 'inbox', { house })).find((n) => n.kind === 'mention' && n.problem === problemId)
+    if (!hit) throw new Error('no mention in the host inbox')
+    ok('东家的收件箱里有一条“提到了你”')
+  })
   await step('收件箱（0026）：客人交了提案，东家的收件箱里有一条，点一下标成看过、跳到提案', async () => {
     const r = await engine(GUEST, 'openProblem', { house, title: `收件箱用的新问题 ${stamp}`, body: [{ heading: '', text: '测收件箱。' }] })
     if (!r.becameProposal) throw new Error('a guest problem should become a proposal')

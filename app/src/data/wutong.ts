@@ -111,6 +111,7 @@ export const wutong: House = {
         { by: 'li', when: '2026-10-13T08:40', text: { zh: '地锁报价如果用不上，报价表能不能留着？别的院子可能用得上。', en: 'If we don’t need the lock quotes, can we keep the quote table anyway? Another courtyard might use it.', de: 'Wenn wir die Bügel-Angebote nicht brauchen, können wir die Angebotstabelle trotzdem behalten? Ein anderer Hof kann sie vielleicht gebrauchen.' } },
         { by: 'zhao', when: '2026-10-17T22:30', text: { zh: 'v2 里夜班住户要提前登记。登记表谁来收？', en: 'In v2 night-shift residents register in advance. Who collects the forms?', de: 'In v2 melden sich Nachtschicht-Anwohner vorher an. Wer sammelt die Formulare ein?' } },
         { by: 'zhou', when: '2026-10-18T09:10', text: { zh: '我来收。门卫室放一个本子，每周日拍照传到这里。', en: 'I will. There’ll be a notebook in the gatehouse; I’ll photograph it every Sunday and post it here.', de: 'Mache ich. Im Pförtnerhaus liegt ein Heft; ich fotografiere es jeden Sonntag und stelle es hier ein.' } },
+        { by: 'zhao', when: '2026-10-18T19:55', text: { zh: '@陈立 本子的事定了，周六大扫除时顺便贴个通知？@周小满 你那边门卫室说好了吗。', en: '@Chen Li the notebook is settled; shall we put up a notice during Saturday’s clean-up? @Zhou Xiaoman have you sorted it with the gatehouse?', de: '@Chen Li das mit dem Heft ist geklärt; hängen wir beim Putztag am Samstag einen Zettel auf? @Zhou Xiaoman hast du es mit dem Pförtner geklärt?' } },
       ],
     },
     {

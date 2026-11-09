@@ -146,6 +146,7 @@ export default {
   'write.attach': 'Add a picture or file',
   'write.removeFile': 'Remove {name}',
   'write.imageKey': 'pic{n}',
+  'write.mention': 'Mention someone',
   'write.hint': 'Each one stays in the history and isn’t edited once written. Written, not chatted.',
 
   'talk.title': 'Discussion',

@@ -208,7 +208,7 @@
         {:else}
           <p class="quiet none">{t('talk.none')}</p>
         {/if}
-        <div class="talk-write" data-write><Write attach placeholder={t('prop.talkPlaceholder')} hint={me.role === 'guest' ? t('write.hintGuest') : ''} onsubmit={note} /></div>
+        <div class="talk-write" data-write><Write attach people={house.members.filter((m) => m.id !== house.me)} placeholder={t('prop.talkPlaceholder')} hint={me.role === 'guest' ? t('write.hintGuest') : ''} onsubmit={note} /></div>
       </section>
     </section>
   {:else if id !== undefined}

@@ -99,7 +99,7 @@
           {#if i > 0 && n.replies.length && !repliesOpen.has(n.id)}
             <button class="more replies-more" onclick={() => openReplies(n.id)}>{t('board.showReplies', { n: n.replies.length })}</button>
             {#if replying === n.id}
-              <Write attach placeholder={t('board.replyPh')} rows={2} hint={writeHint} onsubmit={(text, _t, files) => reply(n, text, files)} />
+              <Write attach people={house.members.filter((m) => m.id !== house.me)} placeholder={t('board.replyPh')} rows={2} hint={writeHint} onsubmit={(text, _t, files) => reply(n, text, files)} />
             {:else}
               <button class="reply" data-write onclick={() => (replying = n.id)}>{t('board.reply')} →</button>
             {/if}
