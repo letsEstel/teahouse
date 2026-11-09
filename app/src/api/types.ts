@@ -36,7 +36,9 @@ export const isMachine = (m: Pick<Member, 'kind'>) => m.kind === 'machine' || m.
 export interface DeviceInfo { name: string; fingerprint: string; added: string; thisDevice: boolean }
 export interface Event { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
 /** id = 留言文件的仓库路径；when = 进入茶馆的时间，writtenAt = 文件名里的时间戳 */
-export interface Note { id: string; by: string; text: string; when: string; writtenAt: string }
+export interface Note { id: string; by: string; text: string; when: string; writtenAt: string
+  /** 留言里的图片和文件（引擎 #117）：和成果里的附件一样，用 blob 取 */
+  attachments?: Work[] }
 export interface Notice { id: string; by: string; title: string; text: string; when: string; replies: Note[] }
 
 export interface Work {
@@ -98,6 +100,9 @@ export interface ApiError {
   reasons?: string[]
 }
 
+/** 留言要带的附件：stageFile 拿到的本机路径。正文里写 ![名字](<fromPath>)，引擎会换成附件真正的地址 */
+export interface NoteAttachment { fromPath: string; name?: string }
+
 export interface WriteResult { commit: 'local' | 'pushed'; sync: SyncState; becameProposal?: boolean; id?: string }
 
 type HouseArg = { house: string }
@@ -128,7 +133,7 @@ export interface Commands {
   addWork: [HouseArg & { problem: string; kind: WorkKind; title: string; text?: string; fromPath?: string; url?: string; note?: string }, WriteResult]
   updateWork: [HouseArg & { id: string; text?: string; fromPath?: string; url?: string; title?: string; note?: string }, WriteResult]
   /** 留言：problem、notice、proposal 三选一（提案下的留言 0022，引擎 #115） */
-  note: [HouseArg & { problem?: string; notice?: string; proposal?: string; text: string }, WriteResult]
+  note: [HouseArg & { problem?: string; notice?: string; proposal?: string; text: string; attachments?: NoteAttachment[] }, WriteResult]
   removeNote: [HouseArg & { id: string }, WriteResult]
   postNotice: [HouseArg & { title: string; text: string }, WriteResult]
   /** notice = 公告名或路径；茶客的自动变成提案 */

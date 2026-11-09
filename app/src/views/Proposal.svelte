@@ -10,7 +10,7 @@
   import { write } from '../api/backend'
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
-  import type { Note } from '../api/types'
+  import type { Note, NoteAttachment } from '../api/types'
   import { fit } from '../lib/fit'
   import { t, when, i18n } from '../i18n/index.svelte'
 
@@ -49,8 +49,8 @@
   }
 
   // 提案下的留言（0022）：谁都能写，写下不改；东家、伙计能删。决定之后照样能留言
-  async function note(text: string) {
-    if (!p || !(await write('note', { house: house.id, proposal: p.id, text }))) return false
+  async function note(text: string, _title: string, attachments: NoteAttachment[]) {
+    if (!p || !(await write('note', { house: house.id, proposal: p.id, text, attachments: attachments.length ? attachments : undefined }))) return false
     refresh?.()
   }
   async function removeNote(n: Note) {
@@ -208,7 +208,7 @@
         {:else}
           <p class="quiet none">{t('talk.none')}</p>
         {/if}
-        <div class="talk-write" data-write><Write placeholder={t('prop.talkPlaceholder')} hint={me.role === 'guest' ? t('write.hintGuest') : ''} onsubmit={note} /></div>
+        <div class="talk-write" data-write><Write attach placeholder={t('prop.talkPlaceholder')} hint={me.role === 'guest' ? t('write.hintGuest') : ''} onsubmit={note} /></div>
       </section>
     </section>
   {:else if id !== undefined}

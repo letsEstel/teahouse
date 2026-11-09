@@ -1,5 +1,6 @@
 <script lang="ts">
-  import Linked from '../lib/Linked.svelte'
+  import type { NoteAttachment } from '../api/types'
+  import Markdown from '../lib/Markdown.svelte'
   import Shape from '../lib/Shape.svelte'
   import Notes from '../lib/Notes.svelte'
   import Write from '../lib/Write.svelte'
@@ -27,8 +28,8 @@
   async function remove(_n: Notice, note: Note) {
     if (await write('removeNote', { house: house.id, id: note.id })) refresh()
   }
-  async function reply(n: Notice, text: string) {
-    if (!(await write('note', { house: house.id, notice: n.id, text }))) return false
+  async function reply(n: Notice, text: string, attachments: NoteAttachment[]) {
+    if (!(await write('note', { house: house.id, notice: n.id, text, attachments: attachments.length ? attachments : undefined }))) return false
     replying = null
     refresh()
   }
@@ -81,7 +82,8 @@
             <span>{t('board.postedBy', { name: m.name })} · {t(`role.${m.role}`)}</span>
             <span class="when">{when(n.when)}</span>
           </div>
-          <p class="text"><Linked text={n.text} /></p>
+          <!-- 公告正文按 Markdown 显示（0037），和问题正文一样 -->
+          <div class="text"><Markdown text={n.text} house={house.id} /></div>
 
           <div class="replies">
             <div class="label rh">{t('board.replies', { n: n.replies.length })}</div>
@@ -101,7 +103,7 @@
               {#if open && all.length > SHOWN}<button class="more" onclick={() => collapse(n.id)}>{t('board.less')}</button>{/if}
             {/if}
             {#if replying === n.id}
-              <Write placeholder={t('board.replyPh')} rows={2} hint={writeHint} onsubmit={(text) => reply(n, text)} />
+              <Write attach placeholder={t('board.replyPh')} rows={2} hint={writeHint} onsubmit={(text, _t, files) => reply(n, text, files)} />
             {:else}
               <button class="reply" data-write onclick={() => (replying = n.id)}>{t('board.reply')} →</button>
             {/if}

@@ -143,6 +143,9 @@ export default {
   'board.bodyPh': 'Text: when, where, and what you need from people.',
   'board.none': 'No notices yet.',
   'write.submit': 'Write it into the room',
+  'write.attach': 'Add a picture or file',
+  'write.removeFile': 'Remove {name}',
+  'write.imageKey': 'pic{n}',
   'write.hint': 'Each one stays in the history and isn’t edited once written. Written, not chatted.',
 
   'talk.title': 'Discussion',

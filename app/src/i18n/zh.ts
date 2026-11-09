@@ -143,6 +143,9 @@ export default {
   'board.bodyPh': '正文：时间、地点、要大家做什么。',
   'board.none': '还没有公告。',
   'write.submit': '写进包厢',
+  'write.attach': '插图片或文件',
+  'write.removeFile': '去掉 {name}',
+  'write.imageKey': '图{n}',
   'write.hint': '每一条都会一直留在历史里，写下就不再修改。写下来，不是聊天。',
 
   'talk.title': '讨论',

@@ -1,5 +1,7 @@
 <script lang="ts">
-  import Linked from './Linked.svelte'
+  import Markdown from './Markdown.svelte'
+  import MdImage from './MdImage.svelte'
+  import FileGlyph from './FileGlyph.svelte'
   import Shape from './Shape.svelte'
   import MachineMark from './MachineMark.svelte'
   import { member, type House, type Note } from '../api/view'
@@ -10,6 +12,8 @@
   // 写下的时间早于前一条的（离线写、晚到的），用灰色小字注明"写于 …"。
   let { house, notes, ondelete }: { house: House; notes: Note[]; ondelete?: (n: Note) => void } = $props()
   let confirming = $state<Note | null>(null)
+  /** 正文里没插的附件，单独列在下面 */
+  const loose = (n: Note) => (n.attachments ?? []).filter((a) => !n.text.includes(a.id))
 </script>
 
 <ol class="notes">
@@ -30,7 +34,19 @@
           {/if}
         {/if}
       </div>
-      <p><Linked text={n.text} /></p>
+      {#if n.text}<div class="text"><Markdown text={n.text} house={house.id} /></div>{/if}
+      <!-- 附件（引擎 #117）：正文里没插的图片在下面显示；文件列出来，点进档案能存到这台设备 -->
+      {#if loose(n).length}
+        <div class="atts">
+          {#each loose(n) as a}
+            {#if a.kind === 'image'}
+              <div class="img"><MdImage house={house.id} src={a.id} alt={a.title} /></div>
+            {:else}
+              <a class="file" href="#/{house.id}/archive/{encodeURIComponent(a.id)}"><FileGlyph kind="file" /><span>{a.title}</span></a>
+            {/if}
+          {/each}
+        </div>
+      {/if}
     </li>
   {/each}
 </ol>
@@ -46,5 +62,11 @@
   .del { font-size: 12px; color: var(--ink-3); border-bottom: 1px solid transparent; }
   .del:hover { color: var(--ink); border-bottom-color: var(--ink); }
   .del.sure { color: var(--paper); background: var(--ink); padding: 0 6px; }
-  p { margin-top: 6px; font-size: 15px; line-height: 1.8; max-width: 40em; white-space: pre-line; }
+  .text { margin-top: 6px; font-size: 15px; line-height: 1.8; max-width: 40em; }
+  .atts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .img { max-width: min(100%, 360px); }
+  .file { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--ink); padding: 6px 10px; font-size: 13px; color: inherit; text-decoration: none; max-width: 100%; }
+  .file :global(svg) { width: 18px; height: 18px; flex: none; }
+  .file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file:hover { background: var(--paper-deep); }
 </style>
