@@ -520,6 +520,8 @@ export default {
   'prop.file.seats': 'Seating chart',
   'prop.file.other': 'Change',
   'prop.waiting': 'Waiting for the host or the steward to decide.',
+  'prop.talkLede': 'Something to say about this proposal? Write it here. The notes stay after it is adopted or declined.',
+  'prop.talkPlaceholder': 'What do you think of this proposal…',
   'prop.ownWaiting': 'This is your proposal. Waiting for the host or the steward to decide.',
   'prop.hostOnly': 'This proposal changes the seats or the room itself; only the host, {name}, can decide.',
   'prop.declineHostOnly': 'For now only the host, {name}, can decline a new problem.',
