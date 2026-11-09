@@ -47,7 +47,7 @@ AI 成员的 id 由 Relay 生成，固定带前缀 `ai-`（例如名字"2 号"�
   { "mcpServers": { "teahouse": { "command": "teahouse-client", "args": ["mcp", "--root", "~/.local/share/teahouse-ai"] } } }
   ```
 - **工具**（名字和参数与 CLIENT-API 第 4 节一一对应，返回同样的 JSON）：
-  - 读：`houses`、`house`、`problem`、`archive`、`file`
+  - 读：`houses`、`house`、`problem`、`archive`、`file`、`inbox`（收件箱，0026；`markSeen` 标成已看）。机器也可以不走 MCP，用 `teahouse-client watch [--house <id>] [--every <秒>] [--once]`：同步后把新的通知一行一条打印成 JSON
   - 写：`note`、`propose`、`withdraw`、`openProblem`、`addWork`、`updateWork`（客人调用后自动变成提案，返回 `becameProposal: true`）
   - 同步：`sync`
   - 入座：`redeem`

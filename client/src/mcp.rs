@@ -81,6 +81,8 @@ fn tools() -> Vec<(&'static str, &'static str, Value)> {
         ("addWork", "Add a result (work) to a problem: a document, plan, table, attachment, or a link to a document kept elsewhere (Tencent Docs, Google Docs…). As a guest this becomes a proposal.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "kind": kind, "title": s("title"), "text": s("content for doc/plan/table; for a link, an optional description"), "fromPath": s("local file for image/file"), "url": s("for a link: its http(s) address"), "note": s("one line shown under the title") }), &["house", "problem", "kind", "title"])),
         ("updateWork", "Change an existing work's content (by its id); a link's url, title and note too. As a guest this becomes a proposal.", obj(json!({ "house": house(), "id": s("the work's path"), "text": s("the new content"), "fromPath": s("a local file, for attachments"), "url": s("a link's new http(s) address"), "title": s("a link's new title"), "note": s("a link's new note (empty removes it)") }), &["house", "id"])),
         ("updateProblem", "Change a problem's title and/or its text (the Markdown after the frontmatter: summary and ## sections); status and owner stay. As a guest this becomes a proposal.", obj(json!({ "house": house(), "problem": s("4-digit problem id"), "title": s("the new title"), "text": s("the new text") }), &["house", "problem"])),
+        ("inbox", "What is new for you, newest first: someone named you (@your name), something on a problem you raised or own, a proposal waiting (steward, host), a decision on your proposal, a new notice, a changed history. Without house: every room. Start here after `sync`.", obj(json!({ "house": house() }), &[])),
+        ("markSeen", "Mark notifications as seen: the given ids, or without ids everything in the room's inbox now.", obj(json!({ "house": house(), "ids": { "type": "array", "items": s("a notification id") } }), &["house"])),
         ("sync", "Fetch what others wrote and push what you wrote. Without house: every room.", obj(json!({ "house": house() }), &[])),
         ("rename", "Change your own name in a room (your id stays). Names are unique within a room. The host may give member to rename someone else.", obj(json!({ "house": house(), "name": s("the new name"), "member": s("host only: the member's id") }), &["house", "name"])),
         ("pair", "Make a pairing code (TH-…@relay, 10 minutes, once) so another device of yours (or another machine you run on) joins as the same member, in every room you sit in there.", obj(json!({ "house": s("any room you sit in at that relay (default: the first)"), "name": s("a name for the new device, e.g. 手机") }), &[])),
@@ -339,9 +341,9 @@ mod tests {
         ] {
             assert!(!names.iter().any(|n| n == absent), "{absent}");
         }
-        // No seat anywhere: the guest's tools only (of 25 in all).
-        assert_eq!(names.len(), 18);
-        assert_eq!(tools().len(), 25);
+        // No seat anywhere: the guest's tools only (of 27 in all).
+        assert_eq!(names.len(), 20);
+        assert_eq!(tools().len(), 27);
         let r = handle(&c, &json!({ "jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": { "name": "adopt", "arguments": {} } })).unwrap();
         assert_eq!(r["result"]["isError"], true);
         let r = handle(&c, &json!({ "jsonrpc": "2.0", "id": 4, "method": "nope" })).unwrap();

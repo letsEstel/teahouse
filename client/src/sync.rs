@@ -247,6 +247,7 @@ impl Link<'_> {
             return Ok(Outcome::NoRemote);
         }
         let mut record = Record::load(&git_dir);
+        let before = self.repo.refname_to_id(MAIN).ok().map(|o| o.to_string());
         let mut result = self.sync_inner();
         for _ in 1..TRIES {
             match result {
@@ -296,6 +297,9 @@ impl Link<'_> {
             }
         }
         record.save(&git_dir);
+        // The inbox starts at what this device had (0026).
+        let after = self.repo.refname_to_id(MAIN).ok().map(|o| o.to_string());
+        crate::house::inbox::start(&git_dir, before, after);
         result
     }
 

@@ -177,7 +177,21 @@ interface HouseSummary {
   id: string; name: string; me: string; myRole: Role
   seats: number                 // 已坐的人数，上限固定 15
   pendingProposals: number      // 待审提案数（东家看到的徽标）
+  unread: number                // 收件箱里没看过的条数（0026）
   sync: SyncState
+}
+// 收件箱（大云晓钟，0026）：引擎从包厢自己的历史里算出来，不经过任何推送服务。
+// 每台设备各记各的；第一次同步时的位置是起点，之前的旧事不算新的。自己做的事不通知自己。
+type NotificationKind = 'mention'   // 有人在留言里写了 @我的名字（或 @我的 id）
+                      | 'problem'   // 我提出的或交给我的问题有动静（留言、成果、状态、问题改了、提案有了结果）
+                      | 'proposal'  // 有提案等我处理（只给东家和伙计；提案改过会再出现）
+                      | 'decision'  // 我的提案被采纳或不采纳
+                      | 'notice'    // 新公告
+                      | 'history'   // 包厢的历史在服务器上被改了（0020）
+interface Notification {
+  id: string                    // 稳定：那一步的提交 id；等处理的提案是 proposal:<id>:<时间>
+  house: string; kind: NotificationKind; by: string; title: string; when: string
+  problem?: string; proposal?: string; notice?: string; post?: string   // 点开跳到哪里
 }
 interface SyncState {
   state: 'synced' | 'ahead' | 'behind' | 'offline' | 'error'
@@ -287,6 +301,8 @@ interface HistoryEntry { by: string; when: string; act: Act; problem: string; ti
 | `pair` | `{ house?, name? }` | 所有人（AI 也可以） | 无提交；返回配对码 `TH-…@<relay>`，10 分钟内有效、只能用一次，对这台设备在该 Relay 上入座的**所有包厢**有效。`name` 是新设备的名字（如"手机"）。界面在"添加一台设备"里整段显示，供新设备粘贴（见 DEVICES.md） |
 | `devices` | `{ house }` | 所有人 | 无提交；返回 `DeviceInfo[]`（我的全部设备） |
 | `unpair` | `{ house?, device }` | 所有人（只能移除自己的另一台设备） | Relay 代写座位变更；`device` 是设备名或 `SHA256:` 指纹。不指定 `house` 时先同步，再在所有有这台设备的包厢里移除。正在用的这台、最后一台都不能移除。返回移除了的包厢 id |
+| `inbox` | `{ house? }` | 所有人 | 无提交；返回没看过的 `Notification[]`，最新的在前；不写 `house` 就是所有包厢 |
+| `markSeen` | `{ house, ids? }` | 所有人 | 无提交；把这些通知标成已看，不写 `ids` 就是这间包厢现在的全部 |
 | `drafts` | `{ house }` | 所有人 | 无提交；返回 `{ id, kind, title, text, when, reason? }[]`（被拒绝或离线时保存的草稿） |
 | `discardDraft` | `{ house, id }` | 所有人 | 无提交；删除一份草稿 |
 | `purgeBlob` | `{ house, id }` | 东家 | 删除附件内容，引用标成 purged |

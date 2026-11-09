@@ -1,0 +1,268 @@
+//! 大云晓钟
+//!
+//! The inbox (0026): what is new for this device's member, worked out from
+//! the room's own history; nothing comes from a push service.
+//!
+//! * A step concerns me when someone else (never I) mentions me in a post
+//!   (`@<my name>` or `@<my id>`), decides one of my proposals, does
+//!   something on a problem I raised or own, or puts up a notice. One step
+//!   makes one notification, the most specific of these.
+//! * Open proposals of others are waiting for the host and the steward.
+//! * A history changed at the relay (0020) is one too.
+//!
+//! Each device keeps its own record (`teahouse-inbox.json` in the clone's
+//! git directory): where the inbox starts, so what was there before is not
+//! news, and what has been seen. A step's notification is its commit id, so
+//! it stays the same however often it is worked out.
+
+use super::Snapshot;
+use crate::error::Result;
+use crate::format;
+use crate::model::{Act, Notification, NotificationKind};
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
+use std::path::Path;
+use teahouse_core::rules::{format_rfc3339, TalkTopic};
+use teahouse_core::Role;
+
+const FILE: &str = "teahouse-inbox.json";
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Record {
+    /// The commit the inbox starts after: what was on `main` before it is
+    /// not news.
+    pub since: Option<String>,
+    /// Notifications already seen.
+    #[serde(default)]
+    pub seen: BTreeSet<String>,
+}
+
+impl Record {
+    pub fn load(git_dir: &Path) -> Option<Record> {
+        let b = std::fs::read(git_dir.join(FILE)).ok()?;
+        serde_json::from_slice(&b).ok()
+    }
+
+    pub fn save(&self, git_dir: &Path) -> Result<()> {
+        let b =
+            serde_json::to_vec(self).map_err(|e| crate::error::Error::internal(e.to_string()))?;
+        std::fs::write(git_dir.join(FILE), b)?;
+        Ok(())
+    }
+}
+
+/// Called around every sync: the first time, the inbox starts at what this
+/// device had before (`before`), or, for a fresh clone, at what it got.
+pub fn start(git_dir: &Path, before: Option<String>, after: Option<String>) {
+    if Record::load(git_dir).is_none() {
+        let _ = Record {
+            since: before.or(after),
+            seen: BTreeSet::new(),
+        }
+        .save(git_dir);
+    }
+}
+
+impl Snapshot {
+    /// What is new for this device's member and not seen yet, newest first.
+    pub fn inbox(&self) -> Result<Vec<Notification>> {
+        let record = self.inbox_record()?;
+        Ok(self
+            .notifications(&record)?
+            .into_iter()
+            .filter(|n| !record.seen.contains(&n.id))
+            .collect())
+    }
+
+    /// Marks notifications as seen: these, or all there are now.
+    pub fn mark_seen(&self, ids: Option<&[String]>) -> Result<()> {
+        let mut record = self.inbox_record()?;
+        match ids {
+            Some(ids) => record.seen.extend(ids.iter().cloned()),
+            None => {
+                // Everything up to now: the steps by moving the start, the
+                // rest (proposals waiting, a changed history) by id.
+                let now = self.notifications(&record)?;
+                record.since = Some(self.head.clone());
+                record.seen = now
+                    .into_iter()
+                    .filter(|n| {
+                        n.kind == NotificationKind::Proposal || n.kind == NotificationKind::History
+                    })
+                    .map(|n| n.id)
+                    .collect();
+            }
+        }
+        record.save(self.git.dir())
+    }
+
+    fn inbox_record(&self) -> Result<Record> {
+        match Record::load(self.git.dir()) {
+            Some(r) => Ok(r),
+            // Never synced through this engine (a room made locally): it
+            // starts now.
+            None => {
+                let r = Record {
+                    since: Some(self.head.clone()),
+                    seen: BTreeSet::new(),
+                };
+                r.save(self.git.dir())?;
+                Ok(r)
+            }
+        }
+    }
+
+    fn notifications(&self, record: &Record) -> Result<Vec<Notification>> {
+        let Some(me) = self.me.as_ref() else {
+            return Ok(Vec::new());
+        };
+        // A start the history no longer has (it was changed): from now on.
+        let start = match &record.since {
+            Some(h) => match self.steps.iter().position(|s| &s.hash == h) {
+                Some(i) => i + 1,
+                None => self.steps.len(),
+            },
+            None => 0,
+        };
+        let mentions = [format!("@{}", me.name), format!("@{}", me.id)];
+        let mut out = Vec::new();
+        for s in &self.steps[start..] {
+            let by = self.by(s);
+            if by == me.id {
+                continue;
+            }
+            let act = format::infer_act(s.act.first().map(String::as_str), &s.changes);
+            let problem = s
+                .problem
+                .first()
+                .filter(|p| p.len() == 4 && p.bytes().all(|b| b.is_ascii_digit()))
+                .cloned();
+            let mut n = Notification {
+                id: s.hash.clone(),
+                house: self.id.clone(),
+                kind: NotificationKind::Notice,
+                by: by.clone(),
+                title: s.subject.clone(),
+                when: format_rfc3339(s.time),
+                problem: problem.clone(),
+                proposal: None,
+                notice: None,
+                post: None,
+            };
+            // 1. Someone names me in a post.
+            let mentioned = s
+                .changes
+                .iter()
+                .filter(|(c, _)| *c == 'A')
+                .find_map(|(_, p)| {
+                    let post = format::parse_post_path(p)?;
+                    let text = self.text(p).ok()??;
+                    mentions
+                        .iter()
+                        .any(|m| text.contains(m.as_str()))
+                        .then(|| (p.clone(), post.topic))
+                });
+            if let Some((post, topic)) = mentioned {
+                n.kind = NotificationKind::Mention;
+                n.post = Some(post);
+                match topic {
+                    TalkTopic::Board(notice) => n.notice = Some(notice.to_string()),
+                    TalkTopic::Proposal { owner, name } => {
+                        n.proposal = Some(format!("{owner}/{name}"))
+                    }
+                    TalkTopic::Problem(_) => {}
+                }
+                out.push(n);
+                continue;
+            }
+            // 2. One of my proposals was decided.
+            if matches!(act, Act::Adopt | Act::Decline) {
+                if let Some(p) = s
+                    .proposal
+                    .first()
+                    .filter(|p| p.split_once('/').is_some_and(|(o, _)| o == me.id))
+                {
+                    n.kind = NotificationKind::Decision;
+                    n.proposal = Some(p.clone());
+                    out.push(n);
+                    continue;
+                }
+            }
+            // 3. Something on a problem I raised or own.
+            if let Some(pid) = &problem {
+                let mine = self.problem_path(pid).is_some_and(|(_, path)| {
+                    let owner = self
+                        .text(path)
+                        .ok()
+                        .flatten()
+                        .map(|t| format::parse_problem(&t, pid, "").owner);
+                    owner.flatten().as_deref() == Some(me.id.as_str())
+                        || self.added_step(path).is_some_and(|o| self.by(o) == me.id)
+                });
+                let about_it = matches!(
+                    act,
+                    Act::Note
+                        | Act::AddWork
+                        | Act::UpdateWork
+                        | Act::SetStatus
+                        | Act::UpdateProblem
+                        | Act::Adopt
+                        | Act::Decline
+                );
+                if mine && about_it {
+                    n.kind = NotificationKind::Problem;
+                    out.push(n);
+                    continue;
+                }
+            }
+            // 4. A new notice.
+            if act == Act::Notice {
+                n.notice = s
+                    .changes
+                    .iter()
+                    .find_map(|(c, p)| (*c == 'A').then(|| format::parse_notice_path(p)).flatten())
+                    .map(str::to_string);
+                out.push(n);
+            }
+        }
+        // Newest first; within one second, the later step first.
+        out.reverse();
+        // Proposals waiting for the host or the steward: again when reworked.
+        if matches!(me.role, Role::Host | Role::Steward) {
+            for p in self.proposals(false)? {
+                if p.by == me.id {
+                    continue;
+                }
+                out.push(Notification {
+                    id: format!("proposal:{}:{}", p.id, p.when),
+                    house: self.id.clone(),
+                    kind: NotificationKind::Proposal,
+                    by: p.by.clone(),
+                    title: p.title.clone(),
+                    when: p.when.clone(),
+                    problem: Some(p.problem.clone()).filter(|x| !x.is_empty()),
+                    proposal: Some(p.id.clone()),
+                    notice: None,
+                    post: None,
+                });
+            }
+        }
+        // The relay's history was changed (0020).
+        if let Some(h) = crate::sync::Record::load(self.git.dir()).history {
+            out.push(Notification {
+                id: format!("history:{}:{}:{}", self.head, h.dropped, h.added),
+                house: self.id.clone(),
+                kind: NotificationKind::History,
+                by: String::new(),
+                title: format!("-{} +{}", h.dropped, h.added),
+                when: String::new(),
+                problem: None,
+                proposal: None,
+                notice: None,
+                post: None,
+            });
+        }
+        out.sort_by(|a, b| b.when.cmp(&a.when));
+        Ok(out)
+    }
+}

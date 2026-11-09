@@ -1536,6 +1536,110 @@ fn posts_carry_images_and_files() {
 }
 
 #[test]
+fn the_inbox_tells_each_member_what_is_new_for_them() {
+    let w = World::new("inbox");
+    let (wang, li, zhao) = w.wutong();
+    parking(&li); // problem 0001, raised by li
+    let kinds = |p: &Person| -> Vec<String> {
+        p.ok("sync", json!({ "house": "wutong" }));
+        p.ok("inbox", json!({ "house": "wutong" }))
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|n| n["kind"].as_str().unwrap().to_string())
+            .collect()
+    };
+    assert!(kinds(&zhao).is_empty(), "nothing of zhao's yet");
+
+    // A guest's proposal waits for the host and the steward.
+    let prop = zhao.ok(
+        "propose",
+        json!({ "house": "wutong", "problem": "0001", "title": "画线", "changes": [{ "kind": "doc", "title": "画线", "text": "画。" }] }),
+    );
+    assert_eq!(kinds(&wang), ["proposal"]);
+    assert_eq!(kinds(&li), ["proposal"]);
+    assert!(kinds(&zhao).is_empty(), "not one's own");
+
+    // Adopted: zhao hears of it; li too, as it is on li's problem.
+    wang.ok(
+        "adopt",
+        json!({ "house": "wutong", "proposal": prop["id"] }),
+    );
+    assert_eq!(kinds(&zhao), ["decision"]);
+    assert_eq!(kinds(&li), ["problem"]);
+
+    // Named in a post: a mention, whatever the problem.
+    li.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "text": "@小赵 你量一下尺寸？" }),
+    );
+    let _ = kinds(&zhao);
+    let z2 = zhao.ok("inbox", json!({ "house": "wutong" }));
+    let first = &z2.as_array().unwrap()[0];
+    assert_eq!(
+        (&first["kind"], &first["by"], &first["problem"]),
+        (&json!("mention"), &json!("li"), &json!("0001")),
+        "{z2:#}"
+    );
+    assert!(first["post"].as_str().unwrap().starts_with("talk/0001/"));
+
+    // A notice: for everyone else.
+    wang.ok(
+        "postNotice",
+        json!({ "house": "wutong", "title": "周六停水", "text": "上午。" }),
+    );
+    assert_eq!(kinds(&zhao)[0], "notice");
+    assert_eq!(kinds(&li)[0], "notice");
+    assert!(!kinds(&wang).contains(&"notice".to_string()));
+    // The count, as the room's summary shows it.
+    let h = zhao.ok("houses", Value::Null);
+    assert_eq!(h[0]["unread"], 3, "{h:#}");
+
+    // watch --once prints them, one JSON line each.
+    let out = run(Command::new(env!("CARGO_BIN_EXE_teahouse-client"))
+        .arg("--root")
+        .arg(zhao.client.root())
+        .args(["watch", "--once", "--house", "wutong"]));
+    let lines: Vec<Value> = out
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    assert_eq!(lines.len(), 3, "{out}");
+
+    // Seen: one, then all.
+    let items = zhao.ok("inbox", json!({ "house": "wutong" }));
+    zhao.ok(
+        "markSeen",
+        json!({ "house": "wutong", "ids": [items[0]["id"]] }),
+    );
+    assert_eq!(
+        zhao.ok("inbox", json!({ "house": "wutong" }))
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
+    zhao.ok("markSeen", json!({ "house": "wutong" }));
+    assert!(zhao
+        .ok("inbox", json!({ "house": "wutong" }))
+        .as_array()
+        .unwrap()
+        .is_empty());
+    assert_eq!(zhao.ok("houses", Value::Null)[0]["unread"], 0);
+
+    // Someone new: what was there before is not news.
+    let code = wang.ok("invite", json!({ "house": "wutong", "name": "老周" }));
+    let zhou = w.person("zhou");
+    zhou.ok("redeem", json!({ "code": code }));
+    assert!(kinds(&zhou).is_empty());
+    wang.ok(
+        "postNotice",
+        json!({ "house": "wutong", "title": "周日开会", "text": "晚上。" }),
+    );
+    assert_eq!(kinds(&zhou), ["notice"]);
+}
+
+#[test]
 fn attachments_go_to_the_cache_and_into_git_as_references() {
     let w = World::new("blobs");
     let (_wang, li, _zhao) = w.wutong();
