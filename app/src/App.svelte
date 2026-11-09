@@ -10,6 +10,7 @@
   import Archive from './views/Archive.svelte'
   import Join from './views/Join.svelte'
   import Devices from './views/Devices.svelte'
+  import Inbox from './views/Inbox.svelte'
   import Design from './views/Design.svelte'
   import ErrorBar from './lib/ErrorBar.svelte'
   import Loading from './lib/Loading.svelte'
@@ -89,13 +90,15 @@
 <Rail {house} {houses} {section} {seated} />
 <main class:readonly={!seated || frozen}>
   <ErrorBar />
-  <StatusBar {house} {seated} {refresh} />
+  <StatusBar {house} {seated} {refresh} unread={houses.find((x) => x.id === house!.id)?.unread ?? 0} />
   {#key hash + i18n.lang + house.id}
     <div class="page">
       {#if route.page === 'problems'}
         <Problems {house} {refresh} view={route.arg === 'kanban' ? 'kanban' : 'list'} compose={route.arg === 'new'} />
       {:else if route.page === 'board'}
         <Board {house} {refresh} />
+      {:else if route.page === 'inbox'}
+        <Inbox {house} {refresh} />
       {:else if route.page === 'devices'}
         <Devices {house} />
       {:else if route.page === 'design' && (import.meta.env.DEV || backend.kind === 'fake')}

@@ -25,7 +25,19 @@ export interface HouseSummary {
   id: string; name: string; me: string; myRole: Role
   seats: number
   pendingProposals: number
+  /** 收件箱里还没看过的条数（0026，每台设备各记各的） */
+  unread?: number
   sync: SyncState
+}
+
+/** 收件箱的一条（大云晓钟，0026，引擎 #120）：跟我有关的新动静 */
+export interface Notification {
+  id: string; house: string
+  kind: 'mention' | 'problem' | 'proposal' | 'decision' | 'notice' | 'history'
+  by: string; title: string; when: string
+  problem?: string; proposal?: string; notice?: string
+  /** 说的是哪一条留言（有的话） */
+  post?: string
 }
 
 /** 座位表只分人和机器（法则第 17 条）：kind = machine 是机器成员，只是标记，不限制角色；agent 是哪种机器，只用于显示。
@@ -122,6 +134,10 @@ export interface Commands {
   sync: [{ house?: string }, SyncState]
   /** 历史被改时的两个选择（0020）：接受茶屋上的新版本，或者留在旧版本（只读） */
   acceptHistory: [HouseArg, SyncState]
+  /** 收件箱：不写 house 就是所有包厢；最新的在前 */
+  inbox: [{ house?: string }, Notification[]]
+  /** 标成看过：不写 ids 就是这间包厢现在的全部 */
+  markSeen: [HouseArg & { ids?: string[] }, null]
   keepHistory: [HouseArg, SyncState]
   join: [{ relay: string; house: string }, HouseSummary]
 

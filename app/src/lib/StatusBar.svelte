@@ -8,7 +8,8 @@
   //   已离座：本机钥匙不在座位表上（引擎给的 me 为空）→ 只读，副本保留
   //   未同步：有修改还没送到 Relay、Relay 有新内容、离线或同步出错
   //   已同步：一行小字"已同步 · 几分钟前"，旁边照样有"现在同步"——任何时候都能手动拉一次
-  let { house, seated, refresh }: { house: House; seated: boolean; refresh: () => void } = $props()
+  // 收件箱（0026）：右上角一行里放入口，有没看过的就显示墨底数字
+  let { house, seated, refresh, unread = 0 }: { house: House; seated: boolean; refresh: () => void; unread?: number } = $props()
   let s = $derived(house.sync)
   let busy = $state(false)
 
@@ -62,8 +63,16 @@
   </div>
 {/if}
 
+{#snippet inbox()}
+  <a class="inbox" href="#/{house.id}/inbox" aria-label={t('inbox.aria', { n: unread })}>{t('inbox.title')}{#if unread}<em class="badge">{unread > 99 ? '99+' : unread}</em>{/if}</a>
+{/snippet}
+
+{#if s.state !== 'synced'}
+  <div class="quiet-sync">{@render inbox()}</div>
+{/if}
 {#if s.state === 'synced'}
   <div class="quiet-sync" role="status">
+    {@render inbox()}
     <span>{s.lastSync ? t('sync.syncedAt', { when: when(s.lastSync) }) : t('sync.synced')}</span>
     <button class="act" disabled={busy} onclick={sync}>{busy ? t('sync.busy') : t('sync.now')}</button>
   </div>
@@ -85,6 +94,8 @@
 {/if}
 
 <style>
+  .inbox { margin-right: auto; display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ink); text-decoration: none; border-bottom: 1.5px solid var(--ink); }
+  .inbox .badge { font-style: normal; }
   .quiet-sync { margin: 10px var(--pad-x) 0; display: flex; justify-content: flex-end; align-items: baseline; gap: 12px; font-size: 12px; color: var(--ink-3); }
   .bar { margin: 16px var(--pad-x) 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: start; border: 2px solid var(--ink); padding: 14px 18px; }
   .what { font-weight: 700; line-height: 1.5; }

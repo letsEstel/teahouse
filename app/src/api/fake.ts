@@ -31,6 +31,11 @@ const fail = (code: A.ApiError['code'], message: string): A.Result<never> => ({ 
 const find = (id: string) => store.find((h) => h.id === id)
 /** 假数据里"上传"的文件：stageFile 的键、新附件的 id → 浏览器里的 object URL */
 export const fakeStaged = new Map<string, string>()
+const fakeInbox: A.Notification[] = [
+  { id: 'n1', house: 'wutong', kind: 'mention', by: 'zhao', title: '0001 下的留言', when: '2026-10-18T19:55:00Z', problem: '0001', post: 'talk/0001/x.md' },
+  { id: 'n2', house: 'wutong', kind: 'proposal', by: 'sun', title: '补充 2 号楼窗下实测气味记录', when: '2026-10-16T21:00:00Z', problem: '0002', proposal: 'p2' },
+  { id: 'n3', house: 'wutong', kind: 'notice', by: 'zhou', title: '10 月 25 日（周六）上午院内大扫除', when: '2026-10-16T10:00:00Z', notice: 'b1' },
+]
 let fakeAdded = 0
 // 一人多设备：假数据里的配对码，和"我的设备"
 const PAIR_CODE = 'TH-PA1R-7Q3M-XK9D-2WFE'
@@ -240,7 +245,7 @@ const written = (becameProposal = false): A.Result<A.WriteResult> => ok({ commit
 const handlers: Handlers = {
   houses: () => ok(store.map((h) => ({
     id: h.id, name: L(h.name), me: meOf(h), myRole: h.members.find((m) => m.id === h.me)!.role,
-    seats: h.members.length, pendingProposals: h.proposals.length, sync: synced,
+    seats: h.members.length, pendingProposals: h.proposals.length, unread: fakeInbox.filter((n) => n.house === h.id).length, sync: synced,
   }))),
   house: ({ house }) => {
     const h = find(house)
@@ -365,6 +370,9 @@ const handlers: Handlers = {
   // 历史被改时的两个选择（0020）：接受就清掉提示；留在旧版本就标上 kept，提示换一种说法
   acceptHistory: () => { const { historyChanged: _, ...rest } = synced; synced = rest; return ok(synced) },
   keepHistory: () => { if (synced.historyChanged) synced = { ...synced, historyChanged: { ...synced.historyChanged, kept: true } }; return ok(synced) },
+  // 收件箱（0026）：梧桐里有几条没看过的新动静，演示用；其他茶摊子没有
+  inbox: ({ house }) => ok(fakeInbox.filter((n) => !house || n.house === house)),
+  markSeen: ({ house, ids }) => { for (let i = fakeInbox.length - 1; i >= 0; i--) if (fakeInbox[i].house === house && (!ids || ids.includes(fakeInbox[i].id))) fakeInbox.splice(i, 1); return ok(null) },
   rename: ({ house, name, member }) => {
     const h = find(house)
     const m = h?.members.find((x) => x.id === (member ?? h.me))

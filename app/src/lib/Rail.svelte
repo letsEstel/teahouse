@@ -52,7 +52,7 @@
       {#each houses as h}
         <li class:current={h.id === house.id}>
           <a href="#/{h.id}/house" class:on={h.id === house.id} onclick={() => { open = false; expanded = false }}>
-            <i></i><span>{h.name}</span>
+            <i></i><span>{h.name}</span>{#if h.unread}<em class="badge unread" title={t('inbox.aria', { n: h.unread })}>{h.unread > 99 ? '99+' : h.unread}</em>{/if}
           </a>
         </li>
         {#if h.id === house.id}
@@ -310,4 +310,5 @@
     .nm { font-size: 14px; letter-spacing: 0; }
     /* 下拉不比所在的那一栏宽（见上面窄屏那条） */
   }
+  .unread { margin-left: auto; font-size: 10px; padding: 0 5px; line-height: 16px; }
 </style>
