@@ -1362,6 +1362,95 @@ fn a_history_changed_at_the_relay_stops_the_sync_until_the_member_chooses() {
 }
 
 #[test]
+fn posts_about_proposals_before_and_after_the_decision() {
+    let w = World::new("propnotes");
+    let (wang, li, zhao) = w.wutong();
+    parking(&li);
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    let p = zhao.ok(
+        "propose",
+        json!({ "house": "wutong", "problem": "0001", "title": "画线", "changes": [{ "kind": "doc", "title": "画线", "text": "画。" }] }),
+    );
+    let id = p["id"].as_str().unwrap().to_string();
+
+    // 0022: anyone comments on the proposal; it shows on the proposal.
+    li.ok("sync", json!({ "house": "wutong" }));
+    let n = li.ok(
+        "note",
+        json!({ "house": "wutong", "proposal": id, "text": "画在哪一边？" }),
+    );
+    assert!(
+        n["id"]
+            .as_str()
+            .unwrap()
+            .starts_with(&format!("talk/proposals/{id}/")),
+        "{n:#}"
+    );
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let h = wang.house();
+    let prop = h["proposals"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|x| x["id"] == id.as_str())
+        .unwrap()
+        .clone();
+    assert_eq!(
+        (&prop["notes"][0]["by"], &prop["notes"][0]["text"]),
+        (&json!("li"), &json!("画在哪一边？"))
+    );
+    assert_eq!(
+        w.relay_git(&[
+            "log",
+            "-1",
+            "--format=%(trailers:key=Problem,valueonly)",
+            "main"
+        ])
+        .trim(),
+        "proposal"
+    );
+
+    // Not about a proposal that does not exist.
+    let e = li.err(
+        "note",
+        json!({ "house": "wutong", "proposal": "zhao/nope", "text": "?" }),
+    );
+    assert_eq!(e["code"], "not_found", "{e:#}");
+
+    // After the decision, posting goes on, and the decision shows the posts.
+    wang.ok(
+        "decline",
+        json!({ "house": "wutong", "proposal": id, "reason": "先量一下。" }),
+    );
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    zhao.ok(
+        "note",
+        json!({ "house": "wutong", "proposal": id, "text": "好，我去量。" }),
+    );
+    wang.ok("sync", json!({ "house": "wutong" }));
+    let d = wang.house()["decided"][0].clone();
+    assert_eq!(d["id"], id.as_str());
+    let texts: Vec<&str> = d["notes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|n| n["text"].as_str().unwrap())
+        .collect();
+    assert_eq!(texts, ["画在哪一边？", "好，我去量。"]);
+
+    // The steward (li) moderates them like any post.
+    li.ok("sync", json!({ "house": "wutong" }));
+    li.ok("removeNote", json!({ "house": "wutong", "id": n["id"] }));
+    let d = li.house()["decided"][0].clone();
+    assert_eq!(d["notes"].as_array().unwrap().len(), 1, "{d:#}");
+    // A guest cannot.
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    let other = d["notes"][0]["id"].clone();
+    let e = zhao.err("removeNote", json!({ "house": "wutong", "id": other }));
+    assert_eq!(e["code"], "forbidden", "{e:#}");
+}
+
+#[test]
 fn attachments_go_to_the_cache_and_into_git_as_references() {
     let w = World::new("blobs");
     let (_wang, li, _zhao) = w.wutong();

@@ -714,6 +714,7 @@ impl Client {
             house: String,
             problem: Option<String>,
             notice: Option<String>,
+            proposal: Option<String>,
             text: String,
         }
         #[derive(Deserialize)]
@@ -945,6 +946,7 @@ impl Client {
                 to_value(Writer::open(self, &p.house)?.note(
                     p.problem.as_deref(),
                     p.notice.as_deref(),
+                    p.proposal.as_deref(),
                     &p.text,
                     a,
                 )?)

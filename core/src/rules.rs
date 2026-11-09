@@ -16,6 +16,8 @@ pub const STEWARD_DIRS: &[&str] = &["problems/", "works/", "board/", "talk/"];
 /// The stamp only names the file and keeps names apart; posts are *shown* in
 /// the order they reached `main`, so a stamp cannot reorder a discussion.
 pub const TALK_DIR: &str = "talk/";
+/// Where posts about proposals live (0022).
+pub const PROPOSAL_TALK_DIR: &str = "talk/proposals/";
 /// Where notices live: `board/<notice>.md`.
 pub const BOARD_DIR: &str = "board/";
 
@@ -30,6 +32,13 @@ pub const MAX_STAMP_AHEAD_SECS: i64 = 10 * 60;
 pub enum TalkTopic<'a> {
     Problem(&'a str),
     Board(&'a str),
+    /// `talk/proposals/<owner>/<name>/…`: about a proposal (0022), open or
+    /// decided. Kept by the proposal's id, so a renumbered problem does not
+    /// move them.
+    Proposal {
+        owner: &'a str,
+        name: &'a str,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -154,6 +163,9 @@ pub fn parse_talk_path(path: &str) -> Option<TalkPost<'_>> {
     let parts: Vec<&str> = rest.split('/').collect();
     let (topic, file) = match parts.as_slice() {
         ["board", notice, file] if valid_notice_stem(notice) => (TalkTopic::Board(notice), *file),
+        ["proposals", owner, name, file] if valid_member_id(owner) && valid_proposal_name(name) => {
+            (TalkTopic::Proposal { owner, name }, *file)
+        }
         [id, file] if id.len() == 4 && id.bytes().all(|b| b.is_ascii_digit()) => {
             (TalkTopic::Problem(id), *file)
         }
@@ -245,6 +257,9 @@ pub enum ProblemRef {
     /// `Problem: board` — notices and replies; may touch only `board/` and
     /// `talk/board/`.
     Board,
+    /// `Problem: proposal` — posts about proposals; may touch only
+    /// `talk/proposals/`.
+    Proposal,
 }
 
 impl ProblemRef {
@@ -255,6 +270,9 @@ impl ProblemRef {
         }
         if v == "board" {
             return Some(ProblemRef::Board);
+        }
+        if v == "proposal" {
+            return Some(ProblemRef::Proposal);
         }
         if v.len() == 4 && v.bytes().all(|b| b.is_ascii_digit()) {
             return Some(ProblemRef::Id(v.to_string()));
@@ -350,7 +368,23 @@ mod tests {
                 author: "li_2"
             })
         );
+        assert_eq!(
+            parse_talk_path("talk/proposals/zhao/p-2ycv/20261018T213000Z-wang.md"),
+            Some(TalkPost {
+                topic: TalkTopic::Proposal {
+                    owner: "zhao",
+                    name: "p-2ycv"
+                },
+                stamp: "20261018T213000Z",
+                author: "wang"
+            })
+        );
+        assert_eq!(ProblemRef::parse("proposal"), Some(ProblemRef::Proposal));
         for bad in [
+            "talk/proposals/zhao/20261018T213000Z-wang.md",
+            "talk/proposals/Zhao/p/20261018T213000Z-wang.md",
+            "talk/proposals/zhao/../20261018T213000Z-wang.md",
+            "talk/proposals/zhao/p/q/20261018T213000Z-wang.md",
             "talk/0001/x.md",
             "talk/0001/20261018T213000Z-wang.txt",
             "talk/0001/20261018T213000-wang.md",

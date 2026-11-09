@@ -471,12 +471,12 @@ fn house_has_members_problems_board_proposals_and_decisions() {
             {
                 "id": "zhao/flowerbed-y2", "title": "拆掉花坛", "by": "zhao",
                 "result": "declined", "when": when(T0 + 10 * HOUR),
-                "reason": "花坛是大家一起种的。",
+                "reason": "花坛是大家一起种的。", "notes": [],
             },
             {
                 "id": "zhao/night-parking-x1", "title": "夜间临停建议", "by": "zhao",
                 "result": "adopted", "when": when(T0 + 9 * HOUR),
-                "reason": "外来车太多了，晚上更挤。",
+                "reason": "外来车太多了，晚上更挤。", "notes": [],
             },
         ])
     );

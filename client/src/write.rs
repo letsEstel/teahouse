@@ -963,10 +963,12 @@ impl<'c> Writer<'c> {
         self.publish(vec![Undo::Main(c)], "updateNotice", args, false, Some(name))
     }
 
+    /// A post under a problem, a notice, or (0022) a proposal: give one.
     pub fn note(
         self,
         problem: Option<&str>,
         notice: Option<&str>,
+        proposal: Option<&str>,
         text: &str,
         args: &Value,
     ) -> Result<WriteResult> {
@@ -981,12 +983,25 @@ impl<'c> Writer<'c> {
             };
             Error::new(code, m).with("limit", rules::MAX_TEXT_BYTES.to_string())
         })?;
-        let (dir, topic) = match (problem, notice) {
-            (Some(p), None) => {
+        let (dir, topic) = match (problem, notice, proposal) {
+            (Some(p), None, None) => {
                 self.require_problem(p)?;
                 (format!("talk/{p}/"), p.to_string())
             }
-            (None, Some(n)) => {
+            (None, None, Some(id)) => {
+                // Open or decided; posting goes on after the decision.
+                let known = self.snap.proposals(false)?.iter().any(|p| p.id == id)
+                    || self.snap.decided()?.iter().any(|d| d.id == id);
+                if !known {
+                    return Err(Error::not_found(format!("no proposal {id} / 没有这份提案"))
+                        .with("proposal", id));
+                }
+                (
+                    format!("{}{id}/", rules::PROPOSAL_TALK_DIR),
+                    "proposal".to_string(),
+                )
+            }
+            (None, Some(n), None) => {
                 if self.snap.entry(&format!("board/{n}.md")).is_none() {
                     return Err(
                         Error::not_found(format!("no notice {n} / 没有这条公告")).with("notice", n)
@@ -994,11 +1009,9 @@ impl<'c> Writer<'c> {
                 }
                 (format!("talk/board/{n}/"), "board".to_string())
             }
-            _ => {
-                return Err(invalid(
-                    "give either problem or notice / problem 和 notice 只能给一个",
-                ))
-            }
+            _ => return Err(invalid(
+                "give one of problem, notice or proposal / problem、notice、proposal 只能给一个",
+            )),
         };
         // One post per second per member; a second one waits a second.
         let mut at = sync::now();
@@ -1027,6 +1040,7 @@ impl<'c> Writer<'c> {
         let topic = match post.topic {
             rules::TalkTopic::Problem(p) => p.to_string(),
             rules::TalkTopic::Board(_) => "board".into(),
+            rules::TalkTopic::Proposal { .. } => "proposal".into(),
         };
         let c = self.commit_main(
             &[Edit::Remove(id.to_string())],

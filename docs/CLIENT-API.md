@@ -74,7 +74,7 @@ owner: wang               # 认领人的成员 id，可省略
 ### 1.3 公告和留言（Relay 已经强制执行，见 RELAY.md）
 
 - 公告 `board/<公告名>.md`：frontmatter 里写 `title`，正文就是公告内容。
-- 留言 `talk/<问题id>/<YYYYMMDDTHHMMSSZ>-<成员id>.md`，公告的回应放在 `talk/board/<公告名>/…`。文件内容就是留言正文，没有 frontmatter。
+- 留言 `talk/<问题id>/<YYYYMMDDTHHMMSSZ>-<成员id>.md`，公告的回应放在 `talk/board/<公告名>/…`，提案下的留言放在 `talk/proposals/<提案作者>/<提案名>/…`（0022，按提案 id 放，新问题采纳时改了编号也不受影响）。文件内容就是留言正文，没有 frontmatter。
 - **显示顺序 = 进入 main 的先后**，按 RELAY.md "显示顺序"一节给出的 git 命令计算，不按文件名里的时间戳排序。
 
 **`works/` 下文件的分类，按优先级判断**：`*.ref.md` → 附件（`type` 为 `image/*` 时是 `image`，否则是 `file`）；`*.csv.meta.md` → 只作为表格的标题和说明，不单独列出；`*.md` → `plan`（frontmatter 写了 `kind: plan`）或 `doc`；`*.csv` → `table`；其他文件（1.6 节之前直接放进 git 的）→ `file`，带 `size`，没有 `blob`。
@@ -103,7 +103,7 @@ Act: add-work
 | `decline` | 不采纳提案（空提交，另写 `Proposal: …`，正文写理由） | 东家、伙计（记录要写 `Problem: meta` 的，也就是新问题和包厢设置的提案，暂时只有东家） |
 | `remove-note` | 删除留言 | 东家、伙计 |
 
-采纳和不采纳的提交同样必须带 `Problem:`：取提案所针对的问题；提案改的是公告时写 `board`。
+采纳和不采纳的提交同样必须带 `Problem:`：取提案所针对的问题；提案改的是公告时写 `board`。提案下的留言写 `Problem: proposal`，这种提交只能改 `talk/proposals/` 下的文件。
 | `seat` | 座位变更 | 修改 `members.toml` |
 
 **没有 `Act:` 的提交**（比如有人直接用 git 提交）照样能显示：引擎会从改动的路径推断动作，推断不出来时显示为 `update`。
@@ -215,8 +215,9 @@ interface Problem extends ProblemSummary {
 
 interface DiffLine { kind: 'same' | 'add' | 'del'; text: string }
 interface FileChange { path: string; title: string; kind: WorkKind; change: 'add' | 'modify' | 'delete'; lines?: DiffLine[] }
-interface Proposal { id: string; title: string; by: string; problem: string; when: string; reason?: string; files: FileChange[] }
-interface Decided  { id: string; title: string; by: string; result: 'adopted' | 'declined'; when: string; reason?: string }
+interface Proposal { id: string; title: string; by: string; problem: string; when: string; reason?: string; files: FileChange[]; notes: Note[] }
+interface Decided  { id: string; title: string; by: string; result: 'adopted' | 'declined'; when: string; reason?: string; notes: Note[] }
+// notes：提案下的留言，按进入 main 的先后。决定之后照样能留言。
 
 interface House {
   id: string; name: string; signboard?: string; founded: string; capacity: 15
@@ -272,7 +273,7 @@ interface HistoryEntry { by: string; when: string; act: Act; problem: string; ti
 | `setStatus` | `{ house, problem, status, owner? }` | 东家、伙计 | `set-status` |
 | `addWork` | `{ house, problem, kind, title, text? \| fromPath? }`（图片和附件用 `fromPath`，引擎负责上传附件并写引用） | 东家、伙计（客人自动转为提案） | `add-work` |
 | `updateWork` | `{ house, id, text? \| fromPath? }` | 同上 | `update-work` |
-| `note` | `{ house, problem \| notice, text }` | 所有人 | `note` |
+| `note` | `{ house, problem \| notice \| proposal, text }`：三个只给一个；`proposal` 是提案 id（`<作者>/<名字>`），开着的和已决定的都行 | 所有人 | `note` |
 | `postNotice` | `{ house, title, text }` | 东家、伙计（客人自动转为提案） | `notice` |
 | `propose` | `{ house, problem, title, reason?, changes: {id?, kind, title, text? \| fromPath?, delete?}[] }` | 所有人 | 提案分支 |
 | `withdraw` | `{ house, proposal }` | 提案作者 | 删除提案分支 |

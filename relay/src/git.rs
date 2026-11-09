@@ -321,6 +321,34 @@ impl Git {
     }
 
     /// Values of the `key:` trailer, parsed by git's own trailer parser.
+    /// Whether `commit` or one of its ancestors records a decision on
+    /// proposal `id` (`<owner>/<name>`): an adoption or a decline carries
+    /// `Proposal: <id>` (CLIENT-API.md §1.5).
+    pub fn mentions_proposal(&self, commit: &str, id: &str) -> Result<bool> {
+        let escaped: String = id
+            .chars()
+            .flat_map(|c| {
+                let special = c.is_ascii_punctuation() && c != '/' && c != '-' && c != '_';
+                special
+                    .then_some('\\')
+                    .into_iter()
+                    .chain(std::iter::once(c))
+            })
+            .collect();
+        let pattern = format!("^Proposal: {escaped}$");
+        let out = self.run(&[
+            "log",
+            "-1",
+            "--no-show-signature",
+            "--format=%H",
+            "--extended-regexp",
+            "--grep",
+            &pattern,
+            commit,
+        ])?;
+        Ok(!out.is_empty())
+    }
+
     pub fn trailer_values(&self, commit: &str, key: &str) -> Result<Vec<String>> {
         let fmt = format!("--format=%(trailers:key={key},valueonly,unfold,separator=%x00)");
         let out = self.run(&["log", "-1", "--no-show-signature", &fmt, commit])?;

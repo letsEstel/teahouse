@@ -1157,6 +1157,93 @@ fn concurrent_pushes_never_corrupt_main() {
 // ───────────────────────────── 讨论与公告 · talk and board ─────────────────────────────
 
 #[test]
+fn posts_about_a_proposal_open_or_decided() {
+    let w = World::new();
+    let host = w.wutong();
+    let wang = w.clone("wang", "wutong");
+    w.write(&wang, "works/0001/night.md", "夜间共享车位\n");
+    w.commit(&wang, "夜间共享\n\nProblem: 0001");
+    w.push_ok(&wang, &["HEAD:refs/proposals/wang/night-share"]);
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+
+    // 0022: a guest comments on someone's open proposal, straight on main.
+    let li = w.clone("li", "wutong");
+    let post = "talk/proposals/wang/night-share/20261018T213000Z-li.md";
+    w.write(&li, post, "我同意，但要写清楚几点到几点。\n");
+    w.commit(&li, "关于提案\n\nProblem: proposal");
+    w.push_ok(&li, &["main"]);
+
+    // Not about a proposal that never was; not under another topic; and a
+    // `Problem: proposal` commit touches nothing else.
+    w.write(
+        &li,
+        "talk/proposals/wang/nope/20261018T213100Z-li.md",
+        "?\n",
+    );
+    w.commit(&li, "x\n\nProblem: proposal");
+    w.push_denied(
+        &li,
+        &["main"],
+        "about proposal wang/nope, which does not exist",
+    );
+    w.git_ok(&li, &["reset", "--quiet", "--hard", "origin/main"]);
+    w.write(
+        &li,
+        "talk/proposals/wang/night-share/20261018T213200Z-li.md",
+        "x\n",
+    );
+    w.commit(&li, "x\n\nProblem: 0001");
+    w.push_denied(&li, &["main"], "filed under a different topic");
+    w.git_ok(&li, &["reset", "--quiet", "--hard", "origin/main"]);
+    w.write(
+        &li,
+        "talk/proposals/wang/night-share/20261018T213300Z-li.md",
+        "x\n",
+    );
+    w.write(&li, "talk/0001/20261018T213300Z-li.md", "x\n");
+    w.commit(&li, "x\n\nProblem: proposal");
+    w.push_denied(
+        &li,
+        &["main"],
+        "`Problem: proposal` may only change talk/proposals/",
+    );
+    w.git_ok(&li, &["reset", "--quiet", "--hard", "origin/main"]);
+    // Nor edit someone else's post.
+    w.git_ok(&wang, &["pull", "--quiet", "--ff-only"]);
+    w.write(&wang, post, "改别人的\n");
+    w.commit(&wang, "x\n\nProblem: proposal");
+    w.push_denied(&wang, &["main"], "posts are never edited");
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+
+    // Decided (declined, its branch gone): posting goes on.
+    w.git_ok(&host, &["pull", "--quiet", "--ff-only"]);
+    w.git_ok(
+        &host,
+        &[
+            "commit",
+            "--quiet",
+            "--allow-empty",
+            "-m",
+            "不采纳提案：夜间共享\n\n先量一下车位。\n\nProblem: 0001\nAct: decline\nProposal: wang/night-share",
+        ],
+    );
+    w.push_ok(&host, &["main", ":refs/proposals/wang/night-share"]);
+    w.git_ok(&li, &["pull", "--quiet", "--ff-only"]);
+    w.write(
+        &li,
+        "talk/proposals/wang/night-share/20261018T213400Z-li.md",
+        "那就先量。\n",
+    );
+    w.commit(&li, "x\n\nProblem: proposal");
+    w.push_ok(&li, &["main"]);
+    // The steward moderates them like any post.
+    let zhou = w.clone("zhou", "wutong");
+    fs::remove_file(zhou.join(post)).unwrap();
+    w.commit(&zhou, "删除留言\n\nProblem: proposal");
+    w.push_ok(&zhou, &["main"]);
+}
+
+#[test]
 fn guests_post_to_talk_directly_but_only_their_own_new_posts() {
     let w = World::new();
     let _ = w.wutong();

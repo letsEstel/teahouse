@@ -18,7 +18,7 @@ use teahouse_core::members::{Member, Members, Role, MEMBERS_PATH};
 use teahouse_core::rules::{
     check_text, classify_ref, decide_ref, is_reserved_lookalike, may_write_on_main,
     parse_talk_path, stamp_epoch, Op, ProblemRef, RefDecision, RefKind, TalkTopic, BOARD_DIR,
-    MAIN_REF, MAX_STAMP_AHEAD_SECS, MAX_TEXT_BYTES, TALK_DIR,
+    MAIN_REF, MAX_STAMP_AHEAD_SECS, MAX_TEXT_BYTES, PROPOSAL_TALK_DIR, TALK_DIR,
 };
 use teahouse_core::PublicKey;
 
@@ -315,7 +315,7 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
         [one] => match ProblemRef::parse(one) {
             None => {
                 out.push(format!(
-                    "commit {sc}: `Problem: {one}` is not a 4-digit problem id, `board` or `meta`"
+                    "commit {sc}: `Problem: {one}` is not a 4-digit problem id, `board`, `proposal` or `meta`"
                 ));
                 None
             }
@@ -387,6 +387,7 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
             let consistent = match (&post.topic, &facing) {
                 (TalkTopic::Problem(id), Some(ProblemRef::Id(f))) => id == f,
                 (TalkTopic::Board(_), Some(ProblemRef::Board)) => true,
+                (TalkTopic::Proposal { .. }, Some(ProblemRef::Proposal)) => true,
                 (_, Some(ProblemRef::Meta)) => role == Role::Host,
                 _ => false,
             };
@@ -409,6 +410,11 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
         {
             out.push(format!(
                 "commit {sc}: `Problem: board` may only change board/ and talk/board/, not {p}"
+            ));
+        }
+        if matches!(facing, Some(ProblemRef::Proposal)) && !p.starts_with(PROPOSAL_TALK_DIR) {
+            out.push(format!(
+                "commit {sc}: `Problem: proposal` may only change {PROPOSAL_TALK_DIR}, not {p}"
             ));
         }
     }
@@ -453,7 +459,7 @@ fn guest_change_refused(me: &str, status: char, path: &str) -> Option<String> {
             "{path}: guests cannot remove posts; ask the steward or host / 客人不能删除留言，请找伙计或东家"
         )),
         ('A', None) if path.starts_with(TALK_DIR) => Some(format!(
-            "{path} is not a post path; use talk/<problem-id>/<YYYYMMDDTHHMMSSZ>-{me}.md or talk/board/<notice>/<YYYYMMDDTHHMMSSZ>-{me}.md with a real UTC time / 留言路径不对"
+            "{path} is not a post path; use talk/<problem-id>/<YYYYMMDDTHHMMSSZ>-{me}.md, talk/board/<notice>/…, or talk/proposals/<owner>/<name>/… with a real UTC time / 留言路径不对"
         )),
         _ => Some(format!(
             "guests cannot write main except adding their own posts under talk/ (not {path}); push to refs/proposals/{me}/<name> instead / 客人只能在 talk/ 下新增自己的留言，其余请发起提案"
@@ -521,6 +527,17 @@ fn check_discussion_file(
             {
                 out.push(format!(
                     "commit {sc}: {p} answers problem {id}, which does not exist (no problems/{id}-*.md) / 问题 {id} 不存在"
+                ));
+            }
+        }
+        // A proposal that exists, or once existed: open (its ref is here)
+        // or decided (main says so: `Proposal: <owner>/<name>`).
+        TalkTopic::Proposal { owner, name } => {
+            let id = format!("{owner}/{name}");
+            let open = cx.git.resolve(&format!("refs/proposals/{id}"))?.is_some();
+            if !open && !cx.git.mentions_proposal(c, &id)? {
+                out.push(format!(
+                    "commit {sc}: {p} is about proposal {id}, which does not exist / 留言针对的提案不存在"
                 ));
             }
         }
