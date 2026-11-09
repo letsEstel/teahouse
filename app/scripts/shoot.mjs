@@ -292,6 +292,15 @@ screens.push(
   { name: 'wutong-archive-attachment-dark', hash: attachment, theme: 'dark', only1366: true, save: true },
 )
 
+// 第 35 轮：收件箱（大云晓钟，0026）
+screens.push(
+  { name: 'inbox', hash: '#/wutong/inbox', widths: [1366, 390], save: true, full: false },
+  { name: 'inbox-phone', hash: '#/wutong/inbox', widths: [390], save: true, saveAt: 390, full: false },
+  { name: 'inbox-entry', hash: '#/wutong/house', save: true, full: false },
+  { name: 'inbox-dark', hash: '#/wutong/inbox', theme: 'dark', only1366: true, save: true, full: false },
+  { name: 'inbox-empty', hash: '#/kant/inbox', save: true, full: false },
+)
+
 // 在页面里运行：找横向滚动、超出视口的元素、溢出自身盒子的文字
 function audit() {
   const vw = document.documentElement.clientWidth
