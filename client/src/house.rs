@@ -302,6 +302,25 @@ impl Snapshot {
             .collect()
     }
 
+    /// The attachments posted with `post`: the references in the directory
+    /// named after it.
+    fn post_attachments(&self, post: &str) -> Vec<Work> {
+        let dir = format!("{}/", post.trim_end_matches(".md"));
+        let files: Vec<&TreeFile> = self
+            .files_under(&dir)
+            .filter(|f| teahouse_core::rules::talk_attachment_post(&f.path).is_some())
+            .collect();
+        if files.is_empty() {
+            return Vec::new();
+        }
+        let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
+        let texts = self.read_many(&paths).unwrap_or_default();
+        files
+            .into_iter()
+            .filter_map(|f| self.work(f, &texts))
+            .collect()
+    }
+
     /// The posts about proposal `id` (`<owner>/<name>`), 0022.
     pub(crate) fn proposal_notes(&self, id: &str) -> Result<Vec<Note>> {
         let prefix = format!("{PROPOSAL_TALK_DIR}{id}/");
@@ -327,6 +346,7 @@ impl Snapshot {
                     text: texts.get(p).map(|b| text_of(b)).unwrap_or_default(),
                     when: when(self.added_step(p)?.time),
                     written_at: when(pp.written),
+                    attachments: self.post_attachments(p),
                 })
             })
             .collect()

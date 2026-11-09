@@ -17,8 +17,9 @@ use std::path::Path;
 use teahouse_core::members::{Member, Members, Role, MEMBERS_PATH};
 use teahouse_core::rules::{
     check_text, classify_ref, decide_ref, is_reserved_lookalike, may_write_on_main,
-    parse_talk_path, stamp_epoch, Op, ProblemRef, RefDecision, RefKind, TalkTopic, BOARD_DIR,
-    MAIN_REF, MAX_STAMP_AHEAD_SECS, MAX_TEXT_BYTES, PROPOSAL_TALK_DIR, TALK_DIR,
+    parse_talk_path, stamp_epoch, talk_attachment_post, Op, ProblemRef, RefDecision, RefKind,
+    TalkTopic, BOARD_DIR, MAIN_REF, MAX_STAMP_AHEAD_SECS, MAX_TEXT_BYTES, PROPOSAL_TALK_DIR,
+    TALK_DIR,
 };
 use teahouse_core::PublicKey;
 
@@ -351,8 +352,14 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
                 "commit {sc}: guests cannot write main with a merge; push to refs/proposals/{me}/<name> instead / 客人不能直接写入 main，请发起提案"
             ));
         } else {
-            for (status, path) in cx.git.changes(c)? {
-                if let Some(why) = guest_change_refused(me, status, &path) {
+            let changes = cx.git.changes(c)?;
+            let added: Vec<&str> = changes
+                .iter()
+                .filter(|(s, _)| *s == 'A')
+                .map(|(_, p)| p.as_str())
+                .collect();
+            for (status, path) in &changes {
+                if let Some(why) = guest_change_refused(me, *status, path, &added) {
                     out.push(format!("commit {sc}: {why}"));
                 }
             }
@@ -382,8 +389,11 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
                 "commit {sc}: the steward may only change problems/, works/, board/ and talk/, not {p} / 伙计只能修改 problems/、works/、board/、talk/"
             ));
         }
-        // A post must sit under the topic its commit faces.
-        if let Some(post) = parse_talk_path(p) {
+        // A post (or an attachment of one) must sit under the topic its
+        // commit faces.
+        let attachment_of = talk_attachment_post(p);
+        let post_path = attachment_of.as_deref().unwrap_or(p);
+        if let Some(post) = parse_talk_path(post_path) {
             let consistent = match (&post.topic, &facing) {
                 (TalkTopic::Problem(id), Some(ProblemRef::Id(f))) => id == f,
                 (TalkTopic::Board(_), Some(ProblemRef::Board)) => true,
@@ -401,7 +411,15 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
                 "commit {sc}: {p} is not a valid post path (talk/<id>/<YYYYMMDDTHHMMSSZ>-<member>.md or talk/board/<notice>/…)"
             ));
         }
-        if p.starts_with(TALK_DIR) || p.starts_with(BOARD_DIR) {
+        if let Some(post) = &attachment_of {
+            // Added later, an attachment would change a post that was
+            // already written.
+            if cx.git.tree_entry(c, p)?.is_some() && cx.git.tree_entry(c, post)?.is_none() {
+                out.push(format!(
+                    "commit {sc}: {p} is an attachment of {post}, which is not there / 附件所属的留言不存在"
+                ));
+            }
+        } else if p.starts_with(TALK_DIR) || p.starts_with(BOARD_DIR) {
             check_discussion_file(cx, c, p, &facing, out)?;
         }
         check_attachment(cx, c, p, out)?;
@@ -444,7 +462,24 @@ fn check_commit(cx: &Context<'_>, c: &str, on_main: bool, out: &mut Vec<String>)
 
 /// Why a guest may not make this change on `main`, as precisely as we can
 /// tell; `None` if it is their own new post.
-fn guest_change_refused(me: &str, status: char, path: &str) -> Option<String> {
+fn guest_change_refused(me: &str, status: char, path: &str, added: &[&str]) -> Option<String> {
+    // An attachment of a post: only the post's author adds it, with the
+    // post; like the post, it is never changed or removed by a guest.
+    if let Some(post) = talk_attachment_post(path) {
+        let author = parse_talk_path(&post).map(|p| p.author.to_string());
+        return match status {
+            'A' if author.as_deref() == Some(me) && added.contains(&post.as_str()) => None,
+            'A' if author.as_deref() == Some(me) => Some(format!(
+                "{path}: an attachment arrives with its post ({post}), in the same commit / 附件要和留言一起提交"
+            )),
+            'A' => Some(format!(
+                "{path} belongs to someone else's post / 只能给自己的留言加附件"
+            )),
+            _ => Some(format!(
+                "{path}: guests cannot change or remove attachments of posts / 客人不能修改或删除留言里的附件"
+            )),
+        };
+    }
     let post = parse_talk_path(path);
     match (status, &post) {
         ('A', Some(p)) if p.author == me => None,

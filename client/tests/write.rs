@@ -1451,6 +1451,91 @@ fn posts_about_proposals_before_and_after_the_decision() {
 }
 
 #[test]
+fn posts_carry_images_and_files() {
+    let w = World::new("noteatt");
+    let (wang, li, zhao) = w.wutong();
+    parking(&li);
+    zhao.ok("sync", json!({ "house": "wutong" }));
+    let shot = w.tmp.0.join("截图.png");
+    fs::write(&shot, b"\x89PNG shot").unwrap();
+    let pdf = w.tmp.0.join("plan.pdf");
+    fs::write(&pdf, b"%PDF fake").unwrap();
+    let shot_s = shot.to_str().unwrap().to_string();
+    // The form writes the local path into the text; the engine puts the
+    // reference's path in its place.
+    let r = zhao.ok(
+        "note",
+        json!({
+            "house": "wutong", "problem": "0001",
+            "text": format!("看这里：![截图]({shot_s})"),
+            "attachments": [{ "fromPath": shot_s }, { "fromPath": pdf, "name": "方案.pdf" }],
+        }),
+    );
+    let post = r["id"].as_str().unwrap().to_string();
+    let dir = post.trim_end_matches(".md").to_string();
+    li.ok("sync", json!({ "house": "wutong" }));
+    let p = li.ok("problem", json!({ "house": "wutong", "problem": "0001" }));
+    let note = p["notes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|n| n["id"] == post.as_str())
+        .unwrap()
+        .clone();
+    assert_eq!(
+        note["text"],
+        format!("看这里：![截图]({dir}/截图.png.ref.md)")
+    );
+    let atts = note["attachments"].as_array().unwrap();
+    assert_eq!(atts.len(), 2, "{note:#}");
+    let kind_of = |name: &str| {
+        atts.iter()
+            .find(|a| a["id"] == format!("{dir}/{name}").as_str())
+            .map(|a| a["kind"].clone())
+    };
+    assert_eq!(kind_of("方案.pdf.ref.md"), Some(json!("file")));
+    assert_eq!(kind_of("截图.png.ref.md"), Some(json!("image")));
+    let image = format!("{dir}/截图.png.ref.md");
+    let pdf_ref = format!("{dir}/方案.pdf.ref.md");
+    // In one commit, and the file itself went to the attachment store: the
+    // steward's device downloads it.
+    let files = w.relay_git(&[
+        "-c",
+        "core.quotePath=false",
+        "show",
+        "--name-only",
+        "--format=",
+        "main",
+    ]);
+    assert_eq!(files.lines().count(), 3, "{files}");
+    let got = li.ok("blob", json!({ "house": "wutong", "id": image }));
+    assert_eq!(fs::read(got.as_str().unwrap()).unwrap(), b"\x89PNG shot");
+
+    // Attachments only: no text needed.
+    zhao.ok(
+        "note",
+        json!({ "house": "wutong", "problem": "0001", "attachments": [{ "fromPath": pdf }] }),
+    );
+
+    // The host removes one attachment's content; the steward removes a post
+    // with its attachments.
+    wang.ok("sync", json!({ "house": "wutong" }));
+    wang.ok("purgeBlob", json!({ "house": "wutong", "id": pdf_ref }));
+    li.ok("sync", json!({ "house": "wutong" }));
+    li.ok("removeNote", json!({ "house": "wutong", "id": post }));
+    let left = w.relay_git(&[
+        "-c",
+        "core.quotePath=false",
+        "ls-tree",
+        "-r",
+        "--name-only",
+        "main",
+        "talk/",
+    ]);
+    assert!(!left.contains(&dir), "{left}");
+}
+
+#[test]
 fn attachments_go_to_the_cache_and_into_git_as_references() {
     let w = World::new("blobs");
     let (_wang, li, _zhao) = w.wutong();

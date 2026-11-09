@@ -26,6 +26,48 @@ use serde_json::Value;
 use teahouse_core::rules::{self, check_text, format_stamp};
 use teahouse_core::{Member, Members, Role, MEMBERS_PATH};
 
+/// At most this many attachments in one post.
+pub const MAX_POST_ATTACHMENTS: usize = 10;
+
+/// An attachment of a post: a local file, and the name it is shown with.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttachmentArg {
+    pub from_path: String,
+    pub name: Option<String>,
+}
+
+/// A file name for a post's attachment: the given name or the file's own,
+/// without anything that would make it a path.
+fn attachment_name(name: Option<&str>, from: &str) -> String {
+    let raw = name
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| {
+            std::path::Path::new(from)
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default()
+        });
+    let clean: String = raw
+        .chars()
+        .map(|c| {
+            if c == '/' || c == '\\' || c.is_control() {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
+    let clean: String = clean.trim_start_matches('.').chars().take(120).collect();
+    if clean.is_empty() {
+        "附件".into()
+    } else {
+        clean
+    }
+}
+
 /// Largest attachment (CLIENT-API.md §1.6).
 pub const MAX_BLOB: u64 = 100 * 1024 * 1024;
 
@@ -387,8 +429,10 @@ impl<'c> Writer<'c> {
         for e in edits {
             let p = e.path();
             // Guests add their own posts (law 4); that is all.
+            // …and the attachments of their own posts.
+            let post = rules::talk_attachment_post(p).unwrap_or_else(|| p.to_string());
             let own_post = matches!(e, Edit::Put(..))
-                && rules::parse_talk_path(p).is_some_and(|t| t.author == self.me.id);
+                && rules::parse_talk_path(&post).is_some_and(|t| t.author == self.me.id);
             if !own_post && !rules::may_write_on_main(self.role(), p) {
                 return Err(forbidden(p));
             }
@@ -964,16 +1008,28 @@ impl<'c> Writer<'c> {
     }
 
     /// A post under a problem, a notice, or (0022) a proposal: give one.
+    /// Attachments go into the attachment store; their references sit in a
+    /// directory named after the post and arrive with it, in one commit.
+    /// In `text`, `(<fromPath>)` becomes the reference's path, so the
+    /// interface writes `![名字](<fromPath>)` before it knows where it goes.
+    #[allow(clippy::too_many_arguments)]
     pub fn note(
         self,
         problem: Option<&str>,
         notice: Option<&str>,
         proposal: Option<&str>,
         text: &str,
+        attachments: &[AttachmentArg],
         args: &Value,
     ) -> Result<WriteResult> {
-        if text.trim().is_empty() {
+        if text.trim().is_empty() && attachments.is_empty() {
             return Err(invalid("a post needs text / 留言不能为空").with("field", "text"));
+        }
+        if attachments.len() > MAX_POST_ATTACHMENTS {
+            return Err(invalid(format!(
+                "at most {MAX_POST_ATTACHMENTS} attachments in one post / 一条留言最多 {MAX_POST_ATTACHMENTS} 个附件"
+            ))
+            .with("field", "attachments"));
         }
         check_text(text.as_bytes()).map_err(|m| {
             let code = if text.len() > rules::MAX_TEXT_BYTES {
@@ -1022,9 +1078,45 @@ impl<'c> Writer<'c> {
             }
             at += 1;
         };
+        let dir = path.trim_end_matches(".md");
+        let mut text = text.to_string();
+        let mut refs = Vec::new();
+        let mut taken: Vec<String> = Vec::new();
+        for a in attachments {
+            let name = attachment_name(a.name.as_deref(), &a.from_path);
+            let (stem, ext) = match name.rsplit_once('.') {
+                Some((s, e)) if !s.is_empty() => (s.to_string(), format!(".{e}")),
+                _ => (name.clone(), String::new()),
+            };
+            let mut file = format!("{name}.ref.md");
+            let mut n = 2;
+            while taken.contains(&file) {
+                file = format!("{stem}-{n}{ext}.ref.md");
+                n += 1;
+            }
+            taken.push(file.clone());
+            let ref_path = format!("{dir}/{file}");
+            let content = self.blob_ref(&stem, &a.from_path, None)?;
+            text = text.replace(&format!("({})", a.from_path), &format!("({ref_path})"));
+            refs.push(Edit::Put(ref_path, content.into_bytes()));
+        }
+        check_text(text.as_bytes()).map_err(|m| {
+            let code = if text.len() > rules::MAX_TEXT_BYTES {
+                Code::TooLarge
+            } else {
+                Code::Invalid
+            };
+            Error::new(code, m).with("limit", rules::MAX_TEXT_BYTES.to_string())
+        })?;
+        let subject = match first_line(&text, 40) {
+            s if s.is_empty() => "附件".to_string(),
+            s => s,
+        };
+        let mut edits = vec![Edit::Put(path.clone(), text.into_bytes())];
+        edits.extend(refs);
         let c = self.commit_main(
-            &[Edit::Put(path.clone(), text.as_bytes().to_vec())],
-            &first_line(text, 40),
+            &edits,
+            &subject,
             None,
             &[("Problem", topic), ("Act", "note".into())],
         )?;
@@ -1042,8 +1134,16 @@ impl<'c> Writer<'c> {
             rules::TalkTopic::Board(_) => "board".into(),
             rules::TalkTopic::Proposal { .. } => "proposal".into(),
         };
+        // The post and the references of its attachments.
+        let dir = format!("{}/", id.trim_end_matches(".md"));
+        let mut edits = vec![Edit::Remove(id.to_string())];
+        edits.extend(
+            self.snap
+                .files_under(&dir)
+                .map(|f| Edit::Remove(f.path.clone())),
+        );
         let c = self.commit_main(
-            &[Edit::Remove(id.to_string())],
+            &edits,
             "删除留言",
             None,
             &[("Problem", topic), ("Act", "remove-note".into())],
@@ -1329,10 +1429,24 @@ impl<'c> Writer<'c> {
     /// the relay, the relay deletes the file (CLIENT-API.md §1.6).
     pub fn purge_blob(self, id: &str, args: &Value) -> Result<WriteResult> {
         self.require(&[Role::Host], "purgeBlob")?;
-        let Some((pid, _)) = format::parse_work_path(id).filter(|_| id.ends_with(".ref.md")) else {
-            return Err(
-                Error::not_found(format!("{id} is not an attachment / 不是附件")).with("id", id),
-            );
+        // A work's attachment, or a post's (its commit faces the post's topic).
+        let pid = match format::parse_work_path(id).filter(|_| id.ends_with(".ref.md")) {
+            Some((pid, _)) => pid.to_string(),
+            None => match rules::talk_attachment_post(id)
+                .as_deref()
+                .and_then(rules::parse_talk_path)
+                .map(|p| p.topic)
+            {
+                Some(rules::TalkTopic::Problem(p)) => p.to_string(),
+                Some(rules::TalkTopic::Board(_)) => "board".into(),
+                Some(rules::TalkTopic::Proposal { .. }) => "proposal".into(),
+                None => {
+                    return Err(
+                        Error::not_found(format!("{id} is not an attachment / 不是附件"))
+                            .with("id", id),
+                    )
+                }
+            },
         };
         let text = self.snap.text(id)?.ok_or_else(|| {
             Error::not_found(format!("{id} is not an attachment / 不是附件")).with("id", id)
@@ -1352,7 +1466,6 @@ impl<'c> Writer<'c> {
         );
         let new = format::set_fields(&text, &[("purged", Some(&stamp))]);
         let title = r.title.clone().unwrap_or_else(|| format::file_title(id));
-        let pid = pid.to_string();
         let c = self.commit_main(
             &[Edit::Put(id.to_string(), new.into_bytes())],
             &format!("删除附件：{title}"),

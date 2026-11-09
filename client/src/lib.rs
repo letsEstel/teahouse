@@ -715,7 +715,10 @@ impl Client {
             problem: Option<String>,
             notice: Option<String>,
             proposal: Option<String>,
+            #[serde(default)]
             text: String,
+            #[serde(default)]
+            attachments: Vec<write::AttachmentArg>,
         }
         #[derive(Deserialize)]
         struct NoticeArg {
@@ -943,11 +946,17 @@ impl Client {
             }
             "note" => {
                 let p: NoteArg = parse(command, a)?;
+                if p.text.trim().is_empty() && p.attachments.is_empty() {
+                    return Err(
+                        Error::invalid("a post needs text / 留言不能为空").with("field", "text")
+                    );
+                }
                 to_value(Writer::open(self, &p.house)?.note(
                     p.problem.as_deref(),
                     p.notice.as_deref(),
                     p.proposal.as_deref(),
                     &p.text,
+                    &p.attachments,
                     a,
                 )?)
             }

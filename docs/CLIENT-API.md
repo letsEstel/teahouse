@@ -74,7 +74,7 @@ owner: wang               # 认领人的成员 id，可省略
 ### 1.3 公告和留言（Relay 已经强制执行，见 RELAY.md）
 
 - 公告 `board/<公告名>.md`：frontmatter 里写 `title`，正文就是公告内容。
-- 留言 `talk/<问题id>/<YYYYMMDDTHHMMSSZ>-<成员id>.md`，公告的回应放在 `talk/board/<公告名>/…`，提案下的留言放在 `talk/proposals/<提案作者>/<提案名>/…`（0022，按提案 id 放，新问题采纳时改了编号也不受影响）。文件内容就是留言正文，没有 frontmatter。
+- 留言 `talk/<问题id>/<YYYYMMDDTHHMMSSZ>-<成员id>.md`，公告的回应放在 `talk/board/<公告名>/…`，提案下的留言放在 `talk/proposals/<提案作者>/<提案名>/…`（0022，按提案 id 放，新问题采纳时改了编号也不受影响）。留言可以带图片和文件：文件本身进附件仓库，引用文件放在和留言同名的目录里，例如 `talk/0001/20261109T080000Z-wang/截图.png.ref.md`；引用文件和留言在同一个提交里新增，之后不改。正文里用 `![名字](引用文件的路径)` 插在正文中。文件内容就是留言正文，没有 frontmatter。
 - **显示顺序 = 进入 main 的先后**，按 RELAY.md "显示顺序"一节给出的 git 命令计算，不按文件名里的时间戳排序。
 
 **`works/` 下文件的分类，按优先级判断**：`*.ref.md` → 附件（`type` 为 `image/*` 时是 `image`，否则是 `file`）；`*.csv.meta.md` → 只作为表格的标题和说明，不单独列出；`*.md` → `plan`（frontmatter 写了 `kind: plan`）或 `doc`；`*.csv` → `table`；其他文件（1.6 节之前直接放进 git 的）→ `file`，带 `size`，没有 `blob`。
@@ -189,7 +189,7 @@ interface SyncState {
 interface Member { id: string; name: string; role: Role; joined: string; kind: 'human' | 'ai'; agent?: string; devices?: DeviceInfo[] }  // kind 只是标记，不限制角色（法则第 17 条）；界面在 AI 成员旁显示"AI"标记；devices 只出现在自己的座位上
 interface DeviceInfo { name: string; fingerprint: string; added: string; thisDevice: boolean }  // name 为空 = 第一台设备；fingerprint 形如 SHA256:…（和 ssh-keygen -l 一致）
 interface Event  { by: string; act: Act; title: string; when: string; problem?: string; status?: Status }
-interface Note   { id: string; by: string; text: string; when: string; writtenAt: string }  // id=留言文件的仓库路径  // when=进入包厢的时间，writtenAt=文件名里的时间戳
+interface Note   { id: string; by: string; text: string; when: string; writtenAt: string; attachments?: Work[] }  // attachments：随留言发的图片和文件（kind 是 image 或 file，id 是引用文件的路径，用 blob 取文件）  // id=留言文件的仓库路径  // when=进入包厢的时间，writtenAt=文件名里的时间戳
 interface Notice { id: string; by: string; title: string; text: string; when: string; replies: Note[] }
 
 interface Work {
@@ -273,7 +273,7 @@ interface HistoryEntry { by: string; when: string; act: Act; problem: string; ti
 | `setStatus` | `{ house, problem, status, owner? }` | 东家、伙计 | `set-status` |
 | `addWork` | `{ house, problem, kind, title, text? \| fromPath? }`（图片和附件用 `fromPath`，引擎负责上传附件并写引用） | 东家、伙计（客人自动转为提案） | `add-work` |
 | `updateWork` | `{ house, id, text? \| fromPath? }` | 同上 | `update-work` |
-| `note` | `{ house, problem \| notice \| proposal, text }`：三个只给一个；`proposal` 是提案 id（`<作者>/<名字>`），开着的和已决定的都行 | 所有人 | `note` |
+| `note` | `{ house, problem \| notice \| proposal, text, attachments?: { fromPath, name? }[] }`：三个只给一个；`proposal` 是提案 id（`<作者>/<名字>`），开着的和已决定的都行。`attachments` 最多 10 个，每个最大 100 MiB；`text` 里的 `(<fromPath>)` 会被换成附件引用的路径，所以界面插图时写 `![名字](<fromPath>)` 即可；有附件时 `text` 可以为空 | 所有人 | `note` |
 | `postNotice` | `{ house, title, text }` | 东家、伙计（客人自动转为提案） | `notice` |
 | `propose` | `{ house, problem, title, reason?, changes: {id?, kind, title, text? \| fromPath?, delete?}[] }` | 所有人 | 提案分支 |
 | `withdraw` | `{ house, proposal }` | 提案作者 | 删除提案分支 |
