@@ -5,6 +5,7 @@
 //! teahouse-client [--root <dir>] serve [--port 7377] [--sync-every <seconds>|off]
 //! teahouse-client [--root <dir>] key
 //! teahouse-client mcp [--root <dir>]
+//! teahouse-client [--root <dir>] watch [--house <id>] [--every <seconds>] [--once]
 //! teahouse-client dev-seed <fixtures.json> --relay <relay-root> --people <dir>
 //! ```
 //!
@@ -13,12 +14,43 @@
 //! `key` prints this device's public key (making it on first use), for
 //! seating a device by hand during development. `dev-seed` builds the
 //! example teahouses on a local relay (`scripts/dev-stack.sh` runs it).
-//! `mcp` is an MCP server on stdio for an AI member (docs/MCP.md).
+//! `mcp` is an MCP server on stdio for an AI member (docs/MCP.md). `watch`
+//! prints new notifications as JSON lines (the inbox, 0026).
 
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 use teahouse_client::{serve, Client};
+
+/// `watch` (大云晓钟): syncs, then prints each notification not printed
+/// before as one JSON line, so a script or a CI job can wake on it. Every
+/// `every`; with `--once`, one round.
+fn watch(client: Client, house: Option<&str>, every: Duration, once: bool) -> ExitCode {
+    let mut printed = std::collections::BTreeSet::new();
+    loop {
+        let ids = match house {
+            Some(h) => vec![h.to_string()],
+            None => client.house_ids().unwrap_or_default(),
+        };
+        for h in &ids {
+            let _ = client.sync_house(h);
+        }
+        match client.inbox(house) {
+            Ok(items) => {
+                for n in items.into_iter().rev() {
+                    if printed.insert(n.id.clone()) {
+                        println!("{}", serde_json::to_string(&n).unwrap_or_default());
+                    }
+                }
+            }
+            Err(e) => eprintln!("teahouse-client: watch: {}", e.message),
+        }
+        if once {
+            return ExitCode::SUCCESS;
+        }
+        std::thread::sleep(every);
+    }
+}
 
 fn usage() -> ExitCode {
     eprintln!("{USAGE}");
@@ -29,6 +61,7 @@ const USAGE: &str = "usage: teahouse-client [--root <dir>] call <command> [<json
        teahouse-client [--root <dir>] serve [--port 7377] [--sync-every <seconds>|off]
        teahouse-client [--root <dir>] key
        teahouse-client mcp [--root <dir>]
+       teahouse-client [--root <dir>] watch [--house <id>] [--every <seconds>] [--once]
        teahouse-client dev-seed <fixtures.json> --relay <relay-root> --people <dir>";
 
 /// `<app data>/teahouse`, or `$TEAHOUSE_CLIENT_ROOT`.
@@ -141,6 +174,30 @@ fn main() -> ExitCode {
                     ExitCode::FAILURE
                 }
             }
+        }
+        ["watch", rest @ ..] => {
+            let (mut house, mut every, mut once) = (None, 60u64, false);
+            let mut it = rest.iter();
+            while let Some(flag) = it.next() {
+                match *flag {
+                    "--once" => once = true,
+                    "--house" => match it.next() {
+                        Some(h) => house = Some(h.to_string()),
+                        None => return usage(),
+                    },
+                    "--every" => match it.next().and_then(|s| s.parse().ok()) {
+                        Some(n) if n > 0 => every = n,
+                        _ => return usage(),
+                    },
+                    _ => return usage(),
+                }
+            }
+            watch(
+                Client::new(root),
+                house.as_deref(),
+                Duration::from_secs(every),
+                once,
+            )
         }
         ["key"] => match Client::new(root).identity() {
             Ok(id) => {

@@ -16,6 +16,9 @@ const RECENT: usize = 30;
 /// Text files larger than this are not inlined or diffed.
 const MAX_INLINE: u64 = 1024 * 1024;
 
+#[path = "inbox.rs"]
+pub mod inbox;
+
 const PROPOSALS: &str = "refs/proposals/";
 const UPSTREAM: &str = "refs/remotes/origin/main";
 
@@ -517,6 +520,7 @@ impl Snapshot {
             my_role: self.my_role(),
             seats: self.members.members.len(),
             pending_proposals: self.proposals(false)?.len(),
+            unread: self.inbox()?.len(),
             sync: self.summary_sync()?,
         })
     }

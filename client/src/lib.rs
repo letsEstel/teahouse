@@ -155,6 +155,21 @@ impl Client {
             .collect()
     }
 
+    /// What is new for this device's member (0026): one room's, or every
+    /// room's, newest first.
+    pub fn inbox(&self, house: Option<&str>) -> Result<Vec<model::Notification>> {
+        let ids = match house {
+            Some(h) => vec![h.to_string()],
+            None => self.house_ids()?,
+        };
+        let mut all = Vec::new();
+        for h in &ids {
+            all.extend(self.snapshot(h)?.inbox()?);
+        }
+        all.sort_by(|a, b| b.when.cmp(&a.when));
+        Ok(all)
+    }
+
     /// Syncs one teahouse and returns where it stands. Being offline or
     /// refused is a state here, not an error.
     pub fn sync_house(&self, house: &str) -> Result<model::SyncState> {
@@ -762,6 +777,20 @@ impl Client {
         let a = &args;
         match command {
             "houses" => to_value(self.houses()?),
+            "inbox" => {
+                let a: MaybeHouse = parse(command, a)?;
+                to_value(self.inbox(a.house.as_deref())?)
+            }
+            "markSeen" => {
+                #[derive(Deserialize)]
+                struct MarkSeenArg {
+                    house: String,
+                    ids: Option<Vec<String>>,
+                }
+                let a: MarkSeenArg = parse(command, a)?;
+                self.snapshot(&a.house)?.mark_seen(a.ids.as_deref())?;
+                Ok(Value::Null)
+            }
             "house" => {
                 let a: HouseArg = parse(command, a)?;
                 to_value(self.snapshot(&a.house)?.house()?)

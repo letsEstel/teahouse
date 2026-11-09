@@ -353,7 +353,7 @@ fn houses_lists_every_clone_with_my_seat_and_sync_state() {
             "me": "zhao",
             "myRole": "guest",
             "seats": 3,
-            "pendingProposals": 1,
+            "pendingProposals": 1, "unread": 0,
             "sync": { "state": "ahead", "unpushed": 2 },
         }])
     );

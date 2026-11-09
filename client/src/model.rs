@@ -123,7 +123,48 @@ pub struct HouseSummary {
     pub my_role: &'static str,
     pub seats: usize,
     pub pending_proposals: usize,
+    /// Notifications not seen yet on this device (0026).
+    pub unread: usize,
     pub sync: SyncState,
+}
+
+/// What a notification is about (0026).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum NotificationKind {
+    /// Someone named me in a post (`@<name>`).
+    Mention,
+    /// Something happened on a problem I raised or own.
+    Problem,
+    /// A proposal waits for the host or steward.
+    Proposal,
+    /// One of my proposals was adopted or declined.
+    Decision,
+    /// A new notice.
+    Notice,
+    /// The relay's history was changed (0020).
+    History,
+}
+
+/// One entry of the inbox. `id` is stable: a step's commit id, or for a
+/// proposal waiting, its id and when it last changed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Notification {
+    pub id: String,
+    pub house: String,
+    pub kind: NotificationKind,
+    pub by: String,
+    pub title: String,
+    pub when: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub problem: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proposal: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notice: Option<String>,
+    /// The post it is about, when it is about one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub post: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
