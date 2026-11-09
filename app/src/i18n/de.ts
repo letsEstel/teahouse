@@ -478,6 +478,9 @@ export default {
   'board.oldest': 'Älteste zuerst',
   'board.more': '{n} weitere Antworten zeigen',
   'board.less': 'Weniger zeigen',
+  'board.readMore': 'Ganzen Aushang lesen ↓',
+  'board.readLess': 'Weniger zeigen ↑',
+  'board.showReplies': '{n} Antworten ansehen',
 
   // 2026-11-07 nachgetragen: diese Schlüssel fehlten und erschienen auf Englisch
   'access.write': 'Du kannst bearbeiten',
