@@ -25,7 +25,9 @@ export interface Work {
 }
 
 /** 写下来的一段话：公告的回应、问题下的讨论。每条都是一次提交。 */
-export interface Note { by: string; text: Text; when: string }
+export interface Note { by: string; text: Text; when: string
+  /** 假数据里留言带的附件（只在演示时写进来） */
+  attachments?: { id: string; kind: 'image' | 'file'; title: string }[] }
 
 /** 公告板上的一条公告（board/ 目录下一个文件），只有老板和伙计能张贴 */
 export interface Notice {

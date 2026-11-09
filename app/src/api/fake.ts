@@ -96,7 +96,8 @@ function toNotes(ns: FNote[], dir: string): A.Note[] {
     const written = iso(n.when)
     const when = written < last ? new Date(new Date(last).getTime() + 60_000).toISOString() : written
     last = when
-    return { id: `${dir}/${written.replace(/[-:]/g, '').slice(0, 15)}Z-${n.by}.md`, by: n.by, text: L(n.text), when, writtenAt: written }
+    const atts = n.attachments?.map((a) => ({ id: a.id, kind: a.kind, title: a.title, by: n.by, when: written, size: 0, blob: { hash: `sha256:fake-${a.id}`, type: a.kind === 'image' ? 'image/png' : 'application/octet-stream', cached: true } }))
+    return { id: `${dir}/${written.replace(/[-:]/g, '').slice(0, 15)}Z-${n.by}.md`, by: n.by, text: L(n.text), when, writtenAt: written, ...(atts?.length ? { attachments: atts } : {}) }
   })
 }
 const toNotice = (n: FNotice): A.Notice => ({ id: n.id, by: n.by, title: L(n.title), text: L(n.text), when: iso(n.when), replies: toNotes(n.replies, `talk/board/${n.id}`) })
@@ -279,10 +280,24 @@ const handlers: Handlers = {
     }
     return fail('not_found', id)
   },
-  note: ({ house, problem, notice, proposal, text: s }) => {
+  note: ({ house, problem, notice, proposal, text: s, attachments = [] }) => {
     const h = find(house)
     if (!h) return fail('not_found', house)
-    const n: FNote = { by: h.me, when: NOW.toISOString(), text: text(s) }
+    if (!s.trim() && !attachments.length) return fail('invalid', 'empty note')
+    // 附件（引擎 #117）：放在和留言同名的目录里；正文里的 (<fromPath>) 换成附件的地址
+    const x = proposal ? h.proposals.find((q) => q.id === proposal) : undefined
+    const dir = proposal ? `talk/proposals/${x?.by}/${proposal}` : notice ? `talk/board/${notice}` : `talk/${problem}`
+    const base = `${dir}/${NOW.toISOString().replace(/[-:]/g, '').slice(0, 15)}Z-${h.me}`
+    let body = s
+    const atts = attachments.map((a) => {
+      const name = a.name ?? a.fromPath.split('/').pop() ?? 'file'
+      const id = `${base}/${name}.ref.md`
+      const url = fakeStaged.get(a.fromPath)
+      if (url) fakeStaged.set(id, url)
+      body = body.split(`(${a.fromPath})`).join(`(${id})`)
+      return { id, kind: (/\.(png|jpe?g|gif|webp|heic)$/i.test(name) ? 'image' : 'file') as 'image' | 'file', title: name.replace(/\.[^.]+$/, '') }
+    })
+    const n: FNote = { by: h.me, when: NOW.toISOString(), text: text(body), ...(atts.length ? { attachments: atts } : {}) }
     if (proposal) {
       const x = h.proposals.find((q) => q.id === proposal)
       if (!x) return fail('not_found', proposal)

@@ -16,7 +16,7 @@
   import { member, self, pad, eventText, access, fileName, type House, type Note, type Problem } from '../api/view'
   import { api, write as send, blobUrl, BackendError } from '../api/backend'
   import Loading from '../lib/Loading.svelte'
-  import { isMachine, type ApiError } from '../api/types'
+  import { isMachine, type ApiError, type NoteAttachment } from '../api/types'
   import { t, when, date } from '../i18n/index.svelte'
 
   let { house, id, refresh }: { house: House; id: string; refresh?: () => void } = $props()
@@ -115,8 +115,8 @@
   }
 
   // 问题下的讨论：留言直接写进茶馆（茶客也一样）
-  async function write(text: string) {
-    if (!(await send('note', { house: house.id, problem: id, text }))) return false
+  async function write(text: string, _title: string, attachments: NoteAttachment[]) {
+    if (!(await send('note', { house: house.id, problem: id, text, attachments: attachments.length ? attachments : undefined }))) return false
     await load()
   }
   // 删除留言（老板、伙计）：removeNote，然后重新读取
@@ -385,7 +385,7 @@
         {:else}
           <p class="quiet none">{t('talk.none')}</p>
         {/if}
-        <div class="talk-write" data-write><Write placeholder={t('talk.placeholder')} hint={me.role === 'guest' ? t('write.hintGuest') : ''} onsubmit={write} /></div>
+        <div class="talk-write" data-write><Write attach placeholder={t('talk.placeholder')} hint={me.role === 'guest' ? t('write.hintGuest') : ''} onsubmit={write} /></div>
       </section>
     </section>
   </div>
