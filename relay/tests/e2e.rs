@@ -1244,6 +1244,75 @@ fn posts_about_a_proposal_open_or_decided() {
 }
 
 #[test]
+fn a_post_brings_its_attachments_with_it() {
+    let w = World::new();
+    let _ = w.wutong();
+    let wang = w.clone("wang", "wutong");
+    let data = b"\x89PNG post";
+    let hash = teahouse_core::sha256::hex(data);
+    let o = w.command(
+        &key_for(3),
+        "shell",
+        &format!("blob-put wutong {hash} {}", data.len()),
+        data,
+    );
+    assert!(o.status.success(), "{}", s(&o));
+    let reference = format!(
+        "---\ntitle: 截图\nblob: sha256:{hash}\nsize: {}\ntype: image/png\n---\n",
+        data.len()
+    );
+    let post = "talk/0001/20261018T213000Z-wang.md";
+    let att = "talk/0001/20261018T213000Z-wang/截图.png.ref.md";
+
+    // A post and its attachment, in one commit: fine.
+    w.write(
+        &wang,
+        post,
+        "看图：![截图](talk/0001/20261018T213000Z-wang/截图.png.ref.md)\n",
+    );
+    w.write(&wang, att, &reference);
+    w.commit(&wang, "留言\n\nProblem: 0001");
+    w.push_ok(&wang, &["main"]);
+
+    // Later, it would change a post already written.
+    w.write(
+        &wang,
+        "talk/0001/20261018T213000Z-wang/又一张.png.ref.md",
+        &reference,
+    );
+    w.commit(&wang, "补一张\n\nProblem: 0001");
+    w.push_denied(&wang, &["main"], "an attachment arrives with its post");
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+    // Nor on someone else's post, nor changed afterwards.
+    w.write(&wang, "talk/0001/20261018T213100Z-li.md", "冒名\n");
+    w.write(
+        &wang,
+        "talk/0001/20261018T213100Z-li/x.png.ref.md",
+        &reference,
+    );
+    w.commit(&wang, "x\n\nProblem: 0001");
+    w.push_denied(&wang, &["main"], "belongs to someone else's post");
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+    w.write(&wang, att, &reference.replace("截图", "改了"));
+    w.commit(&wang, "x\n\nProblem: 0001");
+    w.push_denied(
+        &wang,
+        &["main"],
+        "cannot change or remove attachments of posts",
+    );
+    w.git_ok(&wang, &["reset", "--quiet", "--hard", "origin/main"]);
+    // An attachment must be a reference whose file is in the store.
+    w.write(&wang, "talk/0001/20261018T213200Z-wang.md", "x\n");
+    w.write(
+        &wang,
+        "talk/0001/20261018T213200Z-wang/y.png.ref.md",
+        &reference.replace(&hash, &"0".repeat(64)),
+    );
+    w.commit(&wang, "x\n\nProblem: 0001");
+    w.push_denied(&wang, &["main"], "not in the attachment store");
+}
+
+#[test]
 fn guests_post_to_talk_directly_but_only_their_own_new_posts() {
     let w = World::new();
     let _ = w.wutong();

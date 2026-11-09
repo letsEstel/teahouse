@@ -157,6 +157,25 @@ fn valid_notice_stem(s: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || b"-_.".contains(&c))
 }
 
+/// An attachment of a post: `talk/<…>/<stamp>-<member>/<file>.ref.md`, in a
+/// directory named after the post (`talk/<…>/<stamp>-<member>.md`). Returns
+/// the post's path; `None` if it is not one. Only references live there:
+/// the files themselves are in the attachment store (CLIENT-API.md §1.6).
+pub fn talk_attachment_post(path: &str) -> Option<String> {
+    let (dir, file) = path.rsplit_once('/')?;
+    let lower = file.to_ascii_lowercase();
+    let ok_name = lower.ends_with(".ref.md")
+        && file.len() > ".ref.md".len()
+        && file.len() <= 200
+        && !file.starts_with('.')
+        && !file.chars().any(|c| c.is_control() || c == '\\');
+    if !ok_name {
+        return None;
+    }
+    let post = format!("{dir}.md");
+    parse_talk_path(&post).map(|_| post.clone())
+}
+
 /// Parses a discussion post path; `None` if it is not one.
 pub fn parse_talk_path(path: &str) -> Option<TalkPost<'_>> {
     let rest = path.strip_prefix(TALK_DIR)?;
@@ -380,6 +399,24 @@ mod tests {
             })
         );
         assert_eq!(ProblemRef::parse("proposal"), Some(ProblemRef::Proposal));
+        assert_eq!(
+            talk_attachment_post("talk/0001/20261018T213000Z-ai-2/截图.png.ref.md").as_deref(),
+            Some("talk/0001/20261018T213000Z-ai-2.md")
+        );
+        assert_eq!(
+            talk_attachment_post("talk/proposals/zhao/p-1/20261018T213000Z-li/a.pdf.ref.md")
+                .as_deref(),
+            Some("talk/proposals/zhao/p-1/20261018T213000Z-li.md")
+        );
+        for bad in [
+            "talk/0001/20261018T213000Z-ai-2/截图.png",
+            "talk/0001/20261018T213000Z-ai-2/.ref.md",
+            "talk/0001/20261018T213000Z-ai-2/x/y.ref.md",
+            "talk/0001/x/y.ref.md",
+            "works/0001/20261018T213000Z-li/y.ref.md",
+        ] {
+            assert_eq!(talk_attachment_post(bad), None, "{bad}");
+        }
         for bad in [
             "talk/proposals/zhao/20261018T213000Z-wang.md",
             "talk/proposals/Zhao/p/20261018T213000Z-wang.md",

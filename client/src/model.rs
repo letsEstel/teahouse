@@ -177,6 +177,10 @@ pub struct Note {
     pub when: String,
     /// The stamp in its file name.
     pub written_at: String,
+    /// Images and files posted with it: each a work of kind `image` or
+    /// `file` (its `id` is the reference's path, for `blob`).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub attachments: Vec<Work>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
