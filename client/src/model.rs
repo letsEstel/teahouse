@@ -294,6 +294,8 @@ pub struct Proposal {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
     pub files: Vec<FileChange>,
+    /// Posts about this proposal, in the order they entered main (0022).
+    pub notes: Vec<Note>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -312,6 +314,8 @@ pub struct Decided {
     pub when: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    /// Posts about it; posting goes on after the decision (0022).
+    pub notes: Vec<Note>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

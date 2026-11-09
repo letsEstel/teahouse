@@ -8,7 +8,7 @@ use crate::git::{Git, Step, TreeFile};
 use crate::model::*;
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
-use teahouse_core::rules::{format_rfc3339, TalkTopic};
+use teahouse_core::rules::{format_rfc3339, TalkTopic, PROPOSAL_TALK_DIR};
 use teahouse_core::{members::valid_member_id, Members, PublicKey, MAX_MEMBERS, MEMBERS_PATH};
 
 /// How many events `House.recent` carries.
@@ -302,6 +302,14 @@ impl Snapshot {
             .collect()
     }
 
+    /// The posts about proposal `id` (`<owner>/<name>`), 0022.
+    pub(crate) fn proposal_notes(&self, id: &str) -> Result<Vec<Note>> {
+        let prefix = format!("{PROPOSAL_TALK_DIR}{id}/");
+        let paths: Vec<&str> = self.files_under(&prefix).map(|f| f.path.as_str()).collect();
+        let texts = self.read_many(&paths)?;
+        Ok(self.notes_under(&prefix, &texts))
+    }
+
     fn notes_under(&self, prefix: &str, texts: &HashMap<String, Vec<u8>>) -> Vec<Note> {
         let mut posts: Vec<(&str, usize)> = self
             .files_under(prefix)
@@ -384,6 +392,7 @@ impl Snapshot {
                 when: when(last.time),
                 reason: (!reason.is_empty()).then_some(reason),
                 files,
+                notes: self.proposal_notes(&id)?,
             });
         }
         out.sort_by(|a, b| a.when.cmp(&b.when).then(a.id.cmp(&b.id)));
@@ -432,7 +441,7 @@ impl Snapshot {
     }
 
     /// Proposals adopted or declined, newest first, from `main`'s history.
-    fn decided(&self) -> Result<Vec<Decided>> {
+    pub(crate) fn decided(&self) -> Result<Vec<Decided>> {
         let mut out = Vec::new();
         for s in self.steps.iter().rev() {
             let act = s.act.first().and_then(|a| Act::parse(a));
@@ -472,6 +481,7 @@ impl Snapshot {
                 result,
                 when: when(s.time),
                 reason: (!reason.is_empty()).then_some(reason),
+                notes: self.proposal_notes(id)?,
             });
         }
         Ok(out)
@@ -788,7 +798,7 @@ impl Snapshot {
                 .map_or(pp.member, |m| m.name.as_str());
             let problem = match pp.topic {
                 TalkTopic::Problem(id) => Some(id.to_string()),
-                TalkTopic::Board(_) => None,
+                TalkTopic::Board(_) | TalkTopic::Proposal { .. } => None,
             };
             (NodeKind::Note, Some(who.to_string()), problem)
         } else {
