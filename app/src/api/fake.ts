@@ -42,7 +42,7 @@ if (demo === 'onedevice') myDevices.pop()
 
 // ---- 文件路径（成果、提案改动里的 id 就是路径）----
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x'
-const ext = (k: FWork['kind']) => (k === 'image' ? 'png.ref.md' : k === 'table' ? 'csv' : k === 'link' ? 'link.md' : 'md')
+const ext = (k: FWork['kind']) => (k === 'image' ? 'png.ref.md' : k === 'file' ? 'pdf.ref.md' : k === 'table' ? 'csv' : k === 'link' ? 'link.md' : 'md')
 export const workPath = (p: string, w: FWork) => `works/${p}/${w.id}-${slug(w.title.en)}.${ext(w.kind)}`
 
 // 表格：假数据里用空格或全角空格对齐，转成 CSV
@@ -50,7 +50,7 @@ const cells = (row: string) => row.trim().split(/\s{2,}|　+/)
 const csv = (rows: string[]) => rows.map((r) => cells(r).map((c) => (/[",]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(',')).join('\n')
 
 function workText(w: FWork): string | undefined {
-  if (w.kind === 'image') return undefined
+  if (w.kind === 'image' || w.kind === 'file') return undefined
   if (w.lines) return w.kind === 'table' ? csv(w.lines.map(L)) : w.lines.map(L).join('\n')
   if (w.preview && 'excerpt' in w.preview) return L(w.preview.excerpt)
   return undefined
@@ -67,7 +67,8 @@ function toWork(p: FProblem, w: FWork, file?: AFile): A.Work {
     text: workText(w),
     note: w.note ? L(w.note) : undefined,
     url: w.url,
-    blob: w.kind === 'image' ? { hash: `sha256:fake-${w.id}`, type: 'image/png', cached: true } : undefined,
+    blob: w.kind === 'image' ? { hash: `sha256:fake-${w.id}`, type: 'image/png', cached: true }
+      : w.kind === 'file' ? { hash: `sha256:fake-${w.id}`, type: 'application/pdf', cached: false } : undefined,
   }
 }
 
@@ -208,6 +209,8 @@ function rawText(h: FHouse, f: AFile): string | undefined {
   if (w.kind === 'table') return w.lines ? csv(w.lines.map(L)) : undefined
   // 图片不进 git，只有一份引用文件（CLIENT-API 1.6）
   if (w.kind === 'image') return ['---', `title: ${L(w.title)}`, `blob: sha256:fake-${w.id}`, `size: ${f.size}`, 'type: image/png', '---', ...(w.note ? [L(w.note)] : [])].join('\n')
+  // 附件：引用文件里记着真正的大小（2.3 MB），git 里只有这几行
+  if (w.kind === 'file') return ['---', `title: ${L(w.title)}`, `blob: sha256:fake-${w.id}`, 'size: 2457600', 'type: application/pdf', '---'].join('\n')
   const body = workText(w)
   const fm = ['---', `title: ${L(w.title)}`, ...(w.kind === 'plan' ? ['kind: plan'] : []), ...(w.note ? [`note: ${L(w.note)}`] : []), '---']
   return [...fm, body ?? ''].join('\n')
@@ -259,7 +262,7 @@ const handlers: Handlers = {
     return ok({ node: nodeOf(h, f), text: rawText(h, f), history: history(h, f) })
   },
   // 假数据里只有车位图是"图片"，界面认得这个特殊地址
-  blob: ({ id }) => (fakeStaged.has(id) ? ok(fakeStaged.get(id)!) : id.includes('/w1-') ? ok('fake:parking') : fail('not_found', 'no blob in M0')),
+  blob: ({ id }) => (fakeStaged.has(id) ? ok(fakeStaged.get(id)!) : id.includes('/w1-') ? ok('fake:parking') : id.includes('/w11-') ? ok('data:application/pdf;base64,JVBERi0xLjQKJSVFT0YK') : fail('not_found', 'no blob in M0')),
   export: ({ house }) => ok(`/storage/emulated/0/Download/Teahouse/${house}-20261018`),
   sync: () => {
     // 演示：同步一次就送出了积压的修改（离线时仍然离线）

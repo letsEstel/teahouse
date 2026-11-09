@@ -14,7 +14,10 @@
   import { openUrl } from '@tauri-apps/plugin-opener'
   import { attachImage, imageUrl, prepareFile } from '../lib/images'
   import { member, self, pad, access, readReason, fileName, type House, type ArchiveNode, type HistoryEntry, type Status } from '../api/view'
-  import { api, blobUrl, write as send, exportTo, BackendError, inApp } from '../api/backend'
+  import { api, backend, blobUrl, write as send, exportTo, BackendError, inApp } from '../api/backend'
+  import { invoke } from '@tauri-apps/api/core'
+  import { report } from '../api/errors.svelte'
+  import type { Result } from '../api/types'
   import { t, when, date } from '../i18n/index.svelte'
 
   // 档案：茶馆里所有文件原原本本放在这里。左边文件树（按目录 / 按问题），右边预览和"来历"。
@@ -47,7 +50,8 @@
       if (selected !== target) return
       if (file?.node.id !== f.node.id) image = null
       file = f
-      if (f.node.kind !== 'image' && f.node.kind !== 'file') return
+      // 只有图片要在这里显示；其他附件不预览，保存时才去取（可能有几 MB，0036）
+      if (f.node.kind !== 'image') return
       const path = await api('blob', { house: house.id, id: target }).catch(() => null)
       if (selected === target) image = path
     })
@@ -197,8 +201,49 @@
   }
   let history = $derived(file ? [...file.history].reverse() : [])
 
-  // 下载的就是文件原文
+  // 附件（图片和其他文件）：git 里只有一份引用文件，真正的大小和类型记在它开头（CLIENT-API 1.6）
+  let att = $derived.by(() => {
+    if (!file || (file.node.kind !== 'image' && file.node.kind !== 'file')) return null
+    const fm = /^---\n([\s\S]*?)\n---/.exec(file.text ?? '')?.[1] ?? ''
+    const get = (k: string) => new RegExp(`^${k}:\\s*"?([^"\\n]*?)"?\\s*$`, 'm').exec(fm)?.[1]
+    const base = fileName(file.node.id)
+    const ext = /\.([a-z0-9]{1,8})$/i.exec(base)?.[1] ?? ''
+    const title = (label(file.node) || base).replace(/[\\/:*?"<>|]/g, '_')
+    return { size: Number(get('size')) || undefined, ext: ext.toUpperCase(), name: ext && !title.toLowerCase().endsWith(`.${ext.toLowerCase()}`) ? `${title}.${ext.toLowerCase()}` : title }
+  })
+
+  // 保存附件本身（不是那份引用文件）：应用里存进“下载/Teahouse/”，交给别的应用打开；浏览器里照常下载
+  let saving = $state(false)
+  let savedTo = $state<string | null>(null)
+  async function saveAttachment() {
+    const f = file, a = att
+    if (!f || !a || saving) return
+    saving = true; savedTo = null
+    try {
+      const path = await api('blob', { house: house.id, id: f.node.id })
+      if (backend.kind === 'tauri') {
+        const r = await invoke<Result<{ path: string }>>('saveFile', { from: path, name: a.name })
+        if (!r.ok) throw new BackendError(r.error)
+        savedTo = r.data.path
+        ;(window as { TeahouseAndroid?: { scanFolder?: (p: string) => void } }).TeahouseAndroid?.scanFolder?.(r.data.path)
+      } else {
+        const blob = await (await fetch(blobUrl(house.id, f.node.id, path))).blob()
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(blob)
+        link.download = a.name
+        link.click()
+        URL.revokeObjectURL(link.href)
+        savedTo = a.name
+      }
+    } catch (e) {
+      report(e instanceof BackendError ? e.error : { code: 'internal', message: String(e) })
+    }
+    saving = false
+  }
+
+  // 下载的就是文件原文；附件下载的是附件本身
   function download() {
+    if (att) return saveAttachment()
     if (!file?.text) return
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([file.text], { type: 'text/plain;charset=utf-8' }))
@@ -277,7 +322,7 @@
       <div class="fhead">
         <FileGlyph kind={node.kind} />
         <h2>{label(node)}</h2>
-        <span class="meta">{t(`archive.kind.${node.kind}`)} · {size(node.size)}</span>
+        <span class="meta">{att?.ext && node.kind === 'file' ? att.ext : t(`archive.kind.${node.kind}`)} · {size(att?.size ?? node.size)}</span>
       </div>
 
       <div class="tools">
@@ -301,8 +346,11 @@
             <a class="secondary small" data-write href="#/{house.id}/problem/{node.problem}">{t('archive.edit')}</a>
           {/if}
         {/if}
-        <button class="secondary small" onclick={download} disabled={!file.text} title={file.text ? '' : t('archive.noFile')}>↓ {t('archive.download')}</button>
+        <button class="secondary small" onclick={download} disabled={!file.text || saving} aria-busy={saving || undefined} title={file.text ? '' : t('archive.noFile')}>↓ {t(att && inApp ? 'archive.saveFile' : 'archive.download')}</button>
       </div>
+      {#if savedTo && inApp}
+        <p class="saved" role="status">{t('archive.savedTo')} <code>{savedTo.replace(/^\/storage\/emulated\/0\/Download\//, `${t('archive.downloads')}/`)}</code></p>
+      {/if}
 
       {#if saved}
         <p class="saved" role="status">{t(saved === 'written' ? 'edit.written' : 'edit.proposed')}</p>
@@ -351,7 +399,17 @@
           {:else}
             <div class="binary"><FileGlyph kind="table" /><p>{t('archive.fileOnly')}</p></div>
           {/if}
-        {:else if node.kind === 'image' || node.kind === 'file'}
+        {:else if node.kind === 'file'}
+          <!-- 其他附件（PDF、电子书……）：这里不预览，写清是什么、多大，保存后用别的应用打开 -->
+          <div class="attachment">
+            <FileGlyph kind="file" />
+            <div>
+              <b>{att?.name ?? label(node)}</b>
+              <span>{[att?.ext, att?.size ? size(att.size) : ''].filter(Boolean).join(' · ')}</span>
+              <p>{t(inApp ? 'archive.fileOpenApp' : 'archive.fileOnly')}</p>
+            </div>
+          </div>
+        {:else if node.kind === 'image'}
           {#if image === 'fake:parking'}
             <ParkingMap />
           {:else if image}
@@ -487,6 +545,12 @@
   .cell-who { display: inline-flex; align-items: center; gap: 8px; }
   .binary { display: flex; align-items: center; gap: 18px; padding: 24px; border: 2px dashed var(--ink); color: var(--ink-2); }
   .binary.image { flex-direction: column; align-items: flex-start; }
+  .attachment { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: start; padding: 24px 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); }
+  .attachment :global(svg) { width: 40px; height: 40px; }
+  .attachment b { display: block; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+  .attachment span { display: block; margin-top: 4px; font-family: var(--latin); font-size: 13px; color: var(--ink-2); font-feature-settings: 'tnum' 1; }
+  .attachment p { margin-top: 12px; font-size: 13px; color: var(--ink-2); max-width: 32em; }
+  .saved code { font-family: var(--latin); font-size: 12px; overflow-wrap: anywhere; }
   .binary.image svg { width: min(100%, 320px); }
 
   .history { margin-top: 36px; }
