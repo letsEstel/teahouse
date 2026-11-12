@@ -1,0 +1,19 @@
+# 这本书的目录。
+# 以 ## 开头的是一个部分（标题 | 写给谁）；其余每行是一节。
+# .md 是文字和代码写在一起的一节，.rs 是写在真实代码文件里的一节（书的文字以 //| 开头）。
+book/sections/how-to-read.md
+docs/OVERVIEW.zh.md
+book/sections/glossary.md
+## 第一部分 从零开始 | 给从没写过程序的人
+book/sections/1-start/1-terminal.md
+book/sections/1-start/2-first-program.md
+book/sections/1-start/3-names.md
+book/sections/1-start/4-decisions.md
+book/sections/1-start/5-functions.md
+## 第二部分 Rust 速通 | 给写过程序、第一次学 Rust 的人
+book/sections/2-rust/1-ownership.md
+book/sections/2-rust/2-enums.md
+## 第三部分 茶馆的架构 | 给熟悉 Rust、要维护这个项目的人
+book/sections/3-architecture/1-a-push.md
+book/sections/3-architecture/2-your-own-hook.md
+book/sections/3-architecture/3-what-it-defends.md

@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;700&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+/* 和应用一样的设计语言：米白、墨黑，不用圆角和阴影，排版就是界面 */
+:root {
+  --paper: #f1ece2; --paper-deep: #e6dfd1; --ink: #141414; --ink-3: #5f5a52;
+  --bg: var(--paper); --fg: var(--ink); --sidebar-bg: var(--paper-deep); --sidebar-fg: var(--ink);
+  --sidebar-active: var(--ink); --links: var(--ink); --inline-code-color: var(--ink);
+  --theme-popup-bg: var(--paper); --quote-bg: var(--paper-deep); --quote-border: var(--ink);
+  --content-max-width: 46em;
+  --sidebar-non-existant: var(--ink-3); --sidebar-header-border-color: var(--ink);
+  --mono-font: 'Source Code Pro', ui-monospace, 'Cascadia Mono', Menlo, Consolas, 'Noto Sans SC', monospace;
+  font-size: 62.5%;
+}
+html, body { background: var(--paper); font-family: 'Noto Sans SC', 'Jost', sans-serif; }
+.content main { line-height: 1.85; }
+.content h1 { font-size: clamp(3.4rem, 5vw, 5.2rem); font-weight: 900; line-height: 1.15; margin: .4em 0 .7em; }
+.content h2 { font-size: 2.6rem; font-weight: 900; margin-top: 2.6em; border-top: 2px solid var(--ink); padding-top: .7em; }
+.content a { text-decoration: underline; }
+.source { font-size: 1.3rem; color: var(--ink-3); letter-spacing: .04em; margin-bottom: 0; }
+pre, code, .hljs { background: transparent !important; border-radius: 0 !important; }
+pre { border-left: 1px solid var(--ink-3); padding: .2em 0 .2em 1.2em !important; margin: 1.1em 0 1.5em; font-size: 1.32rem; line-height: 1.6; }
+.ran { margin: 2em 0 -.6em; font-size: 1.3rem; font-weight: 700; }
+.ran code { font-size: 1.25rem; }
+.ran + pre { border-left: 6px solid var(--ink); background: var(--paper-deep) !important; padding: .9em 1.2em !important; }
+.ran::before { content: ""; display: inline-block; width: 0; height: 0; margin-right: .6em; border-left: 9px solid var(--ink); border-top: 6px solid transparent; border-bottom: 6px solid transparent; }
+.ran + pre code, .ran + pre .hljs { background: transparent !important; }
+blockquote { background: var(--paper-deep); border: 0; border-left: 6px solid var(--ink); border-radius: 0; margin: 1.4em 0; padding: .4em 1.2em; }
+/* 代码也只用墨色：关键字加粗，字符串和注释用浅一级的墨，不用彩色 */
+.hljs, .hljs * { color: var(--ink) !important; }
+.hljs-keyword, .hljs-built_in, .hljs-type, .hljs-title { font-weight: 700; }
+.hljs-string, .hljs-comment, .hljs-meta { color: var(--ink-3) !important; }
+pre code { font-family: var(--mono-font); }
+.out, .wont { margin: 1.4em 0 -.7em; font-size: 1.3rem; font-weight: 700; }
+.out + pre { border-left: 0; background: var(--paper-deep) !important; padding: .8em 1.2em !important; }
+.wont + pre { border-left: 6px solid var(--ink); }
+details { margin: 1.2em 0; border-top: 1px solid var(--ink-3); border-bottom: 1px solid var(--ink-3); padding: .6em 0; }
+summary { cursor: pointer; font-weight: 700; }
